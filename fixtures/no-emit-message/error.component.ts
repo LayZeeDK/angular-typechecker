@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 
-// D-02 proof fixture. OUT OF the project graph; excluded from the plugin's
-// tsconfig.lib.json. Do NOT add @ts-nocheck.
+// D-02 proof fixture. OUT OF the project graph; kept out of the plugin build by
+// tsconfig.lib.json's include: ["src/**/*.ts"] scope (the fixtures live at the
+// workspace root, not under the package). Do NOT add @ts-nocheck.
 //
 // This component is intentionally CLEAN. The fixture's job is its tsconfig, which
 // sets `compilerOptions.diagnostics: true` -- the option that drives

@@ -6,7 +6,9 @@ import { Component, signal } from '@angular/core';
 // (files:[], references:[...]) produces ZERO rootNames regardless of whether the
 // leaf source is clean or broken, so the engine's zero-rootNames guard must fire
 // instead of reporting a false "0 files / 0 errors" clean. OUT OF the project
-// graph; excluded from the plugin's tsconfig.lib.json. Do NOT add @ts-nocheck.
+// graph; kept out of the plugin build by tsconfig.lib.json's
+// include: ["src/**/*.ts"] scope (the fixtures live at the workspace root, not
+// under the package). Do NOT add @ts-nocheck.
 @Component({
   selector: 'solution-style-leaf',
   standalone: true,

@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 // F5 -- extended diagnostic introduced in v13 (NG8101 = INVALID_BANANA_IN_BOX,
-// "invalidBananaInBox"). OUT OF the project graph; excluded from the plugin's
-// tsconfig.lib.json. Do NOT add @ts-nocheck -- the diagnostic IS the fixture
-// input.
+// "invalidBananaInBox"). OUT OF the project graph; kept out of the plugin build
+// by tsconfig.lib.json's include: ["src/**/*.ts"] scope (the fixtures live at
+// the workspace root, not under the package). Do NOT add @ts-nocheck -- the
+// diagnostic IS the fixture input.
 //
 // NG8101 is an EXTENDED template diagnostic (verified = 8101 in installed
 // @angular/compiler-cli@22.0.4 error_code.d.ts:394; on the extended path per

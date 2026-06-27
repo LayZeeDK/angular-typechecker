@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
 
 // F6 -- the category-PROMOTION proof (ENG-04 / D-01 fact). OUT OF the project
-// graph; excluded from the plugin's tsconfig.lib.json. Do NOT add @ts-nocheck.
+// graph; kept out of the plugin build by tsconfig.lib.json's
+// include: ["src/**/*.ts"] scope (the fixtures live at the workspace root, not
+// under the package). Do NOT add @ts-nocheck.
 //
 // SAME extended-diagnostic shape as fixtures/extended-v13 (NG8101 =
 // INVALID_BANANA_IN_BOX) -- but this fixture's tsconfig sets

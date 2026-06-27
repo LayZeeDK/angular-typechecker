@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
 
 // F8 -- the D-05 / L-1 composite-triangle regression input. OUT OF the project
-// graph; excluded from the plugin's tsconfig.lib.json. Do NOT add @ts-nocheck.
+// graph; kept out of the plugin build by tsconfig.lib.json's
+// include: ["src/**/*.ts"] scope (the fixtures live at the workspace root, not
+// under the package). Do NOT add @ts-nocheck.
 //
 // This component is intentionally CLEAN. The fixture's job is its tsconfig.json,
 // which DELIBERATELY sets the three options that, WITHOUT the D-05 emit-

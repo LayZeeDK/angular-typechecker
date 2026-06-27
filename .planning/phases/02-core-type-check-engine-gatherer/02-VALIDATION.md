@@ -134,6 +134,6 @@ None. Zero MISSING and zero PARTIAL rows were found -- all behaviors were alread
 ### Notes carried forward (non-blocking, INFO-level -- from `02-VERIFICATION.md` / `02-REVIEW.md`)
 
 - `extended.angular17.integration.spec.ts` proves the version-independent `defaultCategory:"error"` promotion using the portable NG8101 shape; the `angular17` filename is the additive-catalog "promotion" slot, not a claim that NG8101 was introduced in v17 (IN-01).
-- `tsconfig.lib.json` `fixtures/**/*` excludes are dead config (no `fixtures/` dir under the project root); the real guard is `include: ["src/**/*.ts"]`. No fixture `.ts` leaks to `dist` (WR-01). Does not affect any requirement's coverage.
+- `tsconfig.lib.json`'s dead `fixtures/**/*` excludes were removed (no `fixtures/` dir under the project root); the real guard is `include: ["src/**/*.ts"]`, and the fixture header comments now state that mechanism truthfully. No fixture `.ts` leaks to `dist` (WR-01 / IN-03 fixed). Does not affect any requirement's coverage.
 
 **Audit outcome: nyquist_compliant -- all requirement rows COVERED; status flipped draft -> validated; `wave_0_complete: true`.**
