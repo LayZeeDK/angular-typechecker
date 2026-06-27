@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 - [x] 01-01-PLAN.md -- Bootstrap the Nx 23 integrated Angular monorepo in-place over the existing .git/ (Mechanism B)
 - [x] 01-02-PLAN.md -- Scaffold the plugin + spike app, patch tsconfig module to nodenext (BLOCKING), author the Phase-1 plugin package.json
-- [ ] 01-03-PLAN.md -- Build the tracer-bullet core + executor stub + error fixture, then build the plugin (executor.js retains import()
+- [x] 01-03-PLAN.md -- Build the tracer-bullet core + executor stub + error fixture, then build the plugin (executor.js retains import()
 - [ ] 01-04-PLAN.md -- Author the GATE A + GATE B specs, run the suite, record the GO/NO-GO decision
 **UI hint**: no
 
@@ -111,7 +111,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Workspace Bootstrap + Engine Spike (GATED) | 2/4 | In Progress|  |
+| 1. Workspace Bootstrap + Engine Spike (GATED) | 3/4 | In Progress|  |
 | 2. Core Type-Check Engine + Gatherer | 0/TBD | Not started | - |
 | 3. Filtering, Modes, Output + Quality Gates | 0/TBD | Not started | - |
 | 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |

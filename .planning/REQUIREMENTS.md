@@ -18,7 +18,7 @@
 
 - [ ] **ENG-01**: A framework-agnostic core (`runTypecheck(options)`) runs `@angular/compiler-cli` whole-program, no-emit, against a given tsconfig.
 - [ ] **ENG-02**: A custom gatherer collects ALL diagnostics unconditionally -- TS option/syntactic/semantic + Angular template type-check + extended (NG8xxx) -- modeled on `@angular/build`, never short-circuiting like `ngc`'s default gatherer.
-- [ ] **ENG-03**: The core loads ESM `@angular/compiler-cli` via `await import()` and runs under the supported Node range.
+- [x] **ENG-03**: The core loads ESM `@angular/compiler-cli` via `await import()` and runs under the supported Node range.
 - [ ] **ENG-04**: The core returns a structured result (errors/warnings as `ts.Diagnostic[]` + counts) with `strictTemplates` honored; extended-diagnostic categories respected.
 
 ### Executor (EXE)
@@ -112,7 +112,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | WS-04 | Phase 3 | Pending |
 | ENG-01 | Phase 2 | Pending |
 | ENG-02 | Phase 2 | Pending |
-| ENG-03 | Phase 1 | Pending |
+| ENG-03 | Phase 1 | Complete |
 | ENG-04 | Phase 2 | Pending |
 | EXE-01 | Phase 4 | Pending |
 | EXE-02 | Phase 2 | Pending |
