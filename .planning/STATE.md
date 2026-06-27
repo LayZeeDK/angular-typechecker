@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 context gathered
-last_updated: "2026-06-27T13:49:07.525Z"
-last_activity: 2026-06-27 -- Phase 01 execution started
+stopped_at: Plan 01-01 complete (workspace bootstrapped)
+last_updated: "2026-06-27T15:34:00.000Z"
+last_activity: 2026-06-27 -- Plan 01-01 complete (Nx 23 workspace bootstrapped via Mechanism B)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 01 (workspace-bootstrap-engine-spike-gated) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 01
-Last activity: 2026-06-27 -- Phase 01 execution started
+Plan: 2 of 4 (01-01 complete)
+Status: Executing Phase 01 — Plan 01-01 done
+Last activity: 2026-06-27 -- Plan 01-01 complete (Nx 23 workspace bootstrapped via Mechanism B)
 
-Progress: [..........] 0%
+Progress: [==........] 25%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: - min
-- Total execution time: 0.0 hours
+- Total plans completed: 1
+- Average duration: ~22 min
+- Total execution time: ~0.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01 | 1 | ~22 min | ~22 min |
 
 **Recent Trend:**
 
-- Last 5 plans: -
+- Last 5 plans: 01-01 (~22 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - Module: CJS executor + `await import()`, compiled `.js` with `module: node16`/`nodenext` (NOT `commonjs`) -- assert emitted `.js` still contains `import(`.
 - Dependency model: `@nx/devkit` pinned dependency (no `nx`); `@angular/compiler-cli` + `typescript` as peers.
 - Test runner: Vitest via `@nx/vitest:test` (NOT `@nx/vite:test`).
+- [01-01] Bootstrapped via Mechanism B (D-01/D-02/D-03): `create-nx-workspace@23.0.1 --preset=apps` in a temp sibling, copied dotfile-safe over the preserved root `.git/`; HEAD provably unchanged; `.planning/` + `CLAUDE.md` restored byte-identical.
+- [01-01] `--preset=apps` is a minimal empty integrated workspace: CNW 23.0.1 does NOT emit `tsconfig.base.json`/`.prettierrc`/`apps/.gitkeep`. Plan 01-02 now owns creating/validating `tsconfig.base.json` when the first project is generated.
+- [01-01] Root toolchain pinned EXACT (D-15): nx/@nx/* 23.0.1, typescript 6.0.3, @angular/compiler-cli 22.0.4; root workspace name `@angular-typechecker/source`.
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T10:28:39.695Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-workspace-bootstrap-engine-spike-gated/01-CONTEXT.md
+Last session: 2026-06-27T15:34:00.000Z
+Stopped at: Plan 01-01 complete (Nx 23 workspace bootstrapped via Mechanism B)
+Resume file: .planning/phases/01-workspace-bootstrap-engine-spike-gated/01-02-PLAN.md

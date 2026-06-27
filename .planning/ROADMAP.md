@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The spike confirms, on a real Angular 22 workspace, that the custom gatherer surfaces template + extended (NG8xxx) diagnostics UNCONDITIONALLY even when a co-located TS error exists (no `ngc`-style phase short-circuit), across the project-type matrix, with out-of-project diagnostics filtered, and that ESM `@angular/compiler-cli` loads via `await import()` under the supported Node range with a rough cold-run timing recorded.
   4. The Vitest harness (`@nx/vitest:test`) runs at least one green test, establishing the unit/integration test plumbing the engine phases depend on.
 **Plans**: 4 plans
-- [ ] 01-01-PLAN.md -- Bootstrap the Nx 23 integrated Angular monorepo in-place over the existing .git/ (Mechanism B)
+- [x] 01-01-PLAN.md -- Bootstrap the Nx 23 integrated Angular monorepo in-place over the existing .git/ (Mechanism B)
 - [ ] 01-02-PLAN.md -- Scaffold the plugin + spike app, patch tsconfig module to nodenext (BLOCKING), author the Phase-1 plugin package.json
 - [ ] 01-03-PLAN.md -- Build the tracer-bullet core + executor stub + error fixture, then build the plugin (executor.js retains import()
 - [ ] 01-04-PLAN.md -- Author the GATE A + GATE B specs, run the suite, record the GO/NO-GO decision
@@ -111,7 +111,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Workspace Bootstrap + Engine Spike (GATED) | 0/4 | Planned | - |
+| 1. Workspace Bootstrap + Engine Spike (GATED) | 1/4 | In progress | - |
 | 2. Core Type-Check Engine + Gatherer | 0/TBD | Not started | - |
 | 3. Filtering, Modes, Output + Quality Gates | 0/TBD | Not started | - |
 | 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |

@@ -54,7 +54,7 @@
 
 ### Compatibility (CMP)
 
-- [ ] **CMP-01**: Supports Nx 23 + Angular 22 + TypeScript `>=6.0 <6.1` (the only TS-6 pairing).
+- [x] **CMP-01**: Supports Nx 23 + Angular 22 + TypeScript `>=6.0 <6.1` (the only TS-6 pairing).
 - [ ] **CMP-02**: `engines.node = ^22.22.3 || ^24.15.0 || ^26.0.0` (Angular-Nx intersection).
 
 ### Continuous Integration (CI)
@@ -106,7 +106,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WS-01 | Phase 1 | Pending |
+| WS-01 | Phase 1 | Partial (01-01: workspace bootstrapped; plugin package lands in 01-02) |
 | WS-02 | Phase 1 | Pending |
 | WS-03 | Phase 1 | Pending |
 | WS-04 | Phase 3 | Pending |
@@ -133,7 +133,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | PKG-02 | Phase 5 | Pending |
 | PKG-03 | Phase 5 | Pending |
 | PKG-04 | Phase 5 | Pending |
-| CMP-01 | Phase 1 | Pending |
+| CMP-01 | Phase 1 | Complete (01-01: nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 pinned exact) |
 | CMP-02 | Phase 1 | Pending |
 | CI-01 | Phase 6 | Pending |
 
