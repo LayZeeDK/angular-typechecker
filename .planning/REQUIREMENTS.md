@@ -10,8 +10,8 @@
 ### Workspace & Plugin Scaffold (WS)
 
 - [ ] **WS-01**: The repository is an Nx 23 integrated Angular monorepo (created via `create-nx-workspace`) hosting the `angular-typechecker` plugin package.
-- [ ] **WS-02**: The plugin builds via `@nx/js:tsc` to CommonJS `.js` + `.d.ts`, compiled with `module: node16`/`nodenext` (a build-time check asserts the emitted executor `.js` still contains `import(`).
-- [ ] **WS-03**: The plugin's own unit/integration tests run via `@nx/vitest:test` (Vitest).
+- [x] **WS-02**: The plugin builds via `@nx/js:tsc` to CommonJS `.js` + `.d.ts`, compiled with `module: node16`/`nodenext` (a build-time check asserts the emitted executor `.js` still contains `import(`).
+- [x] **WS-03**: The plugin's own unit/integration tests run via `@nx/vitest:test` (Vitest).
 - [ ] **WS-04**: ESLint + Prettier are configured, including `@nx/dependency-checks` and module-boundary enforcement of the framework-agnostic `core/` vs adapters.
 
 ### Type-Check Engine (ENG)
@@ -55,7 +55,7 @@
 ### Compatibility (CMP)
 
 - [x] **CMP-01**: Supports Nx 23 + Angular 22 + TypeScript `>=6.0 <6.1` (the only TS-6 pairing).
-- [ ] **CMP-02**: `engines.node = ^22.22.3 || ^24.15.0 || ^26.0.0` (Angular-Nx intersection).
+- [x] **CMP-02**: `engines.node = ^22.22.3 || ^24.15.0 || ^26.0.0` (Angular-Nx intersection).
 
 ### Continuous Integration (CI)
 
@@ -107,8 +107,8 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | WS-01 | Phase 1 | Partial (01-01: workspace bootstrapped; plugin package lands in 01-02) |
-| WS-02 | Phase 1 | Pending |
-| WS-03 | Phase 1 | Pending |
+| WS-02 | Phase 1 | Complete |
+| WS-03 | Phase 1 | Complete |
 | WS-04 | Phase 3 | Pending |
 | ENG-01 | Phase 2 | Pending |
 | ENG-02 | Phase 2 | Pending |
@@ -134,7 +134,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | PKG-03 | Phase 5 | Pending |
 | PKG-04 | Phase 5 | Pending |
 | CMP-01 | Phase 1 | Complete (01-01: nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 pinned exact) |
-| CMP-02 | Phase 1 | Pending |
+| CMP-02 | Phase 1 | Complete |
 | CI-01 | Phase 6 | Pending |
 
 **Coverage:**
