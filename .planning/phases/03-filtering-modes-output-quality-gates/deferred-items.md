@@ -71,3 +71,16 @@ phase-level criterion resolved there.
 - **Resolution:** addressed by the existing [01-03 CAVEAT] follow-up (resolve the
   compiler-cli surface via a bare specifier when @angular/compiler-cli ships
   nodenext-clean typings). No action for 03-02.
+## 03-03: pre-existing lint failures + `compiler-cli-types.ts` boundary errors (formatter slice)
+
+Plan 03-03 independently confirmed the same pre-existing `npx nx lint
+angular-typechecker` failures already documented above (4 problems on base commit
+`7faa425`, none in 03-03's files). 03-03-specific proof of pre-existence: line 15
+(`transformers/api`) of `compiler-cli-types.ts` was added in Phase 2 and is
+UNTOUCHED by 03-03, yet `@nx/enforce-module-boundaries` errors on it identically to
+line 20 -- so the violation is not caused by 03-03's one-line type-only
+`formatDiagnostics` addition to the line-20 block. Resolution owner remains plan
+03-04 (WS-04 + the "lint passes clean" gate: the deep-import shim needs an
+`@nx/enforce-module-boundaries` allow/override or an eslint-disable, decided in
+03-04). Plan 03-03's own new files (`format-report.ts`, `format-report.spec.ts`)
+are lint-clean; build green; full unit suite 50/50 green.

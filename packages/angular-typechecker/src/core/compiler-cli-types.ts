@@ -19,6 +19,7 @@ import type {
 } from '../../../../node_modules/@angular/compiler-cli/src/transformers/api';
 import type {
   defaultGatherDiagnostics,
+  formatDiagnostics,
   ParsedConfiguration,
   performCompilation,
   readConfiguration,
@@ -42,4 +43,9 @@ export interface CompilerCli {
   // crash. The engine detects this code and RE-THROWS rather than counting it as
   // a type error, so `CoreResult` holds only genuine compiler diagnostics.
   readonly UNKNOWN_ERROR_CODE: typeof UNKNOWN_ERROR_CODE;
+  // OUT-01: the human-output renderer the Phase-3 formatter injects via
+  // `Pick<CompilerCli, 'formatDiagnostics'>`. It emits NG codes + template
+  // codeframes (a superset of `tsc`). Type-only (erased at emit; zero runtime
+  // effect, preserving the nodenext-safe shim invariant -- see file header).
+  formatDiagnostics: typeof formatDiagnostics;
 }
