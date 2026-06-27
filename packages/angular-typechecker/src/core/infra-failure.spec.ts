@@ -57,6 +57,18 @@ function errorDiagnostic(code: number, message: string): ts.Diagnostic {
   } as ts.Diagnostic;
 }
 
+// Minimal fake Program for the non-infra-failure path: a real `performCompilation`
+// always returns a `program` whose `getTsProgram().useCaseSensitiveFileNames()`
+// the Phase-3 boundary filter reads. The diagnostics here are file-less, so the
+// filter keeps them regardless -- this stub just satisfies the host access.
+function fakeProgram(): unknown {
+  return {
+    getTsProgram: () => ({
+      useCaseSensitiveFileNames: () => true,
+    }),
+  };
+}
+
 describe('runTypecheck infrastructure-failure handling (D-06)', () => {
   beforeEach(() => {
     compilerCliStub.performCompilation.mockReset();
@@ -84,7 +96,9 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
       diagnostics: [
         errorDiagnostic(TS2322, 'Type string is not assignable to type number'),
       ],
-      program: undefined,
+      // The normal (non-500) path reaches the Phase-3 boundary filter, which
+      // reads `program.getTsProgram().useCaseSensitiveFileNames()`.
+      program: fakeProgram(),
     });
 
     const { runTypecheck } = await import('./run-typecheck');

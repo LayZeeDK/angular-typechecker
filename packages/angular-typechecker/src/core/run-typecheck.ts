@@ -5,10 +5,22 @@ import type {
   ParsedConfiguration,
 } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
+import { filterDiagnostics } from './filter-diagnostics';
 import { gatherAllDiagnostics } from './gather-diagnostics';
 
 export interface CoreOptions {
   tsConfigPath: string;
+  // D-07: project-boundary filter switch. Default false excludes out-of-project
+  // + node_modules diagnostics from the reported set; true folds them back in
+  // (and resets `suppressedCount` to 0). Orthogonal to the consumer's
+  // `skipLibCheck` (which governs whether node_modules `.d.ts` diagnostics are
+  // even produced).
+  includeDeps?: boolean;
+  // D-08: the formatter's relativization base for CI annotation paths.
+  // `runTypecheck` IGNORES it -- it is consumed ONLY by `formatReport` (plan
+  // 03-03), and lives here for adapter/API discoverability. Including it never
+  // affects the boundary filter (which keys off the leaf tsconfig `basePath`).
+  pathBase?: string;
 }
 
 // D-01: Approach A result shape. `errorCount`/`warningCount` are counted
@@ -23,12 +35,19 @@ export interface CoreResult {
   tsConfigPath: string;
   // D-03: input file count; 0 means the zero-rootNames guard fired.
   rootNamesCount: number;
-  // D-06: GENUINE compiler diagnostics only (config errors prepended per D-03).
+  // D-02/D-06/D-09: GENUINE compiler diagnostics only (config errors prepended
+  // per D-03), FILTERED to the in-project set (D-06) and SORTED + deduped
+  // (D-09). `includeDeps: true` folds the out-of-project + node_modules
+  // diagnostics back in.
   diagnostics: readonly ts.Diagnostic[];
-  // D-01: category === Error (explicit).
+  // D-01/D-02: category === Error, counted POST-filter on the sorted set.
   errorCount: number;
-  // D-01: category === Warning (explicit, NOT total - errorCount).
+  // D-01/D-02: category === Warning (explicit, NOT total - errorCount),
+  // counted POST-filter on the sorted set.
   warningCount: number;
+  // D-02: count of excluded out-of-project + node_modules diagnostics. 0 on the
+  // zero-rootNames guard path (no Program) and whenever `includeDeps` is true.
+  suppressedCount: number;
   durationMs: number;
 }
 
@@ -59,8 +78,9 @@ export class TypecheckInfrastructureError extends Error {
  * structured result. The config is parsed ONCE and spread into a FRESH `options`
  * object so that a second `performCompilation` call (e.g. the GATE B
  * differential) never shares the mutated `noEmit` state of the first (resolved
- * research Open Question 1). No filtering of out-of-project diagnostics is
- * applied (deferred to Phase 3, D-10).
+ * research Open Question 1). Out-of-project + node_modules diagnostics are
+ * filtered out by default in `finalize` (D-06; opt-in `includeDeps`), and the
+ * kept set is sorted + deduped via `ts.sortAndDeduplicateDiagnostics` (D-09).
  *
  * The core requires an ABSOLUTE `tsConfigPath` and never touches
  * `process.cwd()` (D-04); the Phase-4 executor owns path resolution.
@@ -95,6 +115,9 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   if (parsed.rootNames.length === 0) {
     const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
 
+    // No Program on this path: nothing to filter (the single guard diagnostic is
+    // file-less and would never be filtered anyway), so `suppressedCount` is 0
+    // and `finalize` runs with `filter` omitted.
     return finalize(
       ts,
       options.tsConfigPath,
@@ -153,12 +176,27 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     );
   }
 
+  // D-06: classify against the leaf tsconfig's `basePath` (the directory
+  // `readConfiguration` injects), NEVER `parsed.options.rootDir` -- in this
+  // `--preset=apps` workspace `rootDir` is the workspace root, which would mark
+  // every file in-project and defeat the filter. The live program host supplies
+  // `useCaseSensitiveFileNames()` so the case-fold mirrors how diagnostics were
+  // produced (RESEARCH D-05/D-06).
   return finalize(
     ts,
     options.tsConfigPath,
     parsed.rootNames.length,
     [...configDiagnostics, ...result.diagnostics],
     start,
+    {
+      basePath: parsed.options.basePath ?? '',
+      includeDeps: options.includeDeps ?? false,
+      useCaseSensitiveFileNames: result.program
+        .getTsProgram()
+        .useCaseSensitiveFileNames(),
+      realpath: (filePath: string): string =>
+        ts.sys.realpath?.(filePath) ?? filePath,
+    },
   );
 }
 
@@ -198,9 +236,30 @@ function synthesizeZeroRootNamesDiagnostic(
 }
 
 /**
- * Assembles the CoreResult, counting Error and Warning categories EXPLICITLY
- * (D-01) -- never by subtracting errors from the total. Suggestion + Message
- * categories stay in `diagnostics` but are not counted, preserving the invariant
+ * The per-call inputs the project-boundary filter needs, sourced from the live
+ * Program host + the parsed config. Omitted on the zero-rootNames guard path
+ * (no Program), where `suppressedCount` is 0 and nothing is filtered.
+ */
+interface FinalizeFilter {
+  // D-05: in-project baseline = the leaf tsconfig's `basePath`.
+  basePath: string;
+  // D-07: false (default) excludes out-of-project + node_modules.
+  includeDeps: boolean;
+  // D-06: from `result.program.getTsProgram().useCaseSensitiveFileNames()`.
+  useCaseSensitiveFileNames: boolean;
+  // D-06: symlink resolution (pnpm `.pnpm/`); `ts.sys.realpath` in production.
+  realpath: (filePath: string) => string;
+}
+
+/**
+ * Assembles the CoreResult. When `filter` is supplied (the normal path), it
+ * first excludes out-of-project + node_modules diagnostics (D-06), then sorts +
+ * dedupes the kept set via `ts.sortAndDeduplicateDiagnostics` (D-09), then
+ * counts Error and Warning categories EXPLICITLY (D-01) on that POST-filter,
+ * sorted set -- never by subtracting errors from the total. On the
+ * zero-rootNames guard path (no `filter`), the diagnostics pass through unsorted
+ * and unfiltered with `suppressedCount: 0`. Suggestion + Message categories stay
+ * in `diagnostics` but are not counted, preserving the invariant
  * `errorCount + warningCount <= diagnostics.length`.
  */
 function finalize(
@@ -209,20 +268,41 @@ function finalize(
   rootNamesCount: number,
   diagnostics: readonly ts.Diagnostic[],
   start: number,
+  filter?: FinalizeFilter,
 ): CoreResult {
-  const errorCount = diagnostics.filter(
+  let reported: readonly ts.Diagnostic[] = diagnostics;
+  let suppressedCount = 0;
+
+  if (filter !== undefined) {
+    const filtered = filterDiagnostics(diagnostics, {
+      basePath: filter.basePath,
+      includeDeps: filter.includeDeps,
+      useCaseSensitiveFileNames: filter.useCaseSensitiveFileNames,
+      realpath: filter.realpath,
+    });
+
+    // D-09: sort + dedup the kept set BEFORE counting/formatting so the report
+    // is deterministic (alphabetical by file, file-less first) and any
+    // accidental cross-phase duplicates from the unconditional all-getter are
+    // removed.
+    reported = ts.sortAndDeduplicateDiagnostics(filtered.kept);
+    suppressedCount = filtered.suppressedCount;
+  }
+
+  const errorCount = reported.filter(
     (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
   ).length;
-  const warningCount = diagnostics.filter(
+  const warningCount = reported.filter(
     (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Warning,
   ).length;
 
   return {
     tsConfigPath,
     rootNamesCount,
-    diagnostics,
+    diagnostics: reported,
     errorCount,
     warningCount,
+    suppressedCount,
     durationMs: performance.now() - start,
   };
 }

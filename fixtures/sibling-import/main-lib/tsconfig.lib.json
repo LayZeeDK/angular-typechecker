@@ -1,0 +1,20 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sibling/dependency-lib": ["../dependency-lib/dependency"]
+    },
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true
+  },
+  "files": ["main.component.ts", "../dependency-lib/dependency.ts"]
+}
