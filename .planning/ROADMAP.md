@@ -68,9 +68,9 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
   4. Unit tests (Vitest, mocking `@angular/compiler-cli`) cover the gatherer, project-boundary filtering, tsconfig resolution, modes, and `--max-warnings` logic.
   5. ESLint + Prettier are configured (Prettier `singleQuote: true`) including `@nx/dependency-checks` and module-boundary enforcement that forbids `core/` from importing `@nx/devkit`/CLI/architect, and lint passes clean.
 **Plans**: 4 plans
-- [ ] 03-01-PLAN.md -- Project-boundary filter slice: filterDiagnostics + suppressedCount wiring into runTypecheck (EXE-04, OUT-02)
-- [ ] 03-02-PLAN.md -- Verdict slice: pure evaluateResult + --max-warnings gating (EXE-05)
-- [ ] 03-03-PLAN.md -- Human output formatter slice: formatReport (sort+dedup, formatDiagnostics, TTY-gated ANSI, fail-fast truncation) (EXE-03, OUT-01, OUT-03)
+- [x] 03-01-PLAN.md -- Project-boundary filter slice: filterDiagnostics + suppressedCount wiring into runTypecheck (EXE-04, OUT-02)
+- [x] 03-02-PLAN.md -- Verdict slice: pure evaluateResult + --max-warnings gating (EXE-05)
+- [x] 03-03-PLAN.md -- Human output formatter slice: formatReport (sort+dedup, formatDiagnostics, TTY-gated ANSI, fail-fast truncation) (EXE-03, OUT-01, OUT-03)
 - [ ] 03-04-PLAN.md -- Quality gates slice: ESLint core/** import ban + index exports; lint clean + suite green (WS-04, TEST-01)
 **UI hint**: no
 
@@ -120,7 +120,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
-| 3. Filtering, Modes, Output + Quality Gates | 0/4 | Planned | - |
+| 3. Filtering, Modes, Output + Quality Gates | 3/4 | In Progress|  |
 | 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
