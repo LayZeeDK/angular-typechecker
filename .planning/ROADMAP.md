@@ -13,7 +13,7 @@ v0.0.1 ships a single Nx executor (`angular-typecheck`) that runs the complete A
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Workspace Bootstrap + Engine Spike (GATED)** - Stand up the Nx 23 / Angular 22 / TS 6 monorepo in-place and prove the riskiest unknowns (complete unconditional gatherer + CJS-loads-ESM `import()` survives `module: node16`) on a real workspace before committing to the engine. (completed 2026-06-27)
-- [ ] **Phase 2: Core Type-Check Engine + Gatherer** - A framework-agnostic `runTypecheck` runs `@angular/compiler-cli` whole-program no-emit and gathers ALL diagnostics unconditionally, asserted against the v13->v22 diagnostic catalog.
+- [x] **Phase 2: Core Type-Check Engine + Gatherer** - A framework-agnostic `runTypecheck` runs `@angular/compiler-cli` whole-program no-emit and gathers ALL diagnostics unconditionally, asserted against the v13->v22 diagnostic catalog. (completed 2026-06-27)
 - [ ] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split.
 - [ ] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test.
 - [ ] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace.
@@ -52,8 +52,8 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
   4. Integration tests run the REAL compiler against committed fixtures and assert exact diagnostic codes/counts across the v13->v22 catalog (organized by the Angular major that introduced each check), all evaluated on Angular 22 plus any v22 additions.
 **Plans**: 3 plans
 - [x] 02-01-PLAN.md -- Grow the engine in place: D-01 CoreResult + D-05 override + D-02/D-03/D-06 + LW-01 fix + end-to-end and infra-failure proofs (Wave 1)
-- [ ] 02-02-PLAN.md -- Fail-loud config-resolution slice: spec-tsconfig (EXE-02) + malformed + solution-style fixtures and the D-03 integration proofs (Wave 2)
-- [ ] 02-03-PLAN.md -- Real-compiler diagnostic catalog tier: TS/NG/extended/promotion + composite-triangle + D-02 fixtures and the NG() per-version integration specs (Wave 2)
+- [x] 02-02-PLAN.md -- Fail-loud config-resolution slice: spec-tsconfig (EXE-02) + malformed + solution-style fixtures and the D-03 integration proofs (Wave 2)
+- [x] 02-03-PLAN.md -- Real-compiler diagnostic catalog tier: TS/NG/extended/promotion + composite-triangle + D-02 fixtures and the NG() per-version integration specs (Wave 2)
 **UI hint**: no
 
 ### Phase 3: Filtering, Modes, Output + Quality Gates
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
-| 2. Core Type-Check Engine + Gatherer | 1/3 | In Progress|  |
+| 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
 | 3. Filtering, Modes, Output + Quality Gates | 0/TBD | Not started | - |
 | 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
