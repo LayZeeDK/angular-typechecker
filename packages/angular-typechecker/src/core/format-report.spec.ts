@@ -152,9 +152,10 @@ describe('formatReport', () => {
     );
 
     expect(out).toContain(absolute);
-    // No cwd-relative form: the bare basename without the absolute prefix must
-    // not stand alone as the rendered path.
-    expect(out).not.toContain('src/a.component.ts(1,1): error');
+    // The rendered line begins with the ABSOLUTE path -- it is NOT relativized to
+    // the file's own directory (which would start the line at the bare basename).
+    expect(out.startsWith(absolute)).toBe(true);
+    expect(out.startsWith('a.component.ts')).toBe(false);
   });
 
   it('renders a workspace-root-relative, "/"-normalized path when pathBase is set (OUT-02/OUT-03/D-08)', () => {
