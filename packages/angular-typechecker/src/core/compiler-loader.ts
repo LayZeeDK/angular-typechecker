@@ -1,6 +1,6 @@
-import type * as ng from '@angular/compiler-cli';
+import type { CompilerCli } from './compiler-cli-types';
 
-let cached: typeof ng | undefined;
+let cached: CompilerCli | undefined;
 
 /**
  * Lazily loads the ESM-only @angular/compiler-cli from a CommonJS module and
@@ -8,9 +8,13 @@ let cached: typeof ng | undefined;
  * value-import of @angular/compiler-cli in the whole package (every other module
  * uses `import type`); it is the GATE A runtime path (ENG-03) and must survive
  * @nx/js:tsc emit as a native dynamic load (compiled under module: nodenext).
+ *
+ * The return type comes from a hand-built structural namespace (compiler-cli-types)
+ * because the package's barrel typings do not resolve under nodenext -- see that
+ * file's header. The runtime value is the real, fully-featured module.
  */
-export async function loadCompilerCli(): Promise<typeof ng> {
-  cached ??= await import('@angular/compiler-cli');
+export async function loadCompilerCli(): Promise<CompilerCli> {
+  cached ??= (await import('@angular/compiler-cli')) as unknown as CompilerCli;
 
   return cached;
 }

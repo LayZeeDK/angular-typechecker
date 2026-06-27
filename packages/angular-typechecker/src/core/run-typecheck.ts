@@ -1,5 +1,6 @@
 import type ts from 'typescript';
 
+import type { EmitFlags } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
 import { gatherAllDiagnostics } from './gather-diagnostics';
 
@@ -34,7 +35,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   const result = ng.performCompilation({
     rootNames: parsed.rootNames,
     options: { ...parsed.options, noEmit: true },
-    emitFlags: 0 as ng.EmitFlags,
+    emitFlags: 0 as EmitFlags,
     gatherDiagnostics: gatherAllDiagnostics,
   });
   const durationMs = performance.now() - start;
