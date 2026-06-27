@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "AngularTypecheckExecutorOptions",
+  "title": "Angular type-check executor",
+  "description": "Type-checks an Angular project (TypeScript + template + extended NG8xxx) with no emit.",
+  "cli": "nx",
+  "type": "object",
+  "properties": {
+    "tsConfig": {
+      "type": "string",
+      "description": "Path to the tsconfig to type-check."
+    }
+  },
+  "required": ["tsConfig"],
+  "additionalProperties": false
+}
