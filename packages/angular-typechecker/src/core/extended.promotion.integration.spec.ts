@@ -16,9 +16,13 @@ import { runTypecheck } from './run-typecheck';
 // diagnostic now lands in errorCount, and the D-01 invariant
 // (errorCount + warningCount <= diagnostics.length) holds.
 //
-// This file is the per-introduction-version "promotion" slot (named alongside the
-// v17 extended codes in the additive catalog). The promotion mechanism is
-// version-independent, so it is asserted here against the portable NG8101 shape.
+// IN-01: this spec proves the extended-diagnostic category-promotion mechanism,
+// which is VERSION-INDEPENDENT -- it is NOT a claim that NG8101 (or any code) was
+// introduced in a specific Angular version. It is asserted against the portable
+// NG8101 shape. (Renamed from `extended.angular17.integration.spec.ts`, whose
+// `angular17` signal was false: it carried no v17-specific code and there is no
+// `fixtures/extended-v17/` tree. Genuine per-version extended-code coverage is
+// separate, future feature work.)
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const workspaceRoot = join(packageRoot, '..', '..');
