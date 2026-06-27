@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Workspace Bootstrap + Engine Spike (GATED)** - Stand up the Nx 23 / Angular 22 / TS 6 monorepo in-place and prove the riskiest unknowns (complete unconditional gatherer + CJS-loads-ESM `import()` survives `module: node16`) on a real workspace before committing to the engine. (completed 2026-06-27)
 - [x] **Phase 2: Core Type-Check Engine + Gatherer** - A framework-agnostic `runTypecheck` runs `@angular/compiler-cli` whole-program no-emit and gathers ALL diagnostics unconditionally, asserted against the v13->v22 diagnostic catalog. (completed 2026-06-27)
-- [ ] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split.
+- [x] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split. (completed 2026-06-27)
 - [ ] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test.
 - [ ] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace.
 - [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change.
@@ -71,7 +71,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 - [x] 03-01-PLAN.md -- Project-boundary filter slice: filterDiagnostics + suppressedCount wiring into runTypecheck (EXE-04, OUT-02)
 - [x] 03-02-PLAN.md -- Verdict slice: pure evaluateResult + --max-warnings gating (EXE-05)
 - [x] 03-03-PLAN.md -- Human output formatter slice: formatReport (sort+dedup, formatDiagnostics, TTY-gated ANSI, fail-fast truncation) (EXE-03, OUT-01, OUT-03)
-- [ ] 03-04-PLAN.md -- Quality gates slice: ESLint core/** import ban + index exports; lint clean + suite green (WS-04, TEST-01)
+- [x] 03-04-PLAN.md -- Quality gates slice: ESLint core/** import ban + index exports; lint clean + suite green (WS-04, TEST-01)
 **UI hint**: no
 
 ### Phase 4: Nx Executor Adapter + Cacheable Target
@@ -120,7 +120,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
-| 3. Filtering, Modes, Output + Quality Gates | 3/4 | In Progress|  |
+| 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |

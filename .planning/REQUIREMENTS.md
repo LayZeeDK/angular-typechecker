@@ -12,7 +12,7 @@
 - [ ] **WS-01**: The repository is an Nx 23 integrated Angular monorepo (created via `create-nx-workspace`) hosting the `angular-typechecker` plugin package.
 - [x] **WS-02**: The plugin builds via `@nx/js:tsc` to CommonJS `.js` + `.d.ts`, compiled with `module: node16`/`nodenext` (a build-time check asserts the emitted executor `.js` still contains `import(`).
 - [x] **WS-03**: The plugin's own unit/integration tests run via `@nx/vitest:test` (Vitest).
-- [ ] **WS-04**: ESLint + Prettier are configured, including `@nx/dependency-checks` and module-boundary enforcement of the framework-agnostic `core/` vs adapters.
+- [x] **WS-04**: ESLint + Prettier are configured, including `@nx/dependency-checks` and module-boundary enforcement of the framework-agnostic `core/` vs adapters.
 
 ### Type-Check Engine (ENG)
 
@@ -39,7 +39,7 @@
 
 ### Testing (TEST)
 
-- [ ] **TEST-01**: Unit tests (Vitest) mock `@angular/compiler-cli` and cover gatherer, project-boundary filtering, tsconfig resolution, modes, and `--max-warnings` logic.
+- [x] **TEST-01**: Unit tests (Vitest) mock `@angular/compiler-cli` and cover gatherer, project-boundary filtering, tsconfig resolution, modes, and `--max-warnings` logic.
 - [ ] **TEST-02**: Integration tests run the real compiler against fixtures and assert exact diagnostic codes/counts across the v13->v22 catalog (organized by Angular introduction version), all on Angular 22.
 - [ ] **TEST-03**: The executor is validated across all five project types: application, local (non-buildable) library, buildable library, publishable library, and spec tsconfig.
 - [ ] **TEST-04**: A dependency-error-busts-cache correctness test verifies a downstream type change invalidates the consumer's cache.
@@ -109,7 +109,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | WS-01 | Phase 1 | Partial (01-01: workspace bootstrapped; plugin package lands in 01-02) |
 | WS-02 | Phase 1 | Complete |
 | WS-03 | Phase 1 | Complete |
-| WS-04 | Phase 3 | Pending |
+| WS-04 | Phase 3 | Complete |
 | ENG-01 | Phase 2 | Pending |
 | ENG-02 | Phase 2 | Pending |
 | ENG-03 | Phase 1 | Complete |
@@ -124,7 +124,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | OUT-01 | Phase 3 | Pending |
 | OUT-02 | Phase 3 | Pending |
 | OUT-03 | Phase 3 | Pending |
-| TEST-01 | Phase 3 | Pending |
+| TEST-01 | Phase 3 | Complete |
 | TEST-02 | Phase 2 | Pending |
 | TEST-03 | Phase 6 | Pending |
 | TEST-04 | Phase 4 | Pending |
