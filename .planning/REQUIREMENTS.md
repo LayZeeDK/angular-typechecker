@@ -100,17 +100,56 @@
 
 ## Traceability
 
-Populated during roadmap creation (each requirement maps to exactly one phase).
+Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` for phase detail.
+
+> Note: the enumerated v0.0.1 checklist contains **30** distinct requirement IDs (the earlier "26 total" header was a source miscount). All 30 are mapped below -- no orphans, no duplicates.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (to be filled by roadmapper) | | Pending |
+| WS-01 | Phase 1 | Pending |
+| WS-02 | Phase 1 | Pending |
+| WS-03 | Phase 1 | Pending |
+| WS-04 | Phase 3 | Pending |
+| ENG-01 | Phase 2 | Pending |
+| ENG-02 | Phase 2 | Pending |
+| ENG-03 | Phase 1 | Pending |
+| ENG-04 | Phase 2 | Pending |
+| EXE-01 | Phase 4 | Pending |
+| EXE-02 | Phase 2 | Pending |
+| EXE-03 | Phase 3 | Pending |
+| EXE-04 | Phase 3 | Pending |
+| EXE-05 | Phase 3 | Pending |
+| EXE-06 | Phase 4 | Pending |
+| EXE-07 | Phase 4 | Pending |
+| OUT-01 | Phase 3 | Pending |
+| OUT-02 | Phase 3 | Pending |
+| OUT-03 | Phase 3 | Pending |
+| TEST-01 | Phase 3 | Pending |
+| TEST-02 | Phase 2 | Pending |
+| TEST-03 | Phase 6 | Pending |
+| TEST-04 | Phase 4 | Pending |
+| TEST-05 | Phase 5 | Pending |
+| PKG-01 | Phase 5 | Pending |
+| PKG-02 | Phase 5 | Pending |
+| PKG-03 | Phase 5 | Pending |
+| PKG-04 | Phase 5 | Pending |
+| CMP-01 | Phase 1 | Pending |
+| CMP-02 | Phase 1 | Pending |
+| CI-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v0.0.1 requirements: 26 total
-- Mapped to phases: (pending)
-- Unmapped: (pending)
+- v0.0.1 requirements: 30 total (enumerated checklist; supersedes the "26" header miscount)
+- Mapped to phases: 30
+- Unmapped: 0
+
+**Per-phase counts:**
+- Phase 1 (Workspace Bootstrap + Engine Spike): 6 -- WS-01, WS-02, WS-03, ENG-03, CMP-01, CMP-02
+- Phase 2 (Core Type-Check Engine + Gatherer): 5 -- ENG-01, ENG-02, ENG-04, EXE-02, TEST-02
+- Phase 3 (Filtering, Modes, Output + Quality Gates): 8 -- EXE-03, EXE-04, EXE-05, OUT-01, OUT-02, OUT-03, TEST-01, WS-04
+- Phase 4 (Nx Executor Adapter + Cacheable Target): 4 -- EXE-01, EXE-06, EXE-07, TEST-04
+- Phase 5 (Packaging, Publish Hardening + e2e Smoke): 5 -- PKG-01, PKG-02, PKG-03, PKG-04, TEST-05
+- Phase 6 (Full e2e Matrix + CI): 2 -- TEST-03, CI-01
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-27 after initial definition*
+*Last updated: 2026-06-27 after roadmap creation (traceability populated, 30/30 mapped)*
