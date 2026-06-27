@@ -1,9 +1,9 @@
 ---
 phase: 1
 slug: workspace-bootstrap-engine-spike-gated
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-27
 ---
 
@@ -46,16 +46,17 @@ test run for that spec. The full suite command enforces build-before-test orderi
 
 | Req / Gate item | Behavior | Test Type | Automated Command / Assertion | File Exists | Status |
 |-----------------|----------|-----------|-------------------------------|-------------|--------|
-| WS-01 | Repo is an Nx 23 integrated Angular monorepo hosting the plugin | smoke | `npx nx report` shows nx 23.0.1; `npx nx show projects` lists `angular-typechecker` + `ng-spike-app` | manual/CI step | [pending] |
-| WS-02 / Gate 1 (A static) | Built `core/compiler-loader.js` has literal `import(`; neither it nor `executor.js` has `require('@angular/compiler-cli')` (the `import()` lives in core per the core/adapter split — addendum Finding 2) | unit (post-build) | `gate-a-static.spec.ts`: positive `toMatch(/import\(/)` on `compiler-loader.js`; negative `not.toMatch(/require\(["']@angular\/compiler-cli/)` on both (comment-stripped) | [W0] | [pending] |
-| ENG-03 / Gate 2 (A runtime) | `await import()` loads compiler-cli, no `ERR_REQUIRE_ESM`, no code 500 (`UNKNOWN_ERROR_CODE`) | integration | `gate-b.spec.ts`: run resolves; `expect(codes).not.toContain(500)` | [W0] | [pending] |
-| ENG-03 / Gate 3 (B positive) | All-getter returns codes incl. 2322 AND the NG8109 code -998109 (Angular encodes extended codes negative; addendum Finding 3) | integration | `gate-b.spec.ts`: `toContain(2322)` + `toContain(-998109)` (or `Math.abs(c)-990000===8109`) | [W0] | [pending] |
-| ENG-03 / Gate 4 (B differential) | `defaultGatherDiagnostics` on the SAME program returns 2322 but NOT -998109 | integration | `gate-b.spec.ts`: `toContain(2322)` + `not.toContain(-998109)` | [W0] | [pending] |
-| ENG-03 / Gate 5 (B breadth) | Gates 3-4 hold for one app AND one lib tsconfig | integration | `describe.each([app, lib])` in `gate-b.spec.ts` | [W0] | [pending] |
-| ENG-03 / Gate 6 (timing) | One cold-run wall-clock recorded | integration | `runTypecheck` returns `durationMs`; logged once | [W0] | [pending] |
-| WS-03 | Plugin tests run via Vitest with >=1 green test | smoke | `npx nx test angular-typechecker` exits 0 with >=1 green test | [W0] (generator emits a sample spec) | [pending] |
-| CMP-01 | Nx 23 + Angular 22 + TS 6 resolve together | smoke | `npm ls nx @angular/compiler-cli typescript` shows 23.0.1 / 22.0.4 / 6.0.3 | manual/CI step | [pending] |
-| CMP-02 | `engines.node` correct | static | plugin `package.json` `engines.node === "^22.22.3 || ^24.15.0 || ^26.0.0"` | [W0] (tiny manifest test, optional) | [pending] |
+| WS-01 | Repo is an Nx 23 integrated Angular monorepo hosting the plugin | smoke | `npx nx report` shows nx 23.0.1; `npx nx show projects` lists `angular-typechecker` + `ng-spike-app` | manual/CI step | [manual] |
+| WS-02 / Gate 1 (A static) | Built `core/compiler-loader.js` has literal `import(`; neither it nor `executor.js` has `require('@angular/compiler-cli')` (the `import()` lives in core per the core/adapter split — addendum Finding 2) | unit (post-build) | `gate-a-static.spec.ts`: positive `toMatch(/import\(/)` on `compiler-loader.js`; negative `not.toMatch(/require\(["']@angular\/compiler-cli/)` on both (comment-stripped) | [W0] | [green] |
+| ENG-03 / Gate 2 (A runtime) | `await import()` loads compiler-cli, no `ERR_REQUIRE_ESM`, no code 500 (`UNKNOWN_ERROR_CODE`) | integration | `gate-b.spec.ts`: run resolves; `expect(codes).not.toContain(500)` | [W0] | [green] |
+| ENG-03 / Gate 3 (B positive) | All-getter returns codes incl. 2322 AND the NG8109 code -998109 (Angular encodes extended codes negative; addendum Finding 3) | integration | `gate-b.spec.ts`: `toContain(2322)` + `toContain(-998109)` (or `Math.abs(c)-990000===8109`) | [W0] | [green] |
+| ENG-03 / Gate 4 (B differential) | `defaultGatherDiagnostics` on the SAME program returns 2322 but NOT -998109 | integration | `gate-b.spec.ts`: `toContain(2322)` + `not.toContain(-998109)` | [W0] | [green] |
+| ENG-03 / Gate 5 (B breadth) | Gates 3-4 hold for one app AND one lib tsconfig | integration | `describe.each([app, lib])` in `gate-b.spec.ts` | [W0] | [green] |
+| ENG-03 / Gate 6 (timing) | One cold-run wall-clock recorded | integration | `runTypecheck` returns `durationMs`; logged once | [W0] | [green] |
+| WS-03 | Plugin tests run via Vitest with >=1 green test | smoke | `npx nx test angular-typechecker` exits 0 with >=1 green test | [W0] (generator emits a sample spec) | [green] |
+| CMP-01 (runtime) | Nx 23 + Angular 22 + TS 6 resolve together | smoke | `npm ls nx @angular/compiler-cli typescript` shows 23.0.1 / 22.0.4 / 6.0.3 | manual/CI step | [manual] |
+| CMP-01 (manifest) | Plugin manifest declares the D-14 compatibility contract: `@nx/devkit` pinned EXACT as a dependency; NO `nx` in deps/peers; `@angular/compiler-cli`/`typescript` peer ranges; `type: commonjs` | unit | `package-manifest.spec.ts`: `toBe('23.0.1')` on devkit dep; `not.toHaveProperty('nx')` on deps + peers; `toBe('^22.0.0')` / `toBe('>=6.0.0 <6.1.0')` peers; `toBe('commonjs')` | [W0] | [green] |
+| CMP-02 | `engines.node` correct | static | `package-manifest.spec.ts`: plugin `package.json` `engines.node === "^22.22.3 || ^24.15.0 || ^26.0.0"` | [W0] | [green] |
 
 *Status: [pending] · [green] · [red] · [flaky]*
 
@@ -63,13 +64,14 @@ test run for that spec. The full suite command enforces build-before-test orderi
 
 ## Wave 0 Requirements
 
-- [ ] `packages/angular-typechecker/src/.../gate-a-static.spec.ts` — GATE A static (covers WS-02 / Gate 1)
-- [ ] `packages/angular-typechecker/src/.../gate-b.spec.ts` — GATE B positive + differential + runtime + breadth + timing (covers ENG-03 / Gates 2-6)
-- [ ] `fixtures/gate-b-error/{error.component.ts, error.component.html, tsconfig.app.json, tsconfig.lib.json}` — the deliberate-error fixture (out of project graph; nothing imports it — TS #36017)
-- [ ] Confirm the generator-emitted `vitest.config.ts` resolves the workspace tsconfig; Vitest arrives via `--unitTestRunner=vitest` (no extra install)
-- [ ] One green smoke spec (the generator emits a sample; keep or replace) — satisfies WS-03 minimally
+- [x] `packages/angular-typechecker/src/executors/angular-typecheck/gate-a-static.spec.ts` — GATE A static (covers WS-02 / Gate 1)
+- [x] `packages/angular-typechecker/src/core/gate-b.spec.ts` — GATE B positive + differential + runtime + breadth + timing (covers ENG-03 / Gates 2-6)
+- [x] `packages/angular-typechecker/src/package-manifest.spec.ts` — plugin manifest compatibility contract (covers CMP-02 + CMP-01 manifest portion; added by gsd-validate-phase audit)
+- [x] `fixtures/gate-b-error/{error.component.ts, error.component.html, tsconfig.app.json, tsconfig.lib.json}` — the deliberate-error fixture (out of project graph; nothing imports it — TS #36017)
+- [x] Confirm the generator-emitted `vitest.config.mts` resolves the workspace tsconfig; Vitest arrives via `--unitTestRunner=vitest` (no extra install)
+- [x] One green smoke spec (the generator emits a sample; the gate specs + manifest spec supersede it) — satisfies WS-03 minimally
 
-*If the generator already emits a runnable `vitest.config.ts` + sample spec (it does for `--unitTestRunner=vitest`), the only NEW test files are the two gate specs + the fixture.*
+*The generator emitted a runnable `vitest.config.mts`; the NEW test files this phase are the two gate specs + the fixture + the manifest spec (the last added by this validation audit). All exist and pass.*
 
 ---
 
@@ -78,17 +80,45 @@ test run for that spec. The full suite command enforces build-before-test orderi
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
 | Workspace bootstrap did not clobber tracked files | WS-01 | One-time, destructive-adjacent filesystem operation over the live `.git/`; reviewed once, not re-run per commit | After Mechanism B completes: `git status` shows only intended additions; `git log` HEAD unchanged from captured pre-bootstrap SHA; `.planning/` + `CLAUDE.md` restored byte-identical |
-| `nx report` toolchain versions | WS-01, CMP-01 | CLI-output inspection; asserted once at bootstrap, then re-derivable from lockfile | `npx nx report` lists nx 23.0.1, @nx/* 23.0.1; `npm ls` confirms @angular/compiler-cli 22.0.4 / typescript 6.0.3 |
+| Repo is an Nx 23 integrated Angular monorepo hosting the plugin | WS-01 | Env/CI assertion over the workspace topology + Nx CLI output; not a behavior a Vitest unit can observe (it asserts the toolchain installation, not the plugin code). Confirmed this session. | `npx nx report` shows nx 23.0.1 + @nx/* 23.0.1; `npx nx show projects` lists `angular-typechecker` + `ng-spike-app` |
+| Installed toolchain versions resolve together (runtime) | CMP-01 (runtime) | Env/CI assertion against the lockfile-resolved `node_modules`; depends on what is INSTALLED, not on plugin source. The manifest-DECLARED contract those versions must satisfy is now automated by `package-manifest.spec.ts`; only the installed-resolution check stays manual. | `npm ls nx @angular/compiler-cli typescript` shows nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All gate items have an owning automated assertion or a documented Wave 0 dependency
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (two gate specs + fixture)
-- [ ] No watch-mode flags (the spike is a one-shot whole-program check; `--watch` is deferred to a later milestone)
-- [ ] Feedback latency < 90s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All gate items have an owning automated assertion or a documented Manual-Only justification
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (two gate specs + fixture + manifest spec)
+- [x] No watch-mode flags (the spike is a one-shot whole-program check; `--watch` is deferred to a later milestone; `vitest.config.mts` sets `watch: false`)
+- [x] Feedback latency < 90s (full suite ~2.5s; build cached)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-06-27
+
+---
+
+## Validation Audit (gsd-validate-phase, 2026-06-27)
+
+**State A** (01-VALIDATION.md pre-existed). Audited the GREEN Wave 0 suite and filled the one fillable gap.
+
+### Coverage outcome
+
+- **COVERED (existing gate specs, NOT regenerated):**
+  - WS-02 / GATE A static -> `src/executors/angular-typecheck/gate-a-static.spec.ts` (3 tests).
+  - ENG-03 / GATE A runtime + GATE B positive/differential/breadth/timing -> `src/core/gate-b.spec.ts` (5 tests via `describe.each([app,lib])` + timing), `src/core/compiler-loader.spec.ts` (2), `src/core/gather-diagnostics.spec.ts` (2).
+  - WS-03 -> suite runs green via `@nx/vitest:test`.
+- **COVERED (NEW this audit):** CMP-02 + CMP-01 manifest contract -> `src/package-manifest.spec.ts` (5 tests). Pure `fs`/JSON read of the plugin `package.json`; no compiler load; passes under the existing `vitest.config.mts` with no `nx build` prerequisite.
+- **Manual-Only (env/CI, not Vitest-unit-testable):** WS-01 (`nx report` / `nx show projects`) and CMP-01 runtime version resolution (`npm ls`). The manifest-DECLARED portion of CMP-01 is now automated; only the installed-resolution smoke stays manual.
+
+### Suite result (after adding the manifest spec)
+
+`npx nx build angular-typechecker && npx nx test angular-typechecker` -> **GREEN: 5 test files, 17 tests passed** (was 4 files / 12 tests; the manifest spec added 5). The new spec passed on iteration 1 (no debug loop needed; no implementation bug surfaced).
+
+> Test-count note: the `<task>` brief estimated "13 tests across 5 files"; the actual is **17** -- `gate-b.spec.ts` reports 5 tests (positive + differential x app/lib = 4, plus the timing test), not 3, under `describe.each`. The 5-file count is exact; the +5 from the manifest spec is exact.
+
+### Files added by this audit
+
+- `packages/angular-typechecker/src/package-manifest.spec.ts`
+
+No implementation, fixture, or existing gate-spec files were modified.
