@@ -15,6 +15,7 @@
 import type {
   EmitFlags,
   Program,
+  UNKNOWN_ERROR_CODE,
 } from '../../../../node_modules/@angular/compiler-cli/src/transformers/api';
 import type {
   defaultGatherDiagnostics,
@@ -36,4 +37,9 @@ export interface CompilerCli {
   performCompilation: typeof performCompilation;
   defaultGatherDiagnostics: typeof defaultGatherDiagnostics;
   readonly EmitFlags: typeof EmitFlags;
+  // D-06: the value (500) of the synthesized infrastructure-failure diagnostic
+  // that `performCompilation` returns when its outer catch swallows an internal
+  // crash. The engine detects this code and RE-THROWS rather than counting it as
+  // a type error, so `CoreResult` holds only genuine compiler diagnostics.
+  readonly UNKNOWN_ERROR_CODE: typeof UNKNOWN_ERROR_CODE;
 }
