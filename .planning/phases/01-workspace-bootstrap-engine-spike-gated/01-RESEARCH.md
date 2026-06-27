@@ -627,17 +627,19 @@ npx nx g @nx/angular:application --directory=apps/ng-spike-app --standalone --no
 | A4 | The `cp -R <temp>/.` dotfile copy behaves on this Windows arm64 / Git Bash exactly as on Linux | Bootstrap | MED -- Pitfall 5 gives two fallbacks (`dotglob`, `rsync`) + a post-copy `git status` verification the planner should encode |
 | A5 | The `@nx/plugin:plugin` generator under `--preset=apps` still emits `module:"commonjs"` (read at Nx clone `23.1.0-beta.4`; registry-locked is `23.0.1`) | Pitfall 1 | LOW -- behavior is long-standing; the patch task is idempotent (set to nodenext regardless of generated value) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Does the SAME parsed config produce a comparable program for both gatherers?**
+1. **RESOLVED — Does the SAME parsed config produce a comparable program for both gatherers?**
    - What we know: `performCompilation` builds a fresh `NgtscProgram` each call; running it twice with different `gatherDiagnostics` is clean.
    - What's unclear: whether reusing `parsed.options` mutated by the first call (e.g., `noEmit`) affects the second.
    - Recommendation: build `parsed` once, spread into a fresh `options` object per call; do not share mutable option objects.
+   - RESOLVED: carried into the plans — Plan 03-T1 and Plan 04-T2 spread a FRESH `options` object per gatherer call (no shared mutable option object).
 
-2. **Exact path from the plugin's compiled `dist` to `executor.js` for the GATE A read.**
+2. **RESOLVED — Exact path from the plugin's compiled `dist` to `executor.js` for the GATE A read.**
    - What we know: nx-verdaccio outputs `dist/.../src/executors/<name>/executor.js`; outputPath is `{options.outputPath}`.
    - What's unclear: the precise `outputPath` the `@nx/plugin` generator wires for `packages/angular-typechecker`.
    - Recommendation: the planner reads the generated `project.json` `build.options.outputPath` and computes the GATE A path from it (do not hard-code; derive).
+   - RESOLVED: carried into the plans — Plan 02-T1 records `outputPath`, Plan 03-T3 records the resolved `executor.js` path, and Plan 04-T1 derives the spec target from it (no hard-coded path).
 
 ## Environment Availability
 
