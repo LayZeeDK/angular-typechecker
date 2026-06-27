@@ -10,6 +10,8 @@ Deliver the *complete* Angular type-check (TypeScript + template type-check + ex
 
 Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale the whole-program type-check is the dominant, *separable* cost of an Angular build (~15s standalone `ngc --noEmit` vs ~36s full esbuild build). Fast per-file compilers (AnalogJS `fastCompile`, the experimental Oxc compiler) and esbuild dev deliberately *skip* the type-check for speed and expect you to "run the type-check elsewhere"; the editor's Angular Language Service covers the live loop. angular-typechecker is that "elsewhere" for headless/CI/agent loops -- Nx-native, cacheable, and runnable per project.
 
+Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular projects cannot use that fast path -- Angular lacks TypeScript project-references support -- and it would not surface Angular template type-check or extended (NG8xxx) diagnostics anyway. angular-typechecker is the Angular-aware whole-program no-emit type-check that fills that gap.
+
 ## Requirements
 
 ### Validated
@@ -24,11 +26,11 @@ Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale t
 - [ ] Modes: full / report-all by default (matches `tsc --noEmit`); opt-in fail-fast (stop at first error).
 - [ ] Dependency boundary: exclude out-of-project + `node_modules` diagnostics by default; opt-in `includeDeps`.
 - [ ] `--max-warnings=<n>` (0 = fail on any warning; ESLint-style). Errors fail; project-configured diagnostic categories respected.
-- [ ] Default human output = `@angular/compiler-cli` `formatDiagnostics` (superset of `tsc`; renders NG codes + template codeframes).
-- [ ] Nx-cacheable target: `cache: true`, `outputs: []`, `@nx/js`-style per-tsconfig inputs (include/exclude globs + `extends` chain + sibling package.json + transitive deps) + `externalDependencies: ['typescript', '@angular/compiler-cli']`.
+- [ ] Default human output = `@angular/compiler-cli` `formatDiagnostics` (superset of `tsc`; renders NG codes + template codeframes). Filter on absolute realpath-normalized `fileName` (host `getCanonicalFileName` + `realpath`); emit workspace-root-relative paths for GitHub Actions annotations. Agent-ready: deterministic, idempotent, clear non-zero exit on diagnostics.
+- [ ] Nx-cacheable target: `cache: true`, `outputs: []`, `@nx/js`-style per-tsconfig inputs (include/exclude globs + `extends` chain + sibling package.json) + `^production`/`^{projectRoot}` dependency-source filesets (non-buildable deps) + `dependentTasksOutputFiles` (buildable deps) + `externalDependencies: ['typescript', '@angular/compiler-cli']`; verify via `nx show target inputs --check` / Task Sandboxing.
 - [ ] Validated across all five project types: application, local (non-buildable) library, buildable library, publishable library, spec tsconfig.
-- [ ] Test pyramid (Vitest): unit (mock `@angular/compiler-cli`) + integration (real compiler against fixtures, asserting exact diagnostic codes/counts across the v13->v22 catalog) + e2e (one smoke early; full real-workspace tarball matrix in late phase(s)).
-- [ ] Module format: CommonJS executor that loads ESM `@angular/compiler-cli` via `await import()`, shipped as pre-compiled `.js`.
+- [ ] Test pyramid (Vitest via `@nx/vitest:test`): unit (mock `@angular/compiler-cli`) + integration (real compiler against fixtures, asserting exact diagnostic codes/counts across the v13->v22 catalog; incl. a dependency-error-busts-cache test) + e2e (one smoke early; full real-workspace matrix in late phase(s)).
+- [ ] Module format: CommonJS executor that loads ESM `@angular/compiler-cli` via `await import()`, shipped as pre-compiled `.js` built with `module: node16`/`nodenext` (so `import()` is not downleveled to `require()`; build-time assert the emitted `.js` still contains `import(`).
 - [ ] Published to npm (MIT) via `nx release`. Manual `project.json` target wiring documented (no config generator in v0.0.1).
 - [ ] CI: GitHub Actions, Node 22/24/26 x Linux/Windows/macOS (free standard public-repo runners).
 
@@ -38,7 +40,7 @@ Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale t
 - `nx add` + `ng add` schematics; a minimal config generator.
 - Standalone `angular-typecheck` CLI binary (non-Nx use).
 - Storybook story (`*.stories.ts`) type-check support.
-- True Angular builder (`@angular-devkit/architect`) for non-Nx `angular.json` workspaces.
+- Angular CLI surface for non-Nx `angular.json` workspaces: our Nx executor re-exported as an Angular **builder** via `convertNxExecutor`, and our generator as a **schematic** via `convertNxGenerator` (thin re-exports over the same core + Nx executor/generator -- NOT a hand-written `@angular-devkit/architect` builder; these `@nx/devkit` APIs are current, not deprecated).
 - Machine-readable reporters: JSON, SARIF, and others.
 - `NgtscProgram` migration -> incremental (`oldProgram` + affected files + `OptimizeFor.SingleFile`) and `--watch` mode.
 - Jest support (ESM-mode only, if feasible -- spike-gated; older tooling proved it infeasible, re-test on current stack).
@@ -62,9 +64,9 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 
 - **Tech stack**: Nx 23.x, Angular 22.x, TypeScript `>=6.0.0 <6.1.0` -- only viable pairing (Angular 22 needs Nx 23+; only Angular 22 supports TS 6).
 - **Node**: `^22.22.3 || ^24.15.0 || ^26.0.0` (intersection of Angular 22 and Nx 23 ranges; recompute when widening the target set).
-- **Test runner**: Vitest (`@angular/compiler-cli` is ESM-only; Jest deferred).
-- **Dependencies**: `@angular/compiler-cli`, `typescript`, and `nx`/`@nx/devkit` as peerDependencies, resolved from the consumer workspace.
-- **Module format**: CommonJS executor + dynamic `import()` of ESM compiler-cli, shipped as pre-compiled `.js` (Nx's executor loader is `require()`-based across Nx 21/22/23).
+- **Test runner**: Vitest via `@nx/vitest:test` (the dedicated Nx 23 package; `@angular/compiler-cli` is ESM-only; Jest deferred).
+- **Dependencies**: `@nx/devkit` as a pinned `dependency` (do NOT declare `nx`; devkit's peer carries it transitively); `@angular/compiler-cli` + `typescript` as `peerDependencies` (consumer's versions). Policed by `@nx/dependency-checks`. (devkit-as-dependency is required for Nx plugin-registry listing.)
+- **Module format**: CommonJS executor + dynamic `import()` of ESM compiler-cli, shipped as pre-compiled `.js` built with `module: node16`/`nodenext` (Nx's executor loader is `require()`-based across Nx 21/22/23; `module: commonjs` would downlevel `import()` to `require()` and break at runtime).
 - **Engine**: `performCompilation` + custom unconditional all-getter gatherer (Approach A) for v0.0.1; `NgtscProgram` per-file migration deferred.
 - **Platform**: developed on Windows arm64; CI on Linux/Windows/macOS free standard public-repo runners.
 - **License**: MIT, (c) Lars Gyrup Brink Nielsen.
@@ -78,9 +80,9 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 | v0.0.1 = Nx executor only; everything else deferred | Smallest publishable, valuable slice (Vertical MVP) | Pending |
 | Support Nx 23 + Angular 22 + TS 6 only | Matrix-confirmed only viable pairing for TS 6 | Pending |
 | Engine: `performCompilation` + custom all-getter gatherer (unconditional) | Avoids `ngc` short-circuit; models `@angular/build`; stable API | Pending |
-| Module format: CJS executor + `await import()` compiler-cli, compiled `.js` | Nx loader is require()-based; compiler-cli is ESM-only | Pending |
-| Peer deps for compiler-cli/typescript/nx | Use consumer's installed versions; no skew | Pending |
-| Runner: Vitest (Jest deferred) | compiler-cli ESM-only; Jest infeasible on old stack, re-spike later | Pending |
+| Module: CJS executor + `await import()`, compiled `.js` with `module: node16`/`nodenext` | Nx loader require()-based; ESM compiler-cli; avoid import()->require() downlevel | Pending |
+| `@nx/devkit` pinned dependency (no `nx`); compiler-cli + typescript peers | Nx publish-plugin recipe + registry listing; consumer versions | Pending |
+| Runner: Vitest via `@nx/vitest:test` (Jest deferred) | compiler-cli ESM-only; `@nx/vitest` is the Nx 23 package | Pending |
 | Default report-all; opt-in fail-fast (stop at first error) | Matches `tsc --noEmit` default | Pending |
 | Exclude out-of-project diagnostics by default; opt-in `includeDeps` | Project-in-isolation feedback | Pending |
 | `--max-warnings=<n>` (ESLint-style) | Only count-based prior art; tsc/ngc have none | Pending |
@@ -90,6 +92,9 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 | e2e blends both prior approaches under Vitest (fixtures fast tier + tarball CI gate) | Fast agent loop + publish/install fidelity | Pending |
 | Capture `createFsTree`/`flushFsTreeChanges` (nx-internal FsTree) | Drive generators against real disk in tests; no public alt | Pending |
 | Release via `nx release`; manual target wiring in v0.0.1 | Dogfoods Nx; generator/ng-add/nx-add deferred | Pending |
+| Publish hardening: npm Trusted Publishers (OIDC) + provenance + hardened CI + SECURITY.md + tarball audit (publint/attw) | Supply-chain (s1ngularity); registry listing | Pending |
+| Diagnostics: absolute-realpath filter; workspace-root-relative CI paths; agent-ready output | Correct project-boundary filter + GitHub annotations; AI/CI consumers | Pending |
+| Angular CLI surface (deferred) via `convertNxExecutor`/`convertNxGenerator` re-exports | Current @nx/devkit APIs; thin adapters over same core | Pending |
 | GSD: YOLO, Standard granularity, parallel, quality/Opus, Vertical MVP | Correctness-critical tooling with a gating spike | Pending |
 
 ## Evolution
@@ -110,4 +115,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-27 after initialization*
+*Last updated: 2026-06-27 after initialization and research (corrections applied; see .planning/research/SUMMARY.md and FOLLOWUP-FINDINGS.md)*
