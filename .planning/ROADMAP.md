@@ -51,7 +51,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
   3. A required `tsConfig` resolves correctly for each project's tsconfig including a spec/unit-test tsconfig (`tsconfig.spec.json`), and a `references`-only / solution-style tsconfig does NOT silently report "0 files / 0 errors".
   4. Integration tests run the REAL compiler against committed fixtures and assert exact diagnostic codes/counts across the v13->v22 catalog (organized by the Angular major that introduced each check), all evaluated on Angular 22 plus any v22 additions.
 **Plans**: 3 plans
-- [ ] 02-01-PLAN.md -- Grow the engine in place: D-01 CoreResult + D-05 override + D-02/D-03/D-06 + LW-01 fix + end-to-end and infra-failure proofs (Wave 1)
+- [x] 02-01-PLAN.md -- Grow the engine in place: D-01 CoreResult + D-05 override + D-02/D-03/D-06 + LW-01 fix + end-to-end and infra-failure proofs (Wave 1)
 - [ ] 02-02-PLAN.md -- Fail-loud config-resolution slice: spec-tsconfig (EXE-02) + malformed + solution-style fixtures and the D-03 integration proofs (Wave 2)
 - [ ] 02-03-PLAN.md -- Real-compiler diagnostic catalog tier: TS/NG/extended/promotion + composite-triangle + D-02 fixtures and the NG() per-version integration specs (Wave 2)
 **UI hint**: no
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
-| 2. Core Type-Check Engine + Gatherer | 0/3 | Planned | - |
+| 2. Core Type-Check Engine + Gatherer | 1/3 | In Progress|  |
 | 3. Filtering, Modes, Output + Quality Gates | 0/TBD | Not started | - |
 | 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
