@@ -7,6 +7,8 @@
 
 > **How to read this file.** PROJECT.md already locks the core decisions (Nx 23 / Angular 22 / TS 6 / Node ranges / Vitest / CJS-executor-with-`await import()` / `performCompilation` all-getter engine / `nx release` / MIT). The four researchers were instructed NOT to re-derive those. Their job -- and this summary's job -- is to surface what the deep pre-research did NOT settle: **CORRECTIONS** (findings that contradict a locked decision and require a PROJECT.md edit) and **ADDITIONS** (new requirements/notes that refine a phase). The "CORRECTIONS & ADDITIONS vs PROJECT.md" section below is the headline deliverable for the roadmapper; the standard synthesis follows it.
 
+> **UPDATE 2026-06-27 (post-synthesis):** the CORRECTIONS below have now been **APPLIED to PROJECT.md + REQUIREMENTS.md** (commit `3498ddd`). A second research round -- Nx 23 release post + changelog + the Inputs and Deprecations references; the local `nrwl/nx` clone (authoring + testing patterns); the AnalogJS clone; an Nx-blog triage (201 posts); the Brandon Roberts compilation-bottlenecks article; and the angular.dev extended-diagnostics page -- is captured in **`FOLLOWUP-FINDINGS.md`**, with the TEST-02 codes in **`DIAGNOSTIC-CATALOG.md`**. Round-2 net: confirmations + refinements, **no reversals**. See the "Round-2 Research" section below.
+
 ---
 
 ## CORRECTIONS & ADDITIONS vs PROJECT.md
@@ -24,7 +26,7 @@ Ranked by impact. Each item is tagged `[CORRECTION]` (contradicts a locked decis
 | 7 | **[ADDITION]** | **Publish-fidelity hardening:** run **`publint`** + **`attw --pack`** against the *tarball* (not source); enable **`@nx/dependency-checks`** ESLint rule (scoped to the plugin's `package.json`); ensure **`executors.json` (+ each `schema.json` + compiled executor `.js`) is copied into dist** via the build target's `assets`; use **`nx release --first-release`** (with `--dry-run`) for the first publish and **`NPM_CONFIG_PROVENANCE=true` + `id-token: write`** for provenance. | Packaging/Publish phase + Install-matrix e2e. |
 | 8 | **[ADDITION / ARCHITECTURE NUDGE]** | **Keep structured `ts.Diagnostic[]` at the gatherer boundary.** v0.0.1 ships only `formatDiagnostics` human text, but the deferred JSON/SARIF reporters are cheap ONLY if the gatherer returns a structured `CoreResult` (counts + raw diagnostics) and formatting happens at the edge -- not a re-parse of formatted strings. Costs nothing now; de-risks the deferred reporters. | Engine/reporting design (no v0.0.1 feature change). |
 
-**Net effect on PROJECT.md:** items 1 and 3 require edits to locked decisions; item 2 corrects a tooling assumption; items 4-8 add requirements/tests/notes. Everything else in PROJECT.md is **confirmed** by the research (engine approach, feature set, module format intent, release mechanism, project-type coverage).
+**Net effect on PROJECT.md:** items 1 and 3 require edits to locked decisions; item 2 corrects a tooling assumption; items 4-8 add requirements/tests/notes. Everything else in PROJECT.md is **confirmed** by the research (engine approach, feature set, module format intent, release mechanism, project-type coverage). **Status: all 8 items APPLIED to PROJECT.md + REQUIREMENTS.md (commit `3498ddd`).**
 
 ---
 
@@ -144,6 +146,22 @@ Phases with standard, well-documented patterns (skip research-phase):
 - **Phase 3 (test infra):** nx-verdaccio is a verbatim live reference for the FsTree quarantine and vitest config split.
 - **Phase 4 (executor scaffold):** `executors.json`/`schema.json`/thin-adapter conventions are documented + dual-referenced.
 
+## Round-2 Research (post-synthesis)
+
+Done after this summary was first written; full detail in `FOLLOWUP-FINDINGS.md`. No reversals -- confirmations + refinements:
+
+- **Differentiator (now in PROJECT.md Core Value):** Nx's built-in `@nx/js` `typecheck` is plain `tsc`/`tsgo`, and Angular cannot use it -- *"Angular currently lacks TypeScript project references support"* (nx.dev) -- nor would it surface template/extended diagnostics. angular-typechecker is the Angular-aware whole-program no-emit check that fills that gap.
+- **Engine confirmed against local Angular v22 source:** `ngc`/`defaultGatherDiagnostics` short-circuits by phase; `@angular/build` gathers unconditionally (per-file `getDiagnosticsForFile(WholeProgram)`). We model `@angular/build`.
+- **FsTree verified on Nx 23.0.1:** `nx/src/generators/tree` still exported (`./src/*` wildcard); the `createFsTree`/`flushFsTreeChanges` capture stands (the stricter `exports`/`./internal` change applies to `@nx/<pkg>`, not core `nx`).
+- **Vitest is Angular 21+'s default runner** (replaced Karma) -- validates the runner + `tsconfig.spec.json` handling.
+- **Extended diagnostics:** authoritative Angular 22 set captured in `DIAGNOSTIC-CATALOG.md` (NG8101-8109, 8111, 8113-8117, 8021; NG8110/8112 unassigned). Angular *runtime* errors (NG0xxx) are out of scope.
+- **Deprecations swept (17 pages):** nothing planned uses a deprecated API (createNodes not v1; `cache:true` not cacheableOperations; `inputs.runtime` not runtimeCacheInputs; published-plugin local executor/generator; `as-provided`; DB cache).
+- **Angular-CLI surface (deferred):** via `convertNxExecutor`/`convertNxGenerator` (current `@nx/devkit` APIs) -- thin re-exports, not a hand-written architect builder. Nx 17 only dropped Nx wrapping *its own* code for the Angular CLI.
+- **AI-agent layer = a skill, not MCP** (Nx's direction); **agent-ready output** (deterministic / idempotent / clear non-zero exit) is a v0.0.1 output-contract requirement (OUT-03).
+- **Publish hardening:** npm Trusted Publishers (OIDC) + provenance + hardened release CI + `SECURITY.md` (s1ngularity lesson).
+- **nrwl/nx patterns to adopt:** `@nx/js` `run-type-check.ts` result shape; createNodes `optionsHash` targets-cache; e2e via published `@nx/plugin/testing` + the e2e-project `createTestProject` (NOT internal `@nx/e2e-utils`); Verdaccio/`nx release` wired through Vitest `globalSetup`.
+- **0.x semver** works natively with `nx release` (Nx 23 `version.adjustSemverBumpsForZeroMajorVersion` defaults `true`).
+
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
@@ -180,5 +198,6 @@ Phases with standard, well-documented patterns (skip research-phase):
 - None load-bearing. A handful of pitfall items (notably the source-lib cache-input edge cases) rest on community issue threads and warrant empirical verification during the caching phase rather than being taken as settled.
 
 ---
-*Research completed: 2026-06-27*
-*Ready for roadmap: yes*
+*Research completed: 2026-06-27 (round 1 + round 2)*
+*Corrections applied to PROJECT.md + REQUIREMENTS.md (commit 3498ddd). Round-2 detail in FOLLOWUP-FINDINGS.md; TEST-02 codes in DIAGNOSTIC-CATALOG.md.*
+*Ready for roadmap: yes -- ROADMAP.md created (6 phases).*
