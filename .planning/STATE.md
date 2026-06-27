@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: verifying
-stopped_at: Plan 01-04 complete (GATE A + GATE B specs committed and GREEN via nx build && nx test; spike verdict GO on all six checklist items; Phase 1 done, ready for verification)
+status: executing
+stopped_at: Phase 01 VERIFIED PASSED (4/4 success criteria, 6/6 go/no-go items GO; verifier reproduced the gate live) and code review CLEAN (no Critical/High). Spike GO -- Phase 2 may begin. Stopped per --no-transition (no auto-advance to Phase 2).
 last_updated: "2026-06-27T16:37:08.474Z"
-last_activity: 2026-06-27 -- Plan 01-04 complete (gate-a-static + gate-b specs; full suite green; spike GO; Phase 1 ready for verification)
+last_activity: 2026-06-27 -- Phase 01 verified passed + code review clean; spike verdict GO; ready for Phase 2 (discuss/plan)
 progress:
   total_phases: 6
   completed_phases: 1
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 ## Current Position
 
-Phase: 01 (workspace-bootstrap-engine-spike-gated) — COMPLETE (ready for verification)
+Phase: 01 (workspace-bootstrap-engine-spike-gated) — COMPLETE + VERIFIED
 Plan: 4 of 4 (01-01, 01-02, 01-03, 01-04 complete)
-Status: Phase complete — spike verdict GO (all six go/no-go items pass); ready for verification, then Phase 2 may begin
-Last activity: 2026-06-27 -- Plan 01-04 complete (GATE A/B specs green; spike GO)
+Status: Phase 01 verified PASSED (4/4 criteria, 6/6 gate items GO) + code review clean; spike verdict GO. Phase 2 unblocked (GATED note satisfied). Stopped here per --no-transition.
+Last activity: 2026-06-27 -- Phase 01 verified passed + code review clean (spike GO)
 
 Progress: [██████████] 100%
 
@@ -78,6 +78,8 @@ Recent decisions affecting current work:
 - [01-04] Spike GO/NO-GO = GO: all six checklist items pass on app + lib (all-getter [2322,-998109,-998117]; ngc default [2322]); cold-run durationMs ~296ms on Node 24.18.0. Phase 2 may begin (ROADMAP GATED note satisfied).
 - [01-04] GATE A static asserts the BUILT artifacts via fs.readFileSync (dist gitignored, never git grep): positive import-call on core/compiler-loader.js, negative require-of-compiler-cli on BOTH built files (comment-stripped); dist path derived from project.json build.options.outputPath.
 - [01-04] GATE B asserts the negative-encoded NG8109 (-998109), never bare 8109, with a Math.abs(c)-990000===8109 recovery helper; differential drives ng.defaultGatherDiagnostics vs gatherAllDiagnostics off the SAME parsed config with a FRESH options spread per call.
+- [verify] Phase 01 VERIFIED PASSED (01-VERIFICATION.md): 4/4 success criteria, 6/6 go/no-go items GO, 6/6 requirements (WS-01/02/03, ENG-03, CMP-01/02) satisfied; verifier reproduced the gate live (no genuine gaps; all deferrals correctly roadmap-scoped).
+- [code-review] Phase 01 advisory code review CLEAN (01-REVIEW.md): 0 Critical/High. Two Medium findings carried to Phase 2 (see Blockers/Concerns).
 
 ### Pending Todos
 
@@ -89,7 +91,10 @@ None yet.
 
 [Issues that affect future work]
 
-- Phase 1 is GATED: the engine implementation (Phase 2) must not begin until the spike proves (a) the emitted executor `.js` retains `import(` under `module: node16`, and (b) the unconditional gatherer surfaces template + extended (NG8xxx) diagnostics even with a co-located TS error on a real Angular 22 workspace. If either fails, revisit the engine approach before further investment.
+- [RESOLVED] Phase 1 GATED concern: the spike PROVED both unknowns -- (a) the built `compiler-loader.js` retains literal `import(` under `module:nodenext` (no `require()` downlevel; runtime loads ESM compiler-cli with no `ERR_REQUIRE_ESM`), and (b) the unconditional all-getter surfaces NG8109 (`-998109`) that ngc's `defaultGatherDiagnostics` suppresses, with a co-located TS2322, on app + lib. GO -- Phase 2 may begin.
+- [Phase-2 input, code-review MD-01] `run-typecheck.ts` silently drops `ng.readConfiguration(...).errors`; a malformed/unresolvable tsconfig can yield empty `rootNames` and report `errorCount: 0` / `success: true` (false "clean" for a type-checker). The Phase-1 gate never exercises a broken config. Fold `parsed.errors` into diagnostics before counting when the real engine lands (ENG-01).
+- [Phase-2 input, code-review MD-02] `warningCount = total - errorCount` conflates Warning + Suggestion + Message categories (and would miscount ngc's "Time for diagnostics" Message if a consumer sets `diagnostics: true`). Count the `Warning` category explicitly (ENG-04).
+- [Phase-2 input, code-review LW-01] `gather-diagnostics.spec.ts` imports `Program` from the `@angular/compiler-cli` barrel (the import the `compiler-cli-types.ts` shim exists to avoid under `module:nodenext`) -- works only because specs are not lib-compiled. Import from `./compiler-cli-types` for consistency.
 - WS-01 wrinkle: `create-nx-workspace` wants a fresh dir but the repo already has `.git` + `.planning/` -- the bootstrap must handle in-place creation without clobbering tracked files.
 - Cache-correctness for non-buildable deps has tracked Nx gaps (`namedInputs` not honored for source/inlined libs; `externalDependencies` over/under-invalidation) -- treat the dependency-error-busts-cache test (Phase 4) as a correctness gate.
 - pnpm-symlink + case-insensitive FS path filtering is invisible under npm/Linux -- the pnpm fixture + mixed-case assertion (Phase 6) is the backstop.
@@ -110,5 +115,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-27T16:36:47.348Z
-Stopped at: Plan 01-03 complete (tracer-bullet core engine + thin executor stub + out-of-graph TS2322+NG8109 fixture; nx build green; GATE A emit intact and GATE A/B engine pre-validated)
+Stopped at: Phase 01 COMPLETE + VERIFIED (spike GO; all four plans executed, verification passed, code review clean). Stopped per --no-transition -- did NOT auto-advance to Phase 2. Next: optionally /gsd-secure-phase 1, /gsd-validate-phase 1, /gsd-extract-learnings 1, then /gsd-discuss-phase 2 (or /gsd-plan-phase 2).
 Resume file: None
