@@ -129,6 +129,10 @@ None - no external service configuration required.
 - `TypecheckInfrastructureError` and the `{ errorCount }` count fields are the seams the Phase-3 filtering/modes/`--max-warnings`/`formatDiagnostics` work and the Phase-4 executor adapter consume.
 - No blockers. The REAL-compiler integration tier naming convention (`*.integration.spec.ts`) is established; the optional `--exclude` quick-run wiring remains available without a new Nx target.
 
+## Self-Check: PASSED
+
+All claimed created/modified files exist on disk; all task commits (`2062c70`, `873c352`, `82b82d5`) plus the SUMMARY commit (`a14fa26`) are present in git history. Full verification re-run green: `npx nx build angular-typechecker` succeeds; `npx nx test angular-typechecker` is 27/27 across 7 test files.
+
 ---
 *Phase: 02-core-type-check-engine-gatherer*
 *Completed: 2026-06-27*
