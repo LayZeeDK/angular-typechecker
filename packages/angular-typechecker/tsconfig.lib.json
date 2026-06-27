@@ -23,6 +23,7 @@
     "src/**/*.spec.js",
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx",
-    "fixtures/gate-b-error/**/*"
+    "fixtures/gate-b-error/**/*",
+    "fixtures/**/*"
   ]
 }
