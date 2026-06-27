@@ -66,6 +66,15 @@ export class TypecheckInfrastructureError extends Error {
  * `process.cwd()` (D-04); the Phase-4 executor owns path resolution.
  */
 export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
+  // WR-02 / IN-04: capture `start` at the very top so `durationMs` reflects the
+  // FULL cold-run wall-clock -- including the ESM module load of
+  // @angular/compiler-cli + typescript and the config parse, which are the
+  // dominant cold-start cost -- on BOTH the normal and the zero-rootNames-guard
+  // return paths (the guard path otherwise reported a near-zero, misleading
+  // value). The loader memoizes after the first call, so a warm call still
+  // measures the residual load + parse + compile window honestly.
+  const start = performance.now();
+
   // D-06: a throw from loadCompilerCli (ESM load of @angular/compiler-cli)
   // propagates as a true environment/install error, never a type result.
   const ng = await loadCompilerCli();
@@ -77,8 +86,6 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // unreadable, or nonexistent tsconfig surfaces here and is prepended to the
   // final diagnostics so it is counted -- never a silent "clean".
   const configDiagnostics = [...parsed.errors];
-
-  const start = performance.now();
 
   // D-03 part 2 / D-03a: gate on `rootNames.length === 0` (NEVER TS18003, which
   // TypeScript suppresses when a config has a `references` array). A
