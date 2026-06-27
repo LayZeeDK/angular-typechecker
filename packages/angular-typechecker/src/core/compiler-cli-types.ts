@@ -12,11 +12,20 @@
 // nodenext, so we re-build the needed surface directly from them here, isolating
 // the workaround to a single type-only module (erased at emit; zero runtime
 // effect). Revisit if @angular/compiler-cli ships nodenext-clean typings.
+// The two deep-import statements below are the documented nodenext workaround
+// (see file header): the barrel index.d.ts resolves EMPTY under module:nodenext,
+// so the surface is rebuilt from the package's own deep declaration files.
+// Type-only; erased at emit (zero runtime effect). Each import is exempted from
+// @nx/enforce-module-boundaries with a same-line directive (the disable must sit
+// on the line immediately preceding the import statement, not before this block).
+
+// eslint-disable-next-line @nx/enforce-module-boundaries -- documented nodenext deep-import workaround (see file header)
 import type {
   EmitFlags,
   Program,
   UNKNOWN_ERROR_CODE,
 } from '../../../../node_modules/@angular/compiler-cli/src/transformers/api';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- documented nodenext deep-import workaround (see file header)
 import type {
   defaultGatherDiagnostics,
   formatDiagnostics,

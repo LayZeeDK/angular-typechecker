@@ -95,7 +95,10 @@ describe('GATE B timing (cold-run wall-clock)', () => {
     const result = await runTypecheck({ tsConfigPath: libTsConfig });
 
     // Not a pass/fail threshold in Phase 1 -- surface the number so the SUMMARY
-    // can quote it (CONTEXT.md deferred execution-detail).
+    // can quote it (CONTEXT.md deferred execution-detail). Deliberate test-timing
+    // instrumentation: the D-11 core/** no-console ban targets core SOURCE purity,
+    // not spec output, so this single line is exempted.
+    // eslint-disable-next-line no-console -- deliberate GATE B timing surface
     console.log(`[GATE B timing] cold-run durationMs = ${result.durationMs}`);
 
     expect(result.durationMs).toBeGreaterThan(0);
