@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: executing
-stopped_at: Plan 01-03 complete (tracer-bullet core + executor stub + out-of-graph TS2322+NG8109 fixture; nx build green; GATE A emit intact -- built compiler-loader.js retains literal import('@angular/compiler-cli'))
-last_updated: "2026-06-27T16:10:10.365Z"
-last_activity: 2026-06-27 -- Plan 01-03 complete (tracer-bullet core engine + executor stub + error fixture; build green; GATE A/B validated)
+status: verifying
+stopped_at: Plan 01-04 complete (GATE A + GATE B specs committed and GREEN via nx build && nx test; spike verdict GO on all six checklist items; Phase 1 done, ready for verification)
+last_updated: "2026-06-27T16:37:08.474Z"
+last_activity: 2026-06-27 -- Plan 01-04 complete (gate-a-static + gate-b specs; full suite green; spike GO; Phase 1 ready for verification)
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 17
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 ## Current Position
 
-Phase: 01 (workspace-bootstrap-engine-spike-gated) — EXECUTING
-Plan: 4 of 4 (01-01, 01-02, 01-03 complete)
-Status: Executing Phase 01 — Plans 01-01/02/03 done; Plan 01-04 next (GATE A/B spec suite); engine validated, build green
-Last activity: 2026-06-27 -- Plan 01-03 complete (tracer-bullet core engine + executor stub + error fixture)
+Phase: 01 (workspace-bootstrap-engine-spike-gated) — COMPLETE (ready for verification)
+Plan: 4 of 4 (01-01, 01-02, 01-03, 01-04 complete)
+Status: Phase complete — spike verdict GO (all six go/no-go items pass); ready for verification, then Phase 2 may begin
+Last activity: 2026-06-27 -- Plan 01-04 complete (GATE A/B specs green; spike GO)
 
-Progress: [████████░░] 75%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [████████░░] 75%
 - Trend: steady
 
 *Updated after each plan completion*
+| Phase 01 P04 | 25 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [01-03] Added an isolated type-only shim (src/core/compiler-cli-types.ts) re-exporting the compiler-cli surface from the package DEEP declaration files; the barrel index.d.ts does NOT type-resolve under module:nodenext (extensionless `export *` fails strict ESM resolution -> empty namespace). Preserves the locked module:nodenext (GATE A emit) instead of retreating to module:commonjs + a Function-wrapped import.
 - [01-03] GATE A static target for Plan 04 is the BUILT compiler-loader.js (it holds the literal `import('@angular/compiler-cli')`), NOT executor.js -- the `await import()` lives in core per the mandated core/adapter split; executor.js is a thin delegate carrying only the negative assertion (no `require('@angular/compiler-cli')`).
 - [01-03] Angular extended diagnostic codes are encoded NEGATIVE on `ts.Diagnostic.code`: `ngErrorCode(8109) === -998109`. Plan 04 GATE B must assert on -998109 (or recover via `Math.abs(code) - 990000 === 8109`), NOT the bare 8109.
+- [01-04] Spike GO/NO-GO = GO: all six checklist items pass on app + lib (all-getter [2322,-998109,-998117]; ngc default [2322]); cold-run durationMs ~296ms on Node 24.18.0. Phase 2 may begin (ROADMAP GATED note satisfied).
+- [01-04] GATE A static asserts the BUILT artifacts via fs.readFileSync (dist gitignored, never git grep): positive import-call on core/compiler-loader.js, negative require-of-compiler-cli on BOTH built files (comment-stripped); dist path derived from project.json build.options.outputPath.
+- [01-04] GATE B asserts the negative-encoded NG8109 (-998109), never bare 8109, with a Math.abs(c)-990000===8109 recovery helper; differential drives ng.defaultGatherDiagnostics vs gatherAllDiagnostics off the SAME parsed config with a FRESH options spread per call.
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T16:09:42.288Z
+Last session: 2026-06-27T16:36:47.348Z
 Stopped at: Plan 01-03 complete (tracer-bullet core engine + thin executor stub + out-of-graph TS2322+NG8109 fixture; nx build green; GATE A emit intact and GATE A/B engine pre-validated)
-Resume file: .planning/phases/01-workspace-bootstrap-engine-spike-gated/01-04-PLAN.md
+Resume file: None
