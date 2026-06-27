@@ -524,7 +524,9 @@ No new dependencies -> no supply-chain delta this phase (the s1ngularity/publish
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> **RESOLVED at plan time (2026-06-27):** Both items below were Claude's-discretion and are now locked by Plan 02-01. (1) The synthesized config-guard diagnostic uses numeric code `90001` in the `angular-typechecker` namespace (category Error, `file: undefined`, message naming the leaf tsconfigs), distinct from TS codes and the Angular `-99xxxx`/`500` space; no public enum until a second synthesized code exists. (2) D-06 infra-failure is proven via a focused `performCompilation` stub returning a single `code === 500` (`UNKNOWN_ERROR_CODE`) diagnostic, asserting `runTypecheck` throws `TypecheckInfrastructureError`; detection gates on `code === 500` ONLY (not `source === 'angular'`, per V-3/L-3). This is the single justified Phase-2 mock -- broad mock coverage stays in Phase-3 TEST-01. The recommendations below are retained for provenance.
 
 1. **The `ATC1001` synthesized-code numeric value + namespace scheme.**
    - What we know: Claude's discretion (CONTEXT); must be category Error, `file: undefined`, message naming leaf tsconfigs, distinct from TS codes and the Angular `-99xxxx`/`500` space.
