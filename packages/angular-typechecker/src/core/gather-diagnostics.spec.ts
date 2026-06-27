@@ -1,5 +1,6 @@
-import type { Program } from '@angular/compiler-cli';
 import type ts from 'typescript';
+
+import type { Program } from './compiler-cli-types';
 
 import { describe, expect, it, vi } from 'vitest';
 

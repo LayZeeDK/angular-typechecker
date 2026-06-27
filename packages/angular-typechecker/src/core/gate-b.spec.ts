@@ -99,7 +99,11 @@ describe('GATE B timing (cold-run wall-clock)', () => {
     console.log(`[GATE B timing] cold-run durationMs = ${result.durationMs}`);
 
     expect(result.durationMs).toBeGreaterThan(0);
-    expect(result.codes).toContain(TS2322);
-    expect(result.codes).toContain(NG8109);
+    // D-01: CoreResult no longer exposes a public `codes` field; derive it from
+    // the diagnostics array (L-8 reconcile -- the GATE B differential proof
+    // itself is unchanged).
+    const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
+    expect(codes).toContain(TS2322);
+    expect(codes).toContain(NG8109);
   });
 });
