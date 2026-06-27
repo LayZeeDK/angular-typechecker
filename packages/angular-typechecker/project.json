@@ -1,0 +1,55 @@
+{
+  "name": "angular-typechecker",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/angular-typechecker/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/angular-typechecker",
+        "main": "packages/angular-typechecker/src/index.ts",
+        "tsConfig": "packages/angular-typechecker/tsconfig.lib.json",
+        "assets": [
+          "packages/angular-typechecker/*.md",
+          {
+            "input": "./packages/angular-typechecker/src",
+            "glob": "**/!(*.ts)",
+            "output": "./src"
+          },
+          {
+            "input": "./packages/angular-typechecker/src",
+            "glob": "**/*.d.ts",
+            "output": "./src"
+          },
+          {
+            "input": "./packages/angular-typechecker",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./packages/angular-typechecker",
+            "glob": "executors.json",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
+      "options": {
+        "reportsDirectory": "coverage/packages/angular-typechecker"
+      }
+    }
+  }
+}
