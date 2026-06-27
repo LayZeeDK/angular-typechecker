@@ -27,11 +27,24 @@
  * Encodes a 4-digit Angular `ErrorCode` to the negative value seen on a
  * `ts.Diagnostic.code`. Mirrors the compiler's `ngErrorCode(code) =
  * parseInt('-99' + code)`. Example: `NG(8101) === -998101`.
+ *
+ * PRECONDITION: `code` is a 4-digit Angular `ErrorCode` (1000-9999). The
+ * `-990000 - code` shortcut ONLY equals `parseInt('-99' + code)` for exactly 4
+ * digits. For a 3-digit code the two diverge (`NG(801) === -990801` vs
+ * `parseInt('-99801') === -99801`); 5+ digits likewise. All current NG codes are
+ * 4-digit (8001/8101/8109/8117); passing a non-4-digit code would compute a
+ * wrong, never-matching value -- the exact "bare code never matches" trap this
+ * module exists to prevent, one level up.
  */
 export const NG = (code: number): number => -990000 - code;
 
 /**
  * Recovers the human 4-digit Angular `ErrorCode` from a negative diagnostic code.
  * Inverse of `NG()`. Example: `ngCodeOf(-998101) === 8101`.
+ *
+ * PRECONDITION: `code` is the negative encoding of a 4-digit Angular `ErrorCode`
+ * (i.e. produced by `NG()` / the compiler's `parseInt('-99' + code)`). The
+ * `Math.abs(code) - 990000` inverse only round-trips for that 4-digit range; a
+ * differently-shaped input yields a wrong code (see the `NG()` precondition).
  */
 export const ngCodeOf = (code: number): number => Math.abs(code) - 990000;
