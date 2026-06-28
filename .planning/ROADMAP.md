@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Core Type-Check Engine + Gatherer** - A framework-agnostic `runTypecheck` runs `@angular/compiler-cli` whole-program no-emit and gathers ALL diagnostics unconditionally, asserted against the v13->v22 diagnostic catalog. (completed 2026-06-27)
 - [x] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split. (completed 2026-06-27)
 - [x] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test. (completed 2026-06-28)
-- [ ] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace.
+- [x] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace. (completed 2026-06-28)
 - [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change.
 
 ## Phase Details
@@ -104,7 +104,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 - [x] 05-02-PLAN.md -- Tarball audit gate: publint + attw --pack + leak/no-install-scripts against the packed .tgz (PKG-02) [Wave 2]
 - [x] 05-03-PLAN.md -- e2e smoke (tracer bullet): clean tarball install + green + injected-TS2322 runs (TEST-05) [Wave 2]
 - [x] 05-04-PLAN.md -- nx release config + SECURITY.md + hardened CI + Dependabot + dry-run review (PKG-03 config, PKG-04) [Wave 3]
-- [ ] 05-05-PLAN.md -- Live first publish (HUMAN-GATED, B-01): token-seed -> register Trusted Publisher -> revoke -> verify provenance (PKG-03) [Wave 4]
+- [x] 05-05-PLAN.md -- Live first publish (HUMAN-GATED, B-01): token-seed -> register Trusted Publisher -> revoke -> verify provenance (PKG-03) [Wave 4]
 **UI hint**: no
 
 ### Phase 6: Full e2e Matrix + CI
@@ -130,5 +130,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
-| 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 4/5 | In Progress|  |
+| 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
