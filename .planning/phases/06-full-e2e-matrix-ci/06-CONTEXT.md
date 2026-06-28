@@ -373,7 +373,56 @@ None of the discussion drifted outside the Phase 6 boundary.
 
 </deferred>
 
+## Validation Strategy Addendum (post-discuss maintainer direction, 2026-06-29)
+
+The maintainer raised three options to close the "the CI matrix can't be validated on the
+Windows arm64 dev box" gap; a 2-pass research round (re-validated against installed tool
+versions + live `gh api` on this repo) resolved them. These are LOCKED for execution.
+
+- **D-11 `[research, HIGH]`: Adopt `actionlint` (rhysd/actionlint) for STATIC workflow
+  validation -- locally AND as a CI `lint-workflows` job.** Native Windows-arm64 binary exists
+  (`actionlint_*_windows_arm64.zip`, or `go install github.com/rhysd/actionlint/cmd/actionlint@latest`);
+  NO Docker. It type-checks `${{ }}` expressions, the `needs.*.result` graph, `matrix.*`
+  references, `runs-on` labels, and shellchecks `run:` steps -- exactly the structural-bug class
+  the plan-checker flagged (the brittle `os:`/`node:` array + the `contains(needs.*.result,...)`
+  form). It does NOT enforce SHA-pinning (we pin manually; not a regression). **06-03 ci.yml
+  gains a dedicated `lint-workflows` job** (Linux runner; SHA-pinned `actions/checkout` +
+  download-and-run actionlint, or the `rhysd/actionlint` action). Run actionlint LOCALLY before
+  any push as the pre-push static gate.
+
+- **D-12 `[research, HIGH]`: The AUTHORITATIVE cross-OS matrix validation is a throwaway
+  feature-branch + DRAFT PR on real GitHub runners** -- the only way to truly exercise
+  `windows-latest` + `macos-latest` (which `act` cannot emulate). Verified safe on this repo:
+  a same-repo PR runs a workflow ADDED in that PR (merge ref); the active **"v0.0.1"** ruleset
+  targets `main` ONLY (no block on feature branches / PR creation / check execution); the
+  **"Default branch"** ruleset is DISABLED (staged); `release.yml` is tag-push-only (a branch/PR
+  CANNOT trigger an npm publish); public repo => free/unlimited standard-runner minutes; draft
+  PRs DO run `on: pull_request` workflows. **Safe sequence:** validate `ci.yml` on a
+  `ci/validate-ci-matrix` branch via a draft PR; iterate to green (`gh pr checks --watch`,
+  `gh run view --log-failed`); then **close the PR WITHOUT merging** and land `ci.yml` on `main`
+  via the EXISTING Phase-6 direct-push flow. This does NOT pre-adopt Phase 7 (no ruleset switch,
+  no PR-merge release flow, no wiring `ci` into required-checks -- those stay Phase 7's). Ensure
+  `ci.yml` scopes `on: push: branches: [main]` (so the feature-branch push doesn't double-run)
+  and uses plain `on: pull_request` (no draft-excluding `types:`).
+
+- **D-13 `[research, HIGH]` -- reasoned divergence from the "act in CI" suggestion: `nektos/act`
+  is DECLINED for CI and is OPTIONAL local-only.** act runs Linux containers ONLY (cannot
+  emulate `windows-latest`/`macos-latest`), and on Windows arm64 its default images are amd64
+  -> pure QEMU (no Rosetta) -> the heavy Nx pack/install e2e is impractical. act-in-CI is
+  nested-Docker / redundant (CI IS the real runner). **`actionlint` is the correct CI-side AND
+  local static validator instead (D-11); the draft PR is the real cross-OS check (D-12).** act
+  remains available for ad-hoc local debugging of a single Linux leg, but is NOT in the loop.
+
+**Consequence for execution:** 06-01 + 06-02 run + verify locally (the mixed-case
+unit/integration tier is a LIVE case-insensitive sample on the Windows dev box; the 5-type npm
+install runs locally; the pnpm symlink guard takes its documented Windows fallback locally and
+is truly validated on the Linux CI leg via the draft PR). 06-03 authors `ci.yml` (+ the
+`lint-workflows` actionlint job), validated statically by local actionlint and authoritatively
+by the draft-PR matrix run. SC3 ("full matrix green + required gate") is proven by the draft-PR
+run, NOT locally.
+
 ---
 
 *Phase: 6-Full e2e Matrix + CI*
 *Context gathered: 2026-06-29*
+*Validation strategy addendum: 2026-06-29 (D-11..D-13)*
