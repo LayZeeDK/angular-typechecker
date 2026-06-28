@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: verifying
-stopped_at: "Completed 04-03-PLAN.md (cache-correctness e2e: TEST-04/EXE-01/EXE-07)"
-last_updated: "2026-06-28T12:00:00.726Z"
+status: ready_to_plan
+stopped_at: Phase 4 complete (3/3) — ready to discuss Phase 5
+last_updated: 2026-06-28T12:09:42.022Z
 last_activity: 2026-06-28
 progress:
   total_phases: 6
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 4 — nx-executor-adapter-cacheable-target
+**Current focus:** Phase 5 — packaging, publish hardening + e2e smoke (mvp)
 
 ## Current Position
 
-Phase: 4 (nx-executor-adapter-cacheable-target) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 5
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-28
 
 Progress: [██████████] 100%
@@ -36,7 +36,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 10
+- Total plans completed: 13
 - Average duration: ~31 min
 - Total execution time: ~1.5 hours
 
@@ -47,6 +47,7 @@ Progress: [██████████] 100%
 | 01 | 3 | ~92 min | ~31 min |
 | 02 | 3 | - | - |
 | 03 | 4 | - | - |
+| 4 | 3 | - | - |
 
 **Recent Trend:**
 
