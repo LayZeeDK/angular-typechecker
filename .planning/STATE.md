@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-06-28T15:46:05.381Z"
+stopped_at: Completed 05-02-PLAN.md (tarball audit gate; D-10/B-02 verified)
+last_updated: "2026-06-28T15:57:25.608Z"
 last_activity: 2026-06-28
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 19
-  completed_plans: 15
-  percent: 67
+  completed_plans: 16
+  percent: 84
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 5 (packaging-publish-hardening-e2e-smoke-mvp) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-06-28
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 84%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [████████░░] 79%
 | Phase 04 P02 | 12 min | 3 tasks | 15 files |
 | Phase 04 P03 | 15min | 3 tasks | 8 files |
 | Phase 5 P1 | 30 min | 3 tasks | 7 files |
+| Phase 5 P2 | ~6 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,11 @@ Recent decisions affecting current work:
 - [Phase ?]: [05-01] D-10/B-02 fixed: compiler-cli-types.ts is self-contained (structural re-declaration over the typescript substrate); deep node_modules escape removed, attw-resolvable; exported names + CompilerCli member set preserved; runtime unchanged; GATE A import( retained.
 - [Phase ?]: [05-01] PerformCompilationResult.program declared NON-optional + getTsProgram() returns ts.Program & { useCaseSensitiveFileNames() } to keep the build green without touching run-typecheck.ts (build is the drift guard).
 - [Phase ?]: [05-01] Full PKG-01 manifest shipped (files/exports/keywords nx+nx-plugin/repository LayZeeDK/license/publishConfig.provenance); per-package LICENSE wired via asset glob; checkVersionMismatches:false guards the public peer ranges; README uses the PUBLISHED executor id angular-typechecker:angular-typecheck.
+- [Phase 5]: [05-02] D-10/B-02 VERIFIED: attw --pack --profile node16 reports analysis.problems empty against the packed tarball -- the 05-01 self-contained-types fix resolved the InternalResolutionError; no escalation needed.
+- [Phase 5]: [05-02] PKG-02 audit gate is a serialized install-e2e project: build --skip-nx-cache -> npm pack --json from dist -> publint --strict + attw (problems empty, no rule suppression) + positive/negative file-set + @fixtures-leak + no-install-scripts, all against the .tgz never the source tree.
+- [Phase 5]: [05-02] Cross-OS tarball extraction MUST use a relative tgz filename + relative -C under cwd=distDir -- GNU tar (Git Bash) misreads a Windows drive-letter path as a remote host:path (status 128) and BSD/macOS tar lacks GNU's --force-local escape; relative-under-shared-cwd is the one form both flavors handle identically.
+- [Phase 5]: [05-02] publint@0.3.21 + @arethetypeswrong/cli@0.18.4 added as EXACT-pinned root devDeps only (npm defaulted to caret; tightened post-install); legitimacy re-verified (versions resolve, scripts.postinstall empty) before install; NEVER in the plugin's published manifest (D-09).
+- [Phase 5]: [05-02] attw JSON carries TWO problems fields -- a top-level `problems` object keyed by entrypoint AND `analysis.problems` (the flat array); assert on analysis.problems (empty array when resolution is clean).
 
 ### Pending Todos
 
@@ -139,6 +145,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T15:45:13.413Z
-Stopped at: Phase 5 context gathered
+Last session: 2026-06-28T15:57:25.601Z
+Stopped at: Completed 05-02-PLAN.md (tarball audit gate; D-10/B-02 verified)
 Resume file: None
