@@ -36,6 +36,19 @@ interface PluginManifest {
   engines?: {
     node?: string;
   };
+  // PKG-01 publishable-contract fields (D-01..D-04).
+  files?: string[];
+  exports?: Record<string, unknown>;
+  keywords?: string[];
+  repository?: {
+    url?: string;
+    directory?: string;
+  };
+  license?: string;
+  description?: string;
+  publishConfig?: {
+    provenance?: boolean;
+  };
 }
 
 const manifest = JSON.parse(
@@ -67,5 +80,46 @@ describe('plugin manifest compatibility contract (CMP-01 manifest / CMP-02 / D-1
       '^22.0.0',
     );
     expect(manifest.peerDependencies?.['typescript']).toBe('>=6.0.0 <6.1.0');
+  });
+});
+
+describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
+  it('declares the explicit files allowlist (D-01; never rely on npm defaults)', () => {
+    expect(manifest.files).toEqual([
+      'src',
+      'executors.json',
+      'README.md',
+      'LICENSE',
+    ]);
+  });
+
+  it('declares the minimal CJS exports map (D-02; barrel entry + package.json escape hatch)', () => {
+    expect(manifest.exports?.['.']).toBe('./src/index.js');
+    expect(manifest.exports?.['./package.json']).toBe('./package.json');
+  });
+
+  it('includes the nx and nx-plugin keywords (D-03; registry/search discovery)', () => {
+    expect(manifest.keywords).toContain('nx');
+    expect(manifest.keywords).toContain('nx-plugin');
+  });
+
+  it('declares the repository url + monorepo directory with the LayZeeDK casing (D-03; OIDC/provenance byte-match)', () => {
+    expect(manifest.repository?.url).toBe(
+      'git+https://github.com/LayZeeDK/angular-typechecker.git',
+    );
+    expect(manifest.repository?.directory).toBe('packages/angular-typechecker');
+  });
+
+  it('declares the MIT license (D-03)', () => {
+    expect(manifest.license).toBe('MIT');
+  });
+
+  it('declares a non-empty description (D-03)', () => {
+    expect(typeof manifest.description).toBe('string');
+    expect((manifest.description ?? '').length).toBeGreaterThan(0);
+  });
+
+  it('opts into npm provenance (D-04; belt-and-suspenders with the CI env)', () => {
+    expect(manifest.publishConfig?.provenance).toBe(true);
   });
 });
