@@ -78,5 +78,15 @@
       "style": "css",
       "unitTestRunner": "none"
     }
+  },
+  "release": {
+    "projects": ["angular-typechecker"],
+    "version": {
+      "conventionalCommits": true,
+      "preVersionCommand": "npx nx run-many -t build"
+    },
+    "changelog": {
+      "workspaceChangelog": { "createRelease": "github" }
+    }
   }
 }
