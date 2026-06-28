@@ -2,6 +2,17 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.0.2 (2026-06-28)
+
+Maintenance release. No functional changes to the executor.
+
+This release verifies the tokenless OIDC steady-state publish path: 0.0.1 was first-published with a one-time token (a first npm publish cannot use OIDC), and 0.0.2 is the first release to authenticate through the registered npm Trusted Publisher with no token, attaching an SLSA provenance attestation.
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
+- Node `^22.22.3 || ^24.15.0 || ^26.0.0`
+
 ## 0.0.1 (2026-06-28)
 
 Initial release.
@@ -24,4 +35,5 @@ angular-typechecker is an Nx plugin that runs the *complete* Angular compiler ty
 
 See the [README](./packages/angular-typechecker/README.md) for wiring the `angular-typecheck` target into a project.
 
+[0.0.2]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.2
 [0.0.1]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.1

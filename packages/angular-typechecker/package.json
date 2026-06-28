@@ -1,6 +1,6 @@
 {
   "name": "angular-typechecker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Nx executor that runs the complete Angular compiler type-check (TypeScript + template type-check + extended NG8xxx diagnostics), no emit, decoupled from build and test.",
   "keywords": [
     "nx",
