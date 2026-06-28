@@ -75,6 +75,23 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     // or published.
     expect(nx.release?.projects).toEqual([RELEASE_PROJECT]);
   });
+
+  it('keeps the local-first cut decoupled from push + GitHub release (PKG-05 / D-13)', () => {
+    const nx = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as {
+      release?: {
+        git?: { push?: boolean };
+        changelog?: { workspaceChangelog?: { createRelease?: unknown } };
+      };
+    };
+
+    // Hard-won in 0.0.2: nx FORCES `git push` on when `createRelease` is set,
+    // which would push an UN-CURATED version commit + tag to a force-push-protected
+    // main before the changelog is hand-curated. The local-first cut requires both
+    // disabled -- the maintainer pushes the tag and creates the Release after
+    // curation. Re-enabling either re-opens the un-curated-force-push hazard.
+    expect(nx.release?.git?.push).toBe(false);
+    expect(nx.release?.changelog?.workspaceChangelog?.createRelease).toBe(false);
+  });
 });
 
 describe('PKG-04: SECURITY.md is present at the repo root', () => {
@@ -170,6 +187,22 @@ describe('PKG-04: the release workflow is supply-chain hardened', () => {
     // An empty NODE_AUTH_TOKEN value breaks OIDC; the var must be entirely unset,
     // so it must NOT appear as an active env declaration anywhere in the workflow.
     expect(workflow).not.toContain('NODE_AUTH_TOKEN');
+  });
+
+  it('retains setup-node registry-url so npm detects the OIDC trusted publisher (PKG-05 / D-03)', () => {
+    const workflow = stripCommentLines(
+      readFileSync(releaseWorkflowPath, 'utf8'),
+    );
+
+    // PKG-05's central empirical finding (0.0.2 steady-state verification): the
+    // setup-node `registry-url` is REQUIRED for npm to DETECT the OIDC
+    // trusted-publishing environment. Dropping it (the now-superseded D-04
+    // "drop registry-url on 404" contingency) makes npm skip the OIDC handshake
+    // entirely and fail with ENEEDAUTH on npm >= 11.5.1. A careless edit removing
+    // this line silently breaks every tokenless publish, so assert it stays.
+    expect(workflow).toMatch(
+      /registry-url:\s*https:\/\/registry\.npmjs\.org\/?/,
+    );
   });
 });
 
