@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split. (completed 2026-06-27)
 - [x] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test. (completed 2026-06-28)
 - [x] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace. (completed 2026-06-28)
+- [ ] **Phase 5.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)** - 0.0.2 is the first OIDC steady-state (tokenless) publish -- the only unproven link after the 0.0.1 token-seed. If it 404s on auth, drop `registry-url` from the `setup-node` step (the empty-`_authToken` trap, documented inline in `release.yml`).
 - [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change.
 
 ## Phase Details
@@ -107,6 +108,16 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 - [x] 05-05-PLAN.md -- Live first publish (HUMAN-GATED, B-01): token-seed -> register Trusted Publisher -> revoke -> verify provenance (PKG-03) [Wave 4]
 **UI hint**: no
 
+### Phase 05.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+
 ### Phase 6: Full e2e Matrix + CI
 **Goal**: The executor is validated across all five project types on a real installed package, and a cross-OS / multi-Node GitHub Actions matrix gates every change -- the slow, gating backstop for packaging, peer-range, path-normalization, and cross-OS bugs.
 **Mode:** mvp
@@ -122,7 +133,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -131,4 +142,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
+| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
