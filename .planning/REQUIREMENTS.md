@@ -47,7 +47,7 @@
 
 ### Packaging & Release (PKG)
 
-- [ ] **PKG-01**: `package.json` declares `@nx/devkit` as a pinned dependency (no `nx`), `@angular/compiler-cli` + `typescript` as peers (Angular `^22` / TS `>=6.0 <6.1`), with `files`/`exports`/`executors` fields and `nx`/`nx-plugin` keywords for registry listing.
+- [x] **PKG-01**: `package.json` declares `@nx/devkit` as a pinned dependency (no `nx`), `@angular/compiler-cli` + `typescript` as peers (Angular `^22` / TS `>=6.0 <6.1`), with `files`/`exports`/`executors` fields and `nx`/`nx-plugin` keywords for registry listing.
 - [ ] **PKG-02**: `executors.json`/`schema.json` (v2, `cli: "nx"`, `outputCapture`) are copied into `dist` and present in the `npm pack` tarball (verified by `publint` + `attw --pack`).
 - [ ] **PKG-03**: Published to npm (MIT, 0.x semver) via `nx release` using npm Trusted Publishers (OIDC) + provenance.
 - [ ] **PKG-04**: `SECURITY.md` present and the release CI is hardened (read-only default permissions, no untrusted `pull_request_target`, SHA-pinned actions, manual-approval publish environment).
@@ -129,7 +129,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | TEST-03 | Phase 6 | Pending |
 | TEST-04 | Phase 4 | Complete |
 | TEST-05 | Phase 5 | Pending |
-| PKG-01 | Phase 5 | Pending |
+| PKG-01 | Phase 5 | Complete |
 | PKG-02 | Phase 5 | Pending |
 | PKG-03 | Phase 5 | Pending |
 | PKG-04 | Phase 5 | Pending |

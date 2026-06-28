@@ -4,13 +4,13 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5 context gathered
-last_updated: "2026-06-28T15:30:06.742Z"
-last_activity: 2026-06-28 -- Phase 5 planning complete
+last_updated: "2026-06-28T15:46:05.381Z"
+last_activity: 2026-06-28
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 15
   percent: 67
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 5 — packaging, publish hardening + e2e smoke (mvp)
+**Current focus:** Phase 5 — packaging-publish-hardening-e2e-smoke-mvp
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 5 (packaging-publish-hardening-e2e-smoke-mvp) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-28 -- Phase 5 planning complete
+Last activity: 2026-06-28
 
-Progress: [██████████] 100%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 | Phase 04 P01 | 6 min | 3 tasks | 11 files |
 | Phase 04 P02 | 12 min | 3 tasks | 15 files |
 | Phase 04 P03 | 15min | 3 tasks | 8 files |
+| Phase 5 P1 | 30 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [04-03] Rule 2 fix: the consumer fixture target needs includeDeps:true -- the non-buildable dep is a SIBLING project root so its diagnostics are out-of-project and SUPPRESSED by the boundary filter by default; without it the injected dep error is a false PASS (a lying cache).
 - [Phase ?]: [04-03] Rule 3 fix: a nested nx run under nx run <e2e>:test inherits NX_SKIP_NX_CACHE + forked-runner NX_* vars; the harness strips them (buildCleanEnv) so the nested run is a clean top-level invocation, else every nested run is a cache-miss and the HIT assertion is dead.
 - [Phase ?]: [04-03] EXE-01/EXE-07 proven: in-process runExecutor (context from the real project graph) parity success===core errorCount===0 + code-set match in both states; one real execSync nx run returns TS diagnostics through the compiled CJS executor with no ERR_REQUIRE_ESM.
+- [Phase ?]: [05-01] D-10/B-02 fixed: compiler-cli-types.ts is self-contained (structural re-declaration over the typescript substrate); deep node_modules escape removed, attw-resolvable; exported names + CompilerCli member set preserved; runtime unchanged; GATE A import( retained.
+- [Phase ?]: [05-01] PerformCompilationResult.program declared NON-optional + getTsProgram() returns ts.Program & { useCaseSensitiveFileNames() } to keep the build green without touching run-typecheck.ts (build is the drift guard).
+- [Phase ?]: [05-01] Full PKG-01 manifest shipped (files/exports/keywords nx+nx-plugin/repository LayZeeDK/license/publishConfig.provenance); per-package LICENSE wired via asset glob; checkVersionMismatches:false guards the public peer ranges; README uses the PUBLISHED executor id angular-typechecker:angular-typecheck.
 
 ### Pending Todos
 
@@ -135,6 +139,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T14:46:17.834Z
+Last session: 2026-06-28T15:45:13.413Z
 Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-packaging-publish-hardening-e2e-smoke-mvp/05-CONTEXT.md
+Resume file: None

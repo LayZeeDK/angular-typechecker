@@ -100,7 +100,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
   3. The package publishes to npm (MIT, 0.x semver) via `nx release` using npm Trusted Publishers (OIDC) + provenance, with `SECURITY.md` present and the release CI hardened (read-only default permissions, no untrusted `pull_request_target`, SHA-pinned actions, manual-approval publish environment).
   4. One real-workspace e2e smoke installs the packed tarball (Verdaccio or `file:`) into a workspace and runs `nx run <project>:angular-typecheck` successfully, proving the executor path resolves from the installed package.
 **Plans**: 5 plans
-- [ ] 05-01-PLAN.md -- Manifest + build-output correctness + the D-10 self-contained-types fix (PKG-01) [Wave 1]
+- [x] 05-01-PLAN.md -- Manifest + build-output correctness + the D-10 self-contained-types fix (PKG-01) [Wave 1]
 - [ ] 05-02-PLAN.md -- Tarball audit gate: publint + attw --pack + leak/no-install-scripts against the packed .tgz (PKG-02) [Wave 2]
 - [ ] 05-03-PLAN.md -- e2e smoke (tracer bullet): clean tarball install + green + injected-TS2322 runs (TEST-05) [Wave 2]
 - [ ] 05-04-PLAN.md -- nx release config + SECURITY.md + hardened CI + Dependabot + dry-run review (PKG-03 config, PKG-04) [Wave 3]
@@ -130,5 +130,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
-| 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/5 | Planned | - |
+| 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 1/5 | In Progress|  |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
