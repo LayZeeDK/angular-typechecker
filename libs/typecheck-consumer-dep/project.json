@@ -1,0 +1,8 @@
+{
+  "name": "typecheck-consumer-dep",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/typecheck-consumer-dep/src",
+  "projectType": "library",
+  "tags": ["scope:fixture"],
+  "targets": {}
+}
