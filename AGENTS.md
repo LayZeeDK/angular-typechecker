@@ -134,13 +134,24 @@ write accurate `type`s and put real changes in the package's files.
    never `contents: write`.
 
    **LANDMINE -- do NOT re-enable `changelog.workspaceChangelog.createRelease: "github"`.**
-   nx requires `git push` enabled whenever `createRelease` is set (it must push the tag to
-   tie the GitHub Release to it -- verified in nx 23 `config.js`), so `createRelease: "github"`
-   silently pushes the version commit + tag during the local `nx release` step -- BEFORE
-   you curate the changelog -- even with `--skip-publish` (which only skips the npm
-   publish, not the git push). That race once pushed an un-curated commit + tag to a
-   force-push-protected `main`, which could not be cleanly undone. `release.git.push: false`
-   + `createRelease: false` is the fix; curation now always precedes the push.
+   nx 23 requires `git push` whenever `createRelease` is set (it must push the tag to tie the
+   GitHub Release to it). How that manifests depends on the current `git.push` value -- and
+   BOTH outcomes defeat the curate-before-push flow:
+   - **With the repo's current explicit `release.git.push: false`:** nx HARD-ERRORS at
+     config-load time with `GIT_PUSH_FALSE_WITH_CREATE_RELEASE` ("The createRelease option for
+     changelogs cannot be enabled when git push is explicitly disabled ...") and
+     `process.exit(1)` -- verified in nx 23.0.1 `command-line/release/config/config.js` (raised
+     ~136-149, reported + exit ~899-913). Every `nx release` then fails until you revert one of
+     the two settings; nothing is pushed.
+   - **If you ALSO drop the explicit `git.push: false`:** nx defaults the changelog git `push`
+     to `true` whenever `createRelease` is set (config.js ~150-160), so `nx release` pushes the
+     version commit + tag during the LOCAL step -- BEFORE you curate. `--skip-publish` does NOT
+     suppress this (the push is gated by `changelog.git.push` at changelog.js:566, not by
+     `skipPublish`). This is the real silent-push hazard that once pushed an un-curated commit +
+     tag to a force-push-protected `main`, which could not be cleanly undone.
+
+   `release.git.push: false` + `createRelease: false` is the fix for both: the local cut stays
+   push-free, and curation always precedes the manual `git push origin angular-typechecker@<version>`.
 
 ## Quick checklist before cutting a release
 
