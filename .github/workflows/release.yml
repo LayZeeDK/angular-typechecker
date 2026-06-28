@@ -52,7 +52,11 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org/
+          # NO registry-url: setup-node's registry-url writes an .npmrc with a
+          # placeholder _authToken (XXXXX-XXXXX-XXXXX-XXXXX) that npm tries instead of
+          # OIDC, yielding a misleading 404 (hit on 0.0.2's first OIDC publish). npm
+          # defaults to registry.npmjs.org and OIDC trusted publishing engages
+          # tokenlessly without it. Do NOT re-add registry-url (Pitfall 2 / D-04).
       - run: npm i -g npm@latest
       - run: npm ci
       # CI is a fresh checkout and dist/ is gitignored, so the publishable output
@@ -71,6 +75,7 @@ jobs:
           # (repo LayZeeDK/angular-typechecker, workflow release.yml, env npm-publish)
           # authenticates every subsequent release tokenlessly. Do NOT re-add
           # NODE_AUTH_TOKEN -- an empty value would break OIDC and a real one is
-          # unnecessary. (If 0.0.2's OIDC publish ever 404s on auth, the likely cause
-          # is setup-node's registry-url writing an empty _authToken into .npmrc when
-          # NODE_AUTH_TOKEN is unset -- drop registry-url from the setup-node step.)
+          # unnecessary. (0.0.2's FIRST OIDC publish attempt 404'd on auth exactly as
+          # predicted: setup-node's registry-url injected a placeholder _authToken that
+          # npm used instead of OIDC. RESOLVED by removing registry-url from setup-node
+          # above -- see that step's comment. Do NOT re-add it.)
