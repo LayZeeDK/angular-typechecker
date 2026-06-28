@@ -1,0 +1,15 @@
+{
+  "name": "consumer-app",
+  "$schema": "node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "src",
+  "projectType": "application",
+  "targets": {
+    "angular-typecheck": {
+      "executor": "angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "tsconfig.lib.json",
+        "includeDeps": true
+      }
+    }
+  }
+}

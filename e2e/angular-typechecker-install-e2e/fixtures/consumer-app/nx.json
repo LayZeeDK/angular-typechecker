@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/nx/schemas/nx-schema.json",
+  "analytics": false,
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": [
+      "default",
+      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json"
+    ],
+    "sharedGlobals": []
+  },
+  "targetDefaults": {
+    "angular-typechecker:angular-typecheck": {
+      "cache": true,
+      "outputs": [],
+      "inputs": [
+        "production",
+        "{projectRoot}/tsconfig*.json",
+        "{projectRoot}/package.json",
+        "^default",
+        {
+          "dependentTasksOutputFiles": "**/*.{d.ts,d.cts,d.mts,tsbuildinfo}",
+          "transitive": true
+        },
+        { "externalDependencies": ["typescript", "@angular/compiler-cli"] }
+      ]
+    }
+  }
+}
