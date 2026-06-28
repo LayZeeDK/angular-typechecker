@@ -28,12 +28,12 @@
           },
           {
             "input": "./packages/angular-typechecker",
-            "glob": "generators.json",
+            "glob": "executors.json",
             "output": "."
           },
           {
             "input": "./packages/angular-typechecker",
-            "glob": "executors.json",
+            "glob": "LICENSE",
             "output": "."
           }
         ]

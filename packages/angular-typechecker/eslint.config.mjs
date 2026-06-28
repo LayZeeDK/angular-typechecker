@@ -69,6 +69,11 @@ export default [
       '@nx/dependency-checks': [
         'error',
         {
+          // D-06: stop the autofix rewriting the PUBLIC peer ranges to the
+          // installed exact versions (`^22.0.0` -> `22.0.4`). The rule still
+          // catches MISSING/OBSOLETE deps; only the version-mismatch autofix is
+          // disabled. NEVER run `eslint --fix` blindly on the manifest.
+          checkVersionMismatches: false,
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vitest.config.{js,ts,mjs,mts}',

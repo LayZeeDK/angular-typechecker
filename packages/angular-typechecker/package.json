@@ -1,10 +1,42 @@
 {
   "name": "angular-typechecker",
   "version": "0.0.1",
+  "description": "Nx executor that runs the complete Angular compiler type-check (TypeScript + template type-check + extended NG8xxx diagnostics), no emit, decoupled from build and test.",
+  "keywords": [
+    "nx",
+    "nx-plugin",
+    "angular",
+    "typecheck",
+    "type-check",
+    "ngc",
+    "compiler-cli",
+    "diagnostics"
+  ],
+  "author": "Lars Gyrup Brink Nielsen <larsbrinknielsen@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/LayZeeDK/angular-typechecker#readme",
+  "bugs": {
+    "url": "https://github.com/LayZeeDK/angular-typechecker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LayZeeDK/angular-typechecker.git",
+    "directory": "packages/angular-typechecker"
+  },
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "executors": "./executors.json",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "executors.json",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@nx/devkit": "23.0.1",
     "tslib": "^2.3.0"
@@ -15,5 +47,8 @@
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.0.0"
+  },
+  "publishConfig": {
+    "provenance": true
   }
 }
