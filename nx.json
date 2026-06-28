@@ -82,12 +82,17 @@
   "release": {
     "projects": ["angular-typechecker"],
     "releaseTag": { "pattern": "angular-typechecker@{version}" },
+    "git": {
+      "commit": true,
+      "tag": true,
+      "push": false
+    },
     "version": {
       "conventionalCommits": true,
       "preVersionCommand": "npx nx run-many -t build"
     },
     "changelog": {
-      "workspaceChangelog": { "createRelease": "github" }
+      "workspaceChangelog": { "createRelease": false }
     }
   }
 }

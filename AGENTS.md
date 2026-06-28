@@ -108,11 +108,26 @@ write accurate `type`s and put real changes in the package's files.
    release-meaningful scopes (`core`, `executor`, `release`, `deps`) over internal ids in
    commits that will reach a public changelog.
 
-3. **Provenance and the GitHub Release are part of the release.** `nx release` cuts the
-   version commit, the changelog, and the git tag (`angular-typechecker@{version}`); the
-   tag push fires `.github/workflows/release.yml`, which publishes to npm via OIDC with
-   provenance and creates the GitHub Release. Do not push release tags by hand outside
-   this flow.
+3. **The local cut does NOT push; you push the tag, and you create the GitHub Release
+   from the curated changelog.** `nx.json` sets `release.git.push: false`, so
+   `npx nx release <version> --skip-publish` creates the version commit, the changelog,
+   and the tag entirely LOCALLY -- nothing reaches origin until you push. Order:
+   (1) cut locally, (2) curate `CHANGELOG.md` and amend it onto the version commit,
+   (3) `git push origin angular-typechecker@<version>` -- which fires
+   `.github/workflows/release.yml` -> OIDC publish with provenance (approve the
+   `npm-publish` environment), (4) create the GitHub Release from the curated changelog
+   yourself: `gh release create angular-typechecker@<version> --notes-file <curated-section>`.
+   The release is cut locally on purpose -- the CI publish job holds only `id-token: write`,
+   never `contents: write`.
+
+   **LANDMINE -- do NOT re-enable `changelog.workspaceChangelog.createRelease: "github"`.**
+   nx requires `git push` enabled whenever `createRelease` is set (it must push the tag to
+   tie the GitHub Release to it -- verified in nx 23 `config.js`), so `createRelease: "github"`
+   silently pushes the version commit + tag during the local `nx release` step -- BEFORE
+   you curate the changelog -- even with `--skip-publish` (which only skips the npm
+   publish, not the git push). That race once pushed an un-curated commit + tag to a
+   force-push-protected `main`, which could not be cleanly undone. `release.git.push: false`
+   + `createRelease: false` is the fix; curation now always precedes the push.
 
 ## Quick checklist before cutting a release
 
@@ -121,6 +136,9 @@ write accurate `type`s and put real changes in the package's files.
 2. Run `npx nx release --dry-run` and read the proposed version + changelog.
 3. If only `docs`/`chore` commits exist, pin the version explicitly.
 4. Curate `CHANGELOG.md` so no internal scopes/ids leak into the public changelog.
-5. Cut locally with `--skip-publish`, then push the tag to let CI publish (OIDC +
-   provenance). See `CLAUDE.md` (Technology Stack -> nx release configuration norms) and
-   `.github/workflows/release.yml` for the full release mechanics.
+5. Cut locally with `--skip-publish` (this pushes nothing -- `release.git.push: false`),
+   curate `CHANGELOG.md` and amend it onto the version commit, THEN push the tag
+   (`git push origin angular-typechecker@<version>`) to fire CI; approve the `npm-publish`
+   environment for the OIDC publish, and create the GitHub Release from the curated
+   changelog (`gh release create ...`). See `.github/workflows/release.yml` for the full
+   mechanics.
