@@ -48,6 +48,7 @@ interface PluginManifest {
   description?: string;
   publishConfig?: {
     provenance?: boolean;
+    access?: string;
   };
 }
 
@@ -121,5 +122,13 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
 
   it('opts into npm provenance (D-04; belt-and-suspenders with the CI env)', () => {
     expect(manifest.publishConfig?.provenance).toBe(true);
+  });
+
+  it('explicitly sets publishConfig.access to public (required for provenance on a NEW package; D-04 correction)', () => {
+    // npm rejects provenance generation for a first publish with
+    // "Can't generate provenance for new or private package, you must set
+    // `access` to public" -- the unscoped-defaults-to-public rule does NOT
+    // satisfy this, so `access: public` must be explicit (caught by the seed run).
+    expect(manifest.publishConfig?.access).toBe('public');
   });
 });
