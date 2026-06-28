@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: executing
-stopped_at: Phase 5.1 FULLY CLOSED -- angular-typechecker@0.0.2 published LIVE via tokenless OIDC + SLSA provenance (PKG-05 / D-08). All GSD close-out gates passed: code-review (deep; WR-01 fixed), verify_phase_goal (passed 13/13), secure-phase (9/9 threats closed), validate-phase (nyquist_compliant; +2 regression assertions, 15/15), extract-learnings. Next: Phase 6 (Full e2e Matrix + CI).
-last_updated: "2026-06-29T12:00:00.000Z"
-last_activity: 2026-06-29 -- Phase 5.1 closed: 0.0.2 OIDC publish verified live; all close-out gates passed; lessons captured (TP-never-saved root cause, registry-url-required, createRelease force-push, ruleset reconciliation)
+status: verifying
+stopped_at: Phase 6 context gathered (--auto --chain --analyze; research-first)
+last_updated: "2026-06-28T22:52:04.189Z"
+last_activity: 2026-06-29 -- Phase 5.1 closed; all close-out gates passed; learnings extracted
 progress:
   total_phases: 8
   completed_phases: 6
@@ -157,6 +157,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T20:36:00.000Z
-Stopped at: Phase 5.1 05.1-01 Task 3 human-action gate (B-01) -- 0.0.2 cut + curated LOCALLY; release.yml run 28335100791 paused at the npm-publish required-reviewer gate. DEVIATION: nx release pushed the version commit + tag to origin (createRelease:github drives the push regardless of --skip-publish); origin carries the OLD un-curated commit 6874f08 while local main carries the curated b5c84eb -- the human must reconcile (force-update origin main + tag to b5c84eb, or re-fire) BEFORE approving, so the GitHub Release derives from the curated changelog.
-Resume file: .planning/phases/05.1-0-0-2-first-oidc-steady-state-publish-verification/05.1-01-PLAN.md
+Last session: 2026-06-28T22:52:04.180Z
+Stopped at: Phase 6 context gathered (--auto --chain --analyze; research-first)
+Resume file: .planning/phases/06-full-e2e-matrix-ci/06-CONTEXT.md
