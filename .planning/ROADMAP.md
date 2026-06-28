@@ -128,7 +128,10 @@ Plans:
   1. The executor is validated end-to-end across all five project types -- application, local (non-buildable) library, buildable library, publishable library, and spec tsconfig -- against the installed tarball, including a pnpm fixture and a mixed-case path assertion (the bug invisible under npm/Linux).
   2. GitHub Actions runs unit + integration on a Node 22/24/26 x Linux/Windows/macOS matrix (free standard public-repo runners), with the heavy e2e/tarball-install gate running Linux-only.
   3. The full matrix is green and is the required gate before merge/publish (no cross-OS path-normalization, pnpm-symlink, or ERESOLVE/EBADENGINE regressions slip through).
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 06-01-PLAN.md -- matrix-e2e Nx project + 5-type consumer-workspace fixture + 5-type e2e spec + OQ-1 clean-install spike (TEST-03)
+- [ ] 06-02-PLAN.md -- pnpm symlink fixture + realpath regression-guard + mixed-case unit/integration extensions (TEST-03 / OUT-02 backstop)
+- [ ] 06-03-PLAN.md -- .github/workflows/ci.yml: 3x3 test matrix + Linux-only e2e job + aggregate ci gate (CI-01)
 **UI hint**: no
 
 ## Progress
@@ -144,7 +147,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 1/1 | Complete   | 2026-06-28 |
-| 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
+| 6. Full e2e Matrix + CI | 0/3 | Not started | - |
 | 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
 
 ### Phase 7: Release-PR workflow and clean changelog
