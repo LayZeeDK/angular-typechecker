@@ -43,7 +43,7 @@
 - [ ] **TEST-02**: Integration tests run the real compiler against fixtures and assert exact diagnostic codes/counts across the v13->v22 catalog (organized by Angular introduction version), all on Angular 22.
 - [ ] **TEST-03**: The executor is validated across all five project types: application, local (non-buildable) library, buildable library, publishable library, and spec tsconfig.
 - [x] **TEST-04**: A dependency-error-busts-cache correctness test verifies a downstream type change invalidates the consumer's cache.
-- [ ] **TEST-05**: One real-workspace e2e smoke (tarball/Verdaccio install) lands early; the full real-workspace e2e matrix lands in late phase(s).
+- [x] **TEST-05**: One real-workspace e2e smoke (tarball/Verdaccio install) lands early; the full real-workspace e2e matrix lands in late phase(s).
 
 ### Packaging & Release (PKG)
 
@@ -128,7 +128,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | TEST-02 | Phase 2 | Pending |
 | TEST-03 | Phase 6 | Pending |
 | TEST-04 | Phase 4 | Complete |
-| TEST-05 | Phase 5 | Pending |
+| TEST-05 | Phase 5 | Complete |
 | PKG-01 | Phase 5 | Complete |
 | PKG-02 | Phase 5 | Complete |
 | PKG-03 | Phase 5 | Pending |
