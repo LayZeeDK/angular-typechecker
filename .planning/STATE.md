@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5.1 05.1-01 Tasks 1-2 done; release config FIXED (38b7fbf -- release.git.push:false + createRelease:false) after the createRelease-forced-push deviation; cancelled the un-curated paused CI run; 0.0.2 still UNPUBLISHED (npm latest=0.0.1) and needs reconcile + re-publish via the fixed flow; STILL before the B-01 irreversible publish gate
-last_updated: "2026-06-28T21:05:00.000Z"
-last_activity: 2026-06-28 -- landed release config fix (push:false) + AGENTS.md code-review policy; origin/main carries un-curated 0.0.2 (6874f08, force-push-blocked); local diverged with curated CHANGELOG
+stopped_at: Phase 5.1 05.1-01 COMPLETE -- angular-typechecker@0.0.2 published LIVE to npm via tokenless OIDC Trusted Publisher with SLSA v1 provenance (dist-tags.latest=0.0.2), GitHub Release cut from curated changelog (PKG-05 / D-08 verified). GSD close-out gates (verify_phase_goal / secure / validate / extract-learnings + code_review_gate) PENDING.
+last_updated: "2026-06-28T22:00:00.000Z"
+last_activity: 2026-06-28 -- 0.0.2 OIDC steady-state publish verified live; root cause of failures was the Trusted Publisher never being saved at 05-05; release config decoupled (push:false, createRelease:false); D-04 drop-registry-url guidance corrected
 progress:
   total_phases: 8
   completed_phases: 5
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 ## Current Position
 
-Phase: 05.1 (0-0-2-first-oidc-steady-state-publish-verification) — EXECUTING (paused; release config fixed, re-cut pending)
-Plan: 1 of 1 (Tasks 1-2 done; release config fix landed; STILL before Task 3 human-action B-01)
-Status: 0.0.2 unpublished (npm=0.0.1). Config fixed (push:false). BLOCKER: origin/main + remote tag carry un-curated 0.0.2 (6874f08 / b2fc762); main force-push blocked by the "v0.0.1" ruleset; local main diverged with the curated CHANGELOG. Needs reconcile (rebase local unique commits onto origin/main, drop redundant version commit, keep curated CHANGELOG) -> ff-push main -> publish 0.0.2 via workflow_dispatch (avoids tag-ruleset) + human approve -> create GitHub Release from curated CHANGELOG -> Task 4 verify.
-Last activity: 2026-06-28 -- config fix + AGENTS.md policy committed (38b7fbf, 119b1e3); paused CI run 28335100791 cancelled
+Phase: 05.1 (0-0-2-first-oidc-steady-state-publish-verification) — plan COMPLETE; GSD close-out gates pending
+Plan: 1 of 1 complete (05.1-01-SUMMARY.md written)
+Status: angular-typechecker@0.0.2 is LIVE on npm via tokenless OIDC + SLSA provenance, dist-tags.latest=0.0.2, GitHub Release published from the curated changelog. PKG-05 verified (D-08). Remaining per GSD: verify_phase_goal (gsd-verifier -> VERIFICATION.md), /gsd-secure-phase 5.1, /gsd-validate-phase 5.1, /gsd-extract-learnings 5.1, and the code_review_gate (reviews the AGENTS.md/nx.json/release.yml changes per the new AGENTS.md review policy). Recommend /clear before running these (long context).
+Last activity: 2026-06-28 -- 0.0.2 published + verified + GitHub Release; release config decoupled (push:false/createRelease:false); always-auth warning fixed; D-04 registry-url guidance corrected in docs + memory
 
 Progress: [██████████] 95%
 

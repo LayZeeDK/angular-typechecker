@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split. (completed 2026-06-27)
 - [x] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test. (completed 2026-06-28)
 - [x] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace. (completed 2026-06-28)
-- [ ] **Phase 5.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)** - 0.0.2 is the first OIDC steady-state (tokenless) publish -- the only unproven link after the 0.0.1 token-seed. If it 404s on auth, drop `registry-url` from the `setup-node` step (the empty-`_authToken` trap, documented inline in `release.yml`).
+- [x] **Phase 5.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)** - 0.0.2 is the first OIDC steady-state (tokenless) publish -- the only unproven link after the 0.0.1 token-seed. If it 404s on auth, drop `registry-url` from the `setup-node` step (the empty-`_authToken` trap, documented inline in `release.yml`). (completed 2026-06-28)
 - [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change.
 - [ ] **Phase 7: Release-PR workflow and clean changelog** - Switch from direct-push-to-main to a Release-PR flow (route nx-release version/changelog through a PR; tag-after-merge fires the OIDC publish), enable the staged "Default branch" ruleset (require PR + Phase-6 CI checks) and delete the temporary "v0.0.1" ruleset, and produce a public changelog that does NOT expose internal GSD phase/plan numbers.
 
@@ -114,10 +114,10 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 **Goal:** Cut `angular-typechecker@0.0.2` and prove the tokenless OIDC steady-state npm publish works end-to-end -- the only unproven link after the 0.0.1 token-seed. 0.0.2 is published live via the registered Trusted Publisher with NO token in the CI run, carries an SLSA v1 provenance attestation, advances `dist-tags.latest`, and cuts a GitHub Release, all behind the human-gated `npm-publish` environment (B-01). If it 404s on auth, drop `registry-url` from the `setup-node` step and re-fire (idempotent).
 **Requirements**: PKG-05
 **Depends on:** Phase 5
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 05.1-01-PLAN.md -- Cut 0.0.2 (explicit literal, --skip-publish) + curate CHANGELOG + record PKG-05 + human-gated OIDC publish + npm-view provenance verification
+- [x] 05.1-01-PLAN.md -- Cut 0.0.2 (explicit literal, --skip-publish) + curate CHANGELOG + record PKG-05 + human-gated OIDC publish + npm-view provenance verification
 
 ### Phase 6: Full e2e Matrix + CI
 **Goal**: The executor is validated across all five project types on a real installed package, and a cross-OS / multi-Node GitHub Actions matrix gates every change -- the slow, gating backstop for packaging, peer-range, path-normalization, and cross-OS bugs.
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
-| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/1 | In progress (paused at human publish gate) | - |
+| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 1/1 | Complete   | 2026-06-28 |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
 | 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
 
