@@ -81,6 +81,7 @@
   },
   "release": {
     "projects": ["angular-typechecker"],
+    "releaseTag": { "pattern": "angular-typechecker@{version}" },
     "version": {
       "conventionalCommits": true,
       "preVersionCommand": "npx nx run-many -t build"
