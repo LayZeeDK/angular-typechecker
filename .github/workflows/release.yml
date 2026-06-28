@@ -55,8 +55,20 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: npm i -g npm@latest
       - run: npm ci
+      # CI is a fresh checkout and dist/ is gitignored, so the publishable output
+      # must be (re)built here before publish. The local `nx release --skip-publish`
+      # build (preVersionCommand) does not carry into this job (D-13 split).
+      - run: npx nx build angular-typechecker
       - run: npx nx release publish
         env:
           NPM_CONFIG_PROVENANCE: true
           # The npm auth-token env var is deliberately NOT declared here -- OIDC
           # engages only with no token present (an empty value would break it).
+          #
+          # ONE-TIME SEED ONLY (05-05 / B-01): the FIRST publish cannot use OIDC
+          # (npm/cli#8544). To seed 0.0.1, TEMPORARILY add the line below, run the
+          # seed, then REVERT it (remove the line) BEFORE registering the npm
+          # Trusted Publisher, so release.yml is OIDC-only when the TP points at it.
+          # The release-hygiene "auth token unset" test will go RED while the line
+          # is present -- that is the expected seed-mode alarm; reverting restores it.
+          #   NODE_AUTH_TOKEN: ${{ secrets.NPM_SEED_TOKEN }}
