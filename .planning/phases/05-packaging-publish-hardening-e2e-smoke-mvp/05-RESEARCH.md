@@ -591,19 +591,22 @@ updates:
 
 > All four are LOW-to-MEDIUM risk and have stated mitigations. No assumption is load-bearing enough to block planning.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the PKG-02 audit gate and the TEST-05 smoke share one e2e project or be siblings?**
    - What we know: D-21 says "PKG-02's audit gate may live in this same e2e project or a sibling" (explicit discretion).
    - Recommendation: ONE shared `e2e/angular-typechecker-install-e2e` project with two `.int.spec.ts` files (audit + smoke). Both need the same `nx build` + `npm pack` `beforeAll`; sharing avoids packing twice. The serialized config already forbids parallelism, so no race risk.
+   - **RESOLVED:** plans adopt ONE shared `e2e/angular-typechecker-install-e2e` project (05-02 scaffolds it + the audit spec; 05-03 adds the smoke spec + fixture).
 
 2. **Does a clean `npm install` of the tarball ERESOLVE (B-03)?**
    - What we know: the workspace relies on `legacy-peer-deps=true` because `@nx/angular@23.0.1` caps Angular tooling peers at <22. Whether that ceiling reaches a CONSUMER (who installs `angular-typechecker` + their own Angular 22) is unknown until the smoke runs clean.
    - Recommendation: the smoke MUST install without `--legacy-peer-deps` and SURFACE the result. If it ERESOLVEs, ESCALATE remediation (README `--legacy-peer-deps` note vs widen ranges vs await `@nx/angular` 23.1.x) — do NOT auto-patch (B-03). This is discoverable only at execution time.
+   - **RESOLVED (intentionally runtime-discoverable, per B-03):** not a pre-execution blocker by design — the 05-03 smoke installs clean and surfaces the result; remediation is escalated, not auto-patched.
 
 3. **Self-contained-types: structural copy vs minimal re-declaration?**
    - What we know: the public surface needs `CompilerCli` (with `readConfiguration`/`performCompilation`/`defaultGatherDiagnostics`/`EmitFlags`/`UNKNOWN_ERROR_CODE`/`formatDiagnostics`), `Program`, `EmitFlags`, `ParsedConfiguration`. The runtime is unchanged.
    - Recommendation: declare these structurally using `typescript`'s public types as the substrate (e.g. `formatDiagnostics: (diags: readonly ts.Diagnostic[], host: ...) => string`). Prove with `attw --pack` (problems empty). If the minimal re-declaration drifts from the real compiler-cli signatures, the engine code that CALLS them would fail to type-check — so the build itself is a guard. Escalate to the user only if the structural copy proves infeasible under nodenext (it should not, per the existing shim's own analysis that the deep `.d.ts` files DO resolve in-workspace).
+   - **RESOLVED:** 05-01 locks structural re-declaration on the `typescript` substrate; the build type-checks callers as a drift guard; `attw --pack` in 05-02 verifies; escalate only if infeasible under nodenext.
 
 ## Environment Availability
 
