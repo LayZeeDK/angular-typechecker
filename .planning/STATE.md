@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5.1 context gathered (0.0.2 OIDC steady-state verification; AGENTS.md added)
-last_updated: "2026-06-28T20:26:18.933Z"
-last_activity: 2026-06-28 -- Phase 05.1 planning complete
+stopped_at: Phase 5.1 05.1-01 Tasks 1-2 done (0.0.2 cut + curated locally); STOPPED at Task 3 human-action gate (B-01 irreversible publish)
+last_updated: "2026-06-28T20:36:00.000Z"
+last_activity: 2026-06-28 -- Phase 05.1 05.1-01 reached the npm-publish human-approval boundary
 progress:
   total_phases: 8
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 5 — packaging-publish-hardening-e2e-smoke-mvp
+**Current focus:** Phase 05.1 — 0-0-2-first-oidc-steady-state-publish-verification
 
 ## Current Position
 
-Phase: 5 (packaging-publish-hardening-e2e-smoke-mvp) — EXECUTING
-Plan: 5 of 5
-Status: Ready to execute
-Last activity: 2026-06-28 -- Phase 05.1 planning complete
+Phase: 05.1 (0-0-2-first-oidc-steady-state-publish-verification) — EXECUTING (paused at human gate)
+Plan: 1 of 1 (Tasks 1-2 done; STOPPED at Task 3 human-action B-01)
+Status: Awaiting human approval of the npm-publish environment (irreversible publish)
+Last activity: 2026-06-28 -- 0.0.2 cut + curated locally; release.yml run paused at npm-publish gate
 
 Progress: [██████████] 95%
 
@@ -157,6 +157,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T20:00:13.794Z
-Stopped at: Phase 5.1 context gathered (0.0.2 OIDC steady-state verification; AGENTS.md added)
-Resume file: .planning/phases/05.1-0-0-2-first-oidc-steady-state-publish-verification/05.1-CONTEXT.md
+Last session: 2026-06-28T20:36:00.000Z
+Stopped at: Phase 5.1 05.1-01 Task 3 human-action gate (B-01) -- 0.0.2 cut + curated LOCALLY; release.yml run 28335100791 paused at the npm-publish required-reviewer gate. DEVIATION: nx release pushed the version commit + tag to origin (createRelease:github drives the push regardless of --skip-publish); origin carries the OLD un-curated commit 6874f08 while local main carries the curated b5c84eb -- the human must reconcile (force-update origin main + tag to b5c84eb, or re-fire) BEFORE approving, so the GitHub Release derives from the curated changelog.
+Resume file: .planning/phases/05.1-0-0-2-first-oidc-steady-state-publish-verification/05.1-01-PLAN.md

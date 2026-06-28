@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
-| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/1 | Not started | - |
+| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/1 | In progress (paused at human publish gate) | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
 | 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
 
