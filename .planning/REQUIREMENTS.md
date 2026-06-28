@@ -23,13 +23,13 @@
 
 ### Executor (EXE)
 
-- [ ] **EXE-01**: An `angular-typecheck` Nx executor wraps the core and can be set as any Angular project's target.
+- [x] **EXE-01**: An `angular-typecheck` Nx executor wraps the core and can be set as any Angular project's target.
 - [ ] **EXE-02**: Required `tsConfig` option (single tsconfig per target), overridable in target configuration; spec/unit-test checking via a target pointed at `tsconfig.spec.json`.
 - [ ] **EXE-03**: Default full / report-all mode (matches `tsc --noEmit`); opt-in fail-fast (return on first error).
 - [ ] **EXE-04**: Excludes out-of-project + `node_modules` diagnostics by default; opt-in `includeDeps`.
 - [ ] **EXE-05**: `--max-warnings=<n>` (0 = fail on any warning); errors always fail; project-configured diagnostic categories respected.
 - [ ] **EXE-06**: The executor target is Nx-cacheable (`cache: true`, `outputs: []`, correct per-tsconfig + dependency-source inputs + `externalDependencies`).
-- [ ] **EXE-07**: Shipped as a CommonJS executor that loads ESM compiler-cli via dynamic `import()` with no `import()`->`require()` downlevel.
+- [x] **EXE-07**: Shipped as a CommonJS executor that loads ESM compiler-cli via dynamic `import()` with no `import()`->`require()` downlevel.
 
 ### Diagnostics & Output (OUT)
 
@@ -114,13 +114,13 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | ENG-02 | Phase 2 | Pending |
 | ENG-03 | Phase 1 | Complete |
 | ENG-04 | Phase 2 | Pending |
-| EXE-01 | Phase 4 | Pending |
+| EXE-01 | Phase 4 | Complete |
 | EXE-02 | Phase 2 | Pending |
 | EXE-03 | Phase 3 | Pending |
 | EXE-04 | Phase 3 | Pending |
 | EXE-05 | Phase 3 | Pending |
 | EXE-06 | Phase 4 | Pending |
-| EXE-07 | Phase 4 | Pending |
+| EXE-07 | Phase 4 | Complete |
 | OUT-01 | Phase 3 | Pending |
 | OUT-02 | Phase 3 | Pending |
 | OUT-03 | Phase 3 | Pending |

@@ -4,13 +4,13 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 4 context gathered
-last_updated: "2026-06-28T11:00:59.363Z"
-last_activity: 2026-06-28 -- Phase 4 planning complete
+last_updated: "2026-06-28T11:16:11.931Z"
+last_activity: 2026-06-28 -- Plan 04-01 complete (executor-adapter slice)
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
   percent: 50
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 4 — nx executor adapter + cacheable target
+**Current focus:** Phase 4 — nx-executor-adapter-cacheable-target
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-28 -- Phase 4 planning complete
+Phase: 4 (nx-executor-adapter-cacheable-target) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 4 (04-01 complete; 04-02 next)
+Last activity: 2026-06-28 -- Plan 04-01 complete (executor-adapter slice)
 
-Progress: [██████░░░░] 3 of 6 phases (50%)
+Progress: [██████░░░░] 3 of 6 phases (50%) -- plans 12 of 14 (86%)
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [██████░░░░] 3 of 6 phases (50%)
 *Updated after each plan completion*
 | Phase 01 P04 | 25 | 3 tasks | 3 files |
 | Phase 03 P04 | ~12 min | 2 tasks | 4 files |
+| Phase 04 P01 | 6 min | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [03-04] WS-04 boundary enforced via a files-scoped `@typescript-eslint/no-restricted-imports` override on `**/src/core/**/*.ts` (bans `nx`/`@nx/devkit`/`@angular-devkit/architect`/`yargs` + `@nx/*`/`@angular-devkit/*` families incl. type-only; `allowTypeImports` OMITTED) + `no-console` + a `process.exit` ban -- because `@nx/enforce-module-boundaries` is project/tag-granular and cannot ban a folder within one project. `@nx/dependency-checks` + `@nx/nx-plugin-checks` left untouched (D-12).
 - [03-04] Resolved the 2 pre-existing `@nx/enforce-module-boundaries` errors on the nodenext deep-import shim (`compiler-cli-types.ts:15`/`:20`, owned by 03-04 per deferred-items.md) with two targeted `eslint-disable-next-line` directives -- NOT a root allow-regex widening -- so the WS-04 lint gate (`nx lint` exit 0, SC5) genuinely passes while enforcement stays intact everywhere else. The directive must sit on the line immediately before each `import` (above the leading comment block triggers "Unused eslint-disable directive").
 - [03-04] Exported `filterDiagnostics`/`evaluateResult`/`formatReport` (+ option/result types) from `src/index.ts` for the Phase-4 adapter to compose. Phase-3 lint gate clean (exit 0; 2 pre-existing unused-vars WARNINGS remain, out of scope), full unit suite 15 files / 70 tests green, build green (GATE A `import(` retained).
+- [Phase 04]: [04-01] renderReport added as a NEW core seam (D-02): loads ng via loadCompilerCli + a private loadTypescript memo, delegates to formatReport; barrel-exported, never leaks loadTypescript, no @nx/devkit import (core boundary held).
+- [Phase 04]: [04-01] Executor completed (D-01/D-04): sub-50-line composition writing the report via raw process.stdout.write (not logger.info), catching TypecheckInfrastructureError and RE-THROWING all other errors; v0.0.1 schema is tsConfig+includeDeps+maxWarnings(no default)+failFast, version 2, lockstep schema.d.ts + key-parity test; outputCapture direct-nodejs. GATE A import( retained.
 
 ### Pending Todos
 
@@ -120,6 +123,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T10:24:51.565Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-nx-executor-adapter-cacheable-target/04-CONTEXT.md
+Last session: 2026-06-28T11:13:03.869Z
+Stopped at: Completed 04-01-PLAN.md (executor-adapter slice)
+Resume file: .planning/phases/04-nx-executor-adapter-cacheable-target/04-02-PLAN.md
