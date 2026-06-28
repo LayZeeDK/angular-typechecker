@@ -19,6 +19,9 @@
     "paths": {
       "@angular-typechecker/angular-typechecker": [
         "./packages/angular-typechecker/src/index.ts"
+      ],
+      "@fixtures/typecheck-consumer-dep": [
+        "libs/typecheck-consumer-dep/src/index.ts"
       ]
     }
   },
