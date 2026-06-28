@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace. (completed 2026-06-28)
 - [ ] **Phase 5.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)** - 0.0.2 is the first OIDC steady-state (tokenless) publish -- the only unproven link after the 0.0.1 token-seed. If it 404s on auth, drop `registry-url` from the `setup-node` step (the empty-`_authToken` trap, documented inline in `release.yml`).
 - [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change.
+- [ ] **Phase 7: Release-PR workflow and clean changelog** - Switch from direct-push-to-main to a Release-PR flow (route nx-release version/changelog through a PR; tag-after-merge fires the OIDC publish), enable the staged "Default branch" ruleset (require PR + Phase-6 CI checks) and delete the temporary "v0.0.1" ruleset, and produce a public changelog that does NOT expose internal GSD phase/plan numbers.
 
 ## Phase Details
 
@@ -133,7 +134,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -144,3 +145,17 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
+| 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
+
+### Phase 7: Release-PR workflow and clean changelog
+
+**Goal:** Replace direct-push-to-main releases with a Release-PR workflow, harden `main` accordingly, and ship a clean public changelog free of internal GSD phase/plan scopes.
+**Requirements**: TBD (new v0.0.1 scope -- to be defined at discuss/plan; candidate IDs REL-01 Release-PR flow, REL-02 branch-protection switch, REL-03 clean changelog)
+**Depends on:** Phase 6 (the "Default branch" ruleset's required status checks reference Phase-6's CI matrix jobs)
+**Success Criteria** (what must be TRUE):
+  1. Releases no longer push version/changelog commits directly to `main`: `nx release` produces the version bump + CHANGELOG on a release branch merged via PR; the tag is created on the merged commit and fires the existing OIDC publish workflow (`release.yml` unchanged). `nx.json` `release.git` decouples commit from tag/push (e.g. `tag:false`, `push:false`).
+  2. Branch protection is switched to PR mode: the staged **"Default branch"** ruleset is ENABLED (require PR + the Phase-6 CI status checks + force-push/deletion blocked) and the temporary **"v0.0.1"** ruleset is DELETED; the **"Release tag"** ruleset is retained (you + deploy key on bypass).
+  3. The public changelog (CHANGELOG.md + GitHub Release notes) does NOT expose internal GSD phase/plan numbers (e.g. `feat(05-01):`) -- via nx release changelog configuration, a `gh` CLI step, or a transform of the nx-/gh-generated changelog.
+**Plans:** 0 plans
+- [ ] TBD (run /gsd-plan-phase 7 to break down)
+**UI hint**: no

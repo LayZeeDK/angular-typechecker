@@ -4,14 +4,14 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5 complete -- angular-typechecker@0.0.1 published to npm with provenance (OIDC Trusted Publisher live)
-last_updated: "2026-06-28T19:19:58.488Z"
+last_updated: "2026-06-28T19:40:57.831Z"
 last_activity: 2026-06-28
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 5
   total_plans: 19
   completed_plans: 19
-  percent: 71
+  percent: 63
 ---
 
 # Project State
@@ -70,6 +70,7 @@ Progress: [██████████] 95%
 ### Roadmap Evolution
 
 - Phase 5.1 inserted after Phase 5: 0.0.2 = first OIDC steady-state publish; the only unproven link after the 0.0.1 token-seed; if it 404s on auth, drop registry-url from setup-node (empty-_authToken trap, documented inline in release.yml) (URGENT)
+- Phase 7 added: Release-PR workflow + branch-protection switch (enable Default branch ruleset, delete v0.0.1 ruleset) + clean changelog (no GSD phase/plan numbers)
 
 ### Decisions
 
