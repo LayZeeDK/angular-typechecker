@@ -28,7 +28,7 @@
 - [ ] **EXE-03**: Default full / report-all mode (matches `tsc --noEmit`); opt-in fail-fast (return on first error).
 - [ ] **EXE-04**: Excludes out-of-project + `node_modules` diagnostics by default; opt-in `includeDeps`.
 - [ ] **EXE-05**: `--max-warnings=<n>` (0 = fail on any warning); errors always fail; project-configured diagnostic categories respected.
-- [ ] **EXE-06**: The executor target is Nx-cacheable (`cache: true`, `outputs: []`, correct per-tsconfig + dependency-source inputs + `externalDependencies`).
+- [x] **EXE-06**: The executor target is Nx-cacheable (`cache: true`, `outputs: []`, correct per-tsconfig + dependency-source inputs + `externalDependencies`).
 - [x] **EXE-07**: Shipped as a CommonJS executor that loads ESM compiler-cli via dynamic `import()` with no `import()`->`require()` downlevel.
 
 ### Diagnostics & Output (OUT)
@@ -119,7 +119,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | EXE-03 | Phase 3 | Pending |
 | EXE-04 | Phase 3 | Pending |
 | EXE-05 | Phase 3 | Pending |
-| EXE-06 | Phase 4 | Pending |
+| EXE-06 | Phase 4 | Complete |
 | EXE-07 | Phase 4 | Complete |
 | OUT-01 | Phase 3 | Pending |
 | OUT-02 | Phase 3 | Pending |

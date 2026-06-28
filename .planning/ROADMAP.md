@@ -85,7 +85,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
   3. A dedicated dependency-error-busts-cache correctness test proves a green run, then a type change injected into a transitive source dependency, does NOT cache-hit on re-run and reports the new error (a type-checker that lies is worse than none).
 **Plans**: 3 plans
 - [x] 04-01-PLAN.md -- Executor-adapter slice: renderReport core seam (D-02) + normalize-options + completed executor + v0.0.1 schema + outputCapture (EXE-01, EXE-07)
-- [ ] 04-02-PLAN.md -- Cacheable-target slice: executor-id-keyed nx.json targetDefaults (^default inlined-source recipe) + tsconfig alias + committed consumer/dep fixtures + R1 edge guard (EXE-06)
+- [x] 04-02-PLAN.md -- Cacheable-target slice: executor-id-keyed nx.json targetDefaults (^default inlined-source recipe) + tsconfig alias + committed consumer/dep fixtures + R1 edge guard (EXE-06)
 - [ ] 04-03-PLAN.md -- Cache-correctness slice: dedicated serialized cache-e2e project + dependency-error-busts-cache HIT/MISS gate + executor parity + real nx run (TEST-04, EXE-01, EXE-07)
 **UI hint**: no
 
@@ -124,6 +124,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
-| 4. Nx Executor Adapter + Cacheable Target | 1/3 | In Progress|  |
+| 4. Nx Executor Adapter + Cacheable Target | 2/3 | In Progress|  |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |

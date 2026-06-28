@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-06-28T11:16:11.931Z"
-last_activity: 2026-06-28 -- Plan 04-01 complete (executor-adapter slice)
+stopped_at: Completed 04-02-PLAN.md (cacheable target + fixture graph)
+last_updated: "2026-06-28T11:30:24.297Z"
+last_activity: 2026-06-28
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 50
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 4 (nx-executor-adapter-cacheable-target) — EXECUTING
-Plan: 2 of 3
-Status: Executing Phase 4 (04-01 complete; 04-02 next)
-Last activity: 2026-06-28 -- Plan 04-01 complete (executor-adapter slice)
+Plan: 3 of 3
+Status: Ready to execute
+Last activity: 2026-06-28
 
-Progress: [██████░░░░] 3 of 6 phases (50%) -- plans 12 of 14 (86%)
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [██████░░░░] 3 of 6 phases (50%) -- plans 12 of 14
 | Phase 01 P04 | 25 | 3 tasks | 3 files |
 | Phase 03 P04 | ~12 min | 2 tasks | 4 files |
 | Phase 04 P01 | 6 min | 3 tasks | 11 files |
+| Phase 04 P02 | 12 min | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,10 @@ Recent decisions affecting current work:
 - [03-04] Exported `filterDiagnostics`/`evaluateResult`/`formatReport` (+ option/result types) from `src/index.ts` for the Phase-4 adapter to compose. Phase-3 lint gate clean (exit 0; 2 pre-existing unused-vars WARNINGS remain, out of scope), full unit suite 15 files / 70 tests green, build green (GATE A `import(` retained).
 - [Phase 04]: [04-01] renderReport added as a NEW core seam (D-02): loads ng via loadCompilerCli + a private loadTypescript memo, delegates to formatReport; barrel-exported, never leaks loadTypescript, no @nx/devkit import (core boundary held).
 - [Phase 04]: [04-01] Executor completed (D-01/D-04): sub-50-line composition writing the report via raw process.stdout.write (not logger.info), catching TypecheckInfrastructureError and RE-THROWING all other errors; v0.0.1 schema is tsConfig+includeDeps+maxWarnings(no default)+failFast, version 2, lockstep schema.d.ts + key-parity test; outputCapture direct-nodejs. GATE A import( retained.
+- [Phase 04]: [04-02] EXE-06 cacheable target: executor-id-keyed nx.json targetDefault angular-typechecker:angular-typecheck (cache true, outputs [], ^default inlined-source recipe NOT ^production); no custom hasher so the --check guard stays valid (D-07/D-08/D-09).
+- [Phase 04]: [04-02] D-10 R1 edge guard PASSES live (exit 0): the @fixtures paths-alias-to-source + a static import form the consumer->dep Nx graph edge automatically (analyzeSourceFiles true), so ^default reaches the dep source; NO implicitDependencies needed.
+- [Phase 04]: [04-02] tsconfig paths-alias VALUE must be RELATIVE (./libs/...): a non-relative value triggers TS5090 (baseUrl-not-set) as an OPTIONS diagnostic inherited by every fixture extending tsconfig.base.json; ngc defaultGatherDiagnostics short-circuits on it and masks the real TS code (broke gate-b differential). Match the existing ./packages/... entry style.
+- [Phase 04]: [04-02] HAND-OFF to 04-03: do NOT pass --no-color on the nx run CLI (Nx forwards color:false into executor options -> additionalProperties:false rejects with 'color is not found in schema'). Use FORCE_COLOR=0/NO_COLOR=1 env instead for D-12 no-color determinism.
 
 ### Pending Todos
 
@@ -123,6 +128,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T11:13:03.869Z
-Stopped at: Completed 04-01-PLAN.md (executor-adapter slice)
-Resume file: .planning/phases/04-nx-executor-adapter-cacheable-target/04-02-PLAN.md
+Last session: 2026-06-28T11:30:24.290Z
+Stopped at: Completed 04-02-PLAN.md (cacheable target + fixture graph)
+Resume file: .planning/phases/04-nx-executor-adapter-cacheable-target/04-03-PLAN.md
