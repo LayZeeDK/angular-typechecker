@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md (tarball audit gate; D-10/B-02 verified)
-last_updated: "2026-06-28T16:10:02.124Z"
+stopped_at: Completed 05-04-PLAN.md (publish-ready: release config + SECURITY.md + hardened CI; dry-run previewed 0.0.1, no real publish per B-01)
+last_updated: "2026-06-28T16:20:04.134Z"
 last_activity: 2026-06-28
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 19
-  completed_plans: 17
-  percent: 67
+  completed_plans: 18
+  percent: 95
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 5 (packaging-publish-hardening-e2e-smoke-mvp) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-06-28
 
-Progress: [█████████░] 89%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [█████████░] 89%
 | Phase 5 P1 | 30 min | 3 tasks | 7 files |
 | Phase 5 P2 | ~6 min | 3 tasks | 7 files |
 | Phase Phase 5 P3 P03 | ~5 min | 2 tasks tasks | 7 files files |
+| Phase 5 P4 | ~18 min | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 5]: [05-02] attw JSON carries TWO problems fields -- a top-level `problems` object keyed by entrypoint AND `analysis.problems` (the flat array); assert on analysis.problems (empty array when resolution is clean).
 - [Phase ?]: [05-03] TEST-05 tracer bullet PASSES: clean npm install of the packed tarball into a tmp consumer (PUBLISHED executor id + includeDeps:true, no source alias) runs green (exit 0) and reports an injected TS2322 (non-zero exit, no ERR_REQUIRE_ESM) -- packaged CJS import() survived and the check actually ran.
 - [Phase ?]: [05-03] B-03 RESOLVED (not masked): a clean install (empty .npmrc, no peer-override, non-existent userconfig) SUCCEEDS -- consumers on stable Angular 22.0.4 + Nx 23.0.1 need NO peer-resolution override; the @nx/angular <22 ceiling is a dev-repo concern not reaching consumers. README pre-release note remains sufficient.
+- [Phase 5]: [05-04] PUBLISH-READY reached (D-12/B-01): nx.json release block scoped to [angular-typechecker] only (fixtures/spike/e2e excluded, all private:true); SECURITY.md (GitHub PVR + larsbrinknielsen@gmail.com fallback, latest-0.x-only); hardened release.yml (tag-push angular-typechecker@*, top-level contents:read, publish job id-token:write only, environment npm-publish required-reviewer gate, checkout v5.0.1 + setup-node v5.0.0 SHA-pinned, persist-credentials:false, NPM_CONFIG_PROVENANCE true, NODE_AUTH_TOKEN unset for OIDC); dependabot github-actions; release-hygiene.int.spec.ts regression gate. nx release --first-release --dry-run previewed 0.0.1 + changelog and wrote nothing. NO real publish (05-05 is human-gated B-01).
+- [Phase 5]: [05-04] The workflow filename release.yml + the environment name npm-publish are LOAD-BEARING for the 05-05 npm Trusted Publisher registration (provider GitHub Actions, repo LayZeeDK/angular-typechecker, tick "npm publish" for configs created after 2026-05-20). nx release single-project tag form is angular-typechecker@x.y.z (the workspace-changelog dry-run header's v{version} is cosmetic for a one-package repo).
+- [Phase 5]: [05-04] Hardened-workflow comments must AVOID the bare literal tokens pull_request_target / contents: write / NODE_AUTH_TOKEN / @vN -- a literal git grep -c acceptance check counts comment lines; reword the threat-model comments while ACTIVE YAML directives carry the real security model (verified via structural YAML parse).
 
 ### Pending Todos
 
@@ -148,6 +152,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T16:09:20.714Z
-Stopped at: Completed 05-02-PLAN.md (tarball audit gate; D-10/B-02 verified)
+Last session: 2026-06-28T16:20:04.134Z
+Stopped at: Completed 05-04-PLAN.md (publish-ready: release config + SECURITY.md + hardened CI; dry-run previewed 0.0.1, no real publish per B-01)
 Resume file: None
