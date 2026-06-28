@@ -51,6 +51,7 @@
 - [x] **PKG-02**: `executors.json`/`schema.json` (v2, `cli: "nx"`, `outputCapture`) are copied into `dist` and present in the `npm pack` tarball (verified by `publint` + `attw --pack`).
 - [x] **PKG-03**: Published to npm (MIT, 0.x semver) via `nx release` using npm Trusted Publishers (OIDC) + provenance.
 - [x] **PKG-04**: `SECURITY.md` present and the release CI is hardened (read-only default permissions, no untrusted `pull_request_target`, SHA-pinned actions, manual-approval publish environment).
+- [ ] **PKG-05**: Tokenless OIDC steady-state publish verified on 0.0.2: a real release authenticates via the registered npm Trusted Publisher with NO token, attaches SLSA v1 provenance, sets `dist-tags.latest`, and cuts a GitHub Release.
 
 ### Compatibility (CMP)
 
@@ -133,13 +134,14 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | PKG-02 | Phase 5 | Complete |
 | PKG-03 | Phase 5 | Complete |
 | PKG-04 | Phase 5 | Complete |
+| PKG-05 | Phase 5.1 | Pending |
 | CMP-01 | Phase 1 | Complete (01-01: nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 pinned exact) |
 | CMP-02 | Phase 1 | Complete |
 | CI-01 | Phase 6 | Pending |
 
 **Coverage:**
-- v0.0.1 requirements: 30 total (enumerated checklist; supersedes the "26" header miscount)
-- Mapped to phases: 30
+- v0.0.1 requirements: 31 total (30 enumerated checklist + PKG-05 added with the Phase 5.1 insertion; supersedes the "26" header miscount)
+- Mapped to phases: 31
 - Unmapped: 0
 
 **Per-phase counts:**
@@ -148,8 +150,9 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 - Phase 3 (Filtering, Modes, Output + Quality Gates): 8 -- EXE-03, EXE-04, EXE-05, OUT-01, OUT-02, OUT-03, TEST-01, WS-04
 - Phase 4 (Nx Executor Adapter + Cacheable Target): 4 -- EXE-01, EXE-06, EXE-07, TEST-04
 - Phase 5 (Packaging, Publish Hardening + e2e Smoke): 5 -- PKG-01, PKG-02, PKG-03, PKG-04, TEST-05
+- Phase 5.1 (0.0.2 first OIDC steady-state publish verification): 1 -- PKG-05
 - Phase 6 (Full e2e Matrix + CI): 2 -- TEST-03, CI-01
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-27 after roadmap creation (traceability populated, 30/30 mapped)*
+*Last updated: 2026-06-28 -- PKG-05 (tokenless OIDC steady-state publish) recorded for Phase 5.1 (31/31 mapped)*
