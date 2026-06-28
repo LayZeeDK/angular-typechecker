@@ -65,10 +65,12 @@ jobs:
           # The npm auth-token env var is deliberately NOT declared here -- OIDC
           # engages only with no token present (an empty value would break it).
           #
-          # ONE-TIME SEED -- ACTIVE NOW (05-05 / B-01): the FIRST publish cannot use
-          # OIDC (npm/cli#8544), so the seed token below is TEMPORARILY active. REVERT
-          # it (re-comment / remove the line) BEFORE registering the npm Trusted
-          # Publisher, so release.yml is OIDC-only when the TP points at it. The
-          # release-hygiene "auth token unset" test is RED while this line is active --
-          # that is the expected seed-mode alarm; reverting restores green.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_SEED_TOKEN }}
+          # SEED COMPLETE: 0.0.1 was published 2026-06-28 with provenance via a
+          # one-time granular bypass-2FA token (the first publish cannot use OIDC --
+          # npm/cli#8544). This workflow is now OIDC-only: the npm Trusted Publisher
+          # (repo LayZeeDK/angular-typechecker, workflow release.yml, env npm-publish)
+          # authenticates every subsequent release tokenlessly. Do NOT re-add
+          # NODE_AUTH_TOKEN -- an empty value would break OIDC and a real one is
+          # unnecessary. (If 0.0.2's OIDC publish ever 404s on auth, the likely cause
+          # is setup-node's registry-url writing an empty _authToken into .npmrc when
+          # NODE_AUTH_TOKEN is unset -- drop registry-url from the setup-node step.)
