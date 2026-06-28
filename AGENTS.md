@@ -3,6 +3,19 @@
 Agent-agnostic instructions for any AI coding agent working in this repository.
 (Claude Code loads this via the `@AGENTS.md` reference at the top of `CLAUDE.md`.)
 
+## Changing this file
+
+**Any change to `AGENTS.md` MUST be code-reviewed.** This file governs how every AI agent
+works in this repository, so an inaccurate, ambiguous, or unverified instruction propagates
+silently into all future agent behavior. The review may be satisfied EITHER by an explicit
+independent review before commit, OR by the mandatory `/gsd-code-review` step that runs
+during phase execution (the `code_review_gate`), which reviews every source file changed in
+the phase -- including this one. Either way, an `AGENTS.md` change is not "done" until a
+code review has checked it for factual accuracy against the actual codebase and tooling,
+clarity, and internal consistency, and every finding is resolved. (This rule exists because
+a release-mechanics claim in this file was once wrong about the 0.x semver bump shift and
+about `--skip-publish` semantics -- review is what caught both.)
+
 ## Conventional Commits drive the changelog and the released version
 
 This repository releases `angular-typechecker` to npm with **`nx release`** configured
