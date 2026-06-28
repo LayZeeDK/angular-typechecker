@@ -4,12 +4,12 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 5.1 context gathered (0.0.2 OIDC steady-state verification; AGENTS.md added)
-last_updated: "2026-06-28T20:00:13.802Z"
-last_activity: 2026-06-28
+last_updated: "2026-06-28T20:26:18.933Z"
+last_activity: 2026-06-28 -- Phase 05.1 planning complete
 progress:
   total_phases: 8
   completed_phases: 5
-  total_plans: 19
+  total_plans: 20
   completed_plans: 19
   percent: 63
 ---
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 Phase: 5 (packaging-publish-hardening-e2e-smoke-mvp) — EXECUTING
 Plan: 5 of 5
 Status: Ready to execute
-Last activity: 2026-06-28
+Last activity: 2026-06-28 -- Phase 05.1 planning complete
 
 Progress: [██████████] 95%
 
