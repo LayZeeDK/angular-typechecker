@@ -60,6 +60,14 @@ jobs:
           # NOT exactly match the OIDC claims (org/user casing, repo, workflow filename
           # release.yml, environment npm-publish) -- fix the TP on npmjs.com.
           registry-url: https://registry.npmjs.org/
+      # setup-node writes a deprecated `always-auth=true` into the .npmrc it generates
+      # for registry-url; npm 11 no longer recognizes it and warns on every command.
+      # Strip it (cosmetic only -- OIDC is unaffected and registry-url must stay). The
+      # NPM_CONFIG_USERCONFIG path is exported by setup-node above.
+      - run: |
+          if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
+            sed -i '/^always-auth=/d' "$NPM_CONFIG_USERCONFIG"
+          fi
       - run: npm i -g npm@latest
       - run: npm ci
       # CI is a fresh checkout and dist/ is gitignored, so the publishable output
