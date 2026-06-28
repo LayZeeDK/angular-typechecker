@@ -6,6 +6,8 @@ export type { FilterOptions, FilterResult } from './core/filter-diagnostics';
 export { formatReport } from './core/format-report';
 export type { FormatOptions } from './core/format-report';
 export { gatherAllDiagnostics } from './core/gather-diagnostics';
+export { renderReport } from './core/render-report';
+export type { RenderOptions } from './core/render-report';
 export {
   runTypecheck,
   TypecheckInfrastructureError,
