@@ -65,10 +65,10 @@ jobs:
           # The npm auth-token env var is deliberately NOT declared here -- OIDC
           # engages only with no token present (an empty value would break it).
           #
-          # ONE-TIME SEED ONLY (05-05 / B-01): the FIRST publish cannot use OIDC
-          # (npm/cli#8544). To seed 0.0.1, TEMPORARILY add the line below, run the
-          # seed, then REVERT it (remove the line) BEFORE registering the npm
-          # Trusted Publisher, so release.yml is OIDC-only when the TP points at it.
-          # The release-hygiene "auth token unset" test will go RED while the line
-          # is present -- that is the expected seed-mode alarm; reverting restores it.
-          #   NODE_AUTH_TOKEN: ${{ secrets.NPM_SEED_TOKEN }}
+          # ONE-TIME SEED -- ACTIVE NOW (05-05 / B-01): the FIRST publish cannot use
+          # OIDC (npm/cli#8544), so the seed token below is TEMPORARILY active. REVERT
+          # it (re-comment / remove the line) BEFORE registering the npm Trusted
+          # Publisher, so release.yml is OIDC-only when the TP points at it. The
+          # release-hygiene "auth token unset" test is RED while this line is active --
+          # that is the expected seed-mode alarm; reverting restores green.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_SEED_TOKEN }}
