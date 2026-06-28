@@ -111,13 +111,13 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 
 ### Phase 05.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Cut `angular-typechecker@0.0.2` and prove the tokenless OIDC steady-state npm publish works end-to-end -- the only unproven link after the 0.0.1 token-seed. 0.0.2 is published live via the registered Trusted Publisher with NO token in the CI run, carries an SLSA v1 provenance attestation, advances `dist-tags.latest`, and cuts a GitHub Release, all behind the human-gated `npm-publish` environment (B-01). If it 404s on auth, drop `registry-url` from the `setup-node` step and re-fire (idempotent).
+**Requirements**: PKG-05
 **Depends on:** Phase 5
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.1 to break down)
+- [ ] 05.1-01-PLAN.md -- Cut 0.0.2 (explicit literal, --skip-publish) + curate CHANGELOG + record PKG-05 + human-gated OIDC publish + npm-view provenance verification
 
 ### Phase 6: Full e2e Matrix + CI
 **Goal**: The executor is validated across all five project types on a real installed package, and a cross-OS / multi-Node GitHub Actions matrix gates every change -- the slow, gating backstop for packaging, peer-range, path-normalization, and cross-OS bugs.
@@ -143,7 +143,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
-| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/TBD | Not started | - |
+| 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 0/1 | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
 | 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
 
