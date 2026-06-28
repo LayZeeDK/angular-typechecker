@@ -1,13 +1,14 @@
 ---
 phase: 05-packaging-publish-hardening-e2e-smoke-mvp
 verified: 2026-06-28T18:30:00Z
-status: human_needed
-score: 4/4 must-have truths verified (publish-ready boundary); 1 human-gated action remaining (B-01 live publish). Item 2 (tag-pattern/trigger alignment) RESOLVED post-verification in commit 785c747.
+reverified: 2026-06-28T20:05:00Z
+status: passed
+score: 5/5 -- 4/4 publish-ready truths verified + the B-01 live publish COMPLETED. angular-typechecker@0.0.1 is live on npm with a provenance attestation; npm Trusted Publisher registered (OIDC, repo LayZeeDK/angular-typechecker, workflow release.yml, env npm-publish) with the strictest "require 2FA and disallow tokens" package setting. Item 2 (tag-pattern/trigger alignment) RESOLVED in commit 785c747.
 overrides_applied: 0
 human_verification:
-  - test: "Perform the live first npm publish of angular-typechecker@0.0.1 (05-05, B-01)"
-    expected: "0.0.1 live on npm (MIT, 0.x semver) with a provenance attestation (npm view angular-typechecker --json shows provenance); npm Trusted Publisher registered against repo LayZeeDK/angular-typechecker, workflow release.yml, environment npm-publish, npm-publish action ticked; the short-lived granular seed token revoked"
-    why_human: "By design (B-01). The first publish is irreversible (immutable versions, 72h unpublish window, the npm name is claimed forever) and requires out-of-band npmjs.com actions no agent can perform: npm cannot do a package's FIRST publish via OIDC (npm/cli#8544 open) and registering the Trusted Publisher is a manual npmjs.com UI action. This is the PKG-03 EXECUTION half; the PKG-03 CONFIG is fully verified. NOT a gap/defect."
+  - test: "[RESOLVED 2026-06-28] Live first npm publish of angular-typechecker@0.0.1 (05-05, B-01)"
+    expected: "RESOLVED: 0.0.1 is LIVE on npm with provenance -- `npm view angular-typechecker --json` shows version 0.0.1, dist.attestations.provenance predicateType https://slsa.dev/provenance/v1, maintainer layzee <larsbrinknielsen@gmail.com>. Published via the hardened release.yml in CI (OIDC id-token + access:public). npm Trusted Publisher registered (GitHub Actions, repo LayZeeDK/angular-typechecker, workflow release.yml, env npm-publish, npm publish action) with package publishing access 'Require 2FA and disallow tokens'. Seed token reverted in release.yml (OIDC-only) -- maintainer to revoke the token + delete the NPM_SEED_TOKEN secret. Two real defects the seed run caught and the orchestrator fixed: publishConfig.access:public (required for provenance on a new package) and the granular token's Bypass-2FA flag."
+    why_human: "Was human-gated (B-01) -- irreversible + required out-of-band npmjs.com actions (npm/cli#8544: no OIDC first-publish; manual Trusted-Publisher registration). Now COMPLETE."
   - test: "[RESOLVED 2026-06-28, commit 785c747] Release tag pattern aligns with the release.yml workflow trigger"
     expected: "RESOLVED: nx.json now sets release.releaseTag.pattern = 'angular-typechecker@{version}' (Nx 23 nested shape; the deprecated top-level releaseTagPattern is rejected by Nx 23). `nx release 0.0.1 --first-release --dry-run` now prints CREATE .../releases/tag/angular-typechecker@0.0.1, which MATCHES the release.yml trigger glob 'angular-typechecker@*'. The tag-push trigger now fires correctly; workflow_dispatch remains as a fallback. No human action required for this item."
     why_human: "No longer human-gated -- the orchestrator applied the releaseTag.pattern fix and re-verified the dry-run tag form. Retained for audit-trail completeness only."
