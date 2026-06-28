@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-02-PLAN.md (cacheable target + fixture graph)
-last_updated: "2026-06-28T11:30:24.297Z"
+status: verifying
+stopped_at: "Completed 04-03-PLAN.md (cache-correctness e2e: TEST-04/EXE-01/EXE-07)"
+last_updated: "2026-06-28T12:00:00.726Z"
 last_activity: 2026-06-28
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
-  percent: 50
+  completed_plans: 14
+  percent: 67
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 Phase: 4 (nx-executor-adapter-cacheable-target) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-28
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [█████████░] 93%
 | Phase 03 P04 | ~12 min | 2 tasks | 4 files |
 | Phase 04 P01 | 6 min | 3 tasks | 11 files |
 | Phase 04 P02 | 12 min | 3 tasks | 15 files |
+| Phase 04 P03 | 15min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,11 @@ Recent decisions affecting current work:
 - [Phase 04]: [04-02] D-10 R1 edge guard PASSES live (exit 0): the @fixtures paths-alias-to-source + a static import form the consumer->dep Nx graph edge automatically (analyzeSourceFiles true), so ^default reaches the dep source; NO implicitDependencies needed.
 - [Phase 04]: [04-02] tsconfig paths-alias VALUE must be RELATIVE (./libs/...): a non-relative value triggers TS5090 (baseUrl-not-set) as an OPTIONS diagnostic inherited by every fixture extending tsconfig.base.json; ngc defaultGatherDiagnostics short-circuits on it and masks the real TS code (broke gate-b differential). Match the existing ./packages/... entry style.
 - [Phase 04]: [04-02] HAND-OFF to 04-03: do NOT pass --no-color on the nx run CLI (Nx forwards color:false into executor options -> additionalProperties:false rejects with 'color is not found in schema'). Use FORCE_COLOR=0/NO_COLOR=1 env instead for D-12 no-color determinism.
+- [Phase ?]: [04-03] TEST-04 cache-correctness gate PASSES: green->HIT->inject TS2322 into the non-buildable dep->MISS (no marker + TS2322 + non-zero exit), in a dedicated serialized e2e project (D-14).
+- [Phase ?]: [04-03] Rule 1 fix: nx.json needed the WORKSPACE-scoped executor-id key @angular-typechecker/angular-typechecker:angular-typecheck (not just the published-name angular-typechecker:...) or the cacheable targetDefault never bound and every run was a cache-miss. Phase-5 README must use the PUBLISHED-name key for consumers.
+- [Phase ?]: [04-03] Rule 2 fix: the consumer fixture target needs includeDeps:true -- the non-buildable dep is a SIBLING project root so its diagnostics are out-of-project and SUPPRESSED by the boundary filter by default; without it the injected dep error is a false PASS (a lying cache).
+- [Phase ?]: [04-03] Rule 3 fix: a nested nx run under nx run <e2e>:test inherits NX_SKIP_NX_CACHE + forked-runner NX_* vars; the harness strips them (buildCleanEnv) so the nested run is a clean top-level invocation, else every nested run is a cache-miss and the HIT assertion is dead.
+- [Phase ?]: [04-03] EXE-01/EXE-07 proven: in-process runExecutor (context from the real project graph) parity success===core errorCount===0 + code-set match in both states; one real execSync nx run returns TS diagnostics through the compiled CJS executor with no ERR_REQUIRE_ESM.
 
 ### Pending Todos
 
@@ -128,6 +134,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T11:30:24.290Z
-Stopped at: Completed 04-02-PLAN.md (cacheable target + fixture graph)
-Resume file: .planning/phases/04-nx-executor-adapter-cacheable-target/04-03-PLAN.md
+Last session: 2026-06-28T12:00:00.717Z
+Stopped at: Completed 04-03-PLAN.md (cache-correctness e2e: TEST-04/EXE-01/EXE-07)
+Resume file: None

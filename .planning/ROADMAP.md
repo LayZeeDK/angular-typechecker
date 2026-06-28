@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Workspace Bootstrap + Engine Spike (GATED)** - Stand up the Nx 23 / Angular 22 / TS 6 monorepo in-place and prove the riskiest unknowns (complete unconditional gatherer + CJS-loads-ESM `import()` survives `module: node16`) on a real workspace before committing to the engine. (completed 2026-06-27)
 - [x] **Phase 2: Core Type-Check Engine + Gatherer** - A framework-agnostic `runTypecheck` runs `@angular/compiler-cli` whole-program no-emit and gathers ALL diagnostics unconditionally, asserted against the v13->v22 diagnostic catalog. (completed 2026-06-27)
 - [x] **Phase 3: Filtering, Modes, Output + Quality Gates** - Project-boundary filtering, report-all/fail-fast modes, `--max-warnings`, and `formatDiagnostics` human output complete the core contract; ESLint/Prettier + module-boundary enforcement lock the core-vs-adapter split. (completed 2026-06-27)
-- [ ] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test.
+- [x] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test. (completed 2026-06-28)
 - [ ] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace.
 - [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change.
 
@@ -86,7 +86,7 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
 **Plans**: 3 plans
 - [x] 04-01-PLAN.md -- Executor-adapter slice: renderReport core seam (D-02) + normalize-options + completed executor + v0.0.1 schema + outputCapture (EXE-01, EXE-07)
 - [x] 04-02-PLAN.md -- Cacheable-target slice: executor-id-keyed nx.json targetDefaults (^default inlined-source recipe) + tsconfig alias + committed consumer/dep fixtures + R1 edge guard (EXE-06)
-- [ ] 04-03-PLAN.md -- Cache-correctness slice: dedicated serialized cache-e2e project + dependency-error-busts-cache HIT/MISS gate + executor parity + real nx run (TEST-04, EXE-01, EXE-07)
+- [x] 04-03-PLAN.md -- Cache-correctness slice: dedicated serialized cache-e2e project + dependency-error-busts-cache HIT/MISS gate + executor parity + real nx run (TEST-04, EXE-01, EXE-07)
 **UI hint**: no
 
 ### Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)
@@ -124,6 +124,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
-| 4. Nx Executor Adapter + Cacheable Target | 2/3 | In Progress|  |
+| 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete   | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
