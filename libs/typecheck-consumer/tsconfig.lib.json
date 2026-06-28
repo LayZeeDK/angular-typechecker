@@ -6,8 +6,6 @@
     "module": "preserve",
     "moduleResolution": "bundler",
     "strict": true,
-    "baseUrl": "../..",
-    "ignoreDeprecations": "6.0",
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false
   },

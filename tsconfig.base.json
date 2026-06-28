@@ -21,7 +21,7 @@
         "./packages/angular-typechecker/src/index.ts"
       ],
       "@fixtures/typecheck-consumer-dep": [
-        "libs/typecheck-consumer-dep/src/index.ts"
+        "./libs/typecheck-consumer-dep/src/index.ts"
       ]
     }
   },
