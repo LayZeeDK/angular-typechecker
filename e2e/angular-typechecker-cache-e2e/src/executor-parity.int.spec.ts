@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { ExecutorContext, ProjectGraph } from '@nx/devkit';
 import {
   createProjectGraphAsync,
+  joinPathFragments,
   readProjectsConfigurationFromProjectGraph,
   runExecutor,
 } from '@nx/devkit';
@@ -25,6 +26,12 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 const CONSUMER_PROJECT = 'typecheck-consumer';
 const TARGET = 'angular-typecheck';
 
+// The rendered TS diagnostic code the injection deliberately triggers. Asserting
+// the full 'TS2322' token (not a bare 4-digit '2322' substring) keeps the real
+// `nx run` differential from false-PASSing on a coincidental 4-digit occurrence
+// (WR-01); single source so a future code change is one edit (IN-02).
+const INJECTED_TS_CODE = 'TS2322';
+
 // Resolve the workspace root from this spec's location
 // (e2e/angular-typechecker-cache-e2e/src/<file>) -- 4 dirs up.
 const workspaceRoot = join(
@@ -40,8 +47,14 @@ const PRISTINE = `${DEP_FILE}.pristine`;
 
 // The consumer's leaf tsconfig the angular-typecheck target points at. Absolute
 // (the core requires an absolute path and is process-free; the executor's
-// normalizeOptions does the rel->abs resolution). Forward-slash for stability.
-const consumerTsConfig = `${workspaceRoot.split('\\').join('/')}/libs/typecheck-consumer/tsconfig.lib.json`;
+// normalizeOptions does the rel->abs resolution). joinPathFragments normalizes to
+// POSIX separators for cross-OS stability -- the same path primitive the
+// production code uses (D-03), instead of fragile backslash string surgery
+// (WR-03).
+const consumerTsConfig = joinPathFragments(
+  workspaceRoot,
+  'libs/typecheck-consumer/tsconfig.lib.json',
+);
 
 // The consumer target runs with includeDeps:true (so the inlined non-buildable
 // dep source is type-checked); the core oracle MUST match that to be a true
@@ -225,7 +238,7 @@ describe('EXE-01/EXE-07/D-05: a real `nx run` returns NG/TS diagnostics through 
       }
 
       expect(stdout).not.toMatch(/ERR_REQUIRE_ESM/);
-      expect(stdout).toMatch(/TS2322|2322/);
+      expect(stdout).toContain(INJECTED_TS_CODE);
       expect(code).not.toBe(0);
     } finally {
       healFromPristine();
