@@ -1,3 +1,5 @@
+import { dirname } from 'node:path';
+
 import type ts from 'typescript';
 
 import type {
@@ -86,7 +88,7 @@ export class TypecheckInfrastructureError extends Error {
  * `process.cwd()` (D-04); the Phase-4 executor owns path resolution.
  */
 export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
-  // WR-02 / IN-04: capture `start` at the very top so `durationMs` reflects the
+  // Capture `start` at the very top so `durationMs` reflects the
   // FULL cold-run wall-clock -- including the ESM module load of
   // @angular/compiler-cli + typescript and the config parse, which are the
   // dominant cold-start cost -- on BOTH the normal and the zero-rootNames-guard
@@ -189,7 +191,10 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     [...configDiagnostics, ...result.diagnostics],
     start,
     {
-      basePath: parsed.options.basePath ?? '',
+      basePath: resolveFilterBasePath(
+        parsed.options.basePath,
+        options.tsConfigPath,
+      ),
       includeDeps: options.includeDeps ?? false,
       useCaseSensitiveFileNames: result.program
         .getTsProgram()
@@ -198,6 +203,27 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
         ts.sys.realpath?.(filePath) ?? filePath,
     },
   );
+}
+
+/**
+ * WR-01: resolves the project-boundary filter's `basePath`. `readConfiguration`
+ * injects an absolute `basePath` in practice, but on the defensive path where it
+ * is missing (undefined OR empty string -- `??` alone would not catch `''`) we
+ * MUST fall back to the leaf tsconfig's directory, NEVER `''`. An empty base
+ * makes `isUnderDir` treat `'' + '/'` as `/`, which matches EVERY absolute path
+ * on POSIX and silently DISABLES the boundary filter -- the exact failure the
+ * filter module guards against. `tsConfigPath` is required absolute (see
+ * `runTypecheck`), so `dirname` always yields an absolute, non-empty base.
+ */
+export function resolveFilterBasePath(
+  parsedBasePath: string | undefined,
+  tsConfigPath: string,
+): string {
+  if (parsedBasePath !== undefined && parsedBasePath !== '') {
+    return parsedBasePath;
+  }
+
+  return dirname(tsConfigPath);
 }
 
 /**
@@ -253,13 +279,14 @@ interface FinalizeFilter {
 
 /**
  * Assembles the CoreResult. When `filter` is supplied (the normal path), it
- * first excludes out-of-project + node_modules diagnostics (D-06), then sorts +
- * dedupes the kept set via `ts.sortAndDeduplicateDiagnostics` (D-09), then
- * counts Error and Warning categories EXPLICITLY (D-01) on that POST-filter,
- * sorted set -- never by subtracting errors from the total. On the
- * zero-rootNames guard path (no `filter`), the diagnostics pass through unsorted
- * and unfiltered with `suppressedCount: 0`. Suggestion + Message categories stay
- * in `diagnostics` but are not counted, preserving the invariant
+ * first excludes out-of-project + node_modules diagnostics (D-06). The kept set
+ * is then sorted + deduped via `ts.sortAndDeduplicateDiagnostics` (D-09)
+ * UNCONDITIONALLY -- including the zero-rootNames guard path (no `filter`, where
+ * diagnostics pass through unfiltered with `suppressedCount: 0`) -- so the
+ * reported order is deterministic on every path (IN-01/IN-05). Error and Warning
+ * categories are then counted EXPLICITLY (D-01) on that POST-filter, sorted set,
+ * never by subtracting errors from the total. Suggestion + Message categories
+ * stay in `diagnostics` but are not counted, preserving the invariant
  * `errorCount + warningCount <= diagnostics.length`.
  */
 function finalize(
@@ -270,7 +297,7 @@ function finalize(
   start: number,
   filter?: FinalizeFilter,
 ): CoreResult {
-  let reported: readonly ts.Diagnostic[] = diagnostics;
+  let kept: readonly ts.Diagnostic[] = diagnostics;
   let suppressedCount = 0;
 
   if (filter !== undefined) {
@@ -281,13 +308,16 @@ function finalize(
       realpath: filter.realpath,
     });
 
-    // D-09: sort + dedup the kept set BEFORE counting/formatting so the report
-    // is deterministic (alphabetical by file, file-less first) and any
-    // accidental cross-phase duplicates from the unconditional all-getter are
-    // removed.
-    reported = ts.sortAndDeduplicateDiagnostics(filtered.kept);
+    kept = filtered.kept;
     suppressedCount = filtered.suppressedCount;
   }
+
+  // D-09 / IN-01 / IN-05: sort + dedup the kept set UNCONDITIONALLY before
+  // counting/formatting so the report is deterministic (alphabetical by file,
+  // file-less first) on BOTH the normal path and the zero-rootNames guard path,
+  // and any accidental cross-phase duplicates from the unconditional all-getter
+  // are always removed.
+  const reported = ts.sortAndDeduplicateDiagnostics(kept);
 
   const errorCount = reported.filter(
     (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
