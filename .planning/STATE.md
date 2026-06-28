@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 4 complete (3/3) — ready to discuss Phase 5
-last_updated: 2026-06-28T12:09:42.022Z
+status: planning
+stopped_at: Phase 5 context gathered
+last_updated: "2026-06-28T14:46:17.842Z"
 last_activity: 2026-06-28
 progress:
   total_phases: 6
@@ -135,6 +135,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T12:00:00.717Z
-Stopped at: Completed 04-03-PLAN.md (cache-correctness e2e: TEST-04/EXE-01/EXE-07)
-Resume file: None
+Last session: 2026-06-28T14:46:17.834Z
+Stopped at: Phase 5 context gathered
+Resume file: .planning/phases/05-packaging-publish-hardening-e2e-smoke-mvp/05-CONTEXT.md
