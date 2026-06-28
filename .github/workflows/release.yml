@@ -1,0 +1,62 @@
+# Hardened publish workflow (PKG-04 / D-13 / D-15 / D-16).
+#
+# Threat model (s1ngularity + TanStack postmortems):
+#   - NEVER use the untrusted-PR-code trigger: an untrusted PR title interpolated
+#     into a privileged run: step was the s1ngularity command-injection +
+#     token-leak vector. This workflow triggers on TAG PUSH only (+ manual
+#     dispatch).
+#   - Least privilege: contents read-only at the top level; the publish job
+#     re-grants ONLY id-token: write (the GitHub release is cut LOCALLY per D-13,
+#     so no repo-write permission is needed here).
+#   - Workflow-scoped trust: the npm Trusted Publisher is pinned to THIS exact
+#     workflow filename (release.yml) + the named environment. The whole-repo
+#     trust scope was the TanStack vector; the EXACT filename + environment below
+#     are load-bearing and must match the npm Trusted Publisher registered at
+#     05-05.
+#   - SHA-pinned actions: every action reference is a full 40-char commit SHA (a
+#     mutable major-version tag repointed to malicious code was the tj-actions
+#     vector). Dependabot (.github/dependabot.yml, github-actions ecosystem)
+#     keeps these fresh.
+#   - persist-credentials: false so a checkout credential cannot be persisted to
+#     .git/config and leaked via an artifact/log.
+#   - Tokenless OIDC publish: the npm auth-token env var is left entirely UNSET
+#     (an empty value breaks OIDC and yields a misleading 404 -- Pitfall 2);
+#     NPM_CONFIG_PROVENANCE: true keeps the provenance attestation on.
+name: release
+
+on:
+  push:
+    tags:
+      - 'angular-typechecker@*'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # The environment MUST have a Required Reviewer configured in repo settings;
+    # it is the manual-approval gate on the publish job (the control Nx itself
+    # adopted post-incident). Its name is load-bearing: it must match the npm
+    # Trusted Publisher config registered at 05-05.
+    environment: npm-publish
+    permissions:
+      # ONLY id-token: write -- mints the OIDC identity npm validates. No
+      # repo-write permission (the GitHub release is created locally per D-13).
+      id-token: write
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org/
+      - run: npm i -g npm@latest
+      - run: npm ci
+      - run: npx nx release publish
+        env:
+          NPM_CONFIG_PROVENANCE: true
+          # The npm auth-token env var is deliberately NOT declared here -- OIDC
+          # engages only with no token present (an empty value would break it).

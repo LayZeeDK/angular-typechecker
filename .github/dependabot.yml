@@ -1,0 +1,10 @@
+# Dependabot config (PKG-04 / D-16). The github-actions ecosystem keeps the
+# SHA-pinned actions in .github/workflows/ fresh -- Dependabot bumps a pinned
+# 40-char commit SHA to the latest release SHA and updates the trailing # vN
+# comment, so SHA-pinning does not mean stale actions.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
