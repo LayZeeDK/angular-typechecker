@@ -1,21 +1,62 @@
 import type { ExecutorContext } from '@nx/devkit';
+import { logger } from '@nx/devkit';
 
-import { runTypecheck } from '../../core/run-typecheck';
+import { evaluateResult } from '../../core/evaluate-result';
+import { renderReport } from '../../core/render-report';
+import {
+  runTypecheck,
+  TypecheckInfrastructureError,
+} from '../../core/run-typecheck';
+import { normalizeOptions } from './normalize-options';
 import type { AngularTypecheckExecutorOptions } from './schema';
 
 /**
- * Thin Nx executor adapter -- the only tier that references @nx/devkit (type-only)
- * -- delegating to the framework-agnostic core. Its compiled .js is the GATE A
- * artifact: built under module: nodenext so the transitive dynamic load of
- * @angular/compiler-cli in compiler-loader.ts survives emit (not downleveled to
- * require()). Full option normalization and schema validation are deferred to
- * Phase 4 (EXE-01).
+ * The complete Nx executor adapter (D-01) -- the only tier (with
+ * normalize-options) that references @nx/devkit. It composes the
+ * framework-agnostic core: normalizeOptions -> runTypecheck -> renderReport
+ * (raw stdout) -> evaluateResult -> { success }.
+ *
+ * Its compiled .js is the GATE A artifact: built under module: nodenext so the
+ * transitive dynamic load of @angular/compiler-cli in compiler-loader.ts (reached
+ * via runTypecheck + renderReport) survives emit (not downleveled to require()).
+ *
+ * Error handling (D-01): a `TypecheckInfrastructureError` (the Angular compiler
+ * failed to RUN -- not a type error) is caught and mapped to a distinct
+ * logger.error meta message + { success: false }. EVERY other error is RE-THROWN:
+ * a type-checker that silently swallows an unknown failure and reports success is
+ * worse than none.
  */
 export default async function angularTypecheckExecutor(
   options: AngularTypecheckExecutorOptions,
-  _context: ExecutorContext,
+  context: ExecutorContext,
 ): Promise<{ success: boolean }> {
-  const result = await runTypecheck({ tsConfigPath: options.tsConfig });
+  const { coreOptions, maxWarnings, failFast, color } = normalizeOptions(
+    options,
+    context,
+  );
 
-  return { success: result.errorCount === 0 };
+  try {
+    const result = await runTypecheck(coreOptions);
+    const report = await renderReport(result, {
+      pathBase: coreOptions.pathBase,
+      color,
+      failFast,
+    });
+    // D-04: write the report to RAW stdout, NOT logger.info (which prepends Nx
+    // chrome/color and corrupts the byte-deterministic codeframes + GitHub
+    // problem-matcher file:line:col parsing).
+    process.stdout.write(report);
+
+    return evaluateResult(result, { maxWarnings });
+  } catch (error) {
+    if (error instanceof TypecheckInfrastructureError) {
+      logger.error(
+        `angular-typecheck: the Angular compiler failed to run (infrastructure error, not a type error): ${error.message}`,
+      );
+
+      return { success: false };
+    }
+
+    throw error;
+  }
 }
