@@ -1,10 +1,10 @@
 import { execSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 // TEST-04: the phase's central correctness gate. A green run caches a HIT; a
 // type error injected into a NON-buildable transitive dep's SOURCE must bust the
@@ -23,6 +23,13 @@ const CACHE_MARKER =
   'Nx read the output from the cache instead of running the command';
 
 const TARGET = 'typecheck-consumer:angular-typecheck';
+
+// The rendered TS diagnostic code the injection deliberately triggers. Asserting
+// the full 'TS2322' token (not a bare 4-digit '2322' substring) keeps the cache-
+// MISS check from false-PASSing on an unrelated 4-digit occurrence in a stack
+// trace / hash / offset (WR-01). Hoisted to one place so a future code change is
+// a single edit (IN-02).
+const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
 // (e2e/angular-typechecker-cache-e2e/src/<file>) -- 4 dirs up -- so every nx
@@ -133,6 +140,13 @@ afterEach(() => {
   healFromPristine();
 });
 
+afterAll(() => {
+  // Remove the per-run isolated cache dir so each CI/local run does not leak a
+  // populated atc-cache-* directory under the OS temp dir (WR-02). force:true
+  // keeps teardown non-fatal if the dir is already gone.
+  rmSync(cacheDir, { recursive: true, force: true });
+});
+
 describe('TEST-04: a dep type error busts the consumer cache', () => {
   it('R1 pre-flight (BLOCKING): the dep source IS an input for the consumer target (the consumer->dep graph edge exists)', () => {
     // D-10 headline correctness guard: if the edge is missing, ^default reaches
@@ -184,7 +198,15 @@ describe('TEST-04: a dep type error busts the consumer cache', () => {
       //   (3) the exit code is non-zero.
       const third = run();
       expect(third.stdout).not.toContain(CACHE_MARKER);
-      expect(third.stdout).toMatch(/TS2322|2322/);
+      // Require the real, rendered TS code token (not a bare 4-digit substring)
+      // so the cache was busted AND the genuine dep diagnostic was reported --
+      // not a coincidental '2322' from a stack trace / offset / hash (WR-01).
+      expect(third.stdout).toContain(INJECTED_TS_CODE);
+      // Guard the MISS case against an UNRELATED infrastructure failure
+      // masquerading as a bust (a crashed run also satisfies marker-absent +
+      // exit-nonzero for the wrong reason) (WR-01).
+      expect(third.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
+      expect(third.stdout).not.toContain('infrastructure error');
       expect(third.code).not.toBe(0);
     } finally {
       // D-15 byte-restore of the captured original (preserves EOL exactly).
@@ -208,7 +230,7 @@ describe('TEST-04: a dep type error busts the consumer cache', () => {
       // differential). The marker can never appear with --skip-nx-cache.
       const forced = run('--skip-nx-cache');
       expect(forced.stdout).not.toContain(CACHE_MARKER);
-      expect(forced.stdout).toMatch(/TS2322|2322/);
+      expect(forced.stdout).toContain(INJECTED_TS_CODE);
       expect(forced.code).not.toBe(0);
     } finally {
       writeFileSync(DEP_FILE, original);
