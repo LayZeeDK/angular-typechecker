@@ -83,7 +83,10 @@ Note: This is the GATED spike PROJECT.md flags. The engine implementation (Phase
   1. An `angular-typecheck` Nx executor (sub-50-line adapter: `ExecutorContext` -> `CoreOptions` -> `runTypecheck` -> `{ success }`) can be set as any Angular project's target and `nx run <project>:angular-typecheck` produces the same diagnostics as the core, with the executor shipped as CommonJS that loads ESM compiler-cli via dynamic `import()` (verified no `import()`->`require()` downlevel at runtime).
   2. The executor target is Nx-cacheable (`cache: true`, `outputs: []`) with correct per-tsconfig inputs (include/exclude globs + full `extends` chain + sibling `package.json`), `^production`/`^{projectRoot}` dependency-source filesets for non-buildable deps, `dependentTasksOutputFiles` for buildable deps, and `externalDependencies: ['typescript','@angular/compiler-cli']`; verified via `nx show target inputs --check`.
   3. A dedicated dependency-error-busts-cache correctness test proves a green run, then a type change injected into a transitive source dependency, does NOT cache-hit on re-run and reports the new error (a type-checker that lies is worse than none).
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 04-01-PLAN.md -- Executor-adapter slice: renderReport core seam (D-02) + normalize-options + completed executor + v0.0.1 schema + outputCapture (EXE-01, EXE-07)
+- [ ] 04-02-PLAN.md -- Cacheable-target slice: executor-id-keyed nx.json targetDefaults (^default inlined-source recipe) + tsconfig alias + committed consumer/dep fixtures + R1 edge guard (EXE-06)
+- [ ] 04-03-PLAN.md -- Cache-correctness slice: dedicated serialized cache-e2e project + dependency-error-busts-cache HIT/MISS gate + executor parity + real nx run (TEST-04, EXE-01, EXE-07)
 **UI hint**: no
 
 ### Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)
@@ -121,6 +124,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Workspace Bootstrap + Engine Spike (GATED) | 4/4 | Complete   | 2026-06-27 |
 | 2. Core Type-Check Engine + Gatherer | 3/3 | Complete   | 2026-06-27 |
 | 3. Filtering, Modes, Output + Quality Gates | 4/4 | Complete   | 2026-06-27 |
-| 4. Nx Executor Adapter + Cacheable Target | 0/TBD | Not started | - |
+| 4. Nx Executor Adapter + Cacheable Target | 0/3 | Not started | - |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 0/TBD | Not started | - |
 | 6. Full e2e Matrix + CI | 0/TBD | Not started | - |
