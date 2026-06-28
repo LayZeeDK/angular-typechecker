@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5.1 05.1-01 COMPLETE -- angular-typechecker@0.0.2 published LIVE to npm via tokenless OIDC Trusted Publisher with SLSA v1 provenance (dist-tags.latest=0.0.2), GitHub Release cut from curated changelog (PKG-05 / D-08 verified). GSD close-out gates (verify_phase_goal / secure / validate / extract-learnings + code_review_gate) PENDING.
-last_updated: "2026-06-28T22:00:00.000Z"
-last_activity: 2026-06-28 -- 0.0.2 OIDC steady-state publish verified live; root cause of failures was the Trusted Publisher never being saved at 05-05; release config decoupled (push:false, createRelease:false); D-04 drop-registry-url guidance corrected
+stopped_at: Phase 5.1 FULLY CLOSED -- angular-typechecker@0.0.2 published LIVE via tokenless OIDC + SLSA provenance (PKG-05 / D-08). All GSD close-out gates passed: code-review (deep; WR-01 fixed), verify_phase_goal (passed 13/13), secure-phase (9/9 threats closed), validate-phase (nyquist_compliant; +2 regression assertions, 15/15), extract-learnings. Next: Phase 6 (Full e2e Matrix + CI).
+last_updated: "2026-06-29T12:00:00.000Z"
+last_activity: 2026-06-29 -- Phase 5.1 closed: 0.0.2 OIDC publish verified live; all close-out gates passed; lessons captured (TP-never-saved root cause, registry-url-required, createRelease force-push, ruleset reconciliation)
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 20
-  completed_plans: 19
-  percent: 63
+  completed_plans: 20
+  percent: 75
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 ## Current Position
 
-Phase: 05.1 (0-0-2-first-oidc-steady-state-publish-verification) — plan COMPLETE; GSD close-out gates pending
-Plan: 1 of 1 complete (05.1-01-SUMMARY.md written)
-Status: angular-typechecker@0.0.2 is LIVE on npm via tokenless OIDC + SLSA provenance, dist-tags.latest=0.0.2, GitHub Release published from the curated changelog. PKG-05 verified (D-08). Remaining per GSD: verify_phase_goal (gsd-verifier -> VERIFICATION.md), /gsd-secure-phase 5.1, /gsd-validate-phase 5.1, /gsd-extract-learnings 5.1, and the code_review_gate (reviews the AGENTS.md/nx.json/release.yml changes per the new AGENTS.md review policy). Recommend /clear before running these (long context).
-Last activity: 2026-06-28 -- 0.0.2 published + verified + GitHub Release; release config decoupled (push:false/createRelease:false); always-auth warning fixed; D-04 registry-url guidance corrected in docs + memory
+Phase: 05.1 (0-0-2-first-oidc-steady-state-publish-verification) — FULLY CLOSED (all gates passed)
+Plan: 1 of 1 complete; artifacts: SUMMARY, REVIEW (deep), VERIFICATION (passed), SECURITY (9/9 closed), VALIDATION (nyquist_compliant), LEARNINGS
+Status: angular-typechecker@0.0.2 LIVE on npm via tokenless OIDC + SLSA provenance, dist-tags.latest=0.0.2, GitHub Release from curated changelog. PKG-05 verified. Release config hardened + decoupled (push:false/createRelease:false; registry-url retained for OIDC; always-auth stripped). Next phase: 6 (Full e2e Matrix + CI).
+Last activity: 2026-06-29 -- Phase 5.1 closed; all close-out gates passed; learnings extracted
 
 Progress: [██████████] 95%
 
