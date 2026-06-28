@@ -84,3 +84,29 @@ line 20 -- so the violation is not caused by 03-03's one-line type-only
 `@nx/enforce-module-boundaries` allow/override or an eslint-disable, decided in
 03-04). Plan 03-03's own new files (`format-report.ts`, `format-report.spec.ts`)
 are lint-clean; build green; full unit suite 50/50 green.
+
+## Code-review follow-ups (03-REVIEW.md) -- resolution status
+
+Deep code review (03-REVIEW.md) found 0 blockers, 2 warnings, 5 info. Resolved
+in commit 4c7cf66 (user-selected scope "WR-01 + safe INFO cleanups"):
+
+- WR-01 (RESOLVED): `run-typecheck.ts` boundary-filter `basePath` no longer
+  falls back to `''` (which silently disabled the filter on POSIX); new
+  `resolveFilterBasePath` falls back to `dirname(tsConfigPath)` and guards both
+  `undefined` and `''`. Regression specs in `run-typecheck.spec.ts`.
+- IN-01 / IN-05 (RESOLVED): `sortAndDeduplicateDiagnostics` now runs
+  unconditionally in `finalize` (zero-rootNames guard path is deterministic too).
+- IN-04 (RESOLVED): stale `WR-02 / IN-04` finding-ID removed from a source
+  comment.
+
+Deferred (out of the selected fix scope; tracked here, see 03-REVIEW.md for full
+detail):
+
+- WR-02 (DEFERRED): `filter-diagnostics.ts` canonicalizer cache is unbounded.
+  Per-call lifetime is correct today; the documented fix is a one-line invariant
+  comment to deter a future "hoist to module scope" refactor. No behavior change.
+- IN-02 (DEFERRED): `suppressedCount` is computed pre-dedup, so it can over-count
+  when the all-getter emits cross-phase duplicates among suppressed diagnostics.
+- IN-03 (DEFERRED): the non-throwing `realpath` contract
+  (`ts.sys.realpath?.(p) ?? p`) is undocumented at the call boundary.
+  Revisit alongside Phase-4 CLI wiring.
