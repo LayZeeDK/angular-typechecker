@@ -1,0 +1,4 @@
+{
+  "dest": "../../dist/publishable-lib",
+  "lib": { "entryFile": "src/index.ts" }
+}

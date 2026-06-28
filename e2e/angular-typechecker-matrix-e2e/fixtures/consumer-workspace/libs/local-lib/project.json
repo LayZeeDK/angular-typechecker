@@ -1,0 +1,22 @@
+{
+  "name": "local-lib",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/local-lib/src",
+  "projectType": "library",
+  "targets": {
+    "angular-typecheck": {
+      "executor": "angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "libs/local-lib/tsconfig.lib.json",
+        "includeDeps": true
+      }
+    },
+    "angular-typecheck-spec": {
+      "executor": "angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "libs/local-lib/tsconfig.spec.json",
+        "includeDeps": true
+      }
+    }
+  }
+}

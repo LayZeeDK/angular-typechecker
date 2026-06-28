@@ -1,0 +1,17 @@
+{
+  "name": "angular-typechecker-matrix-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "e2e/angular-typechecker-matrix-e2e/src",
+  "tags": ["scope:fixture"],
+  "implicitDependencies": ["angular-typechecker"],
+  "targets": {
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/e2e/angular-typechecker-matrix-e2e"
+      }
+    }
+  }
+}

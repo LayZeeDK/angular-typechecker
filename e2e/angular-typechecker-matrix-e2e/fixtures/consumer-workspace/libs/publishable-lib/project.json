@@ -1,0 +1,21 @@
+{
+  "name": "publishable-lib",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/publishable-lib/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:package",
+      "options": {
+        "project": "libs/publishable-lib/ng-package.json"
+      }
+    },
+    "angular-typecheck": {
+      "executor": "angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "libs/publishable-lib/tsconfig.lib.json",
+        "includeDeps": true
+      }
+    }
+  }
+}

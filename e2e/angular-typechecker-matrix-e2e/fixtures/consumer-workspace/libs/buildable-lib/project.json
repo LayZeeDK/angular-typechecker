@@ -1,0 +1,21 @@
+{
+  "name": "buildable-lib",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/buildable-lib/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "options": {
+        "project": "libs/buildable-lib/ng-package.json"
+      }
+    },
+    "angular-typecheck": {
+      "executor": "angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "libs/buildable-lib/tsconfig.lib.json",
+        "includeDeps": true
+      }
+    }
+  }
+}

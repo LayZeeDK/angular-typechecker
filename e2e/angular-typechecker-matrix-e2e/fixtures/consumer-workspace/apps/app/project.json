@@ -1,0 +1,15 @@
+{
+  "name": "app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/app/src",
+  "projectType": "application",
+  "targets": {
+    "angular-typecheck": {
+      "executor": "angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "apps/app/tsconfig.app.json",
+        "includeDeps": true
+      }
+    }
+  }
+}
