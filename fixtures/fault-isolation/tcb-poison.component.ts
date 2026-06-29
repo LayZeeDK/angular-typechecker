@@ -1,4 +1,4 @@
-import { Component, Directive } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 // RES-02 fault-isolation fixture: the TCB-POISON half (component A). OUT OF the
 // project graph: nothing in the workspace imports it, and it is kept out of the
@@ -12,28 +12,34 @@ import { Component, Directive } from '@angular/core';
 // would NOT exercise getDiagnosticsForFile's per-file template try/catch, so it
 // would not prove per-file isolation.
 //
-// HOW THIS TRIGGERS IMPORT_GENERATION_FAILURE (reference_emit_environment.ts:52
-// @ v22.0.4): UnexportedLocalDirective is a real, applied directive that the
-// component's strict-templates type-check block (TCB) must reference. Because the
-// directive class is NOT exported from this module, the reference emitter cannot
-// generate an import for it into the separate .ngtypecheck shim file
+// HOW THIS TRIGGERS IMPORT_GENERATION_FAILURE -- this is the EXACT construct from
+// Angular's own v22.0.4 test suite (compiler-cli/test/ngtsc/template_typecheck_spec.ts:86-115,
+// "should not fail with a runtime error when generating TCB"): a referenced
+// component `SubComponent` is INTENTIONALLY NOT EXPORTED, has a required input,
+// and is bound in this component's template. Under strictTemplates the type-check
+// block (TCB) must reference SubComponent's class to type-check the [someInput]
+// binding. Because SubComponent is not exported from its module, the reference
+// emitter cannot generate an import for it into the separate .ngtypecheck shim
 // (ReferenceEmitKind.Failed -> unexportedDiagnostic, tcb_adapter.ts:377), so
-// referenceTcbValue throws FatalDiagnosticError(IMPORT_GENERATION_FAILURE) DURING
-// TCB GENERATION. The directive selector is applied in the template below, which
-// forces the TCB to reference it (an unapplied import would be tree-shaken before
-// reference emit and would not throw).
+// referenceTcbValue throws FatalDiagnosticError(IMPORT_GENERATION_FAILURE)
+// ("Unable to import symbol SubComponent.", reference_emit_environment.ts:52)
+// DURING TCB GENERATION.
 
-// Deliberately NOT exported: the unexported local directive that poisons the TCB.
-@Directive({
-  selector: '[poisonDirective]',
+// Deliberately NOT exported: the referenced component that poisons the TCB. Its
+// bound input forces the TCB to reference this (unexported) class.
+@Component({
+  selector: 'sub-cmp',
   standalone: true,
+  template: '',
 })
-class UnexportedLocalDirective {}
+class SubComponent {
+  someInput = input.required<string>();
+}
 
 @Component({
   selector: 'tcb-poison',
   standalone: true,
-  imports: [UnexportedLocalDirective],
+  imports: [SubComponent],
   templateUrl: './tcb-poison.component.html',
 })
 export class TcbPoisonComponent {}
