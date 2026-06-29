@@ -69,8 +69,8 @@ Plans:
 **Wave 1**
 
 - [x] 09-01-PLAN.md -- RES-01 [GATE/spike, wave 1, alone-gating]: probe the live api.Program for file-less non-template diagnostics + author the fault-isolation fixture; record the SIMPLE|HYBRID GO decision (09-RES-01-SPIKE.md)
-- [ ] 09-03-PLAN.md -- RES-03 [wave 1, parallel]: createCanonicalizer realpath try/catch + raw-path fallback in filter-diagnostics.ts + the throwing-realpath unit case
-- [ ] 09-04-PLAN.md -- RES-04 [wave 1, parallel]: suppressOutputPathCheck:true to readConfiguration in run-typecheck.ts + the readConfiguration-spy unit + the no-nuisance integration assertion
+- [x] 09-03-PLAN.md -- RES-03 [wave 1, parallel]: createCanonicalizer realpath try/catch + raw-path fallback in filter-diagnostics.ts + the throwing-realpath unit case
+- [x] 09-04-PLAN.md -- RES-04 [wave 1, parallel]: suppressOutputPathCheck:true to readConfiguration in run-typecheck.ts + the readConfiguration-spy unit + the no-nuisance integration assertion
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -104,5 +104,5 @@ Plans:
 | 6. Full e2e Matrix + CI | v0.0.1 | 5/5 | Complete | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
-| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 1/4 | In Progress|  |
+| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 3/4 | In Progress|  |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 0/? | Not started | - |
