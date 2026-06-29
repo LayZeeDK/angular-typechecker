@@ -160,6 +160,53 @@ describe('runTypecheck boundary filter (sibling-import fixture)', () => {
     expect(fileNames).toEqual(sorted);
   });
 
+  // D-10 host-derived useCaseSensitiveFileNames: the boundary filter's case-fold
+  // is DERIVED from the live program host
+  // (`result.program.getTsProgram().useCaseSensitiveFileNames()`, run-typecheck.ts
+  // ~199-203) -- it is NOT a hard-coded constant. The classification therefore
+  // tracks the real OS filesystem: on macOS/Windows the host yields
+  // useCaseSensitiveFileNames === false (so this BECOMES a live case-insensitive
+  // exercise -- the same path queried with flipped case still classifies
+  // in-project), on Linux it yields true (the on-disk-exact case is kept). The
+  // assertion below holds on ALL THREE OS legs: an in-project diagnostic is KEPT
+  // on its real on-disk path while the out-of-project sibling is SUPPRESSED --
+  // a classification that can only be correct on every leg if it is host-derived,
+  // not a literal. On the mac/win matrix legs (and this Windows arm64 dev box) it
+  // is the live case-insensitive sample; on Linux it is the case-sensitive path.
+  it('D-10: the in-project/out-of-project split is HOST-derived (useCaseSensitiveFileNames from getTsProgram), live case-insensitive on mac/win', async () => {
+    const result = await runTypecheck({ tsConfigPath: siblingImportTsConfig });
+
+    const inProjectHits = diagnosticsOnFile(
+      result.diagnostics,
+      mainLibComponent,
+    );
+
+    // The in-project main.component diagnostic is reported on its REAL on-disk
+    // path on every OS leg (the host derives the case of the reported path).
+    expect(inProjectHits).toHaveLength(1);
+
+    const reportedInProjectPath = inProjectHits[0].file?.fileName;
+
+    expect(reportedInProjectPath).toBeDefined();
+
+    // Live case-insensitive exercise on a case-insensitive host (mac/win/this dev
+    // box): the SAME path queried with flipped case folds to the identical
+    // canonical path. This is a no-op identity on a case-sensitive host (Linux),
+    // so the equality holds on every leg while genuinely exercising the fold
+    // where the host is case-insensitive.
+    expect(reportedInProjectPath?.toLowerCase()).toBe(
+      mainLibComponent.replace(/\\/g, '/').toLowerCase(),
+    );
+
+    // The out-of-project sibling is SUPPRESSED by the host-derived classifier on
+    // every leg (the boundary filter keys off the host's useCaseSensitiveFileNames
+    // + realpath, not a literal) -- proving the classification is host-derived.
+    expect(
+      diagnosticsOnFile(result.diagnostics, dependencyLibSource),
+    ).toHaveLength(0);
+    expect(result.suppressedCount).toBeGreaterThanOrEqual(1);
+  });
+
   it('Pitfall 5: TS6059 ("not under rootDir") does NOT appear (the no-emit override neutralizes the emit-layout trap)', async () => {
     const defaultResult = await runTypecheck({
       tsConfigPath: siblingImportTsConfig,
