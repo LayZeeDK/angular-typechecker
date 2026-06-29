@@ -97,6 +97,30 @@ describe('config-resolution: malformed config is never silently clean (D-03/MD-0
   });
 });
 
+describe('config-resolution: a config-resolution 500 is infrastructure, never a type error (COR-01)', () => {
+  it('re-throws a TypecheckInfrastructureError for a nonexistent tsconfig path', async () => {
+    // COR-01 / D-01..D-03: a nonexistent tsconfig path makes
+    // `readConfiguration`'s outer catch fire (ENOENT from host.lstat in
+    // calcProjectFileAndBasePath) -> a code-500 (UNKNOWN_ERROR_CODE) in
+    // parsed.errors with rootNames: []. The early scan classifies it as
+    // infrastructure and re-throws BEFORE the zero-rootNames guard -- never a
+    // folded/counted type error. A nonexistent PATH triggers ENOENT (the 500);
+    // a nonexistent EXTENDS TARGET triggers 5012 (a folded diagnostic, proven by
+    // the malformed-config cases above). They are distinct -- both must hold.
+    const { TypecheckInfrastructureError } = await import('./run-typecheck');
+    const missingTsConfig = join(
+      workspaceRoot,
+      'fixtures',
+      'config-broken',
+      'tsconfig.does-not-exist.json',
+    );
+
+    await expect(
+      runTypecheck({ tsConfigPath: missingTsConfig }),
+    ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+  });
+});
+
 describe('config-resolution: solution-style guard fires (D-03/D-03a)', () => {
   it('returns rootNamesCount 0 AND errorCount 1 with a leaf-tsconfig-naming message', async () => {
     const result = await runTypecheck({ tsConfigPath: solutionStyleTsConfig });
