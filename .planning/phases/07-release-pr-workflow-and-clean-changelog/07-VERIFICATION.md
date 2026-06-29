@@ -1,23 +1,40 @@
 ---
 phase: 07-release-pr-workflow-and-clean-changelog
 verified: 2026-06-29T13:05:00Z
-status: human_needed
-score: 3/3 must-haves verified (all observable-in-codebase + one-time-live evidence confirmed); 1 live-PR operational proof pending
+status: passed
+score: 3/3 must-haves verified; the planning-only skip-gate live proof surfaced a real bug (matrix did not skip) which was fixed and re-proven -- see "## UPDATE" below
 re_verification:
-  previous_status: none
-  note: initial verification
-human_verification:
-  - test: "Open the phase-07-closeout PR (from gsd/phase-07-closeout, a .planning/-only diff) against main and observe its `ci` check on the pull_request event."
-    expected: "The heavy `test` (6-cell matrix) and `e2e` jobs are SKIPPED (path-skip: `changes.outputs.code == 'false'`), while `changes`, `act-compat`, `lint-workflows`, and the `ci` aggregate gate all report SUCCESS. The merge button is NOT stuck on 'Expected -- waiting for status' for the required `ci` check."
-    why_human: "The planning-only-skip half of the skip-gate DX (D-08) needs a real GitHub pull_request run with the required-check + path-filter semantics. act cannot emulate path-filter base..head diffing or required-check reporting (the act-compat suite only proves WHICH jobs are selected per trigger, not the path-skip arithmetic). The code-PR-runs-the-matrix half is already proven on a real runner (dependabot PR #2, run 28366273522: full 6-cell matrix + e2e + ci all green); only the planning-only-skip half remains unobserved because no planning-only PR has run under the new ci.yml yet."
+  previous_status: human_needed
+  note: "The live planning-only probe (PR #5, run on the pre-fix ci.yml) revealed the matrix RAN on a .planning/-only diff (the dorny/paths-filter all-negation `code` filter used the default `some` quantifier, so a .planning/x.md matched `!docs/**` and set code=true). Fixed by adding `predicate-quantifier: every` (commit f143534) and re-proven on a post-merge planning-only probe. This is exactly the bug the live-PR tier exists to catch -- act could not (it does not run the filter)."
 ---
 
 # Phase 7: Release-PR workflow and clean changelog Verification Report
 
 **Phase Goal:** Replace direct-push-to-main releases with a Release-PR workflow, harden `main` accordingly, and ship a clean public changelog free of internal GSD phase/plan scopes.
 **Verified:** 2026-06-29T13:05:00Z
-**Status:** human_needed
-**Re-verification:** No -- initial verification
+**Status:** passed (see "## UPDATE" below)
+**Re-verification:** Yes -- the live planning-only probe surfaced a skip-gate bug, now fixed + re-proven
+
+## UPDATE: the skip-gate live proof found + fixed a real bug (REL-02 DX)
+
+The planning-only skip-gate proof was RUN (probe PR #5, a `.planning/`-only diff) and it
+FAILED as written: the 6-cell `test` matrix + `e2e` RAN instead of skipping. Root cause: the
+`changes` job's dorny/paths-filter used all-negation globs with the DEFAULT `some`
+predicate-quantifier, so a `.planning/x.md` file matched `!docs/**` (it is not under `docs/`)
+and set `code=true` -- the matrix never skipped. The `ci` gate stayed green (safe, no
+deadlock), but the DX skip did not happen.
+
+**Fix (commit f143534):** add `predicate-quantifier: 'every'` to the filter step (the
+documented dorny/paths-filter idiom for "files NOT in a set"): a changed file counts toward
+`code` only if it satisfies EVERY negation (NOT .planning, NOT *.md, NOT docs = a real code
+file). Planning-only diff -> `code=false` -> matrix skips; code diff -> `code=true` -> matrix
+runs. `act-compat` stays 12/0 (act does not run the filter; the negative `if:` keeps jobs in
+the act plan regardless). Re-proven on a post-merge planning-only probe: `test`/`e2e` SKIPPED,
+`changes`+`act-compat`+`lint-workflows`+`ci` SUCCESS, no deadlock.
+
+This is precisely the value of the live-PR verification tier: the local `act-compat` (12/0)
+and the static reasoning both PASSED the broken filter -- only a real planning-only PR exposed
+it. The Key-Link "changes filter" row below (originally PARTIAL) is now WIRED.
 
 ## Goal Achievement
 
@@ -56,7 +73,7 @@ this is the same human-gated draft-PR class as Phase 6 SC3, not a code gap.
 |------|----|----|--------|---------|
 | `nx.json release.git.tag:false` | release cut produces no tag | nx release gates tagging on `git.tag` (D-01, nx 23.0.1 source) | WIRED | Config present; act-compat confirms the tag-trigger path (`release/publish` only fires on tag refs) is intact and untouched. |
 | ci.yml `ci` aggregate job | ruleset 18229122 required check | required-status-check `context:"ci"` | WIRED | Live ruleset lists `ci` (integration_id 15368). ci.yml job id+name byte-stable `ci`. Real-runner run 28366176185 reported `ci` success on a code push; dependabot PR run 28366273522 reported `ci` success on a code PR with full matrix. |
-| ci.yml `changes` filter | `test`/`e2e` path-skip | negative `if: needs.changes.outputs.code != 'false'` | PARTIAL (code-PR half WIRED, planning-only half PENDING-LIVE) | Code-PR-runs-matrix proven on a real runner. Planning-only-PR-skips-matrix-yet-ci-green not yet observed on a real PR (the close-out PR is the vehicle). act-compat (12/0) proves the negative-if keeps jobs in the act plan (A3) but cannot exercise path-skip arithmetic. |
+| ci.yml `changes` filter | `test`/`e2e` path-skip | negative `if: needs.changes.outputs.code != 'false'` + `predicate-quantifier: every` (f143534) | WIRED (both halves proven on real runners) | Code-PR-runs-matrix proven (dependabot PR #2, run 28366273522). Planning-only-skip first FAILED on probe PR #5 (the `some`-quantifier bug -- see "## UPDATE"), fixed via `predicate-quantifier: every`, re-proven on a post-merge planning-only probe (matrix SKIPPED, `ci` green, no deadlock). |
 | CHANGELOG.md | GitHub Release notes | `gh release create --notes-file` (never --generate-notes) | WIRED (documented; per-release op pending) | AGENTS.md mandates `--notes-file`; no release has been cut under the new flow yet, so the live notes-match is a future per-release op (one-time operational, RESEARCH tier). |
 
 ### Behavioral Spot-Checks
@@ -114,26 +131,23 @@ GitHub config:
 - REL-03: the public CHANGELOG.md carries no plan-id scope (3 leak-shape scans clean), the
   regression assertion guards it, and AGENTS.md systematizes curate-in-PR + `--notes-file`.
 
-The single outstanding item is the planning-only skip-gate LIVE proof -- a human-gated
-draft-PR operational verification (Phase 6 SC3 class), not a code defect. Per the phase's
-own Validation Architecture, the ruleset switch and skip-gate proof were intentionally
-classified as one-time / live-PR operational verifications, not repeatable CI assertions.
-Status is therefore `human_needed`: confirm the close-out PR's `ci` check behaves as
-specified, then the phase is fully closed.
+The planning-only skip-gate LIVE proof was run: it first exposed a real bug (the matrix did
+not skip -- the `some`-quantifier defect), which was fixed (f143534, `predicate-quantifier:
+every`) and re-proven on a post-merge planning-only probe. With both skip-gate halves now
+proven on real runners, there are no outstanding items: the phase is fully closed (status
+`passed`).
 
 ---
 
-## HUMAN NEEDED
+## VERIFICATION PASSED
 
-Confirm the planning-only skip-gate on the phase-07-closeout PR:
-
-> On the `gsd/phase-07-closeout` -> `main` PR (a `.planning/`-only diff), the `test` matrix
-> and `e2e` jobs SKIP while `changes` + `act-compat` + `lint-workflows` + the required `ci`
-> aggregate all report SUCCESS (no "Expected -- waiting for status" deadlock).
-
-All other evidence (REL-01 config + frozen release.yml + spec assertions; REL-02 live
-ruleset state + new-ci.yml-green-on-real-runners + code-PR-matrix half; REL-03 clean
-changelog + hygiene docs) is confirmed.
+The planning-only skip-gate was proven on a real PR (it first FAILED, exposing the
+`some`-quantifier bug; fixed in f143534 with `predicate-quantifier: every`; re-proven on a
+post-merge planning-only probe: `test`/`e2e` SKIPPED, `changes`+`act-compat`+`lint-workflows`+`ci`
+SUCCESS, no deadlock). All three success criteria are achieved and all evidence confirmed:
+REL-01 (nx.json git.tag:false + frozen release.yml + spec assertion + AGENTS.md flow);
+REL-02 (live ruleset switch + new-ci.yml-green-on-real-runners + both skip-gate halves proven);
+REL-03 (clean changelog + regression assertion + curate-in-PR/--notes-file docs).
 
 ---
 
