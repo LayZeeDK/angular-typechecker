@@ -77,7 +77,7 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     expect(nx.release?.projects).toEqual([RELEASE_PROJECT]);
   });
 
-  it('keeps the local-first cut decoupled from push + GitHub release (PKG-05 / D-13)', () => {
+  it('keeps the cut decoupled from push + GitHub release (PKG-05 / D-13)', () => {
     const nx = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as {
       release?: {
         git?: { push?: boolean };
@@ -86,10 +86,11 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     };
 
     // Hard-won in 0.0.2: nx FORCES `git push` on when `createRelease` is set,
-    // which would push an UN-CURATED version commit + tag to a force-push-protected
-    // main before the changelog is hand-curated. The local-first cut requires both
-    // disabled -- the maintainer pushes the tag and creates the Release after
-    // curation. Re-enabling either re-opens the un-curated-force-push hazard.
+    // which would push an UN-CURATED version commit + tag before the changelog is
+    // hand-curated. The Phase-7 Release-PR flow requires both disabled -- the cut
+    // happens on a release/* branch (committed, not pushed), the change merges via
+    // PR, and the maintainer tags the merge commit + creates the Release after
+    // curation. Re-enabling either re-opens the un-curated-push hazard.
     expect(nx.release?.git?.push).toBe(false);
     expect(nx.release?.changelog?.workspaceChangelog?.createRelease).toBe(
       false,
@@ -243,13 +244,20 @@ describe('REL-03: the public changelog exposes no internal GSD plan-id scope', (
     // an internal GSD phase/plan scope. A live `nx release --dry-run` PROVED the
     // RAW generated changelog leaks `**06-02:**` plan-id scopes -- so the entry
     // must be hand-curated (D-13) and scope-hygiene enforced (D-15). This guards
-    // the CURATED CHANGELOG content, not the raw nx output. The three leak shapes:
-    //   1. a conventional-commit scope, e.g. `feat(05-01):`
-    //   2. a bold heading token,        e.g. `**06-02:**`
-    //   3. a bare leading scope,         e.g. `05-01:` / `06:`
-    const conventionalCommitScope = /\((\d{2}(?:-\d{2})*)\)/;
-    const boldHeadingScope = /\*\*\d{2}(?:-\d{2})*[:*]/;
-    const bareLeadingScope = /\b\d{2}(?:-\d{2})*:/;
+    // the CURATED CHANGELOG content, not the raw nx output. The three leak shapes
+    // are each anchored to the leak GRAMMAR so legitimate prose (a version like
+    // `Node (22)`, a phrase like `Angular 22:`, or a time `14:30`) does NOT
+    // false-positive and wrongly fail a future curated entry (WR-01):
+    //   1. a conventional-commit scope, e.g. `feat(05-01):` -- requires a
+    //      commit-type keyword before `(NN[-NN])`, so `Node (22)` does not match.
+    //   2. a bold heading token,        e.g. `**06-02:**` -- nx renders a scope as
+    //      `**scope:**`; requires the trailing colon so bold prose `**22**` is safe.
+    //   3. a bare leading scope at line start, e.g. `05-01:` / `06:` -- anchored to
+    //      line start (multiline), so mid-line `Angular 22:` / `14:30` is safe.
+    const conventionalCommitScope =
+      /\b(?:feat|fix|docs|chore|refactor|perf|test|build|ci|style|revert)\(\d{2}(?:-\d{2})*\)/;
+    const boldHeadingScope = /\*\*\d{2}(?:-\d{2})*:/;
+    const bareLeadingScope = /^\s*\d{2}(?:-\d{2})*:/m;
 
     expect(changelog).not.toMatch(conventionalCommitScope);
     expect(changelog).not.toMatch(boldHeadingScope);
