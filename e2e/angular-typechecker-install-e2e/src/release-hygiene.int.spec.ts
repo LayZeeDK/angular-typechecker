@@ -92,6 +92,21 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     expect(nx.release?.git?.push).toBe(false);
     expect(nx.release?.changelog?.workspaceChangelog?.createRelease).toBe(false);
   });
+
+  it('keeps the cut decoupled from git tagging (REL-01 / D-01)', () => {
+    const nx = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as {
+      release?: { git?: { tag?: boolean } };
+    };
+
+    // Phase 7 Release-PR flow: the cut must create NO tag. With git.tag:false the
+    // `nx release --skip-publish` cut commits the version + curated CHANGELOG on a
+    // release/* branch but never tags it; the change merges via PR and the
+    // maintainer tags the MERGE COMMIT (`angular-typechecker@x.y.z`) post-merge,
+    // which is what fires the frozen tag-triggered OIDC release.yml (D-01/D-03).
+    // Re-flipping this to true would re-couple the version commit to the publish
+    // trigger and bypass the PR gate -- so assert it stays false.
+    expect(nx.release?.git?.tag).toBe(false);
+  });
 });
 
 describe('PKG-04: SECURITY.md is present at the repo root', () => {

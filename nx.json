@@ -84,7 +84,7 @@
     "releaseTag": { "pattern": "angular-typechecker@{version}" },
     "git": {
       "commit": true,
-      "tag": true,
+      "tag": false,
       "push": false
     },
     "version": {
