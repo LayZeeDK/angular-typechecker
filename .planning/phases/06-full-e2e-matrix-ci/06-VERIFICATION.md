@@ -1,21 +1,21 @@
 ---
 phase: 06-full-e2e-matrix-ci
 verified: 2026-06-29T02:30:00Z
-status: human_needed
-score: 2/3 must-haves verified (SC1 + SC2 verified locally; SC3 human-gated per RD-10)
+status: passed
+score: 3/3 must-haves verified (SC1 + SC2 verified locally; SC3 PROVEN GREEN on real GitHub runners)
 overrides_applied: 0
-human_verification:
-  - test: "Open a throwaway draft PR (branch ci/validate-ci-matrix) on real GitHub runners to prove the full lean 6-cell matrix is GREEN and the aggregate `ci` gate passes"
-    expected: "All 6 test cells (ubuntu 22/24/26 + windows 24/26 + macos 24) green; the Linux-only e2e job green (install-e2e + cache-e2e + matrix-e2e); act-compat green; lint-workflows green (actionlint clean); the aggregate `ci` job green. Then close the PR WITHOUT merging and land ci.yml on main via the existing direct-push flow (do NOT pre-adopt Phase 7's ruleset switch)."
-    why_human: "RD-10: windows-latest + macos-latest CANNOT be emulated locally (act runs Linux containers only; the dev box is Windows arm64). The draft-PR matrix run on real GitHub runners is the only authoritative cross-OS proof. No push is allowed tonight. The aggregate gate's `skipped`-handling must also be confirmed there (act's needs.*.result/skipped semantics diverge from GitHub)."
+sc3_resolution:
+  proof: "PR #3 (branch ci/validate-ci-matrix), run 28354578169 -- ALL checks green: the 6 test cells (ubuntu 22/24/26 + windows 24/26 + macos 24), the Linux e2e job (install-e2e + cache-e2e + matrix-e2e), act-compat, lint-workflows, and the aggregate `ci` gate."
+  bugs_found_and_fixed: "The first run (28353917275) caught 2 real CI-portability bugs invisible on the local Windows box: (1) the 3 GATE-A-static tests read dist/ but the test job never built -> a stale-dist false-pass locally; fixed via dependsOn:[build] on the test target. (2) act-compat.sh used rg (not installed on ubuntu runners); fixed to pure-bash substring matching. Commit 4fdd251 -> re-run green."
+  human_verification: []
 ---
 
 # Phase 6: Full e2e Matrix + CI Verification Report
 
 **Phase Goal:** The executor is validated across all five project types on a real installed package, and a cross-OS / multi-Node GitHub Actions matrix gates every change -- the slow, gating backstop for packaging, peer-range, path-normalization, and cross-OS bugs.
 **Verified:** 2026-06-29
-**Status:** human_needed
-**Re-verification:** No -- initial verification
+**Status:** passed (SC3 re-verified green on real runners)
+**Re-verification:** Yes -- SC3 proven GREEN via PR #3 run 28354578169 (all 6 matrix cells + e2e + act-compat + lint-workflows + the `ci` gate); 2 CI-portability bugs found + fixed (commit 4fdd251)
 
 ## Goal Achievement
 

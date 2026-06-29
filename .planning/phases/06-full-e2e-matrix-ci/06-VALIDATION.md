@@ -101,6 +101,6 @@ updated: 2026-06-29
 - [x] Wave 0 fully resolved
 - [x] No watch-mode flags
 - [x] `nyquist_compliant: true` (all coverage exists + passes; verifier independently re-ran)
-- [ ] SC3 matrix-green proof — pending the human draft-PR run (RD-10; tracked in `06-HANDOFF.md`)
+- [x] SC3 matrix-green proof — **PROVEN GREEN** on real runners (PR #3 run 28354578169: all 6 cells + e2e + act-compat + lint-workflows + the `ci` gate)
 
-**Approval:** validated 2026-06-29 (local coverage complete; SC3 human-gated).
+**Approval:** validated 2026-06-29 — full coverage + SC3 green on real GitHub runners.

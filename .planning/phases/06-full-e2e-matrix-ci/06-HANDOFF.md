@@ -1,6 +1,17 @@
 # Phase 6 — Morning Handoff (overnight run, 2026-06-29)
 
-## TL;DR
+## ✅ RESOLVED 2026-06-29 — SC3 is GREEN
+
+The draft-PR validation is **done**. PR #3 (`ci/validate-ci-matrix`), run `28354578169`:
+**all 6 matrix cells + e2e + act-compat + lint-workflows + the aggregate `ci` gate are GREEN.**
+The first run caught 2 real CI-portability bugs (GATE-A stale-`dist/` false-pass; `rg` not on
+ubuntu runners) — both fixed in commit `4fdd251`, re-run green. Phase 6 is COMPLETE.
+Remaining: land the validated branch on `main` + close PR #3 (see the bottom of this doc).
+The original handoff below is kept for the record.
+
+---
+
+## TL;DR (original — now resolved)
 
 Phase 6 (Full e2e Matrix + CI) is **fully executed, committed locally, and verified to the
 limit of what's possible without a push.** All 5 plans done; every local gate green. The

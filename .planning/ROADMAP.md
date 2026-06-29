@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Nx Executor Adapter + Cacheable Target** - A thin `angular-typecheck` executor wraps the core and runs as any Angular project's target, with a correct cacheable target proven by a dependency-error-busts-cache test. (completed 2026-06-28)
 - [x] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace. (completed 2026-06-28)
 - [x] **Phase 5.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)** - 0.0.2 published tokenlessly via the registered npm OIDC Trusted Publisher with SLSA provenance (proven: npm `_npmUser` = `GitHub Actions <npm-oidc-no-reply@github.com>`). The initial 404 was the Trusted Publisher never actually being SAVED at 05-05 (a simultaneous *Publishing access* change blocked it), NOT a registry-url problem -- `registry-url` is REQUIRED for OIDC detection (dropping it caused `ENEEDAUTH`); the old "drop registry-url on 404" contingency was wrong for npm >= 11.5.1. Release config decoupled (`release.git.push:false` + `createRelease:false`). (completed 2026-06-29)
-- [ ] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change. (executed + locally verified 2026-06-29; SC3 cross-OS matrix-green is HUMAN-GATED -- pending the draft-PR run on real runners, see 06-HANDOFF.md)
+- [x] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change. (completed 2026-06-29; SC3 cross-OS matrix proven GREEN on real runners via PR #3 run 28354578169 -- all 6 cells + e2e + act-compat + lint-workflows + the `ci` gate; 2 CI-portability bugs found + fixed)
 - [ ] **Phase 7: Release-PR workflow and clean changelog** - Switch from direct-push-to-main to a Release-PR flow (route nx-release version/changelog through a PR; tag-after-merge fires the OIDC publish), enable the staged "Default branch" ruleset (require PR + Phase-6 CI checks) and delete the temporary "v0.0.1" ruleset, and produce a public changelog that does NOT expose internal GSD phase/plan numbers.
 
 ## Phase Details
@@ -149,7 +149,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 1/1 | Complete   | 2026-06-28 |
-| 6. Full e2e Matrix + CI | 5/5 | Executed (SC3 matrix-green pending draft PR) | 2026-06-29 |
+| 6. Full e2e Matrix + CI | 5/5 | Complete    | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
 
 ### Phase 7: Release-PR workflow and clean changelog
