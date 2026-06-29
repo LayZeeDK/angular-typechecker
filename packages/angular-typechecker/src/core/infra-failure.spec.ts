@@ -75,6 +75,10 @@ function fakeProgram(): unknown {
 describe('runTypecheck infrastructure-failure handling (D-06)', () => {
   beforeEach(() => {
     compilerCliStub.performCompilation.mockReset();
+    // Clear the readConfiguration call history so the RES-04 spy assertion sees
+    // only THIS test's call. `mockReset` would also drop the default return
+    // value, so reset then restore the default below.
+    compilerCliStub.readConfiguration.mockReset();
     // Restore the default non-empty-rootNames / no-errors config parse so the
     // post-performCompilation cases below reach `performCompilation`. The COR-01
     // cases override this per test.
@@ -123,6 +127,34 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
     expect(result.errorCount).toBe(1);
     expect(result.diagnostics.map((diagnostic) => diagnostic.code)).toContain(
       TS2322,
+    );
+  });
+
+  // RES-04 / D-09 / SC4 (deterministic Option a, RESEARCH Open Q1): prove the
+  // engine passes `{ suppressOutputPathCheck: true }` as the SECOND ARG to
+  // `readConfiguration`, matching `@angular/build`'s `loadConfiguration`
+  // (`angular-compilation.ts:51` @ v22.0.4) EXACTLY. The output-path overwrite
+  // check fires in TypeScript's `verifyCompilerOptions()` gated by
+  // `!options.noEmit && !options.suppressOutputPathCheck` (typescript.js:129892),
+  // so this is belt-and-suspenders parity (the engine's `noEmit:true` already
+  // suppresses it). A spy assertion is the deterministic proof of the placement;
+  // the no-nuisance behavior under the real compiler is proven by the companion
+  // `suppress-output-path.integration.spec.ts`.
+  it('RES-04: passes { suppressOutputPathCheck: true } to readConfiguration', async () => {
+    compilerCliStub.performCompilation.mockReturnValue({
+      diagnostics: [],
+      // The non-infra path completes through the Phase-3 boundary filter, which
+      // reads `program.getTsProgram().useCaseSensitiveFileNames()`.
+      program: fakeProgram(),
+    });
+
+    const { runTypecheck } = await import('./run-typecheck');
+
+    await runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' });
+
+    expect(compilerCliStub.readConfiguration).toHaveBeenCalledWith(
+      '/virtual/tsconfig.json',
+      { suppressOutputPathCheck: true },
     );
   });
 });
