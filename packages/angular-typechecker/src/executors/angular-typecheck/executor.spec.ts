@@ -151,6 +151,11 @@ describe('angularTypecheckExecutor (D-01/D-04)', () => {
 
     expect(result).toEqual({ success: false });
     expect(mocks.loggerError).toHaveBeenCalledOnce();
+    // COR-04 / D-08: lock the DISTINCT operator message so an infra failure is
+    // never reported as a plain type-error verdict. Matches executor.ts:54.
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect.stringContaining('infrastructure error'),
+    );
   });
 
   it('RE-THROWS a non-infrastructure error (never swallows an unknown failure) (D-01)', async () => {
