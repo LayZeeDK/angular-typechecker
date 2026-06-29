@@ -63,7 +63,7 @@ Plans:
   3. A throwing `options.realpath()` in the project-boundary filter is caught and falls back to the unresolved path, so a filesystem realpath failure cannot abort the whole type-check pass (proven by a realpath-throws test; the happy path is unchanged).
   4. The no-emit options override sets `suppressOutputPathCheck: true`, so output-path configuration nuisance errors never surface in the type-only flow (verified safe under `noEmit: true`).
 
-**Plans**: 4 plans (2 waves; the INTERNAL gate encoded as wave order)
+**Plans**: 5 plans (3 waves; the INTERNAL gate encoded as wave order; 09-05 added by the RES-02 reframe)
 
 Plans:
 **Wave 1**
@@ -74,7 +74,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [x] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided shape) + the failing-then-passing fault-isolation.integration.spec.ts
+- [x] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided HYBRID shape) + the fault-isolation.integration.spec.ts run-level-resilience proof
+
+**Wave 3** *(RES-02 reframe completion)*
+
+- [x] 09-05-PLAN.md -- RES-02 reframe completion [wave 3, depends_on 09-02]: loud TCB-generation suppression notice (pure-core `CoreResult.templateCheckAborted` set by an NG3004 scan + executor `logger.warn` naming the source file via `normalizeShimFileName`) -- see `09-RES-02-DECISION.md`
 
 ### Phase 10: Drift-hardening & Maintainability
 
@@ -104,5 +108,5 @@ Plans:
 | 6. Full e2e Matrix + CI | v0.0.1 | 5/5 | Complete | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
-| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 4/4 | Complete   | 2026-06-29 |
+| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete   | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 0/? | Not started | - |
