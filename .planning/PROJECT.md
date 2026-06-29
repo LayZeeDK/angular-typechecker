@@ -32,6 +32,7 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - **Codebase:** ~1,162 LOC TypeScript across 33 `.ts` files in `packages/angular-typechecker/` (incl. tests); plus e2e fixture projects and CI/release workflows.
 - **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers.
 - **Known issues / debt:** documentation-drift and INFO-level only (see `.planning/milestones/v0.0.1-MILESTONE-AUDIT.md`); `.npmrc legacy-peer-deps=true` is a dev-repo concern that does not reach consumers.
+- **v0.0.3 progress (in flight):** Phase 8 (Correctness & Completeness, COR-01..04) COMPLETE 2026-06-29 -- config-resolution `UNKNOWN_ERROR_CODE` 500 re-thrown as infrastructure before the zero-rootNames guard, global/location-less TS diagnostics gathered via `getGlobalDiagnostics()`, present-but-empty-`fileName` diagnostics kept, and a pure core `toExitCode` 0/1/2 policy added (literal OS exit code deferred to the future standalone CLI; the Nx executor surfaces infra distinctly within its `{ success }` contract). Full suite 123/123 green. Phases 9 (Resilience) + 10 (Drift-hardening) remain.
 
 ## Requirements
 
@@ -142,4 +143,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-29 -- started milestone v0.0.3 (Engine hardening): added Current Milestone section + Active requirements, grounded in `.planning/research/prior-art/` (verified against @angular/build + @angular/compiler-cli at stable 22.0.4).*
+*Last updated: 2026-06-29 -- v0.0.3 Phase 8 (Correctness & Completeness, COR-01..04) complete and verified (123/123 green); SC4/COR-04 reframed (exit-code policy in core, literal OS code via the deferred standalone CLI). Phases 9-10 remain.*
