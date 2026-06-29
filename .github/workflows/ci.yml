@@ -55,9 +55,15 @@ jobs:
         id: filter
         with:
           # `code` is true when the diff touches anything OUTSIDE the
-          # planning/docs set. The negated globs use the default predicate
-          # quantifier (some): the filter matches when at least one changed file
-          # is NOT a planning/doc file.
+          # planning/docs set. `predicate-quantifier: every` is LOAD-BEARING with
+          # all-negation globs: a changed file counts toward `code` only if it
+          # satisfies EVERY pattern (i.e. is NOT under .planning, NOT *.md, NOT
+          # under docs) -- a real code file. With the default `some` quantifier a
+          # `.planning/x.md` file would match `!docs/**` (it is not under docs/)
+          # and wrongly set code=true, so the matrix would never skip. Proven on a
+          # planning-only probe PR: `every` -> code=false -> test/e2e skipped while
+          # the `ci` aggregate still reports green (no deadlock).
+          predicate-quantifier: 'every'
           filters: |
             code:
               - '!.planning/**'
