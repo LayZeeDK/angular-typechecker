@@ -4,14 +4,14 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-06-29T10:02:12.821Z"
-last_activity: 2026-06-29 -- Phase 07 planning complete
+last_updated: "2026-06-29T10:13:36.256Z"
+last_activity: 2026-06-29
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 29
-  completed_plans: 25
-  percent: 86
+  completed_plans: 26
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 07 — release pr workflow and clean changelog
+**Current focus:** Phase 07 — release-pr-workflow-and-clean-changelog
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
+Phase: 07 (release-pr-workflow-and-clean-changelog) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-06-29 -- Phase 07 planning complete
+Last activity: 2026-06-29
 
-Progress: [██████████] 100%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [██████████] 100%
 | Phase 06 P03 | 3min | 2 tasks | 2 files |
 | Phase 06 P02 | 25min | 3 tasks | 6 files |
 | Phase 06 P05 | 8 min | 2 tasks | 7 files |
+| Phase 07 P01 | ~4 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [06-02] The matrix spec runs each nx run with --skip-nx-cache: the cacheable target's production input EXCLUDES *.spec.ts, so mutating the spec-row source would NOT bust the cache (false-PASS risk). pnpm add uses --config.frozen-lockfile=false (the install-only --no-frozen-lockfile flag is rejected by pnpm add).
 - [Phase ?]: [06-05] ci.yml authored (CI-01): lean 6-cell matrix.include (ubuntu 22/24/26 + windows 24/26 + macos 24, fail-fast:false, NO arm64 runners, NO architecture pin) + Linux-only Node-24 e2e job (3 serialized e2e projects, pnpm via action-setup) + container-free act-compat (act v0.2.89) + lint-workflows (actionlint 1.7.7) + aggregate ci gate (needs all 4, if:always, fail-closed on failure||cancelled||skipped). Envelope matches release.yml; job id+name exactly ci = Phase-7 required-check contract.
 - [Phase ?]: [06-05] act compatibility suite + .actrc (RD-05/06/12): tools/act/act-compat.sh is container-free (act --validate parseability + act -n per-trigger fidelity; --pull=false; capture-then-rg, never plain act execution). Ran 12/0 locally proving the 06-04 release.yml if: ref gate discriminates: push-main -> publish SKIPPED, push-tag -> publish SELECTED, pull_request -> ci jobs only, workflow_dispatch(tag ref) -> publish reachable. .actrc maps ubuntu-latest+ubuntu-24.04 to catthehacker/ubuntu:act-24.04 (no forced linux/amd64; arm64 auto). tools/act/** + .actrc are repo-root dev tooling, NOT in the published files whitelist. actionlint not on the dev box -> local actionlint deferred to orchestrator/draft-PR (allowed); act --validate substituted as local static check.
+- [Phase ?]: [07-01] REL-01 mechanism: nx.json release.git.tag true->false (D-01) decouples the cut from tagging -- commit/push/createRelease unchanged; release-hygiene spec adds a git.tag===false Wave-0 regression assertion alongside the existing push/createRelease gate.
+- [Phase ?]: [07-01] REL-03 backstop: release-hygiene spec asserts CHANGELOG.md carries no GSD plan-id scope via 3 regexes (conventional-commit scope, bold heading token, bare leading scope); validated to catch 6 leak shapes with zero false positives; green against curated 0.0.1/0.0.2.
+- [Phase ?]: [07-01] REQUIREMENTS.md defines REL-01/02/03 (Release Process family) from RESEARCH proposed text; all three mapped to Phase 7 (Pending); coverage recomputed 31->34/34/0.
 
 ### Pending Todos
 
@@ -172,6 +176,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T09:25:31.376Z
+Last session: 2026-06-29T10:13:19.941Z
 Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-release-pr-workflow-and-clean-changelog/07-CONTEXT.md
+Resume file: None
