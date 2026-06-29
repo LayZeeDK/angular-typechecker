@@ -9,7 +9,7 @@
     "experimentalDecorators": false,
     "emitDecoratorMetadata": false,
     "lib": ["es2022", "dom"],
-    "types": ["node"]
+    "types": []
   },
   "angularCompilerOptions": {
     "strictTemplates": true

@@ -226,12 +226,24 @@ afterAll(() => {
 // ahead of. The spec-tsconfig row injects into the *.spec.ts file (NOT the
 // component) so the error provably lands in the spec file set, proving the spec
 // tsconfig is genuinely a distinct check baseline.
+// `originalLabel` is the unique committed line the injection is inserted AHEAD
+// of. `injectedLine` is the TS2322-producing line for that file's CONTEXT: the
+// four component rows inject a class FIELD (`readonly broken: number = 'str';`,
+// valid in a class body); the spec row injects a `const` STATEMENT
+// (`const broken: number = 'str';`, valid inside the `it()` function body where
+// its label line lives). Both build the string via JSON.stringify so there is
+// no quote/apostrophe escaping hazard (ASCII only): a `number` typed binding
+// assigned a string literal -> TS2322.
 interface MatrixRow {
   label: string;
   target: string;
   injectionFile: string;
   originalLabel: string;
+  injectedLine: string;
 }
+
+const BROKEN_FIELD = `readonly broken: number = ${JSON.stringify('str')};`;
+const BROKEN_STATEMENT = `const broken: number = ${JSON.stringify('str')};`;
 
 const MATRIX_ROWS: readonly MatrixRow[] = [
   {
@@ -240,6 +252,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
     injectionFile: join('apps', 'app', 'src', 'app.component.ts'),
     originalLabel:
       "readonly label: string = 'angular-typechecker matrix app';",
+    injectedLine: BROKEN_FIELD,
   },
   {
     label: 'local non-buildable library',
@@ -247,6 +260,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
     injectionFile: join('libs', 'local-lib', 'src', 'local-lib.component.ts'),
     originalLabel:
       "readonly label: string = 'angular-typechecker matrix local lib';",
+    injectedLine: BROKEN_FIELD,
   },
   {
     label: 'buildable library',
@@ -259,6 +273,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
     ),
     originalLabel:
       "readonly label: string = 'angular-typechecker matrix buildable lib';",
+    injectedLine: BROKEN_FIELD,
   },
   {
     label: 'publishable library',
@@ -271,21 +286,25 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
     ),
     originalLabel:
       "readonly label: string = 'angular-typechecker matrix publishable lib';",
+    injectedLine: BROKEN_FIELD,
   },
   {
     label: 'spec tsconfig',
     target: 'local-lib:angular-typecheck-spec',
     // The spec-type error lands in the *.spec.ts file set (the file the spec
     // tsconfig INCLUDES and the component targets EXCLUDE), proving the spec
-    // tsconfig is checked. The label is the unique `toBe(...)` assertion line.
+    // tsconfig is checked. The injection point is the `const label = ...` line
+    // INSIDE the `it()` callback, so the injected error must be a STATEMENT (a
+    // class-field `readonly` declaration would be a syntax error in a function
+    // body, masking the intended TS2322).
     injectionFile: join(
       'libs',
       'local-lib',
       'src',
       'local-lib.component.spec.ts',
     ),
-    originalLabel:
-      "const label: string = component.label;",
+    originalLabel: 'const label: string = component.label;',
+    injectedLine: BROKEN_STATEMENT,
   },
 ];
 
@@ -305,7 +324,7 @@ afterEach(() => {
 describe('TEST-03: the installed tarball type-checks all five project types green + injected-error', () => {
   it.each(MATRIX_ROWS)(
     '$label: green run exit 0 -> injected TS2322 non-zero + token + no ERR_REQUIRE_ESM',
-    ({ target, injectionFile, originalLabel }) => {
+    ({ target, injectionFile, originalLabel, injectedLine }) => {
       const sourcePath = join(consumerWorkspace, injectionFile);
       const original = readFileSync(sourcePath, 'utf8');
 
@@ -315,12 +334,12 @@ describe('TEST-03: the installed tarball type-checks all five project types gree
         const green = run(consumerWorkspace, target);
         expect(green.code).toBe(0);
 
-        // Inject a known TS2322 ahead of the unique label line. Build the broken
-        // line via JSON.stringify (no quote/apostrophe escaping hazard; ASCII
-        // only): a `number` field assigned a string literal.
+        // Inject a known TS2322 ahead of the unique label line, using the row's
+        // context-appropriate injected line (a class field for the component
+        // rows, a `const` statement for the spec-function-body row).
         const injected = original.replace(
           originalLabel,
-          `readonly broken: number = ${JSON.stringify('str')};\n  ${originalLabel}`,
+          `${injectedLine}\n  ${originalLabel}`,
         );
         expect(injected).not.toBe(original);
         lastInjected = { path: sourcePath, original };
