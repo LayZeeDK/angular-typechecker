@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Phase 9 context gathered
-last_updated: "2026-06-29T17:58:52.909Z"
-last_activity: 2026-06-29 -- Phase 09 execution started
+stopped_at: Completed 09-01-PLAN.md (RES-01 GATE = GO=HYBRID)
+last_updated: "2026-06-29T18:17:32.853Z"
+last_activity: 2026-06-29
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 33
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 ## Current Position
 
 Phase: 09 (resilience-per-file-fault-isolation-boundary-robustness) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 09
-Last activity: 2026-06-29 -- Phase 09 execution started
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-29
 
 ### v0.0.3 phase map
 
@@ -82,6 +82,7 @@ Last activity: 2026-06-29 -- Phase 09 execution started
 | Phase 08 P01 | 5min | 2 tasks | 3 files |
 | Phase 08 P02 | 14min | 2 tasks | 6 files |
 | Phase 08 P03 | 5min | 2 tasks | 5 files |
+| Phase 09 P01 | 14min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,7 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 - [Phase ?]: [08-02] COR-02: gatherAllDiagnostics gained a 7th unconditional getter program.getTsProgram().getGlobalDiagnostics() so global/location-less TS diagnostics (e.g. TS2318) are gathered; no compiler-cli-types.ts edit (getGlobalDiagnostics is on the public ts.Program reached via getTsProgram()); placement safe via finalize sortAndDeduplicateDiagnostics. Fixture fixtures/global-diagnostics uses noLib+types:[] (NOT extending base) for a real TS2318, asserted as raw 2318 through result.diagnostics. Raised vitest testTimeout to 30000ms to kill a pre-existing rotating cold-compiler timeout flake. Phase-10 HARD-01 must add this getter to the drift assertion (D-05).
 - [Phase ?]: [08-03] COR-03: widened the filter-diagnostics file-less guard to (file === undefined || file.fileName === '') so a present-but-empty fileName (synthesized-diagnostic edge canonicalizing to '') is treated as file-less and always kept, never suppressed by the boundary filter (D-06); canonicalizer/segment/isUnderDir untouched.
 - [Phase ?]: [08-03] COR-04: new pure core/exit-codes.ts toExitCode(input) -> 0|1|2 (ngc-parallel: 2 infra via instanceof TypecheckInfrastructureError, 1 errorCount>0, else 0), imports only ./run-typecheck, no process/console/@nx (passes core/** boundary lint), NOT imported by run-typecheck.ts (no cycle). D-08: executor.ts unchanged, toExitCode NOT wired into the executor return; only the infra-catch spec assertion tightened to lock the distinct 'infrastructure error' message.
+- [Phase ?]: [09-01] RES-01 GATE = GO=HYBRID: SIMPLE rejected (could not positively enumerate the non-template diagnostic universe; checkForPrivateExports/A2 not exercised) and counter-evidence found (IMPORT_GENERATION_FAILURE attaches to a .ngtypecheck.ts shim, not the iterated .component.ts). Per D-03 inconclusive -> HYBRID (keep whole-program getNgSemanticDiagnostics() + add per-file loop; finalize dedups). Recorded in 09-RES-01-SPIKE.md; gates plan 09-02.
 
 ### Pending Todos
 
@@ -218,6 +220,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T17:19:58.460Z
-Stopped at: Phase 9 context gathered
-Resume file: .planning/phases/09-resilience-per-file-fault-isolation-boundary-robustness/09-CONTEXT.md
+Last session: 2026-06-29T18:17:32.846Z
+Stopped at: Completed 09-01-PLAN.md (RES-01 GATE = GO=HYBRID)
+Resume file: None

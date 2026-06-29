@@ -18,7 +18,7 @@
 
 ### Resilience (RES)
 
-- [ ] **RES-01** [GATE / spike]: A spike determines whether any Angular non-template diagnostics (`traitCompiler` / `checkForPrivateExports`) are file-less or otherwise unreachable through a per-file `getNgSemanticDiagnostics(fileName)` / `getDiagnosticsForFile` `d.file === file` filter, and produces a GO decision on the per-file isolation shape: simple per-file loop vs. HYBRID (gather the non-template set once whole-program + loop the template/extended families per file). Gates RES-02. -- [#3 open question; the only true unknown].
+- [x] **RES-01** [GATE / spike]: A spike determines whether any Angular non-template diagnostics (`traitCompiler` / `checkForPrivateExports`) are file-less or otherwise unreachable through a per-file `getNgSemanticDiagnostics(fileName)` / `getDiagnosticsForFile` `d.file === file` filter, and produces a GO decision on the per-file isolation shape: simple per-file loop vs. HYBRID (gather the non-template set once whole-program + loop the template/extended families per file). Gates RES-02. -- [#3 open question; the only true unknown].
 - [ ] **RES-02**: Angular diagnostic gathering is fault-isolated per file so that a single component's `FatalDiagnosticError` yields one diagnostic and does NOT abandon the remaining files' Angular diagnostics -- implemented on the existing `api.Program` surface per the RES-01 decision (no `NgtscProgram` migration). -- [#3].
 - [ ] **RES-03**: A throwing `realpath()` in the project-boundary filter is caught (falls back to the unresolved path), so a filesystem realpath failure cannot abort the whole type-check pass. -- [#4].
 - [ ] **RES-04**: The no-emit options override sets `suppressOutputPathCheck: true`, so output-path configuration nuisance errors never surface in the type-only flow. -- [#6].
@@ -61,7 +61,7 @@ Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last
 | COR-02 | Phase 8 | Complete |
 | COR-03 | Phase 8 | Complete |
 | COR-04 | Phase 8 | Complete |
-| RES-01 | Phase 9 | Pending |
+| RES-01 | Phase 9 | Complete |
 | RES-02 | Phase 9 | Pending |
 | RES-03 | Phase 9 | Pending |
 | RES-04 | Phase 9 | Pending |
