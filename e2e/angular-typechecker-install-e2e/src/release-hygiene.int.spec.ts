@@ -36,6 +36,7 @@ const releaseWorkflowPath = join(
   'release.yml',
 );
 const dependabotPath = join(workspaceRoot, '.github', 'dependabot.yml');
+const changelogPath = join(workspaceRoot, 'CHANGELOG.md');
 
 // The published, unscoped project name nx release must be scoped to. Anything
 // else in release.projects would risk versioning/publishing a fixture, the spike
@@ -90,7 +91,9 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     // disabled -- the maintainer pushes the tag and creates the Release after
     // curation. Re-enabling either re-opens the un-curated-force-push hazard.
     expect(nx.release?.git?.push).toBe(false);
-    expect(nx.release?.changelog?.workspaceChangelog?.createRelease).toBe(false);
+    expect(nx.release?.changelog?.workspaceChangelog?.createRelease).toBe(
+      false,
+    );
   });
 
   it('keeps the cut decoupled from git tagging (REL-01 / D-01)', () => {
@@ -174,8 +177,8 @@ describe('PKG-04: the release workflow is supply-chain hardened', () => {
 
     // Collect every `uses:` reference and assert each pins a full 40-char hex
     // commit SHA -- never a `@vN` / `@branch` mutable ref (the tj-actions vector).
-    const usesRefs = [...workflow.matchAll(/uses:\s*\S+@(\S+)/g)].map(
-      (match) => match[1].trim(),
+    const usesRefs = [...workflow.matchAll(/uses:\s*\S+@(\S+)/g)].map((match) =>
+      match[1].trim(),
     );
 
     expect(usesRefs.length).toBeGreaterThan(0);
@@ -228,5 +231,28 @@ describe('PKG-04: Dependabot keeps the SHA pins fresh', () => {
     const dependabot = readFileSync(dependabotPath, 'utf8');
 
     expect(dependabot).toMatch(/package-ecosystem:\s*github-actions/);
+  });
+});
+
+describe('REL-03: the public changelog exposes no internal GSD plan-id scope', () => {
+  it('carries no NN / NN-NN plan-id scope token anywhere in CHANGELOG.md (REL-03 / D-13 / D-15)', () => {
+    const changelog = readFileSync(changelogPath, 'utf8');
+
+    // The public CHANGELOG.md (and the GitHub Release notes it sources via
+    // `gh release create --notes-file`, never `--generate-notes`) must NOT leak
+    // an internal GSD phase/plan scope. A live `nx release --dry-run` PROVED the
+    // RAW generated changelog leaks `**06-02:**` plan-id scopes -- so the entry
+    // must be hand-curated (D-13) and scope-hygiene enforced (D-15). This guards
+    // the CURATED CHANGELOG content, not the raw nx output. The three leak shapes:
+    //   1. a conventional-commit scope, e.g. `feat(05-01):`
+    //   2. a bold heading token,        e.g. `**06-02:**`
+    //   3. a bare leading scope,         e.g. `05-01:` / `06:`
+    const conventionalCommitScope = /\((\d{2}(?:-\d{2})*)\)/;
+    const boldHeadingScope = /\*\*\d{2}(?:-\d{2})*[:*]/;
+    const bareLeadingScope = /\b\d{2}(?:-\d{2})*:/;
+
+    expect(changelog).not.toMatch(conventionalCommitScope);
+    expect(changelog).not.toMatch(boldHeadingScope);
+    expect(changelog).not.toMatch(bareLeadingScope);
   });
 });
