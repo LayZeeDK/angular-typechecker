@@ -1,0 +1,15 @@
+# DI-06-01: stop the MAIN Nx graph from discovering the matrix-e2e consumer-workspace
+# fixture's nested projects (apps/app, libs/{local-lib,buildable-lib,publishable-lib}).
+#
+# Those fixtures are an INSTALLED-consumer workspace exercised ONLY from inside the
+# angular-typechecker-matrix-e2e spec (which copies them to a per-run tmp dir, installs
+# the packed tarball, and runs the executor by its PUBLISHED id). They must NOT be
+# members of THIS repo's project graph: the buildable-lib/publishable-lib declare
+# @nx/angular:ng-packagr-lite / :package build targets WITHOUT ng-packagr installed
+# (OQ-1 -- the executor never RUNS the build, only reads tsConfig), so an unscoped
+# `nx run-many -t build` (e.g. the release preVersionCommand) sweeps them in and fails
+# with "Cannot find module 'ng-packagr'".
+#
+# This excludes ONLY the fixtures subdir -- the angular-typechecker-matrix-e2e project
+# itself (its `test` target) stays in the graph.
+e2e/angular-typechecker-matrix-e2e/fixtures/
