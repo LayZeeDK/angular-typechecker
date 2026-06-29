@@ -25,6 +25,14 @@ import type { AngularTypecheckExecutorOptions } from './schema';
  * logger.error meta message + { success: false }. EVERY other error is RE-THROWN:
  * a type-checker that silently swallows an unknown failure and reports success is
  * worse than none.
+ *
+ * RES-02 (reframe; 09-RES-02-DECISION.md): when the core reports a TCB-generation
+ * Fatal (`result.templateCheckAborted`), the adapter emits a LOUD `logger.warn`
+ * (distinct from the infra `logger.error`) naming the offending file -- so the
+ * incompleteness (surviving files' Angular template/extended NG8xxx diagnostics
+ * are suppressed until that Fatal is fixed) is NEVER silent. The verdict is
+ * untouched: the Fatal is still a counted type error, and the infra-vs-type path
+ * (D-05) is unchanged -- this is additive signalling, not a reclassification.
  */
 export default async function angularTypecheckExecutor(
   options: AngularTypecheckExecutorOptions,
@@ -37,6 +45,23 @@ export default async function angularTypecheckExecutor(
 
   try {
     const result = await runTypecheck(coreOptions);
+
+    // RES-02 (reframe): surface the loud suppression notice BEFORE the report so
+    // it cannot be lost below a long codeframe dump. Fires only when the core
+    // flagged a TCB-generation Fatal -- never on clean / ordinarily-erroring runs.
+    if (result.templateCheckAborted !== undefined) {
+      const offendingFile =
+        result.templateCheckAborted.fileName ?? 'an unknown file';
+
+      logger.warn(
+        `angular-typecheck: a fatal template-compilation error in ${offendingFile} ` +
+          `(NG3004 IMPORT_GENERATION_FAILURE) aborted Angular template type-check-block ` +
+          `generation. Surviving files' Angular template/extended (NG8xxx) diagnostics ` +
+          `may be SUPPRESSED until that error is fixed -- this run's template check is ` +
+          `INCOMPLETE. Fix the reported NG3004 and re-run angular-typecheck.`,
+      );
+    }
+
     const report = await renderReport(result, {
       pathBase: coreOptions.pathBase,
       color,
