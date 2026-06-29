@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "noLib": true,
+    "types": [],
+    "skipLibCheck": false,
+    "noEmit": true
+  },
+  "files": ["global-error.ts"]
+}
