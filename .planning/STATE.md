@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 6 context gathered (--auto --chain --analyze; research-first)
-last_updated: "2026-06-29T01:29:34.593Z"
+stopped_at: Completed 06-02-PLAN.md (TEST-03 5-type matrix + pnpm e2e + DI-06-01 fix)
+last_updated: "2026-06-29T01:55:46.422Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
   percent: 75
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 6 (full-e2e-matrix-ci) — EXECUTING
-Plan: 3 of 5 complete (06-01, 06-03, 06-04 done; 06-02 + 06-05 remain)
-Status: 06-03 complete (OUT-02 cross-platform backstop); ready for 06-02 / 06-05
+Plan: 4 of 5 complete (06-01, 06-02, 06-03, 06-04 done; 06-05 remains)
+Status: 06-02 complete (TEST-03 5-type matrix + pnpm e2e PASSED locally; DI-06-01 resolved); ready for 06-05 (ci.yml)
 Last activity: 2026-06-29
 
-Progress: [█████████░] 92%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [█████████░] 92%
 | Phase 5 P4 | ~18 min | 4 tasks | 5 files |
 | Phase 06 P04 | 4 min | 1 tasks | 1 files |
 | Phase 06 P03 | 3min | 2 tasks | 2 files |
+| Phase 06 P02 | 25min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [06-04] nx release --dry-run version/changelog preview is blocked by a PRE-EXISTING out-of-scope fixture build failure (06-01 buildable-lib/publishable-lib need ng-packagr, deliberately not installed per OQ-1); logged as DI-06-01 in deferred-items.md, NOT fixed in 06-04; resolve (scope preVersionCommand to angular-typechecker:build) before the next real release cut.
 - [Phase ?]: [06-03] D-10 OUT-02 backstop: extended filter-diagnostics.spec.ts with the mixed-case parity set proving the case-fold is GATED on useCaseSensitiveFileNames (out-of-project + node_modules-segment SUPPRESSED under :false; same mixed-case in-project input NOT folded under :true) + RD-04 store-dir generality (.pnpm/.bun/plain node_modules suppressed by the single node_modules-segment test, synthetic realpaths, no install).
 - [Phase ?]: [06-03] D-10 integration assertion phrased to hold on all 3 OS legs: in-project KEPT + out-of-project SUPPRESSED is correct on every leg only if the split is host-derived (getTsProgram().useCaseSensitiveFileNames()); a toLowerCase equality is a live fold on mac/win and an identity no-op on Linux. Reuses the committed sibling-import fixture; no new fixture; no production code changed (test-only).
+- [Phase ?]: [06-02] TEST-03 5-type matrix e2e PASSES locally (Windows arm64): the installed tarball type-checks green + reports an injected TS2322 across app/local-lib/buildable-lib/publishable-lib/spec-tsconfig (install-once consumer-workspace, it.each); pnpm symlinked-store e2e green + injected with the documented Windows realpath fallback (true .pnpm boundary teeth on the Linux CI leg, RD-10).
+- [Phase ?]: [06-02] DI-06-01 RESOLVED via .nxignore excluding e2e/angular-typechecker-matrix-e2e/fixtures/ (remediation #2): the main graph no longer discovers the nested fixture projects, so nx run-many -t build (the release preVersionCommand) runs 2 real projects green instead of failing on ng-packagr; the matrix-e2e project stays in the graph for its test target.
+- [Phase ?]: [06-02] The matrix spec runs each nx run with --skip-nx-cache: the cacheable target's production input EXCLUDES *.spec.ts, so mutating the spec-row source would NOT bust the cache (false-PASS risk). pnpm add uses --config.frozen-lockfile=false (the install-only --no-frozen-lockfile flag is rejected by pnpm add).
 
 ### Pending Todos
 
@@ -152,7 +156,7 @@ None yet.
 - [01-02 PROGRESS] GATE A enabling half is in place: the plugin tsconfig is patched to `module: nodenext` and the plugin builds clean under it. The remaining GATE A/B proof (built executor.js retains `import(`; unconditional gatherer surfaces NG8109 + TS2322) lands in Plans 01-03/01-04.
 - [01-03 PROGRESS] GATE A/B engine validated ahead of the formal Plan 04 spec suite: `nx build angular-typechecker` succeeds and the built `compiler-loader.js` retains a literal `import('@angular/compiler-cli')` (no `require()` downlevel); `require()`-loading the built CJS executor against the fixture ran with no `ERR_REQUIRE_ESM` (GATE A runtime). A throwaway all-getter probe on both fixture tsconfigs returned `[2322, -998109, -998117]` while ngc's `defaultGatherDiagnostics` returned only `[2322]` (GATE B positive + differential; NG8109 fires on stable 22.0.4, D-18). Plan 04 turns these into the committed Vitest gate suite and records the cold-run timing.
 - [01-03 CAVEAT] The compiler-cli-types.ts shim re-exports via a deep relative path into `node_modules/@angular/compiler-cli/...` -- fragile if dep hoisting changes the layout, and coupled to the package's internal `.d.ts` structure (type-only; erased at emit). Revisit when @angular/compiler-cli ships nodenext-clean typings (Angular's own @angular/build consumes these types under module:commonjs/moduleResolution:node, so the barrel is simply not nodenext-tested upstream).
-- [06-04 -> next release cut] DI-06-01: nx release --dry-run fails in its preVersionCommand (npx nx run-many -t build) because the 06-01 matrix-e2e fixtures buildable-lib/publishable-lib declare @nx/angular:ng-packagr-lite/:package build targets but ng-packagr is deliberately not installed (OQ-1). Pre-existing, independent of release.yml. Resolve before the next real release: scope the preVersionCommand to angular-typechecker:build (or exclude fixture build targets from the default sweep). See deferred-items.md.
+- [RESOLVED 06-02] DI-06-01: nx release --dry-run preVersionCommand (npx nx run-many -t build) failed because the 06-01 matrix-e2e fixtures buildable-lib/publishable-lib declared @nx/angular build targets while ng-packagr is deliberately not installed (OQ-1). FIXED via a workspace .nxignore excluding e2e/angular-typechecker-matrix-e2e/fixtures/ so the main graph no longer discovers those fixture projects (the matrix-e2e project itself stays in the graph for its test target). VERIFIED: nx show projects no longer lists app/local-lib/buildable-lib/publishable-lib; nx run-many -t build now runs 2 real projects green. See deferred-items.md (marked RESOLVED, commit 99435b6).
 
 ## Deferred Items
 
@@ -164,6 +168,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T01:28:45.616Z
-Stopped at: Phase 6 context gathered (--auto --chain --analyze; research-first)
+Last session: 2026-06-29T01:55:46.412Z
+Stopped at: Completed 06-02-PLAN.md (TEST-03 5-type matrix + pnpm e2e + DI-06-01 fix)
 Resume file: None

@@ -3,7 +3,22 @@
 Out-of-scope discoveries logged during execution. NOT fixed in the discovering plan
 (SCOPE BOUNDARY: only auto-fix issues directly caused by the current task's changes).
 
-## DI-06-01: `nx release --dry-run` pre-version build fails on the 06-01 fixtures
+## DI-06-01: `nx release --dry-run` pre-version build fails on the 06-01 fixtures -- RESOLVED (06-02)
+
+- **STATUS: RESOLVED in 06-02 (commit `99435b6`).** Fix: added a workspace `.nxignore`
+  excluding `e2e/angular-typechecker-matrix-e2e/fixtures/` so the MAIN Nx graph stops
+  discovering the nested fixture projects (`app`, `local-lib`, `buildable-lib`,
+  `publishable-lib`). The `angular-typechecker-matrix-e2e` project itself stays in the
+  graph for its `test` target. This is candidate remediation #2 below ("exclude the
+  fixture projects from the default build sweep"), chosen over #1 (re-scoping the release
+  `preVersionCommand`) because it is the narrowest, most general fix: the fixture projects
+  are an installed-consumer workspace exercised only from inside the matrix-e2e spec and
+  should never have been graph members. VERIFIED: `nx show projects` no longer lists the 4
+  fixture projects; `npx nx run-many -t build` now runs 2 real projects
+  (`angular-typechecker`, `ng-spike-app`) GREEN (previously failed on
+  `buildable-lib:build` / `publishable-lib:build` -- "Cannot find module 'ng-packagr'").
+  The release `preVersionCommand` (`npx nx run-many -t build`) is therefore no longer
+  swept into the fixture build targets. Original report retained below.
 
 - **Discovered during:** 06-04 (the RD-07 `release.yml` `if:` gate plan), running the
   required `nx release --dry-run` sanity check.
