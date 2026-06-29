@@ -104,6 +104,33 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 
   const parsed = ng.readConfiguration(options.tsConfigPath);
 
+  // COR-01 / D-01..D-03: a config-resolution CRASH surfaces here as a code-500
+  // (UNKNOWN_ERROR_CODE) in `parsed.errors` -- the `readConfiguration` outer
+  // catch wraps a real throw (a nonexistent tsconfig path's ENOENT, a circular
+  // `extends` RangeError) into a single synthesized Error diagnostic. Detect it
+  // by CODE only (D-02; never `source`/message text -- the same predicate as the
+  // post-`performCompilation` scan below) and re-throw as infrastructure.
+  //
+  // This scan MUST precede the zero-rootNames guard: the 500 case returns
+  // `rootNames: []`, so a late scan would be unreachable -- the guard returns
+  // first and the 500 would be folded into `configDiagnostics` and mis-counted
+  // as a type error (a crash masquerading as a clean/typed verdict). Both 500
+  // scans coexist (D-02 defense-in-depth at two distinct stages). Only code 500
+  // is infrastructure: every OTHER `parsed.errors` entry (e.g. a 5012 missing
+  // `extends` target) stays folded into `configDiagnostics` below (D-03).
+  const configInfrastructureFailure = parsed.errors.find(
+    (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
+  );
+
+  if (configInfrastructureFailure !== undefined) {
+    throw new TypecheckInfrastructureError(
+      ts.flattenDiagnosticMessageText(
+        configInfrastructureFailure.messageText,
+        '\n',
+      ),
+    );
+  }
+
   // D-03 part 1 (fixes MD-01): NEVER drop `parsed.errors`. A malformed,
   // unreadable, or nonexistent tsconfig surfaces here and is prepended to the
   // final diagnostics so it is counted -- never a silent "clean".
