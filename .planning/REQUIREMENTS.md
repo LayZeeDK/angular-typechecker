@@ -9,38 +9,38 @@
 
 ### Workspace & Plugin Scaffold (WS)
 
-- [ ] **WS-01**: The repository is an Nx 23 integrated Angular monorepo (created via `create-nx-workspace`) hosting the `angular-typechecker` plugin package.
+- [x] **WS-01**: The repository is an Nx 23 integrated Angular monorepo (created via `create-nx-workspace`) hosting the `angular-typechecker` plugin package.
 - [x] **WS-02**: The plugin builds via `@nx/js:tsc` to CommonJS `.js` + `.d.ts`, compiled with `module: node16`/`nodenext` (a build-time check asserts the emitted executor `.js` still contains `import(`).
 - [x] **WS-03**: The plugin's own unit/integration tests run via `@nx/vitest:test` (Vitest).
 - [x] **WS-04**: ESLint + Prettier are configured, including `@nx/dependency-checks` and module-boundary enforcement of the framework-agnostic `core/` vs adapters.
 
 ### Type-Check Engine (ENG)
 
-- [ ] **ENG-01**: A framework-agnostic core (`runTypecheck(options)`) runs `@angular/compiler-cli` whole-program, no-emit, against a given tsconfig.
-- [ ] **ENG-02**: A custom gatherer collects ALL diagnostics unconditionally -- TS option/syntactic/semantic + Angular template type-check + extended (NG8xxx) -- modeled on `@angular/build`, never short-circuiting like `ngc`'s default gatherer.
+- [x] **ENG-01**: A framework-agnostic core (`runTypecheck(options)`) runs `@angular/compiler-cli` whole-program, no-emit, against a given tsconfig.
+- [x] **ENG-02**: A custom gatherer collects ALL diagnostics unconditionally -- TS option/syntactic/semantic + Angular template type-check + extended (NG8xxx) -- modeled on `@angular/build`, never short-circuiting like `ngc`'s default gatherer.
 - [x] **ENG-03**: The core loads ESM `@angular/compiler-cli` via `await import()` and runs under the supported Node range.
-- [ ] **ENG-04**: The core returns a structured result (errors/warnings as `ts.Diagnostic[]` + counts) with `strictTemplates` honored; extended-diagnostic categories respected.
+- [x] **ENG-04**: The core returns a structured result (errors/warnings as `ts.Diagnostic[]` + counts) with `strictTemplates` honored; extended-diagnostic categories respected.
 
 ### Executor (EXE)
 
 - [x] **EXE-01**: An `angular-typecheck` Nx executor wraps the core and can be set as any Angular project's target.
-- [ ] **EXE-02**: Required `tsConfig` option (single tsconfig per target), overridable in target configuration; spec/unit-test checking via a target pointed at `tsconfig.spec.json`.
-- [ ] **EXE-03**: Default full / report-all mode (matches `tsc --noEmit`); opt-in fail-fast (return on first error).
-- [ ] **EXE-04**: Excludes out-of-project + `node_modules` diagnostics by default; opt-in `includeDeps`.
-- [ ] **EXE-05**: `--max-warnings=<n>` (0 = fail on any warning); errors always fail; project-configured diagnostic categories respected.
+- [x] **EXE-02**: Required `tsConfig` option (single tsconfig per target), overridable in target configuration; spec/unit-test checking via a target pointed at `tsconfig.spec.json`.
+- [x] **EXE-03**: Default full / report-all mode (matches `tsc --noEmit`); opt-in fail-fast (return on first error).
+- [x] **EXE-04**: Excludes out-of-project + `node_modules` diagnostics by default; opt-in `includeDeps`.
+- [x] **EXE-05**: `--max-warnings=<n>` (0 = fail on any warning); errors always fail; project-configured diagnostic categories respected.
 - [x] **EXE-06**: The executor target is Nx-cacheable (`cache: true`, `outputs: []`, correct per-tsconfig + dependency-source inputs + `externalDependencies`).
 - [x] **EXE-07**: Shipped as a CommonJS executor that loads ESM compiler-cli via dynamic `import()` with no `import()`->`require()` downlevel.
 
 ### Diagnostics & Output (OUT)
 
-- [ ] **OUT-01**: Default human output via `@angular/compiler-cli` `formatDiagnostics` (NG codes + template codeframes; superset of `tsc`).
+- [x] **OUT-01**: Default human output via `@angular/compiler-cli` `formatDiagnostics` (NG codes + template codeframes; superset of `tsc`).
 - [x] **OUT-02**: Diagnostics filtered on absolute realpath-normalized `fileName` (pnpm-symlink / case-insensitive-FS safe); CI annotation paths emitted workspace-root-relative.
-- [ ] **OUT-03**: Clear non-zero exit on diagnostics; deterministic, idempotent (agent-ready) output.
+- [x] **OUT-03**: Clear non-zero exit on diagnostics; deterministic, idempotent (agent-ready) output.
 
 ### Testing (TEST)
 
 - [x] **TEST-01**: Unit tests (Vitest) mock `@angular/compiler-cli` and cover gatherer, project-boundary filtering, tsconfig resolution, modes, and `--max-warnings` logic.
-- [ ] **TEST-02**: Integration tests run the real compiler against fixtures and assert exact diagnostic codes/counts across the v13->v22 catalog (organized by Angular introduction version), all on Angular 22.
+- [x] **TEST-02**: Integration tests run the real compiler against fixtures and assert exact diagnostic codes/counts across the v13->v22 catalog (organized by Angular introduction version), all on Angular 22.
 - [x] **TEST-03**: The executor is validated across all five project types: application, local (non-buildable) library, buildable library, publishable library, and spec tsconfig.
 - [x] **TEST-04**: A dependency-error-busts-cache correctness test verifies a downstream type change invalidates the consumer's cache.
 - [x] **TEST-05**: One real-workspace e2e smoke (tarball/Verdaccio install) lands early; the full real-workspace e2e matrix lands in late phase(s).
@@ -51,7 +51,7 @@
 - [x] **PKG-02**: `executors.json`/`schema.json` (v2, `cli: "nx"`, `outputCapture`) are copied into `dist` and present in the `npm pack` tarball (verified by `publint` + `attw --pack`).
 - [x] **PKG-03**: Published to npm (MIT, 0.x semver) via `nx release` using npm Trusted Publishers (OIDC) + provenance.
 - [x] **PKG-04**: `SECURITY.md` present and the release CI is hardened (read-only default permissions, no untrusted `pull_request_target`, SHA-pinned actions, manual-approval publish environment).
-- [ ] **PKG-05**: Tokenless OIDC steady-state publish verified on 0.0.2: a real release authenticates via the registered npm Trusted Publisher with NO token, attaches SLSA v1 provenance, sets `dist-tags.latest`, and cuts a GitHub Release.
+- [x] **PKG-05**: Tokenless OIDC steady-state publish verified on 0.0.2: a real release authenticates via the registered npm Trusted Publisher with NO token, attaches SLSA v1 provenance, sets `dist-tags.latest`, and cuts a GitHub Release.
 
 ### Compatibility (CMP)
 
@@ -64,9 +64,9 @@
 
 ### Release Process (REL)
 
-- [ ] **REL-01** (Release-PR flow): Releases no longer push version/changelog commits directly to `main`. `nx release --skip-publish` on a `release/*` branch produces the version bump + curated CHANGELOG commit with NO git tag and NO push; the change merges via PR; the maintainer creates the release tag on the merge commit, firing the unchanged tag-triggered OIDC publish (`release.yml` byte-identical). **Acceptance:** `nx.json` has `release.git.tag:false` (plus `commit:true`, `push:false`, `createRelease:false`); `release-hygiene.int.spec.ts` asserts `git.tag===false`; a release-branch `nx release --dry-run` shows "Skipped ... Tagging" and creates no tag/push; the tag `angular-typechecker@x.y.z` matches `release.yml`'s `on: push: tags` filter.
-- [ ] **REL-02** (Branch-protection switch): `main` requires a PR satisfying the `ci` + `Analyze (actions)` + `Analyze (javascript-typescript)` status checks with force-push/deletion blocked and empty bypass; the temporary v0.0.1 ruleset is deleted; the Release-tag ruleset is retained. **Acceptance:** `gh api .../rulesets/18229122` returns `enforcement:active`, `strict_required_status_checks_policy:false`, `bypass_actors:[]`, the three required checks, `allowed_merge_methods:["merge"]`; `gh api .../rulesets/18229088` returns 404; `gh api .../rulesets/18229053` still returns the active tag ruleset.
-- [ ] **REL-03** (Clean changelog): The public CHANGELOG.md entry and the GitHub Release notes contain NO internal GSD phase/plan scope (no `NN`/`NN-NN` token like `feat(05-01):`/`**06-02:**`). **Acceptance:** the curated CHANGELOG.md section matches the 0.0.1/0.0.2 style (prose summary + Features/Fixes/Breaking + a Compatibility block) and contains no `\b\d{2}(-\d{2})*\b` plan-id scope; the GitHub Release is created with `--notes-file` pointing at that section (never `--generate-notes`).
+- [x] **REL-01** (Release-PR flow): Releases no longer push version/changelog commits directly to `main`. `nx release --skip-publish` on a `release/*` branch produces the version bump + curated CHANGELOG commit with NO git tag and NO push; the change merges via PR; the maintainer creates the release tag on the merge commit, firing the unchanged tag-triggered OIDC publish (`release.yml` byte-identical). **Acceptance:** `nx.json` has `release.git.tag:false` (plus `commit:true`, `push:false`, `createRelease:false`); `release-hygiene.int.spec.ts` asserts `git.tag===false`; a release-branch `nx release --dry-run` shows "Skipped ... Tagging" and creates no tag/push; the tag `angular-typechecker@x.y.z` matches `release.yml`'s `on: push: tags` filter.
+- [x] **REL-02** (Branch-protection switch): `main` requires a PR satisfying the `ci` + `Analyze (actions)` + `Analyze (javascript-typescript)` status checks with force-push/deletion blocked and empty bypass; the temporary v0.0.1 ruleset is deleted; the Release-tag ruleset is retained. **Acceptance:** `gh api .../rulesets/18229122` returns `enforcement:active`, `strict_required_status_checks_policy:false`, `bypass_actors:[]`, the three required checks, `allowed_merge_methods:["merge"]`; `gh api .../rulesets/18229088` returns 404; `gh api .../rulesets/18229053` still returns the active tag ruleset.
+- [x] **REL-03** (Clean changelog): The public CHANGELOG.md entry and the GitHub Release notes contain NO internal GSD phase/plan scope (no `NN`/`NN-NN` token like `feat(05-01):`/`**06-02:**`). **Acceptance:** the curated CHANGELOG.md section matches the 0.0.1/0.0.2 style (prose summary + Features/Fixes/Breaking + a Compatibility block) and contains no `\b\d{2}(-\d{2})*\b` plan-id scope; the GitHub Release is created with `--notes-file` pointing at that section (never `--generate-notes`).
 
 ## v2 Requirements (deferred to later milestones)
 
@@ -113,26 +113,26 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WS-01 | Phase 1 | Partial (01-01: workspace bootstrapped; plugin package lands in 01-02) |
+| WS-01 | Phase 1 | Complete |
 | WS-02 | Phase 1 | Complete |
 | WS-03 | Phase 1 | Complete |
 | WS-04 | Phase 3 | Complete |
-| ENG-01 | Phase 2 | Pending |
-| ENG-02 | Phase 2 | Pending |
+| ENG-01 | Phase 2 | Complete |
+| ENG-02 | Phase 2 | Complete |
 | ENG-03 | Phase 1 | Complete |
-| ENG-04 | Phase 2 | Pending |
+| ENG-04 | Phase 2 | Complete |
 | EXE-01 | Phase 4 | Complete |
-| EXE-02 | Phase 2 | Pending |
-| EXE-03 | Phase 3 | Pending |
-| EXE-04 | Phase 3 | Pending |
-| EXE-05 | Phase 3 | Pending |
+| EXE-02 | Phase 2 | Complete |
+| EXE-03 | Phase 3 | Complete |
+| EXE-04 | Phase 3 | Complete |
+| EXE-05 | Phase 3 | Complete |
 | EXE-06 | Phase 4 | Complete |
 | EXE-07 | Phase 4 | Complete |
-| OUT-01 | Phase 3 | Pending |
+| OUT-01 | Phase 3 | Complete |
 | OUT-02 | Phase 3 | Complete |
-| OUT-03 | Phase 3 | Pending |
+| OUT-03 | Phase 3 | Complete |
 | TEST-01 | Phase 3 | Complete |
-| TEST-02 | Phase 2 | Pending |
+| TEST-02 | Phase 2 | Complete |
 | TEST-03 | Phase 6 | Complete |
 | TEST-04 | Phase 4 | Complete |
 | TEST-05 | Phase 5 | Complete |
@@ -140,13 +140,13 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | PKG-02 | Phase 5 | Complete |
 | PKG-03 | Phase 5 | Complete |
 | PKG-04 | Phase 5 | Complete |
-| PKG-05 | Phase 5.1 | Pending |
+| PKG-05 | Phase 5.1 | Complete |
 | CMP-01 | Phase 1 | Complete (01-01: nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 pinned exact) |
 | CMP-02 | Phase 1 | Complete |
 | CI-01 | Phase 6 | Complete |
-| REL-01 | Phase 7 | Pending |
-| REL-02 | Phase 7 | Pending |
-| REL-03 | Phase 7 | Pending |
+| REL-01 | Phase 7 | Complete |
+| REL-02 | Phase 7 | Complete |
+| REL-03 | Phase 7 | Complete |
 
 **Coverage:**
 - v0.0.1 requirements: 34 total (30 enumerated checklist + PKG-05 added with the Phase 5.1 insertion + REL-01/REL-02/REL-03 added with the Phase 7 insertion; supersedes the "26" header miscount)
@@ -165,4 +165,4 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-29 -- REL-01/REL-02/REL-03 (Release-PR workflow, branch-protection switch, clean changelog) recorded for Phase 7 (34/34 mapped)*
+*Last updated: 2026-06-29 -- v0.0.1 milestone audit closed all statuses: 34/34 requirements verified SATISFIED across 8 passed phases (see `.planning/v0.0.1-MILESTONE-AUDIT.md`); stale Pending/Partial statuses and `[ ]` checkboxes flipped to Complete/`[x]`*
