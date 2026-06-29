@@ -44,7 +44,7 @@ import { NG, ngCodeOf } from './diagnostic-codes';
 
 // The FROZEN set of getters `gather-diagnostics.ts` CALLS on `api.Program`
 // (`:62-77`): 6 diagnostic getters plus `getTsProgram` (whose `.getGlobalDiagnostics`
-// the COR-02 reach-through at `:80` uses). `getNgStructuralDiagnostics` is included
+// the COR-02 reach-through at `:88` uses). `getNgStructuralDiagnostics` is included
 // for HARD-04 coverage (deliberately retained no-op-tolerant getter). Mirror this
 // EXACTLY -- a divergence from `gather-diagnostics.ts` is itself a drift to catch.
 const GATHERED_GETTERS = [
@@ -105,7 +105,7 @@ describe('compiler-cli-types runtime drift (real NgtscProgram getter-set + NG en
       );
     }
 
-    // COR-02 reach-through: the global-diagnostics call (`gather-diagnostics.ts:80`)
+    // COR-02 reach-through: the global-diagnostics call (`gather-diagnostics.ts:88`)
     // lives on the wrapped `ts.Program`, not on `api.Program`. Cover it explicitly.
     expect(typeof program.getTsProgram().getGlobalDiagnostics).toBe('function');
 
