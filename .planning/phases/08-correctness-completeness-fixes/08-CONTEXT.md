@@ -52,7 +52,7 @@ the design here only ensures we do not paint them into a corner.
   overlap with the per-file `getTsSemanticDiagnostics` safe. Verified: Angular's
   per-file `getTsSemanticDiagnostics` never emits TS global diagnostics (e.g. TS2318);
   `@angular/build` calls `getGlobalDiagnostics()` explicitly.
-- **D-05:** (cross-phase note, NOT implemented here) Phase 10 HARD-01's drift
+- **D-05 [informational]:** (cross-phase note, NOT implemented here; not tracked as a Phase-8 plan decision) Phase 10 HARD-01's drift
   getter-set assertion must include `getTsProgram().getGlobalDiagnostics` so this new
   call cannot silently drop out on an Angular upgrade.
 
@@ -78,12 +78,12 @@ the design here only ensures we do not paint them into a corner.
   `logger.error` operator message (already present, `executor.ts:53`) +
   `return { success: false }` (Nx maps to exit 1). The executor does NOT call
   `process.exit` and does NOT attempt a numeric code.
-- **D-09:** The literal distinct OS exit code (`2` infra / `1` type / `0` clean) is
+- **D-09 [informational]:** (deferred CLI surface; not tracked as a Phase-8 plan decision) The literal distinct OS exit code (`2` infra / `1` type / `0` clean) is
   delivered by the STANDALONE CLI surface (DEFERRED feature) -- it owns its process
   (like `ngc`) and consumes the SAME `toExitCode` policy. The Angular CLI builder
   (deferred, `convertNxExecutor` wrap) inherits the executor's `{ success }` -> 0/1
   behavior. This is why the policy lives in core: one definition, three consumers.
-- **D-10:** SC4 / COR-04 are REFRAMED accordingly. This discussion amends
+- **D-10 [informational]:** (meta-reframe already applied to ROADMAP/REQUIREMENTS; not tracked as a Phase-8 plan decision) SC4 / COR-04 are REFRAMED accordingly. This discussion amends
   `.planning/ROADMAP.md` (Phase 8 SC4 + the phase bullet) and
   `.planning/REQUIREMENTS.md` (COR-04) so the phase verifier checks the reframed
   contract (engine classification + pure policy + distinct executor message), NOT a
