@@ -79,7 +79,10 @@ assert_absent() {
 }
 
 echo "=== act compatibility suite ==="
-act --version
+# WR-03: do NOT let a bare version probe abort the suite under `set -e` -- a
+# degraded/missing act must surface as a counted [FAIL] via the guarded
+# `act --validate` below + the summary, not a silent uncounted abort.
+act --version || true
 
 echo
 echo "--- Guard 1: parseability (act --validate) ---"
@@ -93,8 +96,10 @@ echo
 echo "--- Guard 2: trigger/condition fidelity (act -n per trigger) ---"
 
 # pull_request -> ci jobs reachable (release.yml has no pull_request trigger).
+# WR-02: match the `ci/test-` job FAMILY, not the positional `ci/test-1`, so the
+# assertion survives any reorder/resize of the matrix `include` list.
 PR_PLAN="$(plan pull_request -e "$EVENTS/pull_request.json" --env GITHUB_REF=refs/pull/1/merge)"
-assert_selected "$PR_PLAN" "ci/test-1" "pull_request"
+assert_selected "$PR_PLAN" "ci/test-" "pull_request"
 assert_selected "$PR_PLAN" "ci/e2e" "pull_request"
 assert_selected "$PR_PLAN" "ci/act-compat" "pull_request"
 assert_selected "$PR_PLAN" "ci/lint-workflows" "pull_request"
@@ -104,7 +109,7 @@ assert_absent "$PR_PLAN" "release/publish" "pull_request"
 # push to main -> ci jobs reachable AND release publish SKIPPED (the 06-04 if:
 # ref gate is false on a branch ref).
 PUSH_MAIN_PLAN="$(plan push -e "$EVENTS/push-main.json" --env GITHUB_REF=$BRANCH_REF)"
-assert_selected "$PUSH_MAIN_PLAN" "ci/test-1" "push-main"
+assert_selected "$PUSH_MAIN_PLAN" "ci/test-" "push-main"
 assert_selected "$PUSH_MAIN_PLAN" "ci/ci" "push-main"
 assert_absent "$PUSH_MAIN_PLAN" "release/publish" "push-main"
 
