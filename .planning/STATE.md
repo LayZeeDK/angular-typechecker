@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
-status: planning
+status: roadmapped
 last_updated: "2026-06-29T14:42:07.149Z"
 last_activity: 2026-06-29
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Planning the next milestone (run `/gsd-new-milestone`).
+**Current focus:** v0.0.3 (Engine hardening) roadmapped -- Phases 8-10. Next: `/gsd-plan-phase 8`.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 8 of 10 (Correctness & Completeness Fixes) -- not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-06-29 — Milestone v0.0.3 started
+Status: Roadmapped (3 phases, 13 requirements mapped 13/13)
+Last activity: 2026-06-29 — Milestone v0.0.3 roadmap created (Phases 8-10)
+
+### v0.0.3 phase map
+
+| Phase | Goal | Requirements | Notes |
+|-------|------|--------------|-------|
+| 8. Correctness & Completeness Fixes | Report the diagnostics we miss; classify config crashes as infra | COR-01, COR-02, COR-03, COR-04 | Independent; each test-gated |
+| 9. Resilience (per-file fault isolation + boundary robustness) | Report as much as possible instead of aborting on one fault | RES-01, RES-02, RES-03, RES-04 | INTERNAL GATE: RES-01 spike first, gates RES-02 |
+| 10. Drift-hardening & Maintainability | Make Angular `api.Program` / error-code drift break CI loudly | HARD-01, HARD-02, HARD-03, HARD-04, HARD-05 | Independent; touches vendored shim + new drift CI target |
 
 ## Performance Metrics
 
@@ -74,8 +82,16 @@ Last activity: 2026-06-29 — Milestone v0.0.3 started
 
 ### Roadmap Evolution
 
+- v0.0.3 (Engine hardening) roadmapped 2026-06-29: 3 phases (8-10) derived from the 13 v0.0.3 requirements in three coherent, mostly-independent clusters -- Correctness & Completeness (Phase 8), Resilience (Phase 9, with an internal GATED spike RES-01 -> RES-02), Drift-hardening & Maintainability (Phase 10). Grounded in `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` (verified vs @angular/build + @angular/compiler-cli at stable 22.0.4). No `NgtscProgram` migration; no new feature surfaces.
+- Phase 9 carries the one load-bearing open question (gates RES-02): `NgCompiler.getDiagnosticsForFile` filters non-template diagnostics by `d.file === file`, so a naive per-file loop could DROP file-less `traitCompiler`/`checkForPrivateExports` diagnostics. The RES-01 spike settles simple per-file loop vs. HYBRID before RES-02 implements isolation. Modeled on v0.0.1's Phase-1 GATED spike.
+
+<details>
+<summary>v0.0.1 roadmap-evolution log (historical)</summary>
+
 - Phase 5.1 inserted after Phase 5: 0.0.2 = first OIDC steady-state publish; the only unproven link after the 0.0.1 token-seed; if it 404s on auth, drop registry-url from setup-node (empty-_authToken trap, documented inline in release.yml) (URGENT)
 - Phase 7 added: Release-PR workflow + branch-protection switch (enable Default branch ruleset, delete v0.0.1 ruleset) + clean changelog (no GSD phase/plan numbers)
+
+</details>
 
 ### Decisions
 
@@ -156,9 +172,11 @@ None yet.
 
 ### Blockers/Concerns
 
-v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now addressed. One dev-repo caveat carries forward to the next milestone:
+v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now addressed. Carried forward into v0.0.3:
 
-- **CARRIED FORWARD:** `.npmrc legacy-peer-deps=true` is required in this dev repo because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is Angular 22. It does NOT reach consumers (a clean tarball install on stable Angular 22.0.4 + Nx 23.0.1 needs no override). Revisit/drop when a stable `@nx/angular` admits Angular 22 in its peers.
+- **CARRIED FORWARD (dev-repo):** `.npmrc legacy-peer-deps=true` is required in this dev repo because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is Angular 22. It does NOT reach consumers (a clean tarball install on stable Angular 22.0.4 + Nx 23.0.1 needs no override). Revisit/drop when a stable `@nx/angular` admits Angular 22 in its peers.
+- **PHASE-9 INPUT (open question, gates RES-02):** `NgCompiler.getDiagnosticsForFile` filters non-template diagnostics by `d.file === file` (`compiler.ts:618` per PRIOR-ART-SUMMARY), so a naive per-file `getNgSemanticDiagnostics(fileName)` loop could DROP file-less `traitCompiler`/`checkForPrivateExports` diagnostics. The RES-01 spike MUST settle this before RES-02: simple per-file loop vs. HYBRID (whole-program non-template set ONCE + per-file template/extended loop). This is the only true unknown in the milestone.
+- **PHASE-10 INPUT (vendored shim debt):** `compiler-cli-types.ts` currently fabricates `EmitFlags.None = 0` (the real enum has 7 members incl. `I18nBundle = 8`, no `None`) -- HARD-02 corrects this. The shim is a deliberate subset of the real `api.Program`; HARD-01's drift tsconfig asserts the real->shim assignability and the `ngErrorCode`/`UNKNOWN_ERROR_CODE` encoding, and HARD-04 keeps `getNgStructuralDiagnostics()` under that assertion.
 
 <details>
 <summary>v0.0.1 blockers/concerns log (historical -- all resolved or addressed)</summary>
@@ -185,10 +203,11 @@ Items acknowledged and carried forward from previous milestone close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| Observability | OBS-01 `totalFilesCount` field on `CoreResult` (@nx/js parity) | Deferred pending charter-fit | v0.0.3 requirements definition |
+| Feature families | INF / GEN / SUR / REP / SUP carried from v0.0.1 | Deferred (later milestone) | v0.0.1 close |
 
 ## Session Continuity
 
-Last session: 2026-06-29T10:25:57.899Z
-Stopped at: Phase 7 context gathered
+Last session: 2026-06-29 — v0.0.3 roadmap created (Phases 8-10)
+Stopped at: Roadmap written; 13/13 requirements mapped; ready for `/gsd-plan-phase 8`
 Resume file: None

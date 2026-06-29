@@ -53,29 +53,29 @@ Inferred targets (INF), install/generators (GEN), other surfaces (SUR), reporter
 
 ## Traceability
 
-Which phases cover which requirements. Populated during roadmap creation (phases continue from v0.0.1's last phase 7).
+Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last phase (7), starting at Phase 8.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COR-01 | TBD | Pending |
-| COR-02 | TBD | Pending |
-| COR-03 | TBD | Pending |
-| COR-04 | TBD | Pending |
-| RES-01 | TBD | Pending |
-| RES-02 | TBD | Pending |
-| RES-03 | TBD | Pending |
-| RES-04 | TBD | Pending |
-| HARD-01 | TBD | Pending |
-| HARD-02 | TBD | Pending |
-| HARD-03 | TBD | Pending |
-| HARD-04 | TBD | Pending |
-| HARD-05 | TBD | Pending |
+| COR-01 | Phase 8 | Pending |
+| COR-02 | Phase 8 | Pending |
+| COR-03 | Phase 8 | Pending |
+| COR-04 | Phase 8 | Pending |
+| RES-01 | Phase 9 | Pending |
+| RES-02 | Phase 9 | Pending |
+| RES-03 | Phase 9 | Pending |
+| RES-04 | Phase 9 | Pending |
+| HARD-01 | Phase 10 | Pending |
+| HARD-02 | Phase 10 | Pending |
+| HARD-03 | Phase 10 | Pending |
+| HARD-04 | Phase 10 | Pending |
+| HARD-05 | Phase 10 | Pending |
 
 **Coverage:**
 - v0.0.3 requirements: 13 total
-- Mapped to phases: TBD (filled by roadmapper)
-- Unmapped: TBD
+- Mapped to phases: 13 (Phase 8: COR-01..04; Phase 9: RES-01..04; Phase 10: HARD-01..05)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-29*
-*Last updated: 2026-06-29 after initial definition (milestone v0.0.3 Engine hardening).*
+*Last updated: 2026-06-29 after roadmap creation (milestone v0.0.3 Engine hardening): mapped all 13 requirements to Phases 8-10, coverage 13/13/0.*
