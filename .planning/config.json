@@ -90,5 +90,10 @@
     "gsd-ui-auditor": "opus",
     "gsd-doc-writer": "opus",
     "gsd-doc-verifier": "opus"
+  },
+  "code_quality": {
+    "fallow": {
+      "enabled": true
+    }
   }
 }
