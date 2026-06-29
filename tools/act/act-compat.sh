@@ -58,10 +58,19 @@ plan() {
   act "$event" -n --pull=false "$@" 2>&1 || true
 }
 
+# Substring match via pure bash -- NO external `rg`/`grep`. GitHub ubuntu runners
+# do NOT ship ripgrep, and the repo's local `grep` deny rule is irrelevant inside a
+# portable script; `[[ == *glob* ]]` works identically on CI (ubuntu/mac) and the
+# local Git Bash box. `"[$token"` is quoted so `[` is literal, not a glob class.
+contains_token() {
+  local haystack="$1" token="$2"
+  [[ "$haystack" == *"[$token"* ]]
+}
+
 # Assert a job token IS present in a captured plan.
 assert_selected() {
   local plan_text="$1" token="$2" label="$3"
-  if printf '%s\n' "$plan_text" | rg -q -F "[$token"; then
+  if contains_token "$plan_text" "$token"; then
     pass "$label: $token SELECTED"
   else
     fail "$label: expected $token in the plan, not found"
@@ -71,7 +80,7 @@ assert_selected() {
 # Assert a job token is ABSENT from a captured plan.
 assert_absent() {
   local plan_text="$1" token="$2" label="$3"
-  if printf '%s\n' "$plan_text" | rg -q -F "[$token"; then
+  if contains_token "$plan_text" "$token"; then
     fail "$label: expected $token ABSENT, but it was selected"
   else
     pass "$label: $token SKIPPED/absent"
