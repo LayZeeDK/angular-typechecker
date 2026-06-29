@@ -37,13 +37,16 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 **Depends on**: Nothing (independent cluster; the engine from v0.0.1 already exists)
 **Requirements**: COR-01, COR-02, COR-03, COR-04
 **Success Criteria** (what must be TRUE):
+
   1. A tsconfig with a broken `extends`/host (an `UNKNOWN_ERROR_CODE` 500 diagnostic in `readConfiguration().errors`) is re-thrown as `TypecheckInfrastructureError` and is NEVER counted as a type error or folded into the reported diagnostics (proven by a failing-then-passing test against a broken-config fixture).
   2. A global / location-less TypeScript semantic diagnostic (e.g. TS2318) that the per-file path never emitted now appears in the reported diagnostics (proven by a fixture that triggers a global TS diagnostic).
   3. A diagnostic whose `file.fileName` is present-but-empty is reported (treated as file-less), never silently dropped by the project-boundary filter (proven by an empty-`fileName` diagnostic test).
   4. The engine classifies an infrastructure failure distinctly from a type-error failure and exposes a pure, framework-agnostic exit-code policy (`toExitCode` -> `0` clean / `1` type-error / `2` infra, ngc-parallel) covered by tests; the Nx executor surfaces an infra failure distinctly WITHIN Nx's `{ success: boolean }` contract (typed `TypecheckInfrastructureError` + distinct operator message; Nx maps to exit 1) and a real type-error failure keeps its existing `{ success: false }` behavior. The literal distinct OS exit code (`2`) is delivered by the standalone CLI surface (deferred), which owns its process and consumes the same policy -- NOT by the Nx executor, which Nx hard-maps to 0/1 (verified nx 23.0.1: `run.ts:72`, `command-object.ts:30`). [Reframed 2026-06-29 -- see `08-CONTEXT.md` D-07..D-10.]
+
 **Plans**: 3 plans (1 wave, all parallel -- disjoint files)
 
 Plans:
+
 - [x] 08-01-PLAN.md -- COR-01: early parsed.errors 500 scan re-throws TypecheckInfrastructureError before the zero-rootNames guard (+ unit twin + nonexistent-path integration)
 - [x] 08-02-PLAN.md -- COR-02: gather getTsProgram().getGlobalDiagnostics() (7th getter) + global-diagnostics TS2318 fixture + unit/integration proof
 - [x] 08-03-PLAN.md -- COR-03 (empty-fileName guard kept) + COR-04 (pure core/exit-codes.ts toExitCode 0/1/2 + tightened executor distinct-message assertion)
@@ -54,17 +57,24 @@ Plans:
 **Depends on**: Nothing on the other clusters; INTERNAL gate -- RES-01 (spike) MUST be the first plan and gates RES-02.
 **Requirements**: RES-01, RES-02, RES-03, RES-04
 **Success Criteria** (what must be TRUE):
+
   1. (GATE) The RES-01 spike produces a recorded GO decision on the per-file isolation shape -- simple per-file `getNgSemanticDiagnostics(fileName)` loop vs. HYBRID (gather the file-less non-template `traitCompiler`/`checkForPrivateExports` set ONCE whole-program + loop the template/extended families per file) -- settling whether any Angular non-template diagnostics are file-less and would be dropped by a naive `d.file === file` per-file filter. RES-02 does not start until this returns GO.
   2. One component's `FatalDiagnosticError` yields exactly one diagnostic and does NOT abandon the remaining files' Angular diagnostics -- the surviving files' template/extended diagnostics are still reported (proven by a multi-file fixture where one component throws), implemented on the existing `api.Program` surface per the RES-01 decision (no `NgtscProgram` migration).
   3. A throwing `options.realpath()` in the project-boundary filter is caught and falls back to the unresolved path, so a filesystem realpath failure cannot abort the whole type-check pass (proven by a realpath-throws test; the happy path is unchanged).
   4. The no-emit options override sets `suppressOutputPathCheck: true`, so output-path configuration nuisance errors never surface in the type-only flow (verified safe under `noEmit: true`).
+
 **Plans**: 4 plans (2 waves; the INTERNAL gate encoded as wave order)
 
 Plans:
+**Wave 1**
+
 - [ ] 09-01-PLAN.md -- RES-01 [GATE/spike, wave 1, alone-gating]: probe the live api.Program for file-less non-template diagnostics + author the fault-isolation fixture; record the SIMPLE|HYBRID GO decision (09-RES-01-SPIKE.md)
-- [ ] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided shape) + the failing-then-passing fault-isolation.integration.spec.ts
 - [ ] 09-03-PLAN.md -- RES-03 [wave 1, parallel]: createCanonicalizer realpath try/catch + raw-path fallback in filter-diagnostics.ts + the throwing-realpath unit case
 - [ ] 09-04-PLAN.md -- RES-04 [wave 1, parallel]: suppressOutputPathCheck:true to readConfiguration in run-typecheck.ts + the readConfiguration-spy unit + the no-nuisance integration assertion
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided shape) + the failing-then-passing fault-isolation.integration.spec.ts
 
 ### Phase 10: Drift-hardening & Maintainability
 
@@ -72,11 +82,13 @@ Plans:
 **Depends on**: Nothing (independent cluster). Touches the vendored `compiler-cli-types.ts` shim + a new drift tsconfig/CI target; should land near the end so it asserts against the getter set the COR/RES work leaves in place.
 **Requirements**: HARD-01, HARD-02, HARD-03, HARD-04, HARD-05
 **Success Criteria** (what must be TRUE):
+
   1. A dedicated `tsconfig.drift.json` (classic `moduleResolution: node`) is type-checked in CI as its own target (preferably a `typecheck-drift` target) and FAILS the build when the vendored `Program` shim stops being assignable FROM the real `@angular/compiler-cli` `api.Program` -- a new or removed diagnostic getter, or a changed `ngErrorCode`/`UNKNOWN_ERROR_CODE` encoding, breaks CI (real->shim direction only; the shim is a deliberate subset).
   2. The shim's fabricated `EmitFlags.None = 0` member is corrected against the real enum, while the `emitFlags: 0` call site is retained as a documented literal (verified safe under `noEmit: true`).
   3. Every divergence in the vendored type surface carries a greppable `// angular-typechecker: vendored -- <reason>` marker comment (Prettier `angular-estree-parser` idiom), discoverable by a single grep.
   4. The `getNgStructuralDiagnostics()` call is retained as a documented, deliberately forward-compatible no-op-tolerant call AND is covered by the HARD-01 getter-set assertion, so a future Angular version that reactivates it cannot silently under-gather.
   5. A regression spec asserts that no `TS-99` substring (a raw, un-rewritten negative NG code) survives the `color: false` output path.
+
 **Plans**: TBD
 
 ## Progress
