@@ -60,6 +60,21 @@ describe('filterDiagnostics', () => {
     expect(result.suppressedCount).toBe(0);
   });
 
+  // COR-03 / D-06: a present-but-empty fileName is a synthesized-diagnostic edge
+  // that canonicalizes to '' (isUnderDir('', base) === false), so without the
+  // widened file-less guard it is SUPPRESSED -- a real error dropped by a path
+  // edge (a false PASS). It must be treated as file-less and ALWAYS kept.
+  // Failing-then-passing: pre-fix this asserts kept.length === 0; post-fix 1.
+  it('keeps a diagnostic whose file.fileName is present-but-empty (COR-03/D-06)', () => {
+    const result = filterDiagnostics([diag('')], {
+      ...base,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(1);
+    expect(result.suppressedCount).toBe(0);
+  });
+
   it('does NOT misclassify node_modules-tools as node_modules (segment test, D-06)', () => {
     const result = filterDiagnostics(
       [diag('/ws/proj/node_modules-tools/z.ts')],

@@ -23,9 +23,13 @@ import type ts from 'typescript';
  * (`toLowerCase()` + bare `startsWith` + `includes('node_modules')`) that breaks
  * on pnpm symlinks, case-sensitive Linux CI, and the `node_modules-tools` case.
  *
- * D-03: file-less diagnostics (config errors from `parsed.errors`, the
- * zero-rootNames guard) are NEVER filtered -- they have no path to classify and
- * dropping one would produce a false PASS.
+ * D-03 + COR-03/D-06: file-less diagnostics (config errors from `parsed.errors`,
+ * the zero-rootNames guard) are NEVER filtered -- they have no path to classify
+ * and dropping one would produce a false PASS. This also covers a diagnostic
+ * whose `file` is present but whose `fileName` is the empty string (a
+ * synthesized-diagnostic edge): it canonicalizes to '' and would otherwise be
+ * suppressed by the boundary filter (`isUnderDir('', base) === false`), so it is
+ * treated as file-less and always kept.
  *
  * D-07: `includeDeps: true` turns the boundary filter OFF -- every diagnostic is
  * kept and `suppressedCount` resets to 0. It is orthogonal to the consumer's
@@ -72,9 +76,13 @@ export function filterDiagnostics(
   let suppressedCount = 0;
 
   for (const diagnostic of diagnostics) {
-    // D-03: NEVER filter a file-less diagnostic (config error / zero-rootNames
-    // guard) -- it has no path to classify and dropping it is a false PASS.
-    if (diagnostic.file === undefined) {
+    // D-03 + COR-03/D-06: NEVER filter a file-less diagnostic -- either
+    // `file === undefined` (config error / zero-rootNames guard) OR a
+    // present-but-empty `fileName` (a synthesized-diagnostic edge). Both have no
+    // path to classify and dropping one is a false PASS. An empty `fileName`
+    // canonicalizes to '' and `isUnderDir('', base) === false`, so without this
+    // it would be silently suppressed.
+    if (diagnostic.file === undefined || diagnostic.file.fileName === '') {
       kept.push(diagnostic);
 
       continue;
