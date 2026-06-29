@@ -58,7 +58,13 @@ Plans:
   2. One component's `FatalDiagnosticError` yields exactly one diagnostic and does NOT abandon the remaining files' Angular diagnostics -- the surviving files' template/extended diagnostics are still reported (proven by a multi-file fixture where one component throws), implemented on the existing `api.Program` surface per the RES-01 decision (no `NgtscProgram` migration).
   3. A throwing `options.realpath()` in the project-boundary filter is caught and falls back to the unresolved path, so a filesystem realpath failure cannot abort the whole type-check pass (proven by a realpath-throws test; the happy path is unchanged).
   4. The no-emit options override sets `suppressOutputPathCheck: true`, so output-path configuration nuisance errors never surface in the type-only flow (verified safe under `noEmit: true`).
-**Plans**: TBD
+**Plans**: 4 plans (2 waves; the INTERNAL gate encoded as wave order)
+
+Plans:
+- [ ] 09-01-PLAN.md -- RES-01 [GATE/spike, wave 1, alone-gating]: probe the live api.Program for file-less non-template diagnostics + author the fault-isolation fixture; record the SIMPLE|HYBRID GO decision (09-RES-01-SPIKE.md)
+- [ ] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided shape) + the failing-then-passing fault-isolation.integration.spec.ts
+- [ ] 09-03-PLAN.md -- RES-03 [wave 1, parallel]: createCanonicalizer realpath try/catch + raw-path fallback in filter-diagnostics.ts + the throwing-realpath unit case
+- [ ] 09-04-PLAN.md -- RES-04 [wave 1, parallel]: suppressOutputPathCheck:true to readConfiguration in run-typecheck.ts + the readConfiguration-spy unit + the no-nuisance integration assertion
 
 ### Phase 10: Drift-hardening & Maintainability
 
@@ -86,5 +92,5 @@ Plans:
 | 6. Full e2e Matrix + CI | v0.0.1 | 5/5 | Complete | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
-| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 0/? | Not started | - |
+| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 0/4 | Planned | - |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 0/? | Not started | - |
