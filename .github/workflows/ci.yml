@@ -32,13 +32,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Path-aware change detection (D-08 / REL-02 DX). ~58% of this repo's commits
+  # are `.planning/`-only, so a planning-only PR must NOT burn the full cross-OS
+  # matrix. The diff is classified INSIDE the workflow (never via an `on:`
+  # `paths-ignore`, which would make a required-named check never report and
+  # deadlock the merge button on "Expected -- waiting for status"). The workflow
+  # always triggers; this job computes whether the diff touches anything OUTSIDE
+  # the planning/docs set; the heavy jobs gate on its output; the `ci` aggregate
+  # always runs and reports. dorny/paths-filter is SHA-pinned like every other
+  # action here (Dependabot keeps it fresh). No extra permissions beyond the
+  # top-level `contents: read` are needed -- paths-filter diffs base..head from
+  # the checkout on pull_request.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0
+        id: filter
+        with:
+          # `code` is true when the diff touches anything OUTSIDE the
+          # planning/docs set. The negated globs use the default predicate
+          # quantifier (some): the filter matches when at least one changed file
+          # is NOT a planning/doc file.
+          filters: |
+            code:
+              - '!.planning/**'
+              - '!**/*.md'
+              - '!docs/**'
+
   # Unit + integration on the LEAN 6-cell matrix (RD-01): full Node sweep on
   # Linux + the OS axis on Node 24 + the one worth-keeping cross-cell
   # (windows x newest Node, the OS most prone to ESM/path regressions). NO
   # arm64-specific runners and NO `architecture` pin -- arch is correctness-
   # irrelevant for a pure-JS ngtsc type-checker; macos-latest is arm64 by
   # GitHub's default. fail-fast:false so one red cell never masks the others.
+  #
+  # Path-gated (D-08): runs UNLESS the PR diff is planning/docs-only. The
+  # NEGATIVE if: form (`!= 'false'`) is load-bearing -- under `act -n` the filter
+  # output is empty, and `'' != 'false'` is true, so the job stays in the act
+  # plan and the act-compat assertions keep passing (RESEARCH Pitfall 3 / A3).
   test:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -67,7 +106,12 @@ jobs:
   # release.yml). Runs the three serialized e2e projects by EXPLICIT project
   # list (not nx affected) so the gate's meaning is consistent. pnpm is
   # provisioned via pnpm/action-setup (corepack is removed from Node 25+).
+  #
+  # Path-gated (D-08), same NEGATIVE if: form as `test` -- skips a planning/docs-
+  # only PR yet stays in the `act -n` plan under the empty filter output.
   e2e:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     env:
       NX_DAEMON: false
@@ -122,20 +166,28 @@ jobs:
 
   # Aggregate gate (RD-09 / D-02 cross-phase contract). Job id AND name are
   # EXACTLY `ci` -- the exact required-status-check name Phase 7's Default branch
-  # ruleset will consume. needs all four upstream jobs; if:always() so it runs
-  # even when a dependency failed; fail-closed on failure OR cancelled OR
-  # skipped. The contains(needs.*.result, ...) form aggregates every matrix cell
-  # (a plain needs.test.result != 'success' can read success when one cell
-  # passes under fail-fast:false).
+  # ruleset will consume. needs all upstream jobs (incl. the new `changes`);
+  # if:always() so it runs even when a dependency failed or was path-skipped;
+  # fail-closed on failure OR cancelled. The contains(needs.*.result, ...) form
+  # aggregates every matrix cell (a plain needs.test.result != 'success' can read
+  # success when one cell passes under fail-fast:false).
+  #
+  # Path-skip rework (D-08): `'skipped'` is DROPPED from the fail set -- a heavy
+  # job intentionally path-skipped on a planning/docs-only PR is now acceptable,
+  # so `ci` reports success and the merge button is not deadlocked. `cancelled`
+  # STAYS in the fail set as the backstop: a genuinely mis-skipped or aborted
+  # dependency that GitHub reports as `cancelled` still fails the gate, and the
+  # post-merge `main` `ci` run (which has a real code diff vs its parent on a
+  # code merge) is the second backstop.
   ci:
-    needs: [test, e2e, act-compat, lint-workflows]
+    needs: [changes, test, e2e, act-compat, lint-workflows]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Gate
         run: |
-          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
-            echo "A required job failed, was cancelled, or was skipped"
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "A required job failed or was cancelled"
             exit 1
           fi
-          echo "All required jobs succeeded"
+          echo "All required jobs succeeded or were intentionally path-skipped"
