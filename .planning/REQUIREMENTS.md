@@ -66,9 +66,9 @@ Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last
 | COR-03 | Phase 8 | Complete |
 | COR-04 | Phase 8 | Complete |
 | RES-01 | Phase 9 | Complete |
-| RES-02 | Phase 9 | Pending |
-| RES-03 | Phase 9 | Pending |
-| RES-04 | Phase 9 | Pending |
+| RES-02 | Phase 9 | Complete |
+| RES-03 | Phase 9 | Complete |
+| RES-04 | Phase 9 | Complete |
 | HARD-01 | Phase 10 | Pending |
 | HARD-02 | Phase 10 | Pending |
 | HARD-03 | Phase 10 | Pending |
