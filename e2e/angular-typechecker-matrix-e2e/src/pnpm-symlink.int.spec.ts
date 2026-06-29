@@ -110,8 +110,12 @@ interface RunResult {
 // pipe tail masks Nx's exit code); a fixed target id + fixed flags only.
 function run(cwd: string): RunResult {
   try {
+    // --skip-nx-cache: each green/injected invocation MUST really execute the
+    // executor (the cacheable target could otherwise serve a cached prior result
+    // across the green->injected transition). Cache-correctness is the cache-e2e
+    // project's concern; here we want a real run every time.
     const stdout = execSync(
-      `npx nx run ${TARGET} --output-style=static`,
+      `npx nx run ${TARGET} --output-style=static --skip-nx-cache`,
       { cwd, env, encoding: 'utf8' },
     );
 

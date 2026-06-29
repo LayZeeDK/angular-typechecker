@@ -117,8 +117,15 @@ interface RunResult {
 // project types runs through the same hardened invocation (D-07).
 function run(cwd: string, target: string): RunResult {
   try {
+    // --skip-nx-cache: each green/injected invocation MUST really execute the
+    // executor. The cacheable angular-typecheck target's `production` input
+    // EXCLUDES *.spec.ts (nx.json namedInput), so mutating the spec-row source
+    // does NOT bust the cache -- without --skip-nx-cache the injected spec run
+    // would be served the cached GREEN (exit 0) and the injected assertion would
+    // false-PASS. Cache-correctness is the separate cache-e2e project's concern;
+    // here we want a real run every time.
     const stdout = execSync(
-      `npx nx run ${target} --output-style=static`,
+      `npx nx run ${target} --output-style=static --skip-nx-cache`,
       { cwd, env, encoding: 'utf8' },
     );
 
