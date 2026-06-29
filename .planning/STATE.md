@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
-status: verifying
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-06-29T16:43:17.575Z"
+status: ready_to_plan
+stopped_at: Phase 8 complete (3/3) — ready to discuss Phase 9
+last_updated: 2026-06-29T16:59:18.767Z
 last_activity: 2026-06-29
 progress:
   total_phases: 3
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 8 — Correctness & Completeness Fixes
+**Current focus:** Phase 9 — resilience (per file fault isolation + boundary robustness)
 
 ## Current Position
 
-Phase: 8 (Correctness & Completeness Fixes) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 9
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-29
 
 ### v0.0.3 phase map
@@ -42,7 +42,7 @@ Last activity: 2026-06-29
 
 **Velocity:**
 
-- Total plans completed: 18
+- Total plans completed: 21
 - Average duration: ~31 min
 - Total execution time: ~1.5 hours
 
@@ -55,6 +55,7 @@ Last activity: 2026-06-29
 | 03 | 4 | - | - |
 | 4 | 3 | - | - |
 | 6 | 5 | - | - |
+| 8 | 3 | - | - |
 
 **Recent Trend:**
 
