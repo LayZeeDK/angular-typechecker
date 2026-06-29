@@ -11,7 +11,7 @@
 
 ### Correctness & Completeness (COR)
 
-- [ ] **COR-01**: A config-resolution infrastructure crash -- an `UNKNOWN_ERROR_CODE` (500) diagnostic returned in `readConfiguration().errors` -- is detected immediately after the config parse and re-thrown as `TypecheckInfrastructureError`, never folded into the reported diagnostics or counted as a type error. -- [#1] (today only `result.diagnostics` is scanned for 500; `parsed.errors` is folded verbatim -- a broken `extends`/host throw is mis-counted as a type error).
+- [x] **COR-01**: A config-resolution infrastructure crash -- an `UNKNOWN_ERROR_CODE` (500) diagnostic returned in `readConfiguration().errors` -- is detected immediately after the config parse and re-thrown as `TypecheckInfrastructureError`, never folded into the reported diagnostics or counted as a type error. -- [#1] (today only `result.diagnostics` is scanned for 500; `parsed.errors` is folded verbatim -- a broken `extends`/host throw is mis-counted as a type error).
 - [ ] **COR-02**: Global / location-less TypeScript semantic diagnostics (e.g. TS2318) are gathered via `program.getTsProgram().getGlobalDiagnostics()` and reported. -- [#2] (the per-file `getTsSemanticDiagnostics` path never emits TS global diagnostics; `@angular/build` calls `getGlobalDiagnostics()` explicitly).
 - [ ] **COR-03**: A diagnostic whose `file.fileName` is present-but-empty is treated as file-less (reported, never silently dropped by the project-boundary filter). -- [#5]
 - [ ] **COR-04**: The engine classifies an infrastructure failure (`TypecheckInfrastructureError`) distinctly from a type-error failure and exposes a pure, framework-agnostic exit-code policy (`toExitCode` -> `0` clean / `1` type-error / `2` infra, ngc-parallel) as the single source of truth for all surfaces. The Nx executor surfaces an infra failure distinctly WITHIN Nx's `{ success: boolean }` contract (typed error + distinct operator message; Nx maps to exit 1), so CI/agents can tell a crash apart from real type errors; the literal distinct OS exit code (`2`) is delivered by the DEFERRED standalone CLI surface, which owns its process (like `ngc`) and consumes the same policy. -- [Q3 decision, REFRAMED 2026-06-29 after nx-source + nx-docs prior-art: Nx hard-maps executor `{success}` to 0/1 (verified nx 23.0.1 `run.ts:72`, `command-object.ts:30`) and `process.exit` from an executor is hostile to in-process `runExecutor` / run-many / daemon / batch; parallels ngc `exitCodeFromResult`. See `.planning/phases/08-correctness-completeness-fixes/08-CONTEXT.md` D-07..D-10.]
@@ -57,7 +57,7 @@ Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COR-01 | Phase 8 | Pending |
+| COR-01 | Phase 8 | Complete |
 | COR-02 | Phase 8 | Pending |
 | COR-03 | Phase 8 | Pending |
 | COR-04 | Phase 8 | Pending |

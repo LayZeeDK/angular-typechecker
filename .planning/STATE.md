@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Phase 8 context gathered
-last_updated: "2026-06-29T16:05:15.586Z"
-last_activity: 2026-06-29 -- Phase 8 planning complete
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-06-29T16:17:20.841Z"
+last_activity: 2026-06-29
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** v0.0.3 (Engine hardening) roadmapped -- Phases 8-10. Next: `/gsd-plan-phase 8`.
+**Current focus:** Phase 8 — Correctness & Completeness Fixes
 
 ## Current Position
 
-Phase: 8 of 10 (Correctness & Completeness Fixes) -- not started
-Plan: —
+Phase: 8 (Correctness & Completeness Fixes) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-06-29 -- Phase 8 planning complete
+Last activity: 2026-06-29
 
 ### v0.0.3 phase map
 
@@ -78,6 +78,7 @@ Last activity: 2026-06-29 -- Phase 8 planning complete
 | Phase 07 P01 | ~4 min | 3 tasks | 3 files |
 | Phase 07 P02 | ~9 min | 2 tasks | 1 files |
 | Phase 07 P03 | 7min | 1 tasks | 1 files |
+| Phase 08 P01 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,8 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 
 </details>
 
+- [Phase ?]: [08-01] COR-01: early parsed.errors UNKNOWN_ERROR_CODE (500) scan in run-typecheck.ts re-throws TypecheckInfrastructureError immediately after readConfiguration and BEFORE the zero-rootNames guard (the 500 case has rootNames: [], so a late scan is swallowed + mis-counted as a type error); existing post-performCompilation 500 scan kept unchanged (D-02 two-stage defense-in-depth); only code 500 is infra, every other parsed.errors entry (e.g. 5012) stays folded (D-03); integration fixture is a nonexistent tsconfig path (deterministic ENOENT, no fixture file).
+
 ### Pending Todos
 
 [From .planning/todos/pending/ -- ideas captured during sessions]
@@ -209,6 +212,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T15:19:22.668Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-correctness-completeness-fixes/08-CONTEXT.md
+Last session: 2026-06-29T16:17:20.833Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
