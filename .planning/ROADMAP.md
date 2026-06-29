@@ -25,7 +25,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 ### v0.0.3 -- Engine hardening (active)
 
-- [ ] **Phase 8: Correctness & Completeness Fixes** - Close the under-report / mis-classify holes: detect config-resolution infra crashes, surface global TS diagnostics, stop dropping empty-`fileName` diagnostics, and signal infra-vs-type failures with distinct exit codes.
+- [ ] **Phase 8: Correctness & Completeness Fixes** - Close the under-report / mis-classify holes: detect config-resolution infra crashes, surface global TS diagnostics, stop dropping empty-`fileName` diagnostics, and classify infra-vs-type failures via a pure core exit-code policy (literal OS exit code delivered by the deferred standalone CLI; the Nx executor surfaces infra distinctly within its `{ success }` contract).
 - [ ] **Phase 9: Resilience (per-file fault isolation + boundary robustness)** - GATED spike decides the isolation shape, then per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest, plus a try/catch realpath and `suppressOutputPathCheck`.
 - [ ] **Phase 10: Drift-hardening & Maintainability** - Make an Angular upgrade that changes the `api.Program` getter set or error-code encoding break CI loudly: a build-time drift tsconfig + CI target, the `EmitFlags` fix, vendor markers, the retained-getter-under-assertion, and a no-TS-99-leak regression spec.
 
@@ -40,7 +40,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   1. A tsconfig with a broken `extends`/host (an `UNKNOWN_ERROR_CODE` 500 diagnostic in `readConfiguration().errors`) is re-thrown as `TypecheckInfrastructureError` and is NEVER counted as a type error or folded into the reported diagnostics (proven by a failing-then-passing test against a broken-config fixture).
   2. A global / location-less TypeScript semantic diagnostic (e.g. TS2318) that the per-file path never emitted now appears in the reported diagnostics (proven by a fixture that triggers a global TS diagnostic).
   3. A diagnostic whose `file.fileName` is present-but-empty is reported (treated as file-less), never silently dropped by the project-boundary filter (proven by an empty-`fileName` diagnostic test).
-  4. Running the executor against an infrastructure failure exits with a code DISTINCT from a type-error failure (ngc-style infra-vs-type, parallel to ngc `exitCodeFromResult` 2-vs-1), while a real type-error failure keeps its existing exit code.
+  4. The engine classifies an infrastructure failure distinctly from a type-error failure and exposes a pure, framework-agnostic exit-code policy (`toExitCode` -> `0` clean / `1` type-error / `2` infra, ngc-parallel) covered by tests; the Nx executor surfaces an infra failure distinctly WITHIN Nx's `{ success: boolean }` contract (typed `TypecheckInfrastructureError` + distinct operator message; Nx maps to exit 1) and a real type-error failure keeps its existing `{ success: false }` behavior. The literal distinct OS exit code (`2`) is delivered by the standalone CLI surface (deferred), which owns its process and consumes the same policy -- NOT by the Nx executor, which Nx hard-maps to 0/1 (verified nx 23.0.1: `run.ts:72`, `command-object.ts:30`). [Reframed 2026-06-29 -- see `08-CONTEXT.md` D-07..D-10.]
 **Plans**: TBD
 
 ### Phase 9: Resilience (per-file fault isolation + boundary robustness)
