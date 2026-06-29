@@ -99,8 +99,8 @@ Plans:
 **Wave 1**
 
 - [x] 10-01-PLAN.md -- HARD-02/03/04: correct the shim EmitFlags enum (mirror real members, drop None) + add greppable vendor markers to all 6 divergent constructs + document the retained getNgStructuralDiagnostics()
-- [ ] 10-03-PLAN.md -- HARD-01 (runtime half, D-04): runtime getter-set SUBSET-containment + additions-review + NG encoding round-trip spec against the real await import('@angular/compiler-cli')
-- [ ] 10-04-PLAN.md -- HARD-05: TS-99 leak regression spec via the real cli.formatDiagnostics seam (renderReport color:false; NG#### present, TS-99 absent)
+- [x] 10-03-PLAN.md -- HARD-01 (runtime half, D-04): runtime getter-set SUBSET-containment + additions-review + NG encoding round-trip spec against the real await import('@angular/compiler-cli')
+- [x] 10-04-PLAN.md -- HARD-05: TS-99 leak regression spec via the real cli.formatDiagnostics seam (renderReport color:false; NG#### present, TS-99 absent)
 
 **Wave 2** *(depends on 10-01 shim corrections)*
 
@@ -120,4 +120,4 @@ Plans:
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete    | 2026-06-29 |
-| 10. Drift-hardening & Maintainability | v0.0.3 | 1/4 | In Progress|  |
+| 10. Drift-hardening & Maintainability | v0.0.3 | 3/4 | In Progress|  |
