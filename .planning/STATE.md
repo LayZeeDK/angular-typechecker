@@ -4,13 +4,13 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 7 context gathered
-last_updated: "2026-06-29T10:13:36.256Z"
+last_updated: "2026-06-29T10:20:20.481Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 8
   completed_phases: 7
   total_plans: 29
-  completed_plans: 26
+  completed_plans: 27
   percent: 88
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 07 (release-pr-workflow-and-clean-changelog) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-29
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [█████████░] 90%
 | Phase 06 P02 | 25min | 3 tasks | 6 files |
 | Phase 06 P05 | 8 min | 2 tasks | 7 files |
 | Phase 07 P01 | ~4 min | 3 tasks | 3 files |
+| Phase 07 P02 | ~9 min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [07-01] REL-01 mechanism: nx.json release.git.tag true->false (D-01) decouples the cut from tagging -- commit/push/createRelease unchanged; release-hygiene spec adds a git.tag===false Wave-0 regression assertion alongside the existing push/createRelease gate.
 - [Phase ?]: [07-01] REL-03 backstop: release-hygiene spec asserts CHANGELOG.md carries no GSD plan-id scope via 3 regexes (conventional-commit scope, bold heading token, bare leading scope); validated to catch 6 leak shapes with zero false positives; green against curated 0.0.1/0.0.2.
 - [Phase ?]: [07-01] REQUIREMENTS.md defines REL-01/02/03 (Release Process family) from RESEARCH proposed text; all three mapped to Phase 7 (Pending); coverage recomputed 31->34/34/0.
+- [Phase ?]: [07-02] D-08 mechanism: leading dorny/paths-filter changes job + job-level negative if: on test/e2e + reworked aggregate gate (drops only skipped; keeps failure+cancelled fail-closed); ci job id+name byte-stable; no paths-ignore on trigger; release.yml untouched
+- [Phase ?]: [07-02] act-compat A3 confirmed-in-CI-pending: local act -n cannot schedule changes-dependent test/e2e/ci jobs (Docker not running on this box); act --validate + act -g DAG + manual structural review pass; A3 verified by CI act-compat + draft-PR (Phase-6 precedent); actionlint deferred to CI lint-workflows
 
 ### Pending Todos
 
@@ -176,6 +179,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T10:13:19.941Z
+Last session: 2026-06-29T10:19:42.806Z
 Stopped at: Phase 7 context gathered
 Resume file: None

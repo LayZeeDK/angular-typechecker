@@ -150,7 +150,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 1/1 | Complete   | 2026-06-28 |
 | 6. Full e2e Matrix + CI | 5/5 | Complete    | 2026-06-29 |
-| 7. Release-PR workflow and clean changelog | 1/4 | In Progress|  |
+| 7. Release-PR workflow and clean changelog | 2/4 | In Progress|  |
 
 ### Phase 7: Release-PR workflow and clean changelog
 
@@ -161,9 +161,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
   1. Releases no longer push version/changelog commits directly to `main`: `nx release` produces the version bump + CHANGELOG on a release branch merged via PR; the tag is created on the merged commit and fires the existing OIDC publish workflow (`release.yml` unchanged). `nx.json` `release.git` decouples commit from tag/push (e.g. `tag:false`, `push:false`).
   2. Branch protection is switched to PR mode: the staged **"Default branch"** ruleset is ENABLED (require PR + the Phase-6 CI status checks + force-push/deletion blocked) and the temporary **"v0.0.1"** ruleset is DELETED; the **"Release tag"** ruleset is retained (you + deploy key on bypass).
   3. The public changelog (CHANGELOG.md + GitHub Release notes) does NOT expose internal GSD phase/plan numbers (e.g. `feat(05-01):`) -- via nx release changelog configuration, a `gh` CLI step, or a transform of the nx-/gh-generated changelog.
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 - [x] 07-01-PLAN.md -- Define REL-01/02/03 + flip nx.json git.tag:false + release-hygiene git.tag/CHANGELOG assertions (Wave 1)
-- [ ] 07-02-PLAN.md -- ci.yml path-aware skip-gate: changes filter job + gate test/e2e + rework the skip-aware ci aggregate gate (Wave 1)
+- [x] 07-02-PLAN.md -- ci.yml path-aware skip-gate: changes filter job + gate test/e2e + rework the skip-aware ci aggregate gate (Wave 1)
 - [ ] 07-03-PLAN.md -- AGENTS.md Release-PR-flow rewrite + PR-only-main note (D-17, code-review-gated) (Wave 1)
 - [ ] 07-04-PLAN.md -- HUMAN-GATED live ruleset switch: enable Default-branch ruleset, delete v0.0.1, retain Release-tag (Wave 2)
 **UI hint**: no
