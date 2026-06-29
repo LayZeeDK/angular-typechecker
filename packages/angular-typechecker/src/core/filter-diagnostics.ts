@@ -124,7 +124,20 @@ function createCanonicalizer(
       return cached;
     }
 
-    const real = options.realpath(filePath).replace(/\\/g, '/');
+    let resolved: string;
+
+    try {
+      resolved = options.realpath(filePath);
+    } catch {
+      // D-08 (RES-03): a throwing realpath (EACCES / permission-denied junction /
+      // broken symlink) must NOT abort the whole type-check pass. Fall back to the
+      // UNRESOLVED raw path; the normalization + case-fold below still apply so the
+      // fallback classifies consistently. Silent -- core is PURE (no logging, no
+      // process; eslint bans both in **/src/core/**).
+      resolved = filePath;
+    }
+
+    const real = resolved.replace(/\\/g, '/');
     const canonical = options.useCaseSensitiveFileNames
       ? real
       : real.toLowerCase();
