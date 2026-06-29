@@ -34,7 +34,7 @@
 ### Diagnostics & Output (OUT)
 
 - [ ] **OUT-01**: Default human output via `@angular/compiler-cli` `formatDiagnostics` (NG codes + template codeframes; superset of `tsc`).
-- [ ] **OUT-02**: Diagnostics filtered on absolute realpath-normalized `fileName` (pnpm-symlink / case-insensitive-FS safe); CI annotation paths emitted workspace-root-relative.
+- [x] **OUT-02**: Diagnostics filtered on absolute realpath-normalized `fileName` (pnpm-symlink / case-insensitive-FS safe); CI annotation paths emitted workspace-root-relative.
 - [ ] **OUT-03**: Clear non-zero exit on diagnostics; deterministic, idempotent (agent-ready) output.
 
 ### Testing (TEST)
@@ -123,7 +123,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | EXE-06 | Phase 4 | Complete |
 | EXE-07 | Phase 4 | Complete |
 | OUT-01 | Phase 3 | Pending |
-| OUT-02 | Phase 3 | Pending |
+| OUT-02 | Phase 3 | Complete |
 | OUT-03 | Phase 3 | Pending |
 | TEST-01 | Phase 3 | Complete |
 | TEST-02 | Phase 2 | Pending |

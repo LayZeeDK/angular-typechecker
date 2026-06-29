@@ -4,13 +4,13 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 6 context gathered (--auto --chain --analyze; research-first)
-last_updated: "2026-06-29T01:20:59.812Z"
+last_updated: "2026-06-29T01:29:34.593Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
   percent: 75
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 6 (full-e2e-matrix-ci) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
+Plan: 3 of 5 complete (06-01, 06-03, 06-04 done; 06-02 + 06-05 remain)
+Status: 06-03 complete (OUT-02 cross-platform backstop); ready for 06-02 / 06-05
 Last activity: 2026-06-29
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [█████████░] 88%
 | Phase Phase 5 P3 P03 | ~5 min | 2 tasks tasks | 7 files files |
 | Phase 5 P4 | ~18 min | 4 tasks | 5 files |
 | Phase 06 P04 | 4 min | 1 tasks | 1 files |
+| Phase 06 P03 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ Recent decisions affecting current work:
 - [Phase 5]: [05-04] Hardened-workflow comments must AVOID the bare literal tokens pull_request_target / contents: write / NODE_AUTH_TOKEN / @vN -- a literal git grep -c acceptance check counts comment lines; reword the threat-model comments while ACTIVE YAML directives carry the real security model (verified via structural YAML parse).
 - [Phase ?]: [06-04] RD-07 publish-job ref gate added to release.yml (if: startsWith(github.ref, 'refs/tags/angular-typechecker@') at job level); additive defense-in-depth over the on: push: tags: primary gate; OIDC/provenance/permissions/environment model byte-for-byte unchanged (release-hygiene spec 15/15 green, +7-line-only diff).
 - [Phase ?]: [06-04] nx release --dry-run version/changelog preview is blocked by a PRE-EXISTING out-of-scope fixture build failure (06-01 buildable-lib/publishable-lib need ng-packagr, deliberately not installed per OQ-1); logged as DI-06-01 in deferred-items.md, NOT fixed in 06-04; resolve (scope preVersionCommand to angular-typechecker:build) before the next real release cut.
+- [Phase ?]: [06-03] D-10 OUT-02 backstop: extended filter-diagnostics.spec.ts with the mixed-case parity set proving the case-fold is GATED on useCaseSensitiveFileNames (out-of-project + node_modules-segment SUPPRESSED under :false; same mixed-case in-project input NOT folded under :true) + RD-04 store-dir generality (.pnpm/.bun/plain node_modules suppressed by the single node_modules-segment test, synthetic realpaths, no install).
+- [Phase ?]: [06-03] D-10 integration assertion phrased to hold on all 3 OS legs: in-project KEPT + out-of-project SUPPRESSED is correct on every leg only if the split is host-derived (getTsProgram().useCaseSensitiveFileNames()); a toLowerCase equality is a live fold on mac/win and an identity no-op on Linux. Reuses the committed sibling-import fixture; no new fixture; no production code changed (test-only).
 
 ### Pending Todos
 
@@ -161,6 +164,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T01:20:09.165Z
+Last session: 2026-06-29T01:28:45.616Z
 Stopped at: Phase 6 context gathered (--auto --chain --analyze; research-first)
 Resume file: None
