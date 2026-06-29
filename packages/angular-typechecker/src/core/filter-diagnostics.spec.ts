@@ -102,6 +102,115 @@ describe('filterDiagnostics', () => {
     expect(result.suppressedCount).toBe(0);
   });
 
+  // D-10 mixed-case parity set: the seed above proves the IN-project fold under
+  // useCaseSensitiveFileNames:false; these siblings prove the SAME fold for an
+  // out-of-project and a node_modules-SEGMENT path, and that the fold is GATED on
+  // the flag (the identical mixed-case input is NOT folded under :true). On a
+  // case-insensitive CI leg (macOS/Windows, and this Windows dev box) the :false
+  // branch is the LIVE host behavior; on Linux the :true branch is.
+  it('case-insensitive FS folds an OUT-of-project mixed-case path so it is SUPPRESSED (D-10, OUT-02)', () => {
+    const result = filterDiagnostics([diag('/WS/SIBLING/src/x.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: false,
+      realpath: (p: string) => p,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
+  it('case-insensitive FS folds a mixed-case NODE_MODULES segment so it is SUPPRESSED (D-10, OUT-02)', () => {
+    const result = filterDiagnostics([diag('/WS/PROJ/NODE_MODULES/X/Y.d.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: false,
+      realpath: (p: string) => p,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
+  it('the SAME mixed-case in-project input is NOT folded under useCaseSensitiveFileNames:true -> SUPPRESSED (D-10, OUT-02)', () => {
+    const result = filterDiagnostics([diag('/WS/PROJ/src/A.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath: (p: string) => p,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
+  // RD-04 store-dir generality: the node_modules-SEGMENT exclusion must fire for
+  // EVERY package manager's on-disk store layout, not just pnpm's `.pnpm`. These
+  // map a friendly in-project input path through the injected realpath to a
+  // store realpath that crosses a `node_modules` SEGMENT (exactly as production's
+  // realpath-FIRST-then-segment canonicalizer does), proving the match is the
+  // single `node_modules` segment test -- never hardcoded to `.pnpm`. Synthetic
+  // realpaths only; NO install.
+  it('suppresses an in-project path whose realpath crosses a node_modules/.pnpm store segment (RD-04, OUT-02)', () => {
+    const realpath = (p: string): string => {
+      if (p === '/ws/proj/src/dep.ts') {
+        return '/ws/proj/node_modules/.pnpm/@scope+pkg@1.0.0/node_modules/@scope/pkg/index.d.ts';
+      }
+
+      return p;
+    };
+
+    const result = filterDiagnostics([diag('/ws/proj/src/dep.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
+  it('suppresses an in-project path whose realpath crosses a node_modules/.bun store segment (RD-04, OUT-02)', () => {
+    const realpath = (p: string): string => {
+      if (p === '/ws/proj/src/dep.ts') {
+        return '/ws/proj/node_modules/.bun/pkg@1.0.0/node_modules/pkg/index.d.ts';
+      }
+
+      return p;
+    };
+
+    const result = filterDiagnostics([diag('/ws/proj/src/dep.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
+  it('suppresses an in-project path whose realpath crosses a plain node_modules/<pkg> segment (RD-04, OUT-02)', () => {
+    const realpath = (p: string): string => {
+      if (p === '/ws/proj/src/dep.ts') {
+        return '/ws/proj/node_modules/pkg/index.d.ts';
+      }
+
+      return p;
+    };
+
+    const result = filterDiagnostics([diag('/ws/proj/src/dep.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
   it('keeps a .ngtypecheck.ts shadow file under basePath (Pitfall 1)', () => {
     const result = filterDiagnostics(
       [diag('/ws/proj/src/a.component.ngtypecheck.ts')],
