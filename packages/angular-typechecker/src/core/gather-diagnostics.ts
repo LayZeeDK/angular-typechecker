@@ -63,6 +63,14 @@ export function gatherAllDiagnostics(
   all.push(...program.getNgOptionDiagnostics());
   all.push(...program.getTsSyntacticDiagnostics());
   all.push(...program.getTsSemanticDiagnostics());
+  // HARD-04 / D-10: getNgStructuralDiagnostics() is DELIBERATELY RETAINED, not
+  // dropped. At Angular 22.0.4 it returns [] in practice (the structural phase is
+  // a no-op here), but the getter exists on api.Program -- so the call is kept as
+  // a forward-compatible, no-op-tolerant gather. Retaining AND asserting it (the
+  // HARD-01 per-member drift probe in Plan 02, the runtime getter-set spec in
+  // Plan 03, and the existing call-order assertion in gather-diagnostics.spec.ts)
+  // means a future Angular that REACTIVATES it (returns diagnostics again) cannot
+  // silently under-gather. Do NOT remove this call without retiring those gates.
   all.push(...program.getNgStructuralDiagnostics());
 
   // HYBRID (RES-02 / D-03 / D-04): residual whole-program non-template set...
