@@ -12,6 +12,17 @@ Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale t
 
 Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular projects cannot use that fast path -- Angular lacks TypeScript project-references support -- and it would not surface Angular template type-check or extended (NG8xxx) diagnostics anyway. angular-typechecker is the Angular-aware whole-program no-emit type-check that fills that gap.
 
+## Current Milestone: v0.0.3 Engine hardening
+
+**Goal:** Harden the existing whole-program no-emit `runTypecheck` engine -- close real correctness/completeness holes, make diagnostic gathering resilient instead of all-or-nothing, and make Angular-version drift fail loudly -- all verified against stable Angular 22.0.4 and WITHOUT migrating off `performCompilation` to `NgtscProgram`.
+
+**Target features (3 clusters):**
+- **Correctness & completeness:** detect config-resolution infra crashes (re-throw as infra, do not count as type errors); surface global / location-less TS diagnostics (`getGlobalDiagnostics`); stop suppressing empty-`fileName` diagnostics.
+- **Resilience:** per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest (opens with a GATED spike deciding simple per-file loop vs. hybrid gather); `realpath()` try/catch in the boundary filter; `suppressOutputPathCheck`.
+- **Drift-hardening:** a build-time `tsconfig.drift.json` assertion that the vendored shim stays in sync with the real `api.Program` getter set + NG error-code encoding; fix the fabricated `EmitFlags.None`; vendor-marker comments; KEEP the no-op `getNgStructuralDiagnostics()` call under the drift assertion (forward-compat).
+
+Grounded in `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` (verified against `@angular/build` + `@angular/compiler-cli` at stable 22.0.4). The engine is already complete and faithful to `@angular/build`; this milestone is hardening, not a rewrite. Deferred: `totalFilesCount` observability field; the v0.0.1 deferred feature families (INF/GEN/SUR/REP/SUP) remain out of scope.
+
 ## Current State
 
 **Shipped v0.0.1 (2026-06-29)** -- published live to npm as `angular-typechecker@0.0.1` and `@0.0.2` (tokenless OIDC Trusted Publisher + SLSA v1 provenance).
@@ -41,9 +52,14 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - [x] CI: GitHub Actions, Node 22/24/26 x Linux/Windows/macOS (heavy e2e gate Linux-only). -- v0.0.1
 - [x] Release-PR workflow: PR-only `main`, version/changelog via PR, tag-the-merge-commit publish, clean public changelog (no GSD phase/plan scopes). -- v0.0.1
 
-### Active (next milestone -- not yet scoped)
+### Active (v0.0.3 Engine hardening -- in progress)
 
-No active milestone. Run `/gsd-new-milestone` to scope the next one. The deferred requirement families carried forward from v0.0.1 are the natural candidates (see Out of Scope below and `.planning/milestones/v0.0.1-REQUIREMENTS.md`): inferred targets (INF), install/generators (GEN), other surfaces (SUR), reporters/performance (REP), broader support (SUP).
+Scoped requirements with REQ-IDs live in `.planning/REQUIREMENTS.md`. Summary by cluster:
+- **Correctness & completeness:** config-resolution-crash detection, global TS diagnostics, empty-`fileName` handling.
+- **Resilience:** per-file fault isolation (gated spike), `realpath()` robustness, `suppressOutputPathCheck`.
+- **Drift-hardening:** build-time shim + error-code drift assertion, `EmitFlags` fix, vendor markers, retained-getter-under-assertion.
+
+This milestone improves the EXISTING engine only. The deferred families carried forward from v0.0.1 (inferred targets INF, install/generators GEN, other surfaces SUR, reporters/performance REP, broader support SUP) remain Out of Scope (below) and are the natural candidates for a later milestone.
 
 ### Out of Scope (deferred to later milestones, not abandoned)
 
@@ -126,4 +142,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-29 after v0.0.1 milestone completion (full evolution review; all v0.0.1 requirements moved to Validated; Key Decisions outcomes closed).*
+*Last updated: 2026-06-29 -- started milestone v0.0.3 (Engine hardening): added Current Milestone section + Active requirements, grounded in `.planning/research/prior-art/` (verified against @angular/build + @angular/compiler-cli at stable 22.0.4).*

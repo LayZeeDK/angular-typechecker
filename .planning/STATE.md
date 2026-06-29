@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.0.1
-milestone_name: milestone
-status: milestone_complete
-stopped_at: v0.0.1 milestone complete (archived)
-last_updated: "2026-06-29T13:13:54.000Z"
+milestone: v0.0.3
+milestone_name: Engine hardening
+status: planning
+last_updated: "2026-06-29T14:42:07.149Z"
 last_activity: 2026-06-29
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 29
-  completed_plans: 29
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,13 +24,10 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 ## Current Position
 
-Milestone: v0.0.1 -- COMPLETE (archived 2026-06-29)
-Phases: 8/8 complete (1-7 + inserted 5.1); 29/29 plans
-Status: Shipped to npm (0.0.1 + 0.0.2). Milestone archived to .planning/milestones/.
-Next: scope the next milestone with `/gsd-new-milestone`.
-Last activity: 2026-06-29
-
-Progress: [==========] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-29 — Milestone v0.0.3 started
 
 ## Performance Metrics
 
