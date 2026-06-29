@@ -62,6 +62,12 @@
 
 - [x] **CI-01**: GitHub Actions runs unit + integration on a Node 22/24/26 x Linux/Windows/macOS matrix (free standard public-repo runners); the heavy e2e gate runs Linux-only.
 
+### Release Process (REL)
+
+- [ ] **REL-01** (Release-PR flow): Releases no longer push version/changelog commits directly to `main`. `nx release --skip-publish` on a `release/*` branch produces the version bump + curated CHANGELOG commit with NO git tag and NO push; the change merges via PR; the maintainer creates the release tag on the merge commit, firing the unchanged tag-triggered OIDC publish (`release.yml` byte-identical). **Acceptance:** `nx.json` has `release.git.tag:false` (plus `commit:true`, `push:false`, `createRelease:false`); `release-hygiene.int.spec.ts` asserts `git.tag===false`; a release-branch `nx release --dry-run` shows "Skipped ... Tagging" and creates no tag/push; the tag `angular-typechecker@x.y.z` matches `release.yml`'s `on: push: tags` filter.
+- [ ] **REL-02** (Branch-protection switch): `main` requires a PR satisfying the `ci` + `Analyze (actions)` + `Analyze (javascript-typescript)` status checks with force-push/deletion blocked and empty bypass; the temporary v0.0.1 ruleset is deleted; the Release-tag ruleset is retained. **Acceptance:** `gh api .../rulesets/18229122` returns `enforcement:active`, `strict_required_status_checks_policy:false`, `bypass_actors:[]`, the three required checks, `allowed_merge_methods:["merge"]`; `gh api .../rulesets/18229088` returns 404; `gh api .../rulesets/18229053` still returns the active tag ruleset.
+- [ ] **REL-03** (Clean changelog): The public CHANGELOG.md entry and the GitHub Release notes contain NO internal GSD phase/plan scope (no `NN`/`NN-NN` token like `feat(05-01):`/`**06-02:**`). **Acceptance:** the curated CHANGELOG.md section matches the 0.0.1/0.0.2 style (prose summary + Features/Fixes/Breaking + a Compatibility block) and contains no `\b\d{2}(-\d{2})*\b` plan-id scope; the GitHub Release is created with `--notes-file` pointing at that section (never `--generate-notes`).
+
 ## v2 Requirements (deferred to later milestones)
 
 ### Inference (INF)
@@ -103,7 +109,7 @@
 
 Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` for phase detail.
 
-> Note: the enumerated v0.0.1 checklist contains **30** distinct requirement IDs (the earlier "26 total" header was a source miscount). All 30 are mapped below -- no orphans, no duplicates.
+> Note: the enumerated v0.0.1 checklist contains **34** distinct requirement IDs (the original "26 total" header was a source miscount; 30 checklist + PKG-05 from the Phase 5.1 insertion + REL-01/REL-02/REL-03 from the Phase 7 insertion). All 34 are mapped below -- no orphans, no duplicates.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -138,10 +144,13 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | CMP-01 | Phase 1 | Complete (01-01: nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 pinned exact) |
 | CMP-02 | Phase 1 | Complete |
 | CI-01 | Phase 6 | Complete |
+| REL-01 | Phase 7 | Pending |
+| REL-02 | Phase 7 | Pending |
+| REL-03 | Phase 7 | Pending |
 
 **Coverage:**
-- v0.0.1 requirements: 31 total (30 enumerated checklist + PKG-05 added with the Phase 5.1 insertion; supersedes the "26" header miscount)
-- Mapped to phases: 31
+- v0.0.1 requirements: 34 total (30 enumerated checklist + PKG-05 added with the Phase 5.1 insertion + REL-01/REL-02/REL-03 added with the Phase 7 insertion; supersedes the "26" header miscount)
+- Mapped to phases: 34
 - Unmapped: 0
 
 **Per-phase counts:**
@@ -152,7 +161,8 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 - Phase 5 (Packaging, Publish Hardening + e2e Smoke): 5 -- PKG-01, PKG-02, PKG-03, PKG-04, TEST-05
 - Phase 5.1 (0.0.2 first OIDC steady-state publish verification): 1 -- PKG-05
 - Phase 6 (Full e2e Matrix + CI): 2 -- TEST-03, CI-01
+- Phase 7 (Release-PR workflow and clean changelog): 3 -- REL-01, REL-02, REL-03
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-28 -- PKG-05 (tokenless OIDC steady-state publish) recorded for Phase 5.1 (31/31 mapped)*
+*Last updated: 2026-06-29 -- REL-01/REL-02/REL-03 (Release-PR workflow, branch-protection switch, clean changelog) recorded for Phase 7 (34/34 mapped)*
