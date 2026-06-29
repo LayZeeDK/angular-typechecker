@@ -26,7 +26,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ### v0.0.3 -- Engine hardening (active)
 
 - [x] **Phase 8: Correctness & Completeness Fixes** - Close the under-report / mis-classify holes: detect config-resolution infra crashes, surface global TS diagnostics, stop dropping empty-`fileName` diagnostics, and classify infra-vs-type failures via a pure core exit-code policy (literal OS exit code delivered by the deferred standalone CLI; the Nx executor surfaces infra distinctly within its `{ success }` contract). (completed 2026-06-29)
-- [ ] **Phase 9: Resilience (per-file fault isolation + boundary robustness)** - GATED spike decides the isolation shape, then per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest, plus a try/catch realpath and `suppressOutputPathCheck`.
+- [x] **Phase 9: Resilience (per-file fault isolation + boundary robustness)** - GATED spike decides the isolation shape, then per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest, plus a try/catch realpath and `suppressOutputPathCheck`. (completed 2026-06-29)
 - [ ] **Phase 10: Drift-hardening & Maintainability** - Make an Angular upgrade that changes the `api.Program` getter set or error-code encoding break CI loudly: a build-time drift tsconfig + CI target, the `EmitFlags` fix, vendor markers, the retained-getter-under-assertion, and a no-TS-99-leak regression spec.
 
 ## Phase Details
@@ -74,7 +74,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided shape) + the failing-then-passing fault-isolation.integration.spec.ts
+- [x] 09-02-PLAN.md -- RES-02 [wave 2, depends_on 09-01]: per-file fault-isolated Angular gathering in gather-diagnostics.ts (the RES-01-decided shape) + the failing-then-passing fault-isolation.integration.spec.ts
 
 ### Phase 10: Drift-hardening & Maintainability
 
@@ -104,5 +104,5 @@ Plans:
 | 6. Full e2e Matrix + CI | v0.0.1 | 5/5 | Complete | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
-| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 3/4 | In Progress|  |
+| 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 4/4 | Complete   | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 0/? | Not started | - |
