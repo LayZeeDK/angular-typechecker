@@ -2,35 +2,36 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: executing
-stopped_at: Phase 7 context gathered
-last_updated: "2026-06-29T10:26:42.900Z"
+status: milestone_complete
+stopped_at: v0.0.1 milestone complete (archived)
+last_updated: "2026-06-29T13:13:54.000Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 8
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 29
-  completed_plans: 28
-  percent: 88
+  completed_plans: 29
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-27)
+See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 07 — release-pr-workflow-and-clean-changelog
+**Current focus:** Planning the next milestone (run `/gsd-new-milestone`).
 
 ## Current Position
 
-Phase: 07 (release-pr-workflow-and-clean-changelog) — EXECUTING
-Plan: 4 of 4
-Status: Ready to execute
+Milestone: v0.0.1 -- COMPLETE (archived 2026-06-29)
+Phases: 8/8 complete (1-7 + inserted 5.1); 29/29 plans
+Status: Shipped to npm (0.0.1 + 0.0.2). Milestone archived to .planning/milestones/.
+Next: scope the next milestone with `/gsd-new-milestone`.
 Last activity: 2026-06-29
 
-Progress: [██████████] 97%
+Progress: [==========] 100%
 
 ## Performance Metrics
 
@@ -82,8 +83,10 @@ Progress: [██████████] 97%
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes closed) and the phase archives under `.planning/milestones/v0.0.1-phases/`. The per-plan log below is retained as a historical record.
+
+<details>
+<summary>v0.0.1 decision log (historical)</summary>
 
 - Engine-before-Nx, riskiest-first phase order: a fully testable core engine exists before any Nx code; Phase 1 is a GATED spike.
 - Module: CJS executor + `await import()`, compiled `.js` with `module: node16`/`nodenext` (NOT `commonjs`) -- assert emitted `.js` still contains `import(`.
@@ -147,6 +150,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [07-02] act-compat A3 confirmed-in-CI-pending: local act -n cannot schedule changes-dependent test/e2e/ci jobs (Docker not running on this box); act --validate + act -g DAG + manual structural review pass; A3 verified by CI act-compat + draft-PR (Phase-6 precedent); actionlint deferred to CI lint-workflows
 - [Phase ?]: [07-03] AGENTS.md release-mechanics rewritten for the Release-PR flow (D-17): cut on release/* branch -> PR carrying code + .planning/ -> merge commit -> tag the MERGE COMMIT angular-typechecker@x.y.z (no v) -> push tag -> OIDC publish -> gh release via --notes-file; the cut creates NO tag (git.tag:false) and pushes nothing. Kept the verified 0.x bump table + createRelease LANDMINE + literal-version gotcha verbatim; added the PR-only-main (empty bypass) note + D-12 enforcement-toggle recovery. ASCII-only. Code-review-gated per AGENTS.md own rule.
 
+</details>
+
 ### Pending Todos
 
 [From .planning/todos/pending/ -- ideas captured during sessions]
@@ -155,7 +160,12 @@ None yet.
 
 ### Blockers/Concerns
 
-[Issues that affect future work]
+v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now addressed. One dev-repo caveat carries forward to the next milestone:
+
+- **CARRIED FORWARD:** `.npmrc legacy-peer-deps=true` is required in this dev repo because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is Angular 22. It does NOT reach consumers (a clean tarball install on stable Angular 22.0.4 + Nx 23.0.1 needs no override). Revisit/drop when a stable `@nx/angular` admits Angular 22 in its peers.
+
+<details>
+<summary>v0.0.1 blockers/concerns log (historical -- all resolved or addressed)</summary>
 
 - [RESOLVED] Phase 1 GATED concern: the spike PROVED both unknowns -- (a) the built `compiler-loader.js` retains literal `import(` under `module:nodenext` (no `require()` downlevel; runtime loads ESM compiler-cli with no `ERR_REQUIRE_ESM`), and (b) the unconditional all-getter surfaces NG8109 (`-998109`) that ngc's `defaultGatherDiagnostics` suppresses, with a co-located TS2322, on app + lib. GO -- Phase 2 may begin.
 - [Phase-2 input, code-review MD-01] `run-typecheck.ts` silently drops `ng.readConfiguration(...).errors`; a malformed/unresolvable tsconfig can yield empty `rootNames` and report `errorCount: 0` / `success: true` (false "clean" for a type-checker). The Phase-1 gate never exercises a broken config. Fold `parsed.errors` into diagnostics before counting when the real engine lands (ENG-01).
@@ -170,6 +180,8 @@ None yet.
 - [01-03 PROGRESS] GATE A/B engine validated ahead of the formal Plan 04 spec suite: `nx build angular-typechecker` succeeds and the built `compiler-loader.js` retains a literal `import('@angular/compiler-cli')` (no `require()` downlevel); `require()`-loading the built CJS executor against the fixture ran with no `ERR_REQUIRE_ESM` (GATE A runtime). A throwaway all-getter probe on both fixture tsconfigs returned `[2322, -998109, -998117]` while ngc's `defaultGatherDiagnostics` returned only `[2322]` (GATE B positive + differential; NG8109 fires on stable 22.0.4, D-18). Plan 04 turns these into the committed Vitest gate suite and records the cold-run timing.
 - [01-03 CAVEAT] The compiler-cli-types.ts shim re-exports via a deep relative path into `node_modules/@angular/compiler-cli/...` -- fragile if dep hoisting changes the layout, and coupled to the package's internal `.d.ts` structure (type-only; erased at emit). Revisit when @angular/compiler-cli ships nodenext-clean typings (Angular's own @angular/build consumes these types under module:commonjs/moduleResolution:node, so the barrel is simply not nodenext-tested upstream).
 - [RESOLVED 06-02] DI-06-01: nx release --dry-run preVersionCommand (npx nx run-many -t build) failed because the 06-01 matrix-e2e fixtures buildable-lib/publishable-lib declared @nx/angular build targets while ng-packagr is deliberately not installed (OQ-1). FIXED via a workspace .nxignore excluding e2e/angular-typechecker-matrix-e2e/fixtures/ so the main graph no longer discovers those fixture projects (the matrix-e2e project itself stays in the graph for its test target). VERIFIED: nx show projects no longer lists app/local-lib/buildable-lib/publishable-lib; nx run-many -t build now runs 2 real projects green. See deferred-items.md (marked RESOLVED, commit 99435b6).
+
+</details>
 
 ## Deferred Items
 

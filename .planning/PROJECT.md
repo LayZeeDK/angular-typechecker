@@ -12,27 +12,38 @@ Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale t
 
 Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular projects cannot use that fast path -- Angular lacks TypeScript project-references support -- and it would not surface Angular template type-check or extended (NG8xxx) diagnostics anyway. angular-typechecker is the Angular-aware whole-program no-emit type-check that fills that gap.
 
+## Current State
+
+**Shipped v0.0.1 (2026-06-29)** -- published live to npm as `angular-typechecker@0.0.1` and `@0.0.2` (tokenless OIDC Trusted Publisher + SLSA v1 provenance).
+
+The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS adapter over a framework-agnostic core (`runTypecheck`) that loads ESM `@angular/compiler-cli` via `await import()` and gathers the complete diagnostic set unconditionally. Validated across all five project types against the installed tarball, made Nx-cacheable with a dependency-error-busts-cache correctness gate, and gated by a Node 22/24/26 x Linux/Windows/macOS CI matrix. `main` is PR-only with a Release-PR flow and a curated public changelog.
+
+- **Codebase:** ~1,162 LOC TypeScript across 33 `.ts` files in `packages/angular-typechecker/` (incl. tests); plus e2e fixture projects and CI/release workflows.
+- **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers.
+- **Known issues / debt:** documentation-drift and INFO-level only (see `.planning/milestones/v0.0.1-MILESTONE-AUDIT.md`); `.npmrc legacy-peer-deps=true` is a dev-repo concern that does not reach consumers.
+
 ## Requirements
 
-### Validated
+### Validated (v0.0.1 -- shipped and verified 2026-06-29)
 
-(None yet -- ship to validate)
+- [x] `angular-typecheck` Nx executor: programmatic `@angular/compiler-cli` whole-program type-check, no-emit. -- v0.0.1
+- [x] Complete diagnostics: a custom gatherer runs all phases UNCONDITIONALLY (models `@angular/build`, not `ngc`'s short-circuit) -- TS + Angular template type-check + extended (NG8xxx). -- v0.0.1
+- [x] Required `tsConfig` option (single tsconfig per target, overridable); spec/unit-test checking via a target pointed at `tsconfig.spec.json`. -- v0.0.1
+- [x] Modes: report-all by default (matches `tsc --noEmit`); opt-in fail-fast. -- v0.0.1
+- [x] Dependency boundary: exclude out-of-project + `node_modules` by default; opt-in `includeDeps`. -- v0.0.1
+- [x] `--max-warnings=<n>` (0 = fail on any warning); errors always fail; configured categories respected. -- v0.0.1
+- [x] Human output = `formatDiagnostics`; absolute realpath-normalized filter (pnpm-symlink / case-insensitive-FS safe); workspace-root-relative CI annotation paths; agent-ready (deterministic, idempotent, non-zero exit). -- v0.0.1
+- [x] Nx-cacheable target (`cache:true`, `outputs:[]`, per-tsconfig + dependency-source inputs + `externalDependencies`), proven by a dependency-error-busts-cache test. -- v0.0.1
+- [x] Validated across all five project types: application, local (non-buildable) library, buildable library, publishable library, spec tsconfig. -- v0.0.1
+- [x] Test pyramid (Vitest): unit (mock compiler-cli) + integration (real compiler, v13->v22 catalog) + e2e (smoke + full matrix). -- v0.0.1
+- [x] Module format: CommonJS executor loads ESM `@angular/compiler-cli` via `await import()`, built with `module: nodenext` (no `import()`->`require()` downlevel; GATE A). -- v0.0.1
+- [x] Published to npm (MIT) via `nx release` with tokenless OIDC Trusted Publisher + SLSA v1 provenance; manual `project.json` target wiring documented. -- v0.0.1 (0.0.1 + 0.0.2)
+- [x] CI: GitHub Actions, Node 22/24/26 x Linux/Windows/macOS (heavy e2e gate Linux-only). -- v0.0.1
+- [x] Release-PR workflow: PR-only `main`, version/changelog via PR, tag-the-merge-commit publish, clean public changelog (no GSD phase/plan scopes). -- v0.0.1
 
-### Active (v0.0.1 -- hypotheses until shipped and validated)
+### Active (next milestone -- not yet scoped)
 
-- [ ] `angular-typecheck` Nx executor: programmatic `@angular/compiler-cli` whole-program type-check, no-emit.
-- [ ] Complete diagnostics: a custom gatherer runs all phases UNCONDITIONALLY (models the modern `@angular/build` builder, not `ngc`'s phase-fail-fast short-circuit) -- TS option/syntactic/semantic + Angular template type-check + extended (NG8xxx).
-- [ ] Required `tsConfig` option (single tsconfig per target, overridable in target config). Spec/unit-test checking via a target pointed at `tsconfig.spec.json`.
-- [ ] Modes: full / report-all by default (matches `tsc --noEmit`); opt-in fail-fast (stop at first error).
-- [ ] Dependency boundary: exclude out-of-project + `node_modules` diagnostics by default; opt-in `includeDeps`.
-- [ ] `--max-warnings=<n>` (0 = fail on any warning; ESLint-style). Errors fail; project-configured diagnostic categories respected.
-- [ ] Default human output = `@angular/compiler-cli` `formatDiagnostics` (superset of `tsc`; renders NG codes + template codeframes). Filter on absolute realpath-normalized `fileName` (host `getCanonicalFileName` + `realpath`); emit workspace-root-relative paths for GitHub Actions annotations. Agent-ready: deterministic, idempotent, clear non-zero exit on diagnostics.
-- [ ] Nx-cacheable target: `cache: true`, `outputs: []`, `@nx/js`-style per-tsconfig inputs (include/exclude globs + `extends` chain + sibling package.json) + `^production`/`^{projectRoot}` dependency-source filesets (non-buildable deps) + `dependentTasksOutputFiles` (buildable deps) + `externalDependencies: ['typescript', '@angular/compiler-cli']`; verify via `nx show target inputs --check` / Task Sandboxing.
-- [ ] Validated across all five project types: application, local (non-buildable) library, buildable library, publishable library, spec tsconfig.
-- [ ] Test pyramid (Vitest via `@nx/vitest:test`): unit (mock `@angular/compiler-cli`) + integration (real compiler against fixtures, asserting exact diagnostic codes/counts across the v13->v22 catalog; incl. a dependency-error-busts-cache test) + e2e (one smoke early; full real-workspace matrix in late phase(s)).
-- [ ] Module format: CommonJS executor that loads ESM `@angular/compiler-cli` via `await import()`, shipped as pre-compiled `.js` built with `module: node16`/`nodenext` (so `import()` is not downleveled to `require()`; build-time assert the emitted `.js` still contains `import(`).
-- [ ] Published to npm (MIT) via `nx release`. Manual `project.json` target wiring documented (no config generator in v0.0.1).
-- [ ] CI: GitHub Actions, Node 22/24/26 x Linux/Windows/macOS (free standard public-repo runners).
+No active milestone. Run `/gsd-new-milestone` to scope the next one. The deferred requirement families carried forward from v0.0.1 are the natural candidates (see Out of Scope below and `.planning/milestones/v0.0.1-REQUIREMENTS.md`): inferred targets (INF), install/generators (GEN), other surfaces (SUR), reporters/performance (REP), broader support (SUP).
 
 ### Out of Scope (deferred to later milestones, not abandoned)
 
@@ -76,26 +87,26 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Package name `angular-typechecker` (unscoped, MIT) | Available on npm; cleanest `nx add`/`ng add` UX | Pending |
-| v0.0.1 = Nx executor only; everything else deferred | Smallest publishable, valuable slice (Vertical MVP) | Pending |
-| Support Nx 23 + Angular 22 + TS 6 only | Matrix-confirmed only viable pairing for TS 6 | Pending |
-| Engine: `performCompilation` + custom all-getter gatherer (unconditional) | Avoids `ngc` short-circuit; models `@angular/build`; stable API | Pending |
-| Module: CJS executor + `await import()`, compiled `.js` with `module: node16`/`nodenext` | Nx loader require()-based; ESM compiler-cli; avoid import()->require() downlevel | Pending |
-| `@nx/devkit` pinned dependency (no `nx`); compiler-cli + typescript peers | Nx publish-plugin recipe + registry listing; consumer versions | Pending |
-| Runner: Vitest via `@nx/vitest:test` (Jest deferred) | compiler-cli ESM-only; `@nx/vitest` is the Nx 23 package | Pending |
-| Default report-all; opt-in fail-fast (stop at first error) | Matches `tsc --noEmit` default | Pending |
-| Exclude out-of-project diagnostics by default; opt-in `includeDeps` | Project-in-isolation feedback | Pending |
-| `--max-warnings=<n>` (ESLint-style) | Only count-based prior art; tsc/ngc have none | Pending |
-| Default output = `formatDiagnostics`; JSON/SARIF deferred | Superset of tsc; lossless; machine formats later | Pending |
-| Cacheable target (`cache:true`, `outputs:[]`, @nx/js-style inputs) | Fast feedback; whole-program -> per-target cache | Pending |
-| Tests assert exact diagnostic codes across v13->v22 catalog | Improves on priors' pass/fail-only assertions | Pending |
-| e2e blends both prior approaches under Vitest (fixtures fast tier + tarball CI gate) | Fast agent loop + publish/install fidelity | Pending |
-| Capture `createFsTree`/`flushFsTreeChanges` (nx-internal FsTree) | Drive generators against real disk in tests; no public alt | Pending |
-| Release via `nx release`; manual target wiring in v0.0.1 | Dogfoods Nx; generator/ng-add/nx-add deferred | Pending |
-| Publish hardening: npm Trusted Publishers (OIDC) + provenance + hardened CI + SECURITY.md + tarball audit (publint/attw) | Supply-chain (s1ngularity); registry listing | Pending |
-| Diagnostics: absolute-realpath filter; workspace-root-relative CI paths; agent-ready output | Correct project-boundary filter + GitHub annotations; AI/CI consumers | Pending |
-| Angular CLI surface (deferred) via `convertNxExecutor`/`convertNxGenerator` re-exports | Current @nx/devkit APIs; thin adapters over same core | Pending |
-| GSD: YOLO, Standard granularity, parallel, quality/Opus, Vertical MVP | Correctness-critical tooling with a gating spike | Pending |
+| Package name `angular-typechecker` (unscoped, MIT) | Available on npm; cleanest `nx add`/`ng add` UX | [OK] Validated v0.0.1 |
+| v0.0.1 = Nx executor only; everything else deferred | Smallest publishable, valuable slice (Vertical MVP) | [OK] Validated v0.0.1 |
+| Support Nx 23 + Angular 22 + TS 6 only | Matrix-confirmed only viable pairing for TS 6 | [OK] Validated v0.0.1 |
+| Engine: `performCompilation` + custom all-getter gatherer (unconditional) | Avoids `ngc` short-circuit; models `@angular/build`; stable API | [OK] Validated v0.0.1 |
+| Module: CJS executor + `await import()`, compiled `.js` with `module: node16`/`nodenext` | Nx loader require()-based; ESM compiler-cli; avoid import()->require() downlevel | [OK] Validated v0.0.1 |
+| `@nx/devkit` pinned dependency (no `nx`); compiler-cli + typescript peers | Nx publish-plugin recipe + registry listing; consumer versions | [OK] Validated v0.0.1 |
+| Runner: Vitest via `@nx/vitest:test` (Jest deferred) | compiler-cli ESM-only; `@nx/vitest` is the Nx 23 package | [OK] Validated v0.0.1 |
+| Default report-all; opt-in fail-fast (stop at first error) | Matches `tsc --noEmit` default | [OK] Validated v0.0.1 |
+| Exclude out-of-project diagnostics by default; opt-in `includeDeps` | Project-in-isolation feedback | [OK] Validated v0.0.1 |
+| `--max-warnings=<n>` (ESLint-style) | Only count-based prior art; tsc/ngc have none | [OK] Validated v0.0.1 |
+| Default output = `formatDiagnostics`; JSON/SARIF deferred | Superset of tsc; lossless; machine formats later | [OK] Validated v0.0.1 |
+| Cacheable target (`cache:true`, `outputs:[]`, @nx/js-style inputs) | Fast feedback; whole-program -> per-target cache | [OK] Validated v0.0.1 |
+| Tests assert exact diagnostic codes across v13->v22 catalog | Improves on priors' pass/fail-only assertions | [OK] Validated v0.0.1 |
+| e2e blends both prior approaches under Vitest (fixtures fast tier + tarball CI gate) | Fast agent loop + publish/install fidelity | [OK] Validated v0.0.1 |
+| Capture `createFsTree`/`flushFsTreeChanges` (nx-internal FsTree) | Drive generators against real disk in tests; no public alt | [OK] Validated v0.0.1 |
+| Release via `nx release`; manual target wiring in v0.0.1 | Dogfoods Nx; generator/ng-add/nx-add deferred | [OK] Validated v0.0.1 |
+| Publish hardening: npm Trusted Publishers (OIDC) + provenance + hardened CI + SECURITY.md + tarball audit (publint/attw) | Supply-chain (s1ngularity); registry listing | [OK] Validated v0.0.1 |
+| Diagnostics: absolute-realpath filter; workspace-root-relative CI paths; agent-ready output | Correct project-boundary filter + GitHub annotations; AI/CI consumers | [OK] Validated v0.0.1 |
+| Angular CLI surface (deferred) via `convertNxExecutor`/`convertNxGenerator` re-exports | Current @nx/devkit APIs; thin adapters over same core | [OK] Validated v0.0.1 |
+| GSD: YOLO, Standard granularity, parallel, quality/Opus, Vertical MVP | Correctness-critical tooling with a gating spike | [OK] Validated v0.0.1 |
 
 ## Evolution
 
@@ -115,4 +126,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-27 after initialization and research (corrections applied; see .planning/research/SUMMARY.md and FOLLOWUP-FINDINGS.md)*
+*Last updated: 2026-06-29 after v0.0.1 milestone completion (full evolution review; all v0.0.1 requirements moved to Validated; Key Decisions outcomes closed).*
