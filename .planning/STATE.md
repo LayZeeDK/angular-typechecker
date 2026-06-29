@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-02-PLAN.md (TEST-03 5-type matrix + pnpm e2e + DI-06-01 fix)
-last_updated: "2026-06-29T01:55:46.422Z"
+stopped_at: Completed 06-05-PLAN.md (ci.yml + act compatibility suite + .actrc -- CI-01)
+last_updated: "2026-06-29T02:15:02.986Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 25
-  completed_plans: 24
-  percent: 75
+  completed_plans: 25
+  percent: 88
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 ## Current Position
 
-Phase: 6 (full-e2e-matrix-ci) — EXECUTING
-Plan: 4 of 5 complete (06-01, 06-02, 06-03, 06-04 done; 06-05 remains)
-Status: 06-02 complete (TEST-03 5-type matrix + pnpm e2e PASSED locally; DI-06-01 resolved); ready for 06-05 (ci.yml)
+Phase: 6 (full-e2e-matrix-ci) — ALL PLANS EXECUTED (awaiting verify/secure/validate)
+Plan: 5 of 5 complete (06-01, 06-02, 06-03, 06-04, 06-05 done)
+Status: 06-05 complete (ci.yml + act suite + .actrc; act-compat 12/0 locally). SC3 (full matrix green + required gate) proven on the draft-PR run, NOT locally (RD-10). Pending: gsd-verifier (06-VERIFICATION.md), secure, validate, extract-learnings.
 Last activity: 2026-06-29
 
-Progress: [██████████] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [██████████] 96%
 | Phase 06 P04 | 4 min | 1 tasks | 1 files |
 | Phase 06 P03 | 3min | 2 tasks | 2 files |
 | Phase 06 P02 | 25min | 3 tasks | 6 files |
+| Phase 06 P05 | 8 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -133,6 +134,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [06-02] TEST-03 5-type matrix e2e PASSES locally (Windows arm64): the installed tarball type-checks green + reports an injected TS2322 across app/local-lib/buildable-lib/publishable-lib/spec-tsconfig (install-once consumer-workspace, it.each); pnpm symlinked-store e2e green + injected with the documented Windows realpath fallback (true .pnpm boundary teeth on the Linux CI leg, RD-10).
 - [Phase ?]: [06-02] DI-06-01 RESOLVED via .nxignore excluding e2e/angular-typechecker-matrix-e2e/fixtures/ (remediation #2): the main graph no longer discovers the nested fixture projects, so nx run-many -t build (the release preVersionCommand) runs 2 real projects green instead of failing on ng-packagr; the matrix-e2e project stays in the graph for its test target.
 - [Phase ?]: [06-02] The matrix spec runs each nx run with --skip-nx-cache: the cacheable target's production input EXCLUDES *.spec.ts, so mutating the spec-row source would NOT bust the cache (false-PASS risk). pnpm add uses --config.frozen-lockfile=false (the install-only --no-frozen-lockfile flag is rejected by pnpm add).
+- [Phase ?]: [06-05] ci.yml authored (CI-01): lean 6-cell matrix.include (ubuntu 22/24/26 + windows 24/26 + macos 24, fail-fast:false, NO arm64 runners, NO architecture pin) + Linux-only Node-24 e2e job (3 serialized e2e projects, pnpm via action-setup) + container-free act-compat (act v0.2.89) + lint-workflows (actionlint 1.7.7) + aggregate ci gate (needs all 4, if:always, fail-closed on failure||cancelled||skipped). Envelope matches release.yml; job id+name exactly ci = Phase-7 required-check contract.
+- [Phase ?]: [06-05] act compatibility suite + .actrc (RD-05/06/12): tools/act/act-compat.sh is container-free (act --validate parseability + act -n per-trigger fidelity; --pull=false; capture-then-rg, never plain act execution). Ran 12/0 locally proving the 06-04 release.yml if: ref gate discriminates: push-main -> publish SKIPPED, push-tag -> publish SELECTED, pull_request -> ci jobs only, workflow_dispatch(tag ref) -> publish reachable. .actrc maps ubuntu-latest+ubuntu-24.04 to catthehacker/ubuntu:act-24.04 (no forced linux/amd64; arm64 auto). tools/act/** + .actrc are repo-root dev tooling, NOT in the published files whitelist. actionlint not on the dev box -> local actionlint deferred to orchestrator/draft-PR (allowed); act --validate substituted as local static check.
 
 ### Pending Todos
 
@@ -168,6 +171,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T01:55:46.412Z
+Last session: 2026-06-29T02:10:22.815Z
 Stopped at: Completed 06-02-PLAN.md (TEST-03 5-type matrix + pnpm e2e + DI-06-01 fix)
 Resume file: None

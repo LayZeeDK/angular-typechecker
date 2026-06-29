@@ -60,7 +60,7 @@
 
 ### Continuous Integration (CI)
 
-- [ ] **CI-01**: GitHub Actions runs unit + integration on a Node 22/24/26 x Linux/Windows/macOS matrix (free standard public-repo runners); the heavy e2e gate runs Linux-only.
+- [x] **CI-01**: GitHub Actions runs unit + integration on a Node 22/24/26 x Linux/Windows/macOS matrix (free standard public-repo runners); the heavy e2e gate runs Linux-only.
 
 ## v2 Requirements (deferred to later milestones)
 
@@ -137,7 +137,7 @@ Each v0.0.1 requirement maps to exactly one phase. See `.planning/ROADMAP.md` fo
 | PKG-05 | Phase 5.1 | Pending |
 | CMP-01 | Phase 1 | Complete (01-01: nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3 pinned exact) |
 | CMP-02 | Phase 1 | Complete |
-| CI-01 | Phase 6 | Pending |
+| CI-01 | Phase 6 | Complete |
 
 **Coverage:**
 - v0.0.1 requirements: 31 total (30 enumerated checklist + PKG-05 added with the Phase 5.1 insertion; supersedes the "26" header miscount)
