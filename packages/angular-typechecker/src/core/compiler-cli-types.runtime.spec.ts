@@ -108,6 +108,11 @@ describe('compiler-cli-types runtime drift (real NgtscProgram getter-set + NG en
     // COR-02 reach-through: the global-diagnostics call (`gather-diagnostics.ts:80`)
     // lives on the wrapped `ts.Program`, not on `api.Program`. Cover it explicitly.
     expect(typeof program.getTsProgram().getGlobalDiagnostics).toBe('function');
+
+    // WR-02 reach-through: the per-file loop (`gather-diagnostics.ts:80`) iterates
+    // `getTsProgram().getSourceFiles()`. Also a `ts.Program` member -- cover it so
+    // the asserted runtime call-surface mirrors the gatherer's full Program surface.
+    expect(typeof program.getTsProgram().getSourceFiles).toBe('function');
   });
 
   it('(b) flags any NEW diagnostic getter for review (the additions blind-spot the type gate cannot see)', () => {

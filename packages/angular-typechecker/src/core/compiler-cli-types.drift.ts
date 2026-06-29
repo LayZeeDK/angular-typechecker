@@ -122,6 +122,11 @@ function _callSiteProbes(): void {
   const _h: readonly ts.Diagnostic[] = real
     .getTsProgram()
     .getGlobalDiagnostics();
+  // WR-02 reach-through (gather-diagnostics.ts:80): the per-file template/extended
+  // loop iterates `getTsProgram().getSourceFiles()` (reading `isDeclarationFile`
+  // / `fileName` at :81-85). Like getGlobalDiagnostics, this lives on `ts.Program`
+  // -- probe it so the asserted gatherer call-surface stays complete.
+  const _i: readonly ts.SourceFile[] = real.getTsProgram().getSourceFiles();
 
   void _a;
   void _b;
@@ -131,6 +136,7 @@ function _callSiteProbes(): void {
   void _f;
   void _g;
   void _h;
+  void _i;
 }
 
 void _callSiteProbes;
