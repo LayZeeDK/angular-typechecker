@@ -50,8 +50,9 @@
         "{projectRoot}/src/core/compiler-cli-types.ts",
         "{projectRoot}/tsconfig.drift.json",
         "{workspaceRoot}/tsconfig.base.json",
-        "{workspaceRoot}/node_modules/@angular/compiler-cli/index.d.ts",
-        "{workspaceRoot}/node_modules/@angular/compiler-cli/src/transformers/api.d.ts"
+        {
+          "externalDependencies": ["typescript", "@angular/compiler-cli"]
+        }
       ],
       "options": {
         "command": "tsc --noEmit -p packages/angular-typechecker/tsconfig.drift.json",
