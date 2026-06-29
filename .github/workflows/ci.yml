@@ -1,0 +1,141 @@
+# Cross-OS / multi-Node CI gate (CI-01).
+#
+# Threat model (matches release.yml; s1ngularity + tj-actions postmortems):
+#   - Untrusted-PR trust scope: this workflow uses the SAFE pull-request trigger
+#     (the code-checkout variant, never the privileged sibling). It never
+#     interpolates a PR title/branch/author into a privileged run step -- every
+#     run step uses fixed target ids + flags only. There is no command-injection
+#     surface from untrusted PR metadata.
+#   - Least privilege: read-only repo scope at the top level; NO job re-grants any
+#     write permission (this is a test gate, never a publisher). It sets no
+#     registry credentials and no auth-token env -- OIDC publishing is release.yml's
+#     concern alone.
+#   - SHA-pinned actions: every action reference is a full 40-char commit SHA (a
+#     mutable major-version tag repointed to malicious code was the tj-actions
+#     vector). Dependabot (.github/dependabot.yml, github-actions ecosystem) keeps
+#     these fresh and bumps them in lockstep with release.yml's shared pins.
+#   - persist-credentials disabled on every checkout so a checkout credential
+#     cannot be persisted to .git/config and leaked via an artifact or log.
+#   - concurrency cancel-in-progress reaps superseded PR runs.
+name: ci
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Unit + integration on the LEAN 6-cell matrix (RD-01): full Node sweep on
+  # Linux + the OS axis on Node 24 + the one worth-keeping cross-cell
+  # (windows x newest Node, the OS most prone to ESM/path regressions). NO
+  # arm64-specific runners and NO `architecture` pin -- arch is correctness-
+  # irrelevant for a pure-JS ngtsc type-checker; macos-latest is arm64 by
+  # GitHub's default. fail-fast:false so one red cell never masks the others.
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, node: 22 }
+          - { os: ubuntu-latest, node: 24 }
+          - { os: ubuntu-latest, node: 26 }
+          - { os: windows-latest, node: 24 }
+          - { os: windows-latest, node: 26 }
+          - { os: macos-latest, node: 24 }
+    env:
+      NX_DAEMON: false
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npx nx run-many -t test -p angular-typechecker
+
+  # The heavy tarball-install gate, Linux-only (RD-03), Node 24 (matching
+  # release.yml). Runs the three serialized e2e projects by EXPLICIT project
+  # list (not nx affected) so the gate's meaning is consistent. pnpm is
+  # provisioned via pnpm/action-setup (corepack is removed from Node 25+).
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      NX_DAEMON: false
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - uses: pnpm/action-setup@008330803749db0355799c700092d9a85fd074e9 # v6.0.9
+        with:
+          version: 11.9.0
+      - run: npm ci
+      - run: >
+          npx nx run-many -t test
+          -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e
+
+  # act-compatibility gate (RD-06): container-free `act --validate`
+  # (parseability) + `act -n` per trigger (trigger/condition fidelity via the
+  # if:-gated job selection). NEVER plain `act <event>` execution -- no nested
+  # Docker. act is pinned to v0.2.89.
+  act-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - name: Install act (pinned v0.2.89)
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin v0.2.89
+          act --version
+      - name: act compatibility suite (validate + dry-run per trigger)
+        run: bash tools/act/act-compat.sh
+
+  # Static workflow validation (RD-08): actionlint type-checks expressions, the
+  # needs.*.result graph, matrix references, runs-on labels, and shellchecks run
+  # steps. Container-free. Complements act's parseability check.
+  lint-workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - name: Install actionlint (pinned)
+        run: |
+          bash <(curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -version
+      - name: Lint workflows
+        run: ./actionlint -color
+
+  # Aggregate gate (RD-09 / D-02 cross-phase contract). Job id AND name are
+  # EXACTLY `ci` -- the exact required-status-check name Phase 7's Default branch
+  # ruleset will consume. needs all four upstream jobs; if:always() so it runs
+  # even when a dependency failed; fail-closed on failure OR cancelled OR
+  # skipped. The contains(needs.*.result, ...) form aggregates every matrix cell
+  # (a plain needs.test.result != 'success' can read success when one cell
+  # passes under fail-fast:false).
+  ci:
+    needs: [test, e2e, act-compat, lint-workflows]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Gate
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
+            echo "A required job failed, was cancelled, or was skipped"
+            exit 1
+          fi
+          echo "All required jobs succeeded"
