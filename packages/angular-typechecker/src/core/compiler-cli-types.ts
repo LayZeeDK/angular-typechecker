@@ -80,14 +80,27 @@ export interface Program {
 }
 
 /**
- * The bitflag enum `performCompilation` accepts as `emitFlags`. The engine only
- * ever passes `0` (the emit-neutralizing value, with `noEmit: true`). Declared
- * as an ambient enum so it is usable both as a TYPE (`0 as EmitFlags`) and as a
+ * The bitflag enum `performCompilation` accepts as `emitFlags`. The members now
+ * MIRROR the real `@angular/compiler-cli@22.0.4` enum verbatim
+ * (`src/transformers/api.d.ts:74-82`): `DTS=1, JS=2, Metadata=4, I18nBundle=8,
+ * Codegen=16, Default=19, All=31` -- the real enum has NO `None` member (the
+ * earlier fabricated zero-valued member is removed, HARD-02). The engine only ever passes
+ * the literal `0` (the emit-neutralizing value, with `noEmit: true`); `0` is not
+ * a declared member, so the call site uses an explicit CAST
+ * (`emitFlags: 0 as EmitFlags`, run-typecheck.ts:229) -- a bare `: EmitFlags = 0`
+ * ERRORS TS2322 at tsc 6.0.3, the cast is what keeps `0` acceptable. Declared as
+ * an ambient enum so it is usable both as a TYPE (`0 as EmitFlags`) and as a
  * VALUE namespace (`readonly EmitFlags: typeof EmitFlags` on `CompilerCli`);
  * `declare` means no runtime code is emitted (the shim stays erased-at-emit).
  */
 export declare enum EmitFlags {
-  None = 0,
+  DTS = 1,
+  JS = 2,
+  Metadata = 4,
+  I18nBundle = 8,
+  Codegen = 16,
+  Default = 19,
+  All = 31,
 }
 
 /**
