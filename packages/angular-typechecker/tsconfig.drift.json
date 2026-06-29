@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "noEmit": true,
+    "declaration": false,
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "files": ["src/core/compiler-cli-types.drift.ts"]
+}
