@@ -74,6 +74,18 @@ const survivorComponent = join(
   'survivor.component.ts',
 );
 
+// RES-02 (reframe): an ORDINARILY-ERRORING Angular program with NO
+// TCB-generation Fatal -- ng-baseline emits NG8001 (SCHEMA_INVALID_ELEMENT), a
+// real Angular template error. It proves the suppression flag does NOT fire on a
+// clean / ordinarily-erroring run even when Angular template diagnostics are
+// present (no false positive).
+const ordinaryNgErrorTsConfig = join(
+  workspaceRoot,
+  'fixtures',
+  'ng-baseline',
+  'tsconfig.app.json',
+);
+
 function diagnosticsOnFile(
   diagnostics: readonly { file?: { fileName: string } }[],
   absolutePath: string,
@@ -141,5 +153,42 @@ describe('runTypecheck fault isolation (fault-isolation fixture)', () => {
         (diagnostic) => diagnostic.code === UNKNOWN_ERROR_CODE,
       ),
     ).toBe(false);
+  });
+
+  it('RES-02 reframe: the TCB-generation Fatal SETS templateCheckAborted naming the offending file', async () => {
+    const result = await runTypecheck({ tsConfigPath: faultIsolationTsConfig });
+
+    // The reframed loud-notice signal: the real-compiler poison run flags the
+    // template-check abort (NG3004) so the adapter can warn that survivors'
+    // template/extended diagnostics may be suppressed -- never silently.
+    expect(result.templateCheckAborted).toBeDefined();
+    expect(result.templateCheckAborted?.code).toBe(
+      NG_IMPORT_GENERATION_FAILURE,
+    );
+    // The offending file is named (forward-slash absolute, like every CoreResult
+    // fileName) so the adapter notice can point at it.
+    expect(result.templateCheckAborted?.fileName).toMatch(
+      /fixtures\/fault-isolation\/tcb-poison\.component\.ts$/,
+    );
+  });
+});
+
+describe('runTypecheck templateCheckAborted is UNSET on ordinary runs (RES-02 reframe)', () => {
+  it('does NOT flag an abort on an ordinarily-erroring Angular program (NG8001, no TCB-generation Fatal)', async () => {
+    const result = await runTypecheck({
+      tsConfigPath: ordinaryNgErrorTsConfig,
+    });
+
+    // ng-baseline emits a real Angular template error (NG8001) but NO
+    // TCB-generation Fatal, so the suppression flag must stay unset: the notice
+    // fires only when survivors' template diagnostics were actually aborted.
+    expect(result.templateCheckAborted).toBeUndefined();
+
+    // Sanity: the fixture really did produce its ordinary Angular error, so this
+    // is a genuine "erroring but not aborted" run, not a vacuous clean pass.
+    expect(result.errorCount).toBeGreaterThanOrEqual(1);
+    expect(
+      result.diagnostics.some((diagnostic) => diagnostic.code === NG(8001)),
+    ).toBe(true);
   });
 });
