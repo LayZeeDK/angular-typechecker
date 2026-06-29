@@ -87,13 +87,24 @@ Plans:
 **Requirements**: HARD-01, HARD-02, HARD-03, HARD-04, HARD-05
 **Success Criteria** (what must be TRUE):
 
-  1. A dedicated `tsconfig.drift.json` (classic `moduleResolution: node`) is type-checked in CI as its own target (preferably a `typecheck-drift` target) and FAILS the build when the vendored `Program` shim stops being assignable FROM the real `@angular/compiler-cli` `api.Program` -- a new or removed diagnostic getter, or a changed `ngErrorCode`/`UNKNOWN_ERROR_CODE` encoding, breaks CI (real->shim direction only; the shim is a deliberate subset).
+  1. A dedicated `tsconfig.drift.json` (classic `moduleResolution: node`) is type-checked in CI as its own `typecheck-drift` target and FAILS the build when a REMOVED, renamed, or signature-changed diagnostic getter (among the getters the gatherer calls) stops the real `@angular/compiler-cli` `api.Program` being assignable TO the vendored `Program` shim, or when the `ngErrorCode`/`UNKNOWN_ERROR_CODE` encoding changes. Real->shim direction only (the shim is a deliberate subset); newly-ADDED upstream getters are intentionally NOT a build failure and are surfaced instead by the runtime getter-set spec. [D-07 wording fix.]
   2. The shim's fabricated `EmitFlags.None = 0` member is corrected against the real enum, while the `emitFlags: 0` call site is retained as a documented literal (verified safe under `noEmit: true`).
   3. Every divergence in the vendored type surface carries a greppable `// angular-typechecker: vendored -- <reason>` marker comment (Prettier `angular-estree-parser` idiom), discoverable by a single grep.
   4. The `getNgStructuralDiagnostics()` call is retained as a documented, deliberately forward-compatible no-op-tolerant call AND is covered by the HARD-01 getter-set assertion, so a future Angular version that reactivates it cannot silently under-gather.
   5. A regression spec asserts that no `TS-99` substring (a raw, un-rewritten negative NG code) survives the `color: false` output path.
 
-**Plans**: TBD
+**Plans**: 4 plans (2 waves; the drift target depends on the shim corrections)
+
+Plans:
+**Wave 1**
+
+- [ ] 10-01-PLAN.md -- HARD-02/03/04: correct the shim EmitFlags enum (mirror real members, drop None) + add greppable vendor markers to all 6 divergent constructs + document the retained getNgStructuralDiagnostics()
+- [ ] 10-03-PLAN.md -- HARD-01 (runtime half, D-04): runtime getter-set SUBSET-containment + additions-review + NG encoding round-trip spec against the real await import('@angular/compiler-cli')
+- [ ] 10-04-PLAN.md -- HARD-05: TS-99 leak regression spec via the real cli.formatDiagnostics seam (renderReport color:false; NG#### present, TS-99 absent)
+
+**Wave 2** *(depends on 10-01 shim corrections)*
+
+- [ ] 10-02-PLAN.md -- HARD-01 (build-time half): compiler-cli-types.drift.ts per-member real->shim probes + getTsProgram special-case + call-site probes + value-level UNKNOWN_ERROR_CODE/EmitFlags pins; tsconfig.drift.json; typecheck-drift Nx target + CI wiring; drift-file exclusion from both production tsconfigs; D-07 REQUIREMENTS wording fix
 
 ## Progress
 
