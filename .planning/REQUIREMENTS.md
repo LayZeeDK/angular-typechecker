@@ -26,9 +26,9 @@
 ### Drift-hardening & Maintainability (HARD)
 
 - [ ] **HARD-01**: A build-time drift check -- a dedicated `tsconfig.drift.json` (classic `moduleResolution: node`) type-checked in CI as its own target -- asserts that the vendored `compiler-cli-types.ts` `Program` shim stays assignable FROM the real `@angular/compiler-cli` `api.Program` (a getter-set tripwire: a new/removed diagnostic getter breaks the build) and mirrors the NG error-code encoding (`ngErrorCode`) + the `UNKNOWN_ERROR_CODE` literal. Real->shim direction only (the shim is a deliberate subset). -- [#7].
-- [ ] **HARD-02**: The shim's fabricated `EmitFlags.None = 0` member is corrected against the real enum; the `emitFlags: 0` call site is retained as a documented literal (verified safe under `noEmit: true`). -- [#8].
-- [ ] **HARD-03**: Every divergence in the vendored type surface carries a greppable `// angular-typechecker: vendored -- <reason>` marker comment (Prettier `angular-estree-parser` idiom). -- [#9].
-- [ ] **HARD-04**: The `getNgStructuralDiagnostics()` call is RETAINED (documented as a deliberately forward-compatible no-op-tolerant call) and is covered by the HARD-01 getter-set assertion, so a future Angular version that reactivates it cannot silently under-gather. -- [#10, reversed from "drop it"].
+- [x] **HARD-02**: The shim's fabricated `EmitFlags.None = 0` member is corrected against the real enum; the `emitFlags: 0` call site is retained as a documented literal (verified safe under `noEmit: true`). -- [#8].
+- [x] **HARD-03**: Every divergence in the vendored type surface carries a greppable `// angular-typechecker: vendored -- <reason>` marker comment (Prettier `angular-estree-parser` idiom). -- [#9].
+- [x] **HARD-04**: The `getNgStructuralDiagnostics()` call is RETAINED (documented as a deliberately forward-compatible no-op-tolerant call) and is covered by the HARD-01 getter-set assertion, so a future Angular version that reactivates it cannot silently under-gather. -- [#10, reversed from "drop it"].
 - [ ] **HARD-05**: A regression spec asserts that no `TS-99` substring (a raw, un-rewritten negative NG code) survives our `color: false` output path. -- [Q4 color-rewrite guard].
 
 ## Future Requirements (deferred -- tracked, not in this roadmap)
@@ -70,9 +70,9 @@ Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last
 | RES-03 | Phase 9 | Complete |
 | RES-04 | Phase 9 | Complete |
 | HARD-01 | Phase 10 | Pending |
-| HARD-02 | Phase 10 | Pending |
-| HARD-03 | Phase 10 | Pending |
-| HARD-04 | Phase 10 | Pending |
+| HARD-02 | Phase 10 | Complete |
+| HARD-03 | Phase 10 | Complete |
+| HARD-04 | Phase 10 | Complete |
 | HARD-05 | Phase 10 | Pending |
 
 **Coverage:**

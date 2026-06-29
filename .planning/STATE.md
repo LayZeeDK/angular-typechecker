@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Phase 10 context gathered
-last_updated: "2026-06-29T21:54:59.243Z"
-last_activity: 2026-06-29 -- Phase 10 planning complete
+stopped_at: Completed 10-01-PLAN.md (shim corrections)
+last_updated: "2026-06-29T22:05:33.286Z"
+last_activity: 2026-06-29 -- Phase 10 Plan 01 (shim corrections) complete
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
   percent: 67
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 10 — drift hardening & maintainability
+**Current focus:** Phase 10 — Drift-hardening & Maintainability
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-06-29 -- Phase 10 planning complete
+Phase: 10 (Drift-hardening & Maintainability) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute (10-01 complete: HARD-02/03/04 shim corrections)
+Last activity: 2026-06-29 -- Phase 10 Plan 01 complete
 
 ### v0.0.3 phase map
 
@@ -84,6 +84,7 @@ Last activity: 2026-06-29 -- Phase 10 planning complete
 | Phase 08 P02 | 14min | 2 tasks | 6 files |
 | Phase 08 P03 | 5min | 2 tasks | 5 files |
 | Phase 09 P01 | 14min | 2 tasks | 9 files |
+| Phase 10 P10-01 | 3 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -176,6 +177,9 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 - [Phase ?]: [08-03] COR-03: widened the filter-diagnostics file-less guard to (file === undefined || file.fileName === '') so a present-but-empty fileName (synthesized-diagnostic edge canonicalizing to '') is treated as file-less and always kept, never suppressed by the boundary filter (D-06); canonicalizer/segment/isUnderDir untouched.
 - [Phase ?]: [08-03] COR-04: new pure core/exit-codes.ts toExitCode(input) -> 0|1|2 (ngc-parallel: 2 infra via instanceof TypecheckInfrastructureError, 1 errorCount>0, else 0), imports only ./run-typecheck, no process/console/@nx (passes core/** boundary lint), NOT imported by run-typecheck.ts (no cycle). D-08: executor.ts unchanged, toExitCode NOT wired into the executor return; only the infra-catch spec assertion tightened to lock the distinct 'infrastructure error' message.
 - [Phase ?]: [09-01] RES-01 GATE = GO=HYBRID: SIMPLE rejected (could not positively enumerate the non-template diagnostic universe; checkForPrivateExports/A2 not exercised) and counter-evidence found (IMPORT_GENERATION_FAILURE attaches to a .ngtypecheck.ts shim, not the iterated .component.ts). Per D-03 inconclusive -> HYBRID (keep whole-program getNgSemanticDiagnostics() + add per-file loop; finalize dedups). Recorded in 09-RES-01-SPIKE.md; gates plan 09-02.
+- [Phase ?]: [10-01] HARD-02: shim EmitFlags now mirrors the real @angular/compiler-cli@22.0.4 members (DTS=1..All=31), fabricated zero-valued member dropped; the 0 as EmitFlags cast at run-typecheck.ts:229 is load-bearing and untouched (bare : EmitFlags = 0 errors TS2322).
+- [Phase ?]: [10-01] HARD-03: every divergent construct in compiler-cli-types.ts carries a greppable // angular-typechecker: vendored marker (6 total: TsProgram, Program, EmitFlags, UNKNOWN_ERROR_CODE, ParsedConfiguration, PerformCompilationResult.program).
+- [Phase ?]: [10-01] HARD-04: getNgStructuralDiagnostics() RETAINED + documented forward-compatible/no-op-tolerant (D-10); returns [] at 22.0.4 but kept under the HARD-01 drift probe + runtime getter-set spec + existing call-order assertion so a future reactivation cannot silently under-gather.
 
 ### Pending Todos
 
@@ -221,6 +225,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T21:20:24.571Z
+Last session: 2026-06-29T22:02:30.930Z
 Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-drift-hardening-maintainability/10-CONTEXT.md
+Resume file: None
