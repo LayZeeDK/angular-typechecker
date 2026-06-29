@@ -69,11 +69,11 @@ Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last
 | RES-02 | Phase 9 | Complete |
 | RES-03 | Phase 9 | Complete |
 | RES-04 | Phase 9 | Complete |
-| HARD-01 | Phase 10 | Pending |
+| HARD-01 | Phase 10 | Complete |
 | HARD-02 | Phase 10 | Complete |
 | HARD-03 | Phase 10 | Complete |
 | HARD-04 | Phase 10 | Complete |
-| HARD-05 | Phase 10 | Pending |
+| HARD-05 | Phase 10 | Complete |
 
 **Coverage:**
 - v0.0.3 requirements: 13 total
