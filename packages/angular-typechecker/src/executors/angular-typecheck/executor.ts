@@ -54,11 +54,11 @@ export default async function angularTypecheckExecutor(
         result.templateCheckAborted.fileName ?? 'an unknown file';
 
       logger.warn(
-        `angular-typecheck: a fatal template-compilation error in ${offendingFile} ` +
+        `angular-typecheck: a fatal template-compilation error (e.g. in ${offendingFile}) ` +
           `(NG3004 IMPORT_GENERATION_FAILURE) aborted Angular template type-check-block ` +
           `generation. Surviving files' Angular template/extended (NG8xxx) diagnostics ` +
-          `may be SUPPRESSED until that error is fixed -- this run's template check is ` +
-          `INCOMPLETE. Fix the reported NG3004 and re-run angular-typecheck.`,
+          `may be SUPPRESSED until it is fixed -- this run's template check is ` +
+          `INCOMPLETE. Fix all reported NG3004 diagnostics and re-run angular-typecheck.`,
       );
     }
 

@@ -456,6 +456,15 @@ export function detectTemplateCheckAborted(
  * `.ngtypecheck` infix that the compiler injects via
  * `fileName.replace(/\.tsx?$/, ".ngtypecheck.ts")` (verified at v22.0.4). A
  * non-shim (already-source) path or `undefined` passes through unchanged.
+ *
+ * LIMITATION (WR-01): the compiler collapses BOTH `.ts` and `.tsx` sources to the
+ * SAME `<name>.ngtypecheck.ts` shim, so the original extension is unrecoverable
+ * from the shim name alone -- a `.tsx`-sourced component is therefore named as
+ * `<name>.ts` here. This affects ONLY the advisory notice's path string, never the
+ * verdict, the counts, or the diagnostic's own codeframe (which renders the real
+ * path independently). `.tsx` Angular component sources are vanishingly rare (no
+ * JSX in Angular). If `.tsx` support is ever in scope, resolve the offending
+ * source via the program's source-file map rather than this string surgery.
  */
 function normalizeShimFileName(
   fileName: string | undefined,
