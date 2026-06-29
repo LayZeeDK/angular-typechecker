@@ -4,8 +4,8 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 6 context gathered (--auto --chain --analyze; research-first)
-last_updated: "2026-06-28T23:31:56.335Z"
-last_activity: 2026-06-28 -- Phase 6 planning complete
+last_updated: "2026-06-28T23:49:28.913Z"
+last_activity: 2026-06-28 -- Phase 6 execution started
 progress:
   total_phases: 8
   completed_phases: 6
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 05.1 — 0-0-2-first-oidc-steady-state-publish-verification
+**Current focus:** Phase 6 — full-e2e-matrix-ci
 
 ## Current Position
 
-Phase: 05.1 (0-0-2-first-oidc-steady-state-publish-verification) — FULLY CLOSED (all gates passed)
-Plan: 1 of 1 complete; artifacts: SUMMARY, REVIEW (deep), VERIFICATION (passed), SECURITY (9/9 closed), VALIDATION (nyquist_compliant), LEARNINGS
-Status: Ready to execute
-Last activity: 2026-06-28 -- Phase 6 planning complete
+Phase: 6 (full-e2e-matrix-ci) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 6
+Last activity: 2026-06-28 -- Phase 6 execution started
 
 Progress: [██████████] 95%
 
