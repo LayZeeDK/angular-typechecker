@@ -41,7 +41,12 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   2. A global / location-less TypeScript semantic diagnostic (e.g. TS2318) that the per-file path never emitted now appears in the reported diagnostics (proven by a fixture that triggers a global TS diagnostic).
   3. A diagnostic whose `file.fileName` is present-but-empty is reported (treated as file-less), never silently dropped by the project-boundary filter (proven by an empty-`fileName` diagnostic test).
   4. The engine classifies an infrastructure failure distinctly from a type-error failure and exposes a pure, framework-agnostic exit-code policy (`toExitCode` -> `0` clean / `1` type-error / `2` infra, ngc-parallel) covered by tests; the Nx executor surfaces an infra failure distinctly WITHIN Nx's `{ success: boolean }` contract (typed `TypecheckInfrastructureError` + distinct operator message; Nx maps to exit 1) and a real type-error failure keeps its existing `{ success: false }` behavior. The literal distinct OS exit code (`2`) is delivered by the standalone CLI surface (deferred), which owns its process and consumes the same policy -- NOT by the Nx executor, which Nx hard-maps to 0/1 (verified nx 23.0.1: `run.ts:72`, `command-object.ts:30`). [Reframed 2026-06-29 -- see `08-CONTEXT.md` D-07..D-10.]
-**Plans**: TBD
+**Plans**: 3 plans (1 wave, all parallel -- disjoint files)
+
+Plans:
+- [ ] 08-01-PLAN.md -- COR-01: early parsed.errors 500 scan re-throws TypecheckInfrastructureError before the zero-rootNames guard (+ unit twin + nonexistent-path integration)
+- [ ] 08-02-PLAN.md -- COR-02: gather getTsProgram().getGlobalDiagnostics() (7th getter) + global-diagnostics TS2318 fixture + unit/integration proof
+- [ ] 08-03-PLAN.md -- COR-03 (empty-fileName guard kept) + COR-04 (pure core/exit-codes.ts toExitCode 0/1/2 + tightened executor distinct-message assertion)
 
 ### Phase 9: Resilience (per-file fault isolation + boundary robustness)
 
@@ -80,6 +85,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | v0.0.1 | 1/1 | Complete | 2026-06-29 |
 | 6. Full e2e Matrix + CI | v0.0.1 | 5/5 | Complete | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
-| 8. Correctness & Completeness Fixes | v0.0.3 | 0/? | Not started | - |
+| 8. Correctness & Completeness Fixes | v0.0.3 | 0/3 | Planned | - |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 0/? | Not started | - |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 0/? | Not started | - |
