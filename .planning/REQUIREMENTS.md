@@ -18,10 +18,10 @@
 
 ### Resilience (RES)
 
-- [x] **RES-01** [GATE / spike]: A spike determines whether any Angular non-template diagnostics (`traitCompiler` / `checkForPrivateExports`) are file-less or otherwise unreachable through a per-file `getNgSemanticDiagnostics(fileName)` / `getDiagnosticsForFile` `d.file === file` filter, and produces a GO decision on the per-file isolation shape: simple per-file loop vs. HYBRID (gather the non-template set once whole-program + loop the template/extended families per file). Gates RES-02. -- [#3 open question; the only true unknown].
-- [ ] **RES-02**: Angular diagnostic gathering is fault-isolated per file so that a single component's `FatalDiagnosticError` yields one diagnostic and does NOT abandon the remaining files' Angular diagnostics -- implemented on the existing `api.Program` surface per the RES-01 decision (no `NgtscProgram` migration). -- [#3].
-- [ ] **RES-03**: A throwing `realpath()` in the project-boundary filter is caught (falls back to the unresolved path), so a filesystem realpath failure cannot abort the whole type-check pass. -- [#4].
-- [ ] **RES-04**: The no-emit options override sets `suppressOutputPathCheck: true`, so output-path configuration nuisance errors never surface in the type-only flow. -- [#6].
+- [x] **RES-01** [GATE / spike]: A spike determines whether any Angular non-template diagnostics (`traitCompiler` / `checkForPrivateExports`) are file-less or otherwise unreachable through a per-file `getNgSemanticDiagnostics(fileName)` / `getDiagnosticsForFile` `d.file === file` filter, and produces a GO decision on the per-file isolation shape: simple per-file loop vs. HYBRID (gather the non-template set once whole-program + loop the template/extended families per file). Gates RES-02. -- [#3 open question; the only true unknown]. **GO = HYBRID** (recorded in `phases/09-.../09-RES-01-SPIKE.md`).
+- [x] **RES-02** [REFRAMED 2026-06-29 -- see `phases/09-.../09-RES-02-DECISION.md`]: Angular diagnostic gathering is fault-isolated per file (HYBRID per RES-01) so that a single component's `FatalDiagnosticError` yields exactly one diagnostic and does NOT collapse the whole run to an infrastructure error -- the run completes and surviving files' TypeScript + Angular NON-template diagnostics are still reported, on the existing `api.Program` surface (no `NgtscProgram` migration). A LOUD notice fires when a TCB-generation Fatal may suppress surviving files' template diagnostics (never-silent). **Known limitation, deferred to REP-RES-02b:** surviving files' TEMPLATE/extended (NG8xxx) diagnostics cannot be recovered after a TCB-generation Fatal on the `WholeProgram` / `api.Program` surface (shared shim-priming abort; same as `@angular/build`; verified v22.0.4 + a 5-lens Opus panel). -- [#3].
+- [x] **RES-03**: A throwing `realpath()` in the project-boundary filter is caught (falls back to the unresolved path), so a filesystem realpath failure cannot abort the whole type-check pass. -- [#4].
+- [x] **RES-04**: The no-emit options override sets `suppressOutputPathCheck: true`, so output-path configuration nuisance errors never surface in the type-only flow. -- [#6].
 
 ### Drift-hardening & Maintainability (HARD)
 
@@ -36,6 +36,10 @@
 ### Observability (OBS)
 
 - **OBS-01**: `totalFilesCount` field on `CoreResult` (`@nx/js` parity; root-vs-total program spread). -- [#11] Deferred pending charter-fit (borders on the deferred reporting surface).
+
+### Resilience -- deferred to the `NgtscProgram`/incremental milestone (REP)
+
+- **REP-RES-02b**: Recover SURVIVING files' Angular TEMPLATE/extended (NG8xxx) diagnostics when another component throws a TCB-generation `FatalDiagnosticError`. Requires `OptimizeFor.SingleFile`-per-file priming (the Angular Language Service approach: `ensureAllShimsForOneFile` primes each file independently against the INTACT program, so one file's Fatal does not abort another's). Unreachable on today's `api.Program` `getNgSemanticDiagnostics(fileName)` overload (it hardcodes `WholeProgram` at `program.ts:241`); lands naturally on the `NgtscProgram` incremental surface (REP). The v0.0.3 RES-02 reframe delivered run-level resilience + a loud suppression notice; this is the faithful per-file-template recovery that exceeds `@angular/build`'s cold-build behavior. -- [RES-02 reframe; web research + 5-lens Opus panel 2026-06-29; see `phases/09-.../09-RES-02-DECISION.md`].
 
 ### Carried forward from v0.0.1 (unchanged)
 
