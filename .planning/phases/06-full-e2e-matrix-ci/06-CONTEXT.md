@@ -421,8 +421,99 @@ is truly validated on the Linux CI leg via the draft PR). 06-03 authors `ci.yml`
 by the draft-PR matrix run. SC3 ("full matrix green + required gate") is proven by the draft-PR
 run, NOT locally.
 
+## RE-DISCUSS v2 (LOCKED 2026-06-29) -- supersedes the D-01 matrix + arm64-forward exploration
+
+Mid-execution the maintainer paused (06-01 already committed) and re-scoped via 6 explicit
+requirements, informed by a 5-member Opus panel + focused researchers (CI perf/cost,
+platform-coverage correctness, consumer/ecosystem, matrix economics, adversarial red-team,
+Windows-FS/realpath, cross-package-manager, act-fidelity). These RD-NN decisions are LOCKED and
+**supersede D-01 (the 3x3 matrix) and the arm64-forward "Option C" exploration** where they
+conflict. D-02..D-10 (gate name `ci`, e2e-Linux-only, the harness/fixture shapes) still stand.
+
+- **RD-01 -- Matrix = LEAN 6 cells, STANDARD runners, NO arm64-specific cells.** unit+integration:
+  `ubuntu-latest x {22,24,26}` + `windows-latest x {24,26}` + `macos-latest x {24}`, `fail-fast: false`.
+  Per the maintainer (Req 6): do NOT add `windows-11-arm`/`ubuntu-24.04-arm` to match the dev box --
+  nothing in the requirements NEEDS an arm64 CI runner. `macos-latest` is arm64 only by GitHub's
+  default (it's the standard macOS runner, not added for dogfooding). Intel macOS is dead
+  (`macos-13` retired Dec 2025) -- never use it. All standard runners are free/unmetered on this
+  public repo.
+- **RD-02 -- Axes rationale (why 6 not 9, and tier placement).** arch is **correctness-irrelevant**
+  for a pure-JS ngtsc type-checker (HIGH confidence, panel lenses 2+4): `node:path` + FS case
+  behavior are OS-determined, byte-identical across arm64/amd64. The real axes are **OS**
+  (case-sensitivity + separators) and **Node** (the CJS->ESM `import()` bridge / `node16` resolution).
+  Node and OS are largely INDEPENDENT -> full Node sweep on Linux + OS axis on Node 24 + the one
+  worth-keeping cross-cell `windows x 26` (newest-Node x the OS most prone to ESM/path regressions).
+  **FS/OS/Node differences are placed at the CHEAPEST tier that exercises them (Req 4):**
+  case-fold + separators + store-dir generality -> **unit**; ESM-bridge per-Node -> **integration**
+  (real compiler-cli `import()` on every cell); symlink/realpath + packaged tarball + 5 project
+  types + PM layout classes -> **e2e**.
+- **RD-03 -- e2e package managers = npm + pnpm (the 2 viable on-disk layout classes).** Officially-
+  supported PMs collapse into: **real hoisted dirs** (npm, yarn classic, yarn berry `node-modules`,
+  bun hoisted) -> npm covers; **symlinked content store** (pnpm, yarn berry `nodeLinker:pnpm`, bun
+  isolated) -> pnpm covers; **no node_modules** (yarn berry PnP) -> **OUT OF SCOPE** (Angular CLI
+  #30847 closed "not planned"; Angular won't run under PnP). yarn/bun add NO new code path for the
+  OUT-02 filter -> documented covered-by-class, NOT gaps. e2e stays Linux-only (`ubuntu-latest`),
+  Node 24.
+- **RD-04 -- Store-dir generality UNIT test (the one PM-layout nuance, at the cheapest tier).**
+  Assert the OUT-02 `node_modules`-segment exclusion generalizes across `node_modules/.pnpm/...`,
+  `node_modules/.bun/...`, and plain `node_modules/<pkg>/...` (synthetic realpaths; NO install) --
+  proving the segment match is not accidentally hardcoded to `.pnpm`. Extends `filter-diagnostics.spec.ts`.
+- **RD-05 -- act test suite (Req 1).** `tools/act/act-compat.sh` + `tools/act/events/{push-main,
+  push-tag,pull_request,workflow_dispatch}.json`. **KEY act-fidelity fact (verified v0.2.89):** act
+  does NOT evaluate `on:` filters (`branches`/`tags`/`paths`/`types`) -- only the event NAME
+  (`--apply-event-filters` PR #2729 unmerged). So tag-vs-branch discrimination is encoded as an `if:`
+  ref gate (RD-07) and asserted via **dry-run (`act -n`) + injected `GITHUB_REF`/event-payload**
+  (act DOES faithfully evaluate `if:`). Per-trigger assertions: pull_request -> ci jobs; push-main ->
+  ci jobs + release publish SKIPPED; push-tag -> release publish SELECTED (never executed --
+  OIDC/env/secrets out of act's reach); workflow_dispatch -> release reachable. One Bash script, used
+  locally (native arm64) AND in CI. Event fixtures live under `tools/act/events/` (NOT `.github/`;
+  excluded from the published `files`).
+- **RD-06 -- act-compat CI job (Req 2) = `--validate` + `-n`, container-free; NOT plain `act`.**
+  On `ubuntu-latest` (amd64; Docker present), pinned `act v0.2.89`. **`act --validate`** = act-
+  PARSEABILITY guard (this IS Req 2 -- "can act ingest these workflows"; distinct from actionlint,
+  which validates the GitHub spec). **`act -n` per trigger** = trigger/condition FIDELITY (this IS
+  Req 1 -- the `if:`-gated job selection). BOTH (complementary; neither subsumes the other). Plain
+  `act <event>` execution is EXCLUDED from CI (nested Docker, redundant with the real `test`/`e2e`,
+  can't do OIDC/secrets) -- it is a LOCAL-only dev tool. Both `--validate` and `-n` are container-free
+  (no nested-Docker cost).
+- **RD-07 -- `release.yml` publish-job `if:` ref gate (Option A, USER-APPROVED).** Add
+  `if: startsWith(github.ref, 'refs/tags/angular-typechecker@')` to the publish job. Additive
+  defense-in-depth (publish can't fire on a non-tag ref even if a trigger is broadened later) +
+  self-documents intent + enables the act tag-vs-branch discrimination (RD-05). This touches the
+  Phase-5.1-FROZEN `release.yml` DELIBERATELY -- it does NOT change the OIDC/provenance/permissions/
+  environment model. **MUST re-verify after:** OIDC config unchanged, the `release-hygiene` regression
+  spec stays green (auth-token-unset etc.), and a `nx release --dry-run` sanity. The `on: push: tags:`
+  filter remains the primary real gate; the `if:` is belt-and-suspenders + act-testable.
+- **RD-08 -- actionlint (D-11 stands).** Local pre-push (native arm64 binary, no Docker) + a CI
+  `lint-workflows` job (container-free, SHA-pinned). Validates the GitHub spec + expressions (catches
+  the brittle matrix/`contains(needs.*.result,...)` forms) -- complements act's act-spec `--validate`.
+- **RD-09 -- aggregate `ci` gate.** `needs: [test, e2e, act-compat, lint-workflows]`, `if: always()`,
+  fail-closed (`contains(needs.*.result, 'failure') || ... 'cancelled') || ... 'skipped')`). CAVEAT:
+  act's `needs.*.result`/`skipped` semantics diverge from GitHub, so the gate's skipped-handling is
+  verified on the REAL draft-PR run, not under act. Phase 7 requires ONLY `ci` (D-02 stands).
+- **RD-10 -- validation via throwaway draft PR (D-12 stands).** The cross-OS matrix is proven on real
+  GitHub runners via a draft PR (close-without-merge; land `ci.yml` on `main` via the existing
+  direct-push flow; does NOT pre-adopt Phase 7). No arm64 CI runners needed (RD-01).
+- **RD-11 -- 06-01 is COMMITTED + KEPT.** The `angular-typechecker-matrix-e2e` project + the 5-type
+  consumer-workspace fixture + the OQ-1 clean-install gate are committed (`11e9be4`, `2951664`) and
+  arch/PM-agnostic. **OQ-1 RESULT (validated): the clean `npm install` (no `legacy-peer-deps`) PASSES
+  -> the B-03 honesty invariant holds and the hand-authored buildable/publishable build targets need
+  NO `@nx/angular` dep.** The re-plan builds FORWARD; the 5-type e2e spec is (re)authored per the new
+  e2e design (Linux-only, Node 24, npm path). The old uncommitted/unrun 5-type spec is discarded.
+- **RD-12 -- local act = native-arm64 `.actrc` (optional dev tool, NOT a CI dependency).** Commit a
+  `.actrc` mapping `ubuntu-latest`/`ubuntu-24.04` -> `catthehacker/ubuntu:act-24.04` (multi-arch;
+  Docker auto-selects arm64 on the dev box -- do NOT force `--container-architecture linux/amd64`).
+  Lets the maintainer run the Linux `test`/`e2e` natively on the Windows arm64 box (incl. the pnpm
+  symlink/realpath path that CANNOT be exercised natively on Windows -- Git Bash `ln -s` copies).
+
+**Re-plan consequence:** 06-01 kept; regenerate the remaining plans for: the 5-type e2e spec (new
+design), the pnpm symlink fixture + realpath guard + mixed-case unit/integration + the RD-04 store-dir
+unit test, the act suite + `.actrc` (RD-05/RD-12), and `ci.yml` (RD-01 matrix + e2e + act-compat +
+lint-workflows + aggregate gate, RD-06/08/09) + the `release.yml` `if:` gate + re-verification (RD-07).
+
 ---
 
 *Phase: 6-Full e2e Matrix + CI*
 *Context gathered: 2026-06-29*
 *Validation strategy addendum: 2026-06-29 (D-11..D-13)*
+*Re-discuss v2 (LOCKED): 2026-06-29 (RD-01..RD-12) -- supersedes D-01 matrix + arm64-forward exploration*
