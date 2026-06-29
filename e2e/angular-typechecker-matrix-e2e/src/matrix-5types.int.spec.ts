@@ -164,6 +164,15 @@ beforeAll(() => {
   consumerWorkspace = mkdtempSync(join(tmpdir(), 'atc-matrix-'));
   cpSync(fixtureDir, consumerWorkspace, { recursive: true });
 
+  // Remove the committed pnpm-lock.yaml from the NPM-install copy. The lockfile
+  // is for the pnpm spec ONLY; left in an npm-installed workspace, Nx's
+  // js/dependencies-and-lockfile plugin tries to parse it and HARD-FAILS the
+  // project graph ("Could not find .modules.yaml" -- there is no `.pnpm/` store
+  // under an npm install), which makes every `nx run` exit non-zero before the
+  // executor even starts. Deleting it keeps this consumer a pure npm hoisted
+  // layout (the pnpm symlinked layout is the separate pnpm-symlink spec).
+  rmSync(join(consumerWorkspace, 'pnpm-lock.yaml'), { force: true });
+
   // An explicit EMPTY project .npmrc guarantees no inherited peer override (B-03):
   // a clean install must honestly succeed or surface a REAL ERESOLVE.
   writeFileSync(join(consumerWorkspace, '.npmrc'), '');

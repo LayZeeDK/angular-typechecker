@@ -156,16 +156,20 @@ beforeAll(() => {
 
   // Install the freshly-packed tarball under pnpm so the package lands in pnpm's
   // `.pnpm/` content-addressed store with a symlink at
-  // node_modules/angular-typechecker. `--no-frozen-lockfile` (A1) is the
-  // documented fallback: adding the tarball mutates the dependency set the
-  // committed lockfile does not yet pin, and a runner pnpm version may differ from
-  // the lockfile's; --no-frozen-lockfile lets pnpm update the resolution rather
-  // than hard-fail in CI's auto-frozen mode. NO peer-override flag (B-03 honesty);
-  // npm_config_userconfig -> a non-existent path so ~/.npmrc cannot reintroduce
-  // one. If this ERESOLVEs on the published peer ranges, that is a REAL FINDING to
-  // ESCALATE -- never auto-patch.
+  // node_modules/angular-typechecker. `--config.frozen-lockfile=false` (A1) is the
+  // documented fallback: `pnpm add` is a MUTATING command (it does not accept the
+  // `--no-frozen-lockfile` install flag -- that errors "Unknown option"), but pnpm
+  // auto-enables frozen-lockfile under CI, and adding the tarball mutates the
+  // dependency set the committed lockfile does not yet pin. Forcing
+  // `frozen-lockfile=false` via the `--config.<key>=<value>` escape lets pnpm
+  // update the resolution rather than hard-fail in CI's auto-frozen mode, on any
+  // runner pnpm version. `--ignore-scripts` keeps the install non-interactive
+  // (pnpm blocks non-allowlisted build scripts anyway). NO peer-override flag
+  // (B-03 honesty); npm_config_userconfig -> a non-existent path so ~/.npmrc
+  // cannot reintroduce one. If this ERESOLVEs on the published peer ranges, that
+  // is a REAL FINDING to ESCALATE -- never auto-patch.
   execSync(
-    `pnpm add ${JSON.stringify(tarballPath)} --no-frozen-lockfile`,
+    `pnpm add ${JSON.stringify(tarballPath)} --config.frozen-lockfile=false --ignore-scripts`,
     {
       cwd: consumerWorkspace,
       env: {
