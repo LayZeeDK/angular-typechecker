@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Packaging, Publish Hardening + e2e Smoke (MVP)** - The plugin publishes to npm via `nx release` (OIDC + provenance), passes tarball audits, and installs-and-runs end-to-end against one smoke workspace. (completed 2026-06-28)
 - [x] **Phase 5.1: 0.0.2 first OIDC steady-state publish verification (INSERTED)** - 0.0.2 published tokenlessly via the registered npm OIDC Trusted Publisher with SLSA provenance (proven: npm `_npmUser` = `GitHub Actions <npm-oidc-no-reply@github.com>`). The initial 404 was the Trusted Publisher never actually being SAVED at 05-05 (a simultaneous *Publishing access* change blocked it), NOT a registry-url problem -- `registry-url` is REQUIRED for OIDC detection (dropping it caused `ENEEDAUTH`); the old "drop registry-url on 404" contingency was wrong for npm >= 11.5.1. Release config decoupled (`release.git.push:false` + `createRelease:false`). (completed 2026-06-29)
 - [x] **Phase 6: Full e2e Matrix + CI** - The executor is validated across all five project types and a cross-OS / multi-Node GitHub Actions matrix gates every change. (completed 2026-06-29; SC3 cross-OS matrix proven GREEN on real runners via PR #3 run 28354578169 -- all 6 cells + e2e + act-compat + lint-workflows + the `ci` gate; 2 CI-portability bugs found + fixed)
-- [ ] **Phase 7: Release-PR workflow and clean changelog** - Switch from direct-push-to-main to a Release-PR flow (route nx-release version/changelog through a PR; tag-after-merge fires the OIDC publish), enable the staged "Default branch" ruleset (require PR + Phase-6 CI checks) and delete the temporary "v0.0.1" ruleset, and produce a public changelog that does NOT expose internal GSD phase/plan numbers.
+- [x] **Phase 7: Release-PR workflow and clean changelog** - Switch from direct-push-to-main to a Release-PR flow (route nx-release version/changelog through a PR; tag-after-merge fires the OIDC publish), enable the staged "Default branch" ruleset (require PR + Phase-6 CI checks) and delete the temporary "v0.0.1" ruleset, and produce a public changelog that does NOT expose internal GSD phase/plan numbers. (completed 2026-06-29)
 
 ## Phase Details
 
@@ -150,7 +150,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 1/1 | Complete   | 2026-06-28 |
 | 6. Full e2e Matrix + CI | 5/5 | Complete    | 2026-06-29 |
-| 7. Release-PR workflow and clean changelog | 3/4 | In Progress|  |
+| 7. Release-PR workflow and clean changelog | 4/4 | Complete   | 2026-06-29 |
 
 ### Phase 7: Release-PR workflow and clean changelog
 
@@ -161,9 +161,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
   1. Releases no longer push version/changelog commits directly to `main`: `nx release` produces the version bump + CHANGELOG on a release branch merged via PR; the tag is created on the merged commit and fires the existing OIDC publish workflow (`release.yml` unchanged). `nx.json` `release.git` decouples commit from tag/push (e.g. `tag:false`, `push:false`).
   2. Branch protection is switched to PR mode: the staged **"Default branch"** ruleset is ENABLED (require PR + the Phase-6 CI status checks + force-push/deletion blocked) and the temporary **"v0.0.1"** ruleset is DELETED; the **"Release tag"** ruleset is retained (you + deploy key on bypass).
   3. The public changelog (CHANGELOG.md + GitHub Release notes) does NOT expose internal GSD phase/plan numbers (e.g. `feat(05-01):`) -- via nx release changelog configuration, a `gh` CLI step, or a transform of the nx-/gh-generated changelog.
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 - [x] 07-01-PLAN.md -- Define REL-01/02/03 + flip nx.json git.tag:false + release-hygiene git.tag/CHANGELOG assertions (Wave 1)
 - [x] 07-02-PLAN.md -- ci.yml path-aware skip-gate: changes filter job + gate test/e2e + rework the skip-aware ci aggregate gate (Wave 1)
 - [x] 07-03-PLAN.md -- AGENTS.md Release-PR-flow rewrite + PR-only-main note (D-17, code-review-gated) (Wave 1)
-- [ ] 07-04-PLAN.md -- HUMAN-GATED live ruleset switch: enable Default-branch ruleset, delete v0.0.1, retain Release-tag (Wave 2)
+- [x] 07-04-PLAN.md -- HUMAN-GATED live ruleset switch: enable Default-branch ruleset, delete v0.0.1, retain Release-tag (Wave 2)
 **UI hint**: no
