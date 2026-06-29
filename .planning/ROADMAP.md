@@ -106,6 +106,24 @@ Plans:
 
 - [x] 10-02-PLAN.md -- HARD-01 (build-time half): compiler-cli-types.drift.ts per-member real->shim probes + getTsProgram special-case + call-site probes + value-level UNKNOWN_ERROR_CODE/EmitFlags pins; tsconfig.drift.json; typecheck-drift Nx target + CI wiring; drift-file exclusion from both production tsconfigs; D-07 REQUIREMENTS wording fix
 
+### Phase 11: Fallow code-quality CI gate
+
+**Goal**: Adopt fallow (the dead-code / duplication / complexity analyzer, npm `fallow` v2.x) as a CI quality gate so newly-introduced dead code, duplication, or over-complexity breaks CI LOUDLY -- and resolve the current fallow findings so the gate is green on adoption.
+**Depends on**: Phase 10 (its drift shim + tripwire are the files needing fallow entry-point / ignore declarations).
+**Requirements**: TBD -- a new code-quality-gate requirement to be added to REQUIREMENTS.md during `/gsd-plan-phase`.
+**Scope sketch** (firmed up in discuss/plan):
+
+  1. `fallow` as a root devDependency; a `.fallowrc.jsonc` config (JSON family per preference, JSONC comments documenting each declaration) that declares `compiler-cli-types.drift.ts` as an entry point (tsconfig-`files`-reachable, not import-reachable) and scopes the `EmitFlags` contract-mirror shim so its members are not flagged dead -- the confirmed false positives in `phases/10-drift-hardening-maintainability/10-REVIEW.md` IN-02..IN-05 -- plus resolving any genuine inherited dead code.
+  2. A new path-gated, SHA-pinned `fallow` CI job (ubuntu-latest, Node 24, `fetch-depth: 0` for new-vs-inherited base attribution) running `npx fallow audit --format json --base origin/main`, wired into the `ci` aggregate's `needs:` list -- the single required status check stays `ci`, so NO branch-ruleset change is required.
+  3. `assert_selected "$PR_PLAN" "ci/fallow"` added to `tools/act/act-compat.sh`; actionlint (`lint-workflows`) stays green; the security posture of `ci.yml` (SHA-pinned actions, `contents: read`, no PR-metadata interpolation) is preserved.
+  4. Gate strictness (`fallow --gate new-only` vs `all`) decided in discuss/plan; intent is to RESOLVE the current findings in this phase, not baseline them.
+  5. Project keeps `code_quality.fallow.enabled: true` (the GSD global default is now `false`); fixing GSD's broken fallow structural pre-pass (fallow 2.x CLI flag drift, documented in global CLAUDE.md) is OUT OF SCOPE.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 11 to break down)
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -121,3 +139,4 @@ Plans:
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete    | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete   | 2026-06-29 |
+| 11. Fallow code-quality CI gate | v0.0.3 | 0/0 | Not planned | - |

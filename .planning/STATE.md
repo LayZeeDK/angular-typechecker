@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Phase 10 complete -- v0.0.3 engine-hardening done (phases 8-10 verified/secured/validated; drift tripwire live in CI)
-last_updated: "2026-06-29T23:02:01.959Z"
+stopped_at: Phase 11 (Fallow code-quality CI gate) added to v0.0.3 -- not planned yet; phases 8-10 remain complete (verified/secured/validated; drift tripwire live in CI)
+last_updated: "2026-06-29T23:39:09.000Z"
 last_activity: 2026-06-29
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
   total_plans: 12
   completed_plans: 12
-  percent: 100
+  percent: 75
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 10 — Drift-hardening & Maintainability
+**Current focus:** Phase 11 -- Fallow code-quality CI gate (added to v0.0.3; not planned yet)
 
 ## Current Position
 
-Phase: 10 (Drift-hardening & Maintainability) — EXECUTING
-Plan: 3 of 4
-Status: Ready to execute
+Phase: 11 (Fallow code-quality CI gate) -- NOT PLANNED
+Plan: 0 of 0
+Status: Run /gsd-plan-phase 11 to break it down (phases 8-10 complete)
 Last activity: 2026-06-29
 
 ### v0.0.3 phase map
@@ -37,6 +37,7 @@ Last activity: 2026-06-29
 | 8. Correctness & Completeness Fixes | Report the diagnostics we miss; classify config crashes as infra | COR-01, COR-02, COR-03, COR-04 | Independent; each test-gated |
 | 9. Resilience (per-file fault isolation + boundary robustness) | Report as much as possible instead of aborting on one fault | RES-01, RES-02, RES-03, RES-04 | INTERNAL GATE: RES-01 spike first, gates RES-02 |
 | 10. Drift-hardening & Maintainability | Make Angular `api.Program` / error-code drift break CI loudly | HARD-01, HARD-02, HARD-03, HARD-04, HARD-05 | Independent; touches vendored shim + new drift CI target |
+| 11. Fallow code-quality CI gate | Adopt fallow as a CI quality gate; resolve current findings so it is green on adoption | TBD (new code-quality-gate req added in planning) | Not planned; depends on Phase 10 shim/tripwire files |
 
 ## Performance Metrics
 
@@ -93,6 +94,7 @@ Last activity: 2026-06-29
 
 - v0.0.3 (Engine hardening) roadmapped 2026-06-29: 3 phases (8-10) derived from the 13 v0.0.3 requirements in three coherent, mostly-independent clusters -- Correctness & Completeness (Phase 8), Resilience (Phase 9, with an internal GATED spike RES-01 -> RES-02), Drift-hardening & Maintainability (Phase 10). Grounded in `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` (verified vs @angular/build + @angular/compiler-cli at stable 22.0.4). No `NgtscProgram` migration; no new feature surfaces.
 - Phase 9 carries the one load-bearing open question (gates RES-02): `NgCompiler.getDiagnosticsForFile` filters non-template diagnostics by `d.file === file`, so a naive per-file loop could DROP file-less `traitCompiler`/`checkForPrivateExports` diagnostics. The RES-01 spike settles simple per-file loop vs. HYBRID before RES-02 implements isolation. Modeled on v0.0.1's Phase-1 GATED spike.
+- Phase 11 added 2026-06-29 (Fallow code-quality CI gate): adopt fallow v2.x as a CI quality gate (a new `fallow` job wired into the `ci` aggregate's `needs:`, plus a `.fallowrc.jsonc` config) AND resolve the current fallow findings -- the phase-10 drift/shim false positives (`10-REVIEW.md` IN-02..IN-05) plus any genuine inherited dead code -- so the gate is green on adoption. Reopens v0.0.3 (was 100% at Phase 10). Gate strictness (`--gate new-only` vs `all`) decided in discuss/plan. OUT OF SCOPE: fixing GSD's broken fallow structural pre-pass (fallow 2.x CLI flag drift, documented in global CLAUDE.md). Triggered after the Phase-10 deep code review surfaced fallow's value and the CLI drift.
 
 <details>
 <summary>v0.0.1 roadmap-evolution log (historical)</summary>
