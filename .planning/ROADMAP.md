@@ -27,7 +27,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 - [x] **Phase 8: Correctness & Completeness Fixes** - Close the under-report / mis-classify holes: detect config-resolution infra crashes, surface global TS diagnostics, stop dropping empty-`fileName` diagnostics, and classify infra-vs-type failures via a pure core exit-code policy (literal OS exit code delivered by the deferred standalone CLI; the Nx executor surfaces infra distinctly within its `{ success }` contract). (completed 2026-06-29)
 - [x] **Phase 9: Resilience (per-file fault isolation + boundary robustness)** - GATED spike decides the isolation shape, then per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest, plus a try/catch realpath and `suppressOutputPathCheck`. (completed 2026-06-29)
-- [ ] **Phase 10: Drift-hardening & Maintainability** - Make an Angular upgrade that changes the `api.Program` getter set or error-code encoding break CI loudly: a build-time drift tsconfig + CI target, the `EmitFlags` fix, vendor markers, the retained-getter-under-assertion, and a no-TS-99-leak regression spec.
+- [x] **Phase 10: Drift-hardening & Maintainability** - Make an Angular upgrade that changes the `api.Program` getter set or error-code encoding break CI loudly: a build-time drift tsconfig + CI target, the `EmitFlags` fix, vendor markers, the retained-getter-under-assertion, and a no-TS-99-leak regression spec. (completed 2026-06-29)
 
 ## Phase Details
 
@@ -104,7 +104,7 @@ Plans:
 
 **Wave 2** *(depends on 10-01 shim corrections)*
 
-- [ ] 10-02-PLAN.md -- HARD-01 (build-time half): compiler-cli-types.drift.ts per-member real->shim probes + getTsProgram special-case + call-site probes + value-level UNKNOWN_ERROR_CODE/EmitFlags pins; tsconfig.drift.json; typecheck-drift Nx target + CI wiring; drift-file exclusion from both production tsconfigs; D-07 REQUIREMENTS wording fix
+- [x] 10-02-PLAN.md -- HARD-01 (build-time half): compiler-cli-types.drift.ts per-member real->shim probes + getTsProgram special-case + call-site probes + value-level UNKNOWN_ERROR_CODE/EmitFlags pins; tsconfig.drift.json; typecheck-drift Nx target + CI wiring; drift-file exclusion from both production tsconfigs; D-07 REQUIREMENTS wording fix
 
 ## Progress
 
@@ -120,4 +120,4 @@ Plans:
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete    | 2026-06-29 |
-| 10. Drift-hardening & Maintainability | v0.0.3 | 3/4 | In Progress|  |
+| 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete   | 2026-06-29 |

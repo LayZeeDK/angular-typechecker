@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Completed 10-01-PLAN.md (shim corrections)
-last_updated: "2026-06-29T22:05:33.286Z"
-last_activity: 2026-06-29 -- Phase 10 Plan 01 (shim corrections) complete
+stopped_at: Phase 10 context gathered
+last_updated: "2026-06-29T22:43:55.818Z"
+last_activity: 2026-06-29
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 9
-  percent: 67
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 ## Current Position
 
 Phase: 10 (Drift-hardening & Maintainability) — EXECUTING
-Plan: 2 of 4
-Status: Ready to execute (10-01 complete: HARD-02/03/04 shim corrections)
-Last activity: 2026-06-29 -- Phase 10 Plan 01 complete
+Plan: 3 of 4
+Status: Ready to execute
+Last activity: 2026-06-29
 
 ### v0.0.3 phase map
 
@@ -85,6 +85,7 @@ Last activity: 2026-06-29 -- Phase 10 Plan 01 complete
 | Phase 08 P03 | 5min | 2 tasks | 5 files |
 | Phase 09 P01 | 14min | 2 tasks | 9 files |
 | Phase 10 P10-01 | 3 min | 3 tasks | 2 files |
+| Phase 10 P10-02 | 4 min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -180,6 +181,9 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 - [Phase ?]: [10-01] HARD-02: shim EmitFlags now mirrors the real @angular/compiler-cli@22.0.4 members (DTS=1..All=31), fabricated zero-valued member dropped; the 0 as EmitFlags cast at run-typecheck.ts:229 is load-bearing and untouched (bare : EmitFlags = 0 errors TS2322).
 - [Phase ?]: [10-01] HARD-03: every divergent construct in compiler-cli-types.ts carries a greppable // angular-typechecker: vendored marker (6 total: TsProgram, Program, EmitFlags, UNKNOWN_ERROR_CODE, ParsedConfiguration, PerformCompilationResult.program).
 - [Phase ?]: [10-01] HARD-04: getNgStructuralDiagnostics() RETAINED + documented forward-compatible/no-op-tolerant (D-10); returns [] at 22.0.4 but kept under the HARD-01 drift probe + runtime getter-set spec + existing call-order assertion so a future reactivation cannot silently under-gather.
+- [Phase ?]: [10-02] HARD-01 build-time half: new compiler-cli-types.drift.ts asserts the real @angular/compiler-cli api.Program is assignable TO the shim -- per-member real->shim AssertAssignable tuple for the 6 diagnostic getters; getTsProgram special-cased as ReturnType -> ts.Program (the shim widens its return with useCaseSensitiveFileNames, so a member pair fails TS2322); call-site arity probes defend the optional->required silent gap; value-level UNKNOWN_ERROR_CODE=500 + the 7 EmitFlags member pins. tsconfig.drift.json (classic node, ignoreDeprecations 6.0, noEmit, files=[drift file]). Compiled ONLY there; excluded from tsconfig.lib.json AND tsconfig.spec.json so it never breaks nx build/test under nodenext (real barrel resolves EMPTY -> TS2305).
+- [Phase ?]: [10-02] Drift-file value-level imports (EmitFlags, UNKNOWN_ERROR_CODE) use a regular import, NOT import type (the pins read them as values; import type errored TS1361); Program stays import type. typecheck-drift target = nx:run-commands tsc --noEmit -p tsconfig.drift.json, cache:true with the installed compiler-cli index.d.ts + api.d.ts as inputs (upgrade invalidates the cache = the drift trigger), no outputs; folded into the existing path-gated CI test job run-many (Option A); ci.yml security envelope byte-unchanged.
+- [Phase ?]: [10-02] D-07: HARD-01 REQUIREMENTS.md wording corrected (removed/renamed/sig-changed called getter breaks the build via real->shim; ADDED getters are NOT a build failure, surfaced by the Plan 03 runtime spec). ROADMAP SC1 already carried the corrected wording. Rides the phase code-review gate per AGENTS.md.
 
 ### Pending Todos
 
@@ -225,6 +229,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T22:02:30.930Z
+Last session: 2026-06-29T22:43:55.811Z
 Stopped at: Phase 10 context gathered
 Resume file: None
