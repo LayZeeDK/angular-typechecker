@@ -71,7 +71,8 @@ Two consequences to internalize:
 
 ### Always confirm with a dry run
 
-Because the 0.x adjustment surprises people, never assume the computed version. Preview it:
+Because the 0.x adjustment surprises people, never assume the computed version. Preview it
+with the UNIFIED command:
 
 ```
 npx nx release --dry-run
@@ -79,6 +80,14 @@ npx nx release --dry-run
 
 The dry run prints BOTH the version nx will pick and the changelog it will write, sourced
 from the commit log. Treat its output as the source of truth.
+
+**Always use the unified `nx release` command, NOT the `nx release version` subcommand.**
+Newly verified against nx 23.0.1: the `version` subcommand REJECTS the top-level
+`release.git` block in `nx.json` and errors out (it tells you to move git options under
+`release.version.git` / `release.changelog.git`). Only the unified `nx release` (and its
+`--dry-run`) honors the top-level `release.git` block this repo relies on, so it is the only
+command that previews and cuts with the correct `commit`/`tag`/`push` behavior. Use the
+unified command for every preview and every cut.
 
 (The "nx release configuration norms" note in `CLAUDE.md` states the standard post-1.0
 mapping `feat -> minor, fix -> patch`; the 0.x-adjusted column above is what actually
@@ -116,22 +125,53 @@ write accurate `type`s and put real changes in the package's files.
    public releases.** Internal workflow scopes (for example GSD plan ids like
    `feat(05-01):` or `fix(04-03):`) leak straight into the generated CHANGELOG and the
    GitHub Release notes, and decision refs such as `[#1]` can be mis-parsed as issue
-   links. For any PUBLIC release, hand-curate a clean `CHANGELOG.md` entry (match the
-   existing `0.0.1` entry's style) rather than shipping the raw generated dump. Prefer
-   release-meaningful scopes (`core`, `executor`, `release`, `deps`) over internal ids in
-   commits that will reach a public changelog.
+   links. This is not hypothetical: a live `npx nx release --dry-run` PROVED that the raw
+   nx changelog renders plan-id scopes verbatim as bold headings such as `**06-02:**` --
+   exactly the internal phase/plan numbers a public changelog must never expose. For any
+   PUBLIC release, hand-curate a clean `CHANGELOG.md` entry (match the existing `0.0.1`
+   entry's style) rather than shipping the raw generated dump. Prefer release-meaningful
+   scopes (`core`, `executor`, `release`, `deps`) over internal ids in commits that will
+   reach a public changelog.
 
-3. **The local cut does NOT push; you push the tag, and you create the GitHub Release
-   from the curated changelog.** `nx.json` sets `release.git.push: false`, so
-   `npx nx release <version> --skip-publish` creates the version commit, the changelog,
-   and the tag entirely LOCALLY -- nothing reaches origin until you push. Order:
-   (1) cut locally, (2) curate `CHANGELOG.md` and amend it onto the version commit,
-   (3) `git push origin angular-typechecker@<version>` -- which fires
-   `.github/workflows/release.yml` -> OIDC publish with provenance (approve the
-   `npm-publish` environment), (4) create the GitHub Release from the curated changelog
-   yourself: `gh release create angular-typechecker@<version> --notes-file <curated-section>`.
-   The release is cut locally on purpose -- the CI publish job holds only `id-token: write`,
-   never `contents: write`.
+3. **Releases go through a Release PR; the cut creates NO tag, and you tag the MERGE
+   COMMIT after the PR lands.** `main` is PR-only (see "The default-branch ruleset" note
+   below), so you NEVER cut or push a release directly to `main`. `nx.json` sets
+   `release.git` to `{ commit: true, tag: false, push: false }` (plus
+   `changelog.workspaceChangelog.createRelease: false`), so `npx nx release --skip-publish`
+   commits the version bump + changelog and does NOTHING else: with `tag: false` it creates
+   NO git tag at all, and with `push: false` + `createRelease: false` it pushes nothing.
+   The tag is created separately, by hand, on the merge commit AFTER the PR merges. Full
+   order:
+   - (1) Off an up-to-date `main`, branch `git switch -c release/x.y.z`.
+   - (2) Preview with `npx nx release --dry-run`, then cut with `npx nx release --skip-publish`
+     (one commit lands on the branch: version + raw changelog; NO tag, NO push).
+   - (3) Curate `CHANGELOG.md` (strip plan-id scopes; add the prose summary + Compatibility
+     block) and amend it onto the version commit (`git commit --amend --no-edit`).
+   - (4) Push the branch and open a PR into `main`. The PR CARRIES the code AND the
+     `.planning/` updates (do NOT strip `.planning/` -- this repo wants planning artifacts on
+     `main`). Self-merge once the required `ci` check is green, as a MERGE COMMIT (the repo's
+     `allowed_merge_methods` is `["merge"]`; the tag will target that merge commit).
+   - (5) On the merged `main` HEAD, create the tag on the MERGE COMMIT with the EXACT name
+     `angular-typechecker@x.y.z` (NO `v` prefix -- the `v`-prefixed form would not match
+     `release.yml`'s `on: push: tags: ['angular-typechecker@*']` filter):
+     `git tag angular-typechecker@x.y.z <merge-sha>`.
+   - (6) BEFORE pushing, verify the tagged tree carries the bump:
+     `git show angular-typechecker@x.y.z:packages/angular-typechecker/package.json` must show
+     the new `"version"`. Then `git push origin angular-typechecker@x.y.z` -- which fires
+     `.github/workflows/release.yml` -> OIDC publish with provenance (approve the
+     `npm-publish` environment).
+   - (7) Create the GitHub Release from the curated `CHANGELOG.md` section yourself:
+     `gh release create angular-typechecker@x.y.z --notes-file <curated-section> --verify-tag`.
+     NEVER use `--generate-notes`: it builds notes from PR TITLES and cannot strip text inside
+     a title, so a PR titled `feat(NN-NN): ...` would leak the internal scope verbatim.
+
+   The tag push and the GitHub Release are done by a human on purpose -- the CI publish job
+   holds only `id-token: write`, never `contents: write`, and the irreversible "publish"
+   action stays behind a manual gate. (Why manual tagging rather than CI-automated: the
+   default `GITHUB_TOKEN` cannot trigger another workflow, so a CI-pushed tag would NOT fire
+   `release.yml`; a PAT/GitHub App would reintroduce a long-lived `contents`-scoped secret
+   that contradicts the repo's tokenless-OIDC posture. Manual keeps `release.yml`
+   byte-unchanged and adds zero secrets.)
 
    **LANDMINE -- do NOT re-enable `changelog.workspaceChangelog.createRelease: "github"`.**
    nx 23 requires `git push` whenever `createRelease` is set (it must push the tag to tie the
@@ -155,14 +195,45 @@ write accurate `type`s and put real changes in the package's files.
 
 ## Quick checklist before cutting a release
 
+The release goes through a Release PR; the cut creates NO tag. Tag the merge commit AFTER
+the PR lands, and never push a release directly to `main`.
+
 1. Are the changes since the last tag committed as `feat`/`fix` (so they bump + appear in
    the changelog), or is this an explicit-version maintenance release?
-2. Run `npx nx release --dry-run` and read the proposed version + changelog.
-3. If only `docs`/`chore` commits exist, pin the version explicitly.
-4. Curate `CHANGELOG.md` so no internal scopes/ids leak into the public changelog.
-5. Cut locally with `--skip-publish` (this pushes nothing -- `release.git.push: false`),
-   curate `CHANGELOG.md` and amend it onto the version commit, THEN push the tag
-   (`git push origin angular-typechecker@<version>`) to fire CI; approve the `npm-publish`
-   environment for the OIDC publish, and create the GitHub Release from the curated
-   changelog (`gh release create ...`). See `.github/workflows/release.yml` for the full
-   mechanics.
+2. Branch off an up-to-date `main`: `git switch -c release/x.y.z`.
+3. Run `npx nx release --dry-run` (the unified command, NOT `nx release version`) and read
+   the proposed version + changelog. If only `docs`/`chore` commits exist, pin the version
+   explicitly (see gotcha 1).
+4. Cut on the branch with `npx nx release --skip-publish`. With `git.tag: false` this
+   creates NO tag, and with `push: false` + `createRelease: false` it pushes nothing -- it
+   only commits the version bump + raw changelog.
+5. Curate `CHANGELOG.md` so no internal scopes/ids leak into the public changelog, and amend
+   it onto the version commit (`git commit --amend --no-edit`).
+6. Push the branch and open a PR into `main` that carries BOTH the code and the `.planning/`
+   updates. Self-merge once the required `ci` check is green, as a MERGE COMMIT.
+7. On the merged `main` HEAD, tag the MERGE COMMIT with the exact name
+   `angular-typechecker@x.y.z` (no `v`); verify the tagged tree carries the bump with
+   `git show angular-typechecker@x.y.z:packages/angular-typechecker/package.json`; then
+   `git push origin angular-typechecker@x.y.z` to fire CI. Approve the `npm-publish`
+   environment for the OIDC publish, and create the GitHub Release from the curated changelog
+   with `gh release create angular-typechecker@x.y.z --notes-file <curated-section> --verify-tag`
+   (never `--generate-notes`). See `.github/workflows/release.yml` for the full mechanics.
+
+## The default-branch ruleset: `main` is PR-only
+
+`main` is governed by an active "Default branch" ruleset with an EMPTY bypass list -- even
+the repository owner cannot push directly to `main`. Every change (code AND `.planning/`)
+reaches `main` only through a PR that satisfies the required status checks (`ci` plus the
+CodeQL `Analyze (actions)` / `Analyze (javascript-typescript)` checks). Do NOT attempt a
+direct `git push origin main`; it will be rejected. This is why releases run through the
+Release PR above rather than a local cut pushed to `main`.
+
+Release TAGS are governed by a SEPARATE "Release tag" ruleset, not the default-branch one, so
+the empty branch bypass does not block pushing `angular-typechecker@x.y.z` after a merge.
+
+**Lockout recovery (the cost of the empty bypass):** if the required `ci` check ever goes
+red or stops reporting and the merge button is blocked, recover by EDITING the ruleset --
+repo admins can edit a ruleset even though they cannot bypass it. Toggle the ruleset's
+`enforcement` to `disabled`, push the fix, then re-enable `enforcement: active`. Prefer this
+temporary enforcement toggle over adding a standing bypass actor (a standing bypass would
+permanently weaken the PR-only guarantee).
