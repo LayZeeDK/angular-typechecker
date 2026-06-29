@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
-status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-06-29T16:33:04.351Z"
+status: verifying
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-06-29T16:43:17.575Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 33
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 Phase: 8 (Correctness & Completeness Fixes) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-29
 
 ### v0.0.3 phase map
@@ -80,6 +80,7 @@ Last activity: 2026-06-29
 | Phase 07 P03 | 7min | 1 tasks | 1 files |
 | Phase 08 P01 | 5min | 2 tasks | 3 files |
 | Phase 08 P02 | 14min | 2 tasks | 6 files |
+| Phase 08 P03 | 5min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -169,6 +170,8 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 
 - [Phase ?]: [08-01] COR-01: early parsed.errors UNKNOWN_ERROR_CODE (500) scan in run-typecheck.ts re-throws TypecheckInfrastructureError immediately after readConfiguration and BEFORE the zero-rootNames guard (the 500 case has rootNames: [], so a late scan is swallowed + mis-counted as a type error); existing post-performCompilation 500 scan kept unchanged (D-02 two-stage defense-in-depth); only code 500 is infra, every other parsed.errors entry (e.g. 5012) stays folded (D-03); integration fixture is a nonexistent tsconfig path (deterministic ENOENT, no fixture file).
 - [Phase ?]: [08-02] COR-02: gatherAllDiagnostics gained a 7th unconditional getter program.getTsProgram().getGlobalDiagnostics() so global/location-less TS diagnostics (e.g. TS2318) are gathered; no compiler-cli-types.ts edit (getGlobalDiagnostics is on the public ts.Program reached via getTsProgram()); placement safe via finalize sortAndDeduplicateDiagnostics. Fixture fixtures/global-diagnostics uses noLib+types:[] (NOT extending base) for a real TS2318, asserted as raw 2318 through result.diagnostics. Raised vitest testTimeout to 30000ms to kill a pre-existing rotating cold-compiler timeout flake. Phase-10 HARD-01 must add this getter to the drift assertion (D-05).
+- [Phase ?]: [08-03] COR-03: widened the filter-diagnostics file-less guard to (file === undefined || file.fileName === '') so a present-but-empty fileName (synthesized-diagnostic edge canonicalizing to '') is treated as file-less and always kept, never suppressed by the boundary filter (D-06); canonicalizer/segment/isUnderDir untouched.
+- [Phase ?]: [08-03] COR-04: new pure core/exit-codes.ts toExitCode(input) -> 0|1|2 (ngc-parallel: 2 infra via instanceof TypecheckInfrastructureError, 1 errorCount>0, else 0), imports only ./run-typecheck, no process/console/@nx (passes core/** boundary lint), NOT imported by run-typecheck.ts (no cycle). D-08: executor.ts unchanged, toExitCode NOT wired into the executor return; only the infra-catch spec assertion tightened to lock the distinct 'infrastructure error' message.
 
 ### Pending Todos
 
@@ -214,6 +217,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T16:33:04.344Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-06-29T16:42:48.876Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None
