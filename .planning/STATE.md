@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.0.1
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 6 complete (5/5) — ready to discuss Phase 07
-last_updated: 2026-06-29T07:09:42.065Z
+status: planning
+stopped_at: Phase 7 context gathered
+last_updated: "2026-06-29T09:25:31.388Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 8
@@ -172,6 +172,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T02:35:48.019Z
-Stopped at: Phase 6 EXECUTED + locally verified overnight (114 unit/int + 7 e2e[5-type+pnpm] + 22 release-hygiene + 12 act-compat all green; actionlint clean; nx build green; security 8/8, code-review 0-critical, verifier 0-blockers). SC3 (cross-OS matrix GREEN on real runners) is HUMAN-GATED -- run the draft-PR per 06-HANDOFF.md. Nothing pushed (push gated). Do NOT advance to Phase 7 until the ci check is green.
-Resume file: .planning/phases/06-full-e2e-matrix-ci/06-HANDOFF.md
+Last session: 2026-06-29T09:25:31.376Z
+Stopped at: Phase 7 context gathered
+Resume file: .planning/phases/07-release-pr-workflow-and-clean-changelog/07-CONTEXT.md
