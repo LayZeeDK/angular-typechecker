@@ -4,13 +4,13 @@ milestone: v0.0.1
 milestone_name: milestone
 status: executing
 stopped_at: Phase 6 context gathered (--auto --chain --analyze; research-first)
-last_updated: "2026-06-28T23:49:28.913Z"
-last_activity: 2026-06-28 -- Phase 6 execution started
+last_updated: "2026-06-29T01:20:59.812Z"
+last_activity: 2026-06-29
 progress:
   total_phases: 8
   completed_phases: 6
-  total_plans: 23
-  completed_plans: 20
+  total_plans: 25
+  completed_plans: 22
   percent: 75
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 6 (full-e2e-matrix-ci) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 6
-Last activity: 2026-06-28 -- Phase 6 execution started
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-06-29
 
-Progress: [██████████] 95%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [██████████] 95%
 | Phase 5 P2 | ~6 min | 3 tasks | 7 files |
 | Phase Phase 5 P3 P03 | ~5 min | 2 tasks tasks | 7 files files |
 | Phase 5 P4 | ~18 min | 4 tasks | 5 files |
+| Phase 06 P04 | 4 min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ Recent decisions affecting current work:
 - [Phase 5]: [05-04] PUBLISH-READY reached (D-12/B-01): nx.json release block scoped to [angular-typechecker] only (fixtures/spike/e2e excluded, all private:true); SECURITY.md (GitHub PVR + larsbrinknielsen@gmail.com fallback, latest-0.x-only); hardened release.yml (tag-push angular-typechecker@*, top-level contents:read, publish job id-token:write only, environment npm-publish required-reviewer gate, checkout v5.0.1 + setup-node v5.0.0 SHA-pinned, persist-credentials:false, NPM_CONFIG_PROVENANCE true, NODE_AUTH_TOKEN unset for OIDC); dependabot github-actions; release-hygiene.int.spec.ts regression gate. nx release --first-release --dry-run previewed 0.0.1 + changelog and wrote nothing. NO real publish (05-05 is human-gated B-01).
 - [Phase 5]: [05-04] The workflow filename release.yml + the environment name npm-publish are LOAD-BEARING for the 05-05 npm Trusted Publisher registration (provider GitHub Actions, repo LayZeeDK/angular-typechecker, tick "npm publish" for configs created after 2026-05-20). nx release single-project tag form is angular-typechecker@x.y.z (the workspace-changelog dry-run header's v{version} is cosmetic for a one-package repo).
 - [Phase 5]: [05-04] Hardened-workflow comments must AVOID the bare literal tokens pull_request_target / contents: write / NODE_AUTH_TOKEN / @vN -- a literal git grep -c acceptance check counts comment lines; reword the threat-model comments while ACTIVE YAML directives carry the real security model (verified via structural YAML parse).
+- [Phase ?]: [06-04] RD-07 publish-job ref gate added to release.yml (if: startsWith(github.ref, 'refs/tags/angular-typechecker@') at job level); additive defense-in-depth over the on: push: tags: primary gate; OIDC/provenance/permissions/environment model byte-for-byte unchanged (release-hygiene spec 15/15 green, +7-line-only diff).
+- [Phase ?]: [06-04] nx release --dry-run version/changelog preview is blocked by a PRE-EXISTING out-of-scope fixture build failure (06-01 buildable-lib/publishable-lib need ng-packagr, deliberately not installed per OQ-1); logged as DI-06-01 in deferred-items.md, NOT fixed in 06-04; resolve (scope preVersionCommand to angular-typechecker:build) before the next real release cut.
 
 ### Pending Todos
 
@@ -146,6 +149,7 @@ None yet.
 - [01-02 PROGRESS] GATE A enabling half is in place: the plugin tsconfig is patched to `module: nodenext` and the plugin builds clean under it. The remaining GATE A/B proof (built executor.js retains `import(`; unconditional gatherer surfaces NG8109 + TS2322) lands in Plans 01-03/01-04.
 - [01-03 PROGRESS] GATE A/B engine validated ahead of the formal Plan 04 spec suite: `nx build angular-typechecker` succeeds and the built `compiler-loader.js` retains a literal `import('@angular/compiler-cli')` (no `require()` downlevel); `require()`-loading the built CJS executor against the fixture ran with no `ERR_REQUIRE_ESM` (GATE A runtime). A throwaway all-getter probe on both fixture tsconfigs returned `[2322, -998109, -998117]` while ngc's `defaultGatherDiagnostics` returned only `[2322]` (GATE B positive + differential; NG8109 fires on stable 22.0.4, D-18). Plan 04 turns these into the committed Vitest gate suite and records the cold-run timing.
 - [01-03 CAVEAT] The compiler-cli-types.ts shim re-exports via a deep relative path into `node_modules/@angular/compiler-cli/...` -- fragile if dep hoisting changes the layout, and coupled to the package's internal `.d.ts` structure (type-only; erased at emit). Revisit when @angular/compiler-cli ships nodenext-clean typings (Angular's own @angular/build consumes these types under module:commonjs/moduleResolution:node, so the barrel is simply not nodenext-tested upstream).
+- [06-04 -> next release cut] DI-06-01: nx release --dry-run fails in its preVersionCommand (npx nx run-many -t build) because the 06-01 matrix-e2e fixtures buildable-lib/publishable-lib declare @nx/angular:ng-packagr-lite/:package build targets but ng-packagr is deliberately not installed (OQ-1). Pre-existing, independent of release.yml. Resolve before the next real release: scope the preVersionCommand to angular-typechecker:build (or exclude fixture build targets from the default sweep). See deferred-items.md.
 
 ## Deferred Items
 
@@ -157,6 +161,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T22:52:04.180Z
+Last session: 2026-06-29T01:20:09.165Z
 Stopped at: Phase 6 context gathered (--auto --chain --analyze; research-first)
-Resume file: .planning/phases/06-full-e2e-matrix-ci/06-CONTEXT.md
+Resume file: None

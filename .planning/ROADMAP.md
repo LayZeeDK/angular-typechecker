@@ -132,7 +132,7 @@ Plans:
 - [x] 06-01-PLAN.md -- matrix-e2e Nx project + 5-type consumer-workspace fixture + OQ-1 clean-install gate (TEST-03 foundation)
 - [ ] 06-02-PLAN.md -- 5-type e2e spec + pnpm symlink fixture + realpath regression-guard (TEST-03)
 - [ ] 06-03-PLAN.md -- FS/OS/Node unit+integration: D-10 mixed-case + RD-04 store-dir generality + host-derived case-sensitivity (OUT-02 backstop)
-- [ ] 06-04-PLAN.md -- release.yml publish-job if: ref gate (RD-07) + re-verify the frozen OIDC model (CI-01)
+- [x] 06-04-PLAN.md -- release.yml publish-job if: ref gate (RD-07) + re-verify the frozen OIDC model (CI-01)
 - [ ] 06-05-PLAN.md -- ci.yml lean 6-cell matrix + Linux-only e2e + act-compat + lint-workflows + aggregate ci gate; act suite + .actrc (CI-01)
 **UI hint**: no
 
@@ -149,7 +149,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.1 -> 6 -> 7
 | 4. Nx Executor Adapter + Cacheable Target | 3/3 | Complete    | 2026-06-28 |
 | 5. Packaging, Publish Hardening + e2e Smoke (MVP) | 5/5 | Complete   | 2026-06-28 |
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | 1/1 | Complete   | 2026-06-28 |
-| 6. Full e2e Matrix + CI | 1/5 | Planned | - |
+| 6. Full e2e Matrix + CI | 2/5 | In Progress|  |
 | 7. Release-PR workflow and clean changelog | 0/TBD | Not started | - |
 
 ### Phase 7: Release-PR workflow and clean changelog
