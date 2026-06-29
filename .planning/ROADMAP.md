@@ -45,7 +45,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 Plans:
 - [x] 08-01-PLAN.md -- COR-01: early parsed.errors 500 scan re-throws TypecheckInfrastructureError before the zero-rootNames guard (+ unit twin + nonexistent-path integration)
-- [ ] 08-02-PLAN.md -- COR-02: gather getTsProgram().getGlobalDiagnostics() (7th getter) + global-diagnostics TS2318 fixture + unit/integration proof
+- [x] 08-02-PLAN.md -- COR-02: gather getTsProgram().getGlobalDiagnostics() (7th getter) + global-diagnostics TS2318 fixture + unit/integration proof
 - [ ] 08-03-PLAN.md -- COR-03 (empty-fileName guard kept) + COR-04 (pure core/exit-codes.ts toExitCode 0/1/2 + tightened executor distinct-message assertion)
 
 ### Phase 9: Resilience (per-file fault isolation + boundary robustness)
@@ -85,6 +85,6 @@ Plans:
 | 5.1 0.0.2 first OIDC steady-state publish verification (INSERTED) | v0.0.1 | 1/1 | Complete | 2026-06-29 |
 | 6. Full e2e Matrix + CI | v0.0.1 | 5/5 | Complete | 2026-06-29 |
 | 7. Release-PR workflow and clean changelog | v0.0.1 | 4/4 | Complete | 2026-06-29 |
-| 8. Correctness & Completeness Fixes | v0.0.3 | 1/3 | In Progress|  |
+| 8. Correctness & Completeness Fixes | v0.0.3 | 2/3 | In Progress|  |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 0/? | Not started | - |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 0/? | Not started | - |

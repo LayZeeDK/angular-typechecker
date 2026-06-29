@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-06-29T16:17:20.841Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-06-29T16:33:04.351Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 ## Current Position
 
 Phase: 8 (Correctness & Completeness Fixes) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-06-29
 
@@ -79,6 +79,7 @@ Last activity: 2026-06-29
 | Phase 07 P02 | ~9 min | 2 tasks | 1 files |
 | Phase 07 P03 | 7min | 1 tasks | 1 files |
 | Phase 08 P01 | 5min | 2 tasks | 3 files |
+| Phase 08 P02 | 14min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,7 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 </details>
 
 - [Phase ?]: [08-01] COR-01: early parsed.errors UNKNOWN_ERROR_CODE (500) scan in run-typecheck.ts re-throws TypecheckInfrastructureError immediately after readConfiguration and BEFORE the zero-rootNames guard (the 500 case has rootNames: [], so a late scan is swallowed + mis-counted as a type error); existing post-performCompilation 500 scan kept unchanged (D-02 two-stage defense-in-depth); only code 500 is infra, every other parsed.errors entry (e.g. 5012) stays folded (D-03); integration fixture is a nonexistent tsconfig path (deterministic ENOENT, no fixture file).
+- [Phase ?]: [08-02] COR-02: gatherAllDiagnostics gained a 7th unconditional getter program.getTsProgram().getGlobalDiagnostics() so global/location-less TS diagnostics (e.g. TS2318) are gathered; no compiler-cli-types.ts edit (getGlobalDiagnostics is on the public ts.Program reached via getTsProgram()); placement safe via finalize sortAndDeduplicateDiagnostics. Fixture fixtures/global-diagnostics uses noLib+types:[] (NOT extending base) for a real TS2318, asserted as raw 2318 through result.diagnostics. Raised vitest testTimeout to 30000ms to kill a pre-existing rotating cold-compiler timeout flake. Phase-10 HARD-01 must add this getter to the drift assertion (D-05).
 
 ### Pending Todos
 
@@ -212,6 +214,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T16:17:20.833Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-06-29T16:33:04.344Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
