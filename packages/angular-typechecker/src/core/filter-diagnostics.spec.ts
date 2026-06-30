@@ -125,6 +125,27 @@ describe('filterDiagnostics', () => {
     expect(result.suppressedCount).toBe(0);
   });
 
+  // T1 / RES-03: the OTHER side of the throwing-realpath boundary. The catch falls
+  // back to the unresolved raw path, which is then normalized + case-folded -- so
+  // an OUT-of-project raw path (`/ws/sibling-lib/...` is not under `/ws/proj`)
+  // still classifies out-of-project and is SUPPRESSED. Together with the in-project
+  // KEEP test above, this proves the realpath catch falls through to consistent
+  // classification on BOTH sides of the boundary. Behavior is already correct --
+  // this is a coverage gap, not a failing-then-passing change.
+  it('RES-03: a throwing realpath is caught; an OUT-of-project diagnostic is still SUPPRESSED', () => {
+    const result = filterDiagnostics([diag('/ws/sibling-lib/src/b.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath: () => {
+        throw new Error('EACCES');
+      },
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(0);
+    expect(result.suppressedCount).toBe(1);
+  });
+
   it('case-insensitive FS folds case so /WS/PROJ/src/A.ts is in-project under /ws/proj (OUT-02)', () => {
     const result = filterDiagnostics([diag('/WS/PROJ/src/A.ts')], {
       basePath: '/ws/proj',

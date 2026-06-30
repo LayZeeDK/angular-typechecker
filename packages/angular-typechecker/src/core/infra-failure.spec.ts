@@ -121,6 +121,14 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
     await expect(
       runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
     ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+
+    // T3: the re-throw flattens the planted messageText via
+    // `ts.flattenDiagnosticMessageText(..., '\n')` (a no-op for a single string),
+    // so the thrown message carries the compiler text verbatim, not a generic
+    // placeholder.
+    await expect(
+      runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
+    ).rejects.toThrow(/simulated internal crash/);
   });
 
   it('does NOT throw on a normal TS2322 type error and counts it in errorCount', async () => {
@@ -264,6 +272,13 @@ describe('runTypecheck config-resolution infrastructure-failure handling (COR-01
     await expect(
       runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
     ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+
+    // T3: the config-stage re-throw flattens the planted ENOENT messageText. Assert
+    // a stable cross-OS substring (no path tail / drive letter) so the regex is
+    // deterministic on Windows/Linux/macOS.
+    await expect(
+      runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
+    ).rejects.toThrow(/no such file or directory/);
 
     // The scan must fire on the config parse alone -- performCompilation is
     // never reached on the 500 path.

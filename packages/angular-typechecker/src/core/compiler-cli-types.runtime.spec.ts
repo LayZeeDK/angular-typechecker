@@ -113,6 +113,14 @@ describe('compiler-cli-types runtime drift (real NgtscProgram getter-set + NG en
     // `getTsProgram().getSourceFiles()`. Also a `ts.Program` member -- cover it so
     // the asserted runtime call-surface mirrors the gatherer's full Program surface.
     expect(typeof program.getTsProgram().getSourceFiles).toBe('function');
+
+    // S-types reach-through: the boundary filter's case-fold reads
+    // `getTsProgram().useCaseSensitiveFileNames()` (`run-typecheck.ts:265-267`).
+    // It is in neither GATHERED_GETTERS nor the build-time drift probe, so this is
+    // the one production-read vendored runtime member otherwise unenforced.
+    expect(typeof program.getTsProgram().useCaseSensitiveFileNames).toBe(
+      'function',
+    );
   });
 
   it('(b) flags any NEW diagnostic getter for review (the additions blind-spot the type gate cannot see)', () => {
