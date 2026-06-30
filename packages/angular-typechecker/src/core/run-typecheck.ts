@@ -247,6 +247,26 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     );
   }
 
+  // #3 DEFENSE-IN-DEPTH: the real PerformCompilationResult.program is OPTIONAL
+  // (@angular/compiler-cli perform_compile.d.ts:29); the vendored shim narrows it
+  // to non-optional (compiler-cli-types.ts) to match the engine's guarded usage
+  // below. A `{ program: undefined }` return WITHOUT an UNKNOWN_ERROR_CODE (500)
+  // diagnostic is type-permitted but NOT observed in @angular/compiler-cli@22.0.4
+  // source -- this guard converts that hypothetical bare TypeError (from the
+  // `result.program.getTsProgram()` access in `finalize` below) into the SAME
+  // infra-class failure as the rest of the path. It is DISJOINT from the
+  // post-compilation 500 scan above (which handles UNKNOWN_ERROR_CODE), so there
+  // is no double-handling. This is a RUNTIME defense, not a type change -- the
+  // shim `program` stays non-optional, so TS treats the access as always-defined.
+  if (result.program === undefined) {
+    throw new TypecheckInfrastructureError(
+      'angular-typecheck: the Angular compiler returned no Program ' +
+        '(performCompilation produced neither a Program nor an ' +
+        'UNKNOWN_ERROR_CODE diagnostic). This is an infrastructure failure, ' +
+        'not a type error.',
+    );
+  }
+
   // D-06: classify against the leaf tsconfig's `basePath` (the directory
   // `readConfiguration` injects), NEVER `parsed.options.rootDir` -- in this
   // `--preset=apps` workspace `rootDir` is the workspace root, which would mark
