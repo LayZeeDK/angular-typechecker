@@ -51,14 +51,17 @@ export interface CoreResult {
   durationMs: number;
   // RES-02 (reframe; 09-RES-02-DECISION.md, Option A): set when a TCB-generation
   // `FatalDiagnosticError` (IMPORT_GENERATION_FAILURE, NG3004 -- the ONLY Fatal
-  // thrown from the Type-Check-Block path at v22.0.4) is present in the REPORTED
-  // set. That Fatal is thrown DURING the shared `ensureAllShimsForAllFiles()`
+  // thrown from the Type-Check-Block path at v22.0.4) is present in the gathered
+  // diagnostics. Detection scans the PRE-filter set in `finalize`, so a Fatal on
+  // an out-of-project file is never silently dropped by the project-boundary
+  // filter before the notice fires (I-1). That Fatal is thrown DURING the shared
+  // `ensureAllShimsForAllFiles()`
   // priming `OptimizeFor.WholeProgram` triggers, which aborts shim generation for
   // ALL files -- so surviving files' Angular template/extended (NG8xxx)
   // diagnostics are SUPPRESSED. This is a PURE detection field (set by scanning
   // diagnostics in `finalize`, no `console`/`process`); the adapter renders the
   // loud, file-named notice (executor `logger.warn`). `undefined` when no such
-  // Fatal is reported -- the common case -- so consumers branch on presence.
+  // Fatal is present -- the common case -- so consumers branch on presence.
   //
   // This is ADDITIVE signalling on the normal result path. It does NOT touch the
   // infra-vs-type policy (D-05): a non-fatal/infra throw still surfaces as
@@ -428,22 +431,25 @@ function finalize(
 }
 
 /**
- * RES-02: scans the reported diagnostics for the TCB-generation Fatal code
+ * RES-02: scans the given diagnostics for the TCB-generation Fatal code
  * (`TCB_GENERATION_FATAL_DIAGNOSTIC_CODE === NG(3004)`) and, if found, returns
  * the abort details (the negative code + the offending file when attached). Pure:
  * no `console`/`process`. Returns `undefined` when no TCB-generation Fatal is in
  * the set -- the common case -- so the adapter renders the notice only on
- * presence. The compiler reports the deduped Fatal exactly once, so the `find`
- * picks the single offending diagnostic.
+ * presence. `finalize` passes the PRE-filter diagnostics (NOT the boundary-
+ * filtered `reported` set), so an out-of-project Fatal still fires the notice
+ * (I-1); `find` returns the first match, and the compiler attaches the
+ * TCB-generation Fatal to a single shim, so first-match is the offending
+ * diagnostic.
  *
- * Exported for the RES-02 unit tier: a synthesized reported set lets the
- * detection be proven WITHOUT a real cold-compiler run (the integration tier
- * proves it end-to-end against the poison fixture).
+ * Exported for the RES-02 unit tier: a synthesized diagnostic set lets the
+ * detection logic be proven WITHOUT a real cold-compiler run (the integration
+ * tier proves it end-to-end against the poison fixture).
  */
 export function detectTemplateCheckAborted(
-  reported: readonly ts.Diagnostic[],
+  diagnostics: readonly ts.Diagnostic[],
 ): TemplateCheckAborted | undefined {
-  const fatal = reported.find(
+  const fatal = diagnostics.find(
     (diagnostic) => diagnostic.code === TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
   );
 
