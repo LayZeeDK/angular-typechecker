@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+
+  // IN-02: the build-time drift tripwire is reachable ONLY via tsconfig.drift.json
+  // `files` (classic node10 resolution), never via the import graph, so fallow
+  // flags it `unused_file`. Declaring it an entry point clears that false positive.
+  // (The 56 real Angular component/source entry points are auto-detected by
+  // fallow's Angular plugin; do NOT re-list them here.)
+  "entry": [
+    "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts"
+  ],
+
+  // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
+  // drift tripwire's value-level pin (not the import graph). Pin it so the
+  // `unused_types` finding never gates, regardless of changeset attribution (D-02).
+  "ignoreExports": [
+    {
+      "file": "**/compiler-cli-types.ts",
+      "exports": ["UNKNOWN_ERROR_CODE"]
+    }
+  ],
+
+  "rules": {
+    // D-06: the 14 dev/tooling deps (ESLint flat-config plugins, swc register,
+    // attw/publint CLIs, etc.) are structurally un-traceable by import graph and
+    // will always false-positive. Dev-dep hygiene is owned by @nx/dependency-checks
+    // (the published package) + manual review, not fallow.
+    "unused-dev-dependencies": "off"
+    // D-07: unused-dependencies stays at its default `error` -- catches a genuine
+    // unused PROD dep. @angular/forms is RESOLVED by removal (see package.json),
+    // not here.
+  },
+
+  "overrides": [
+    {
+      // IN-03: the EmitFlags enum mirrors the real @angular/compiler-cli enum as a
+      // contract-mirror shim; members are consumed by the drift pin, not the import
+      // graph. Scope the rule off for this file only.
+      "files": ["**/compiler-cli-types.ts"],
+      "rules": {
+        "unused-enum-members": "off"
+      }
+    },
+    {
+      // Intentional fault-isolation test fixtures: components rendered nowhere +
+      // one fixture @Input. They drive the engine's per-file resilience tests.
+      // NOTE: fixtures live at REPO ROOT (fixtures/fault-isolation/), NOT under
+      // packages/angular-typechecker/ -- the glob MUST be root-relative.
+      "files": ["fixtures/fault-isolation/**"],
+      "rules": {
+        "unrendered-components": "off",
+        "unused-component-inputs": "off"
+      }
+    }
+  ],
+
+  "audit": {
+    // D-02: pin the gate so the verdict is deterministic regardless of CLI flags.
+    "gate": "new-only"
+  }
+}
