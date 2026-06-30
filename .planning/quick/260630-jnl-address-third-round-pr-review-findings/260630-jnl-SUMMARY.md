@@ -3,6 +3,7 @@ phase: quick-260630-jnl
 plan: 01
 subsystem: core
 tags: [pr-review, test-quality, comment-precision, no-behavior-change]
+status: complete
 requires: []
 provides:
   - "S5c anti-tautology guard (3-element Error+Warning+Suggestion set)"

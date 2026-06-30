@@ -3,6 +3,7 @@ phase: quick-260630-fg0
 plan: 01
 subsystem: core engine + executor adapter
 tags: [pr-review, correctness, defense-in-depth, tdd, tests]
+status: complete
 requires:
   - The angular-typechecker core engine (filter-diagnostics, run-typecheck, diagnostic-codes)
 provides:
