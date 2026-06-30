@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: completed
-stopped_at: "Phase 11 executed + audited (code-review 0 critical, verify 14/14 automated, secure threats_open:0, validate nyquist-compliant); verification human_needed -- 5 real-PR/CI items in 11-HUMAN-UAT.md; extract-learnings deferred until gate confirmed green on a real PR"
-last_updated: "2026-06-30T06:18:05.395Z"
+stopped_at: "v0.0.3 milestone shipped -- PR #11 (open into main, CI running). Milestone audit passed (16/16 reqs, 18/18 integration); all 5 Phase-11 human-UAT items confirmed green on real CI (draft PR #9 green, throwaway PR #10 red-path). Awaiting CI green + user approval to merge (main is PR-only, empty-bypass ruleset)."
+last_updated: "2026-06-30T07:30:48.424Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 Phase: 11
 Plan: Not started
-Status: Milestone complete
+Status: v0.0.3 milestone shipped -- PR #11 (open, CI running)
 Last activity: 2026-06-30
 
 ### v0.0.3 phase map
@@ -236,6 +236,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T01:19:20.544Z
-Stopped at: Phase 11 executed + audited (code-review 0 critical, verify 14/14 automated, secure threats_open:0, validate nyquist-compliant); verification human_needed -- 5 real-PR/CI items in 11-HUMAN-UAT.md; extract-learnings deferred until gate confirmed green on a real PR
-Resume file: .planning/phases/11-fallow-code-quality-ci-gate/11-HUMAN-UAT.md
+Last session: 2026-06-30T07:30:48.424Z
+Stopped at: v0.0.3 milestone shipped via /gsd-ship -- PR #11 open into main (CI running). Milestone audit passed; Phase-11 human-UAT 5/5 confirmed green on real CI. Awaiting CI green + user approval to merge (main is PR-only).
+Resume file: https://github.com/LayZeeDK/angular-typechecker/pull/11
