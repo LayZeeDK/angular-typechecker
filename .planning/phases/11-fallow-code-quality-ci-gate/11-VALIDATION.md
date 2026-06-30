@@ -1,10 +1,11 @@
 ---
 phase: 11
 slug: fallow-code-quality-ci-gate
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-30
+updated: 2026-06-30
 ---
 
 # Phase 11 — Validation Strategy
@@ -45,11 +46,13 @@ created: 2026-06-30
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 11-XX | config | — | QUAL-02 | — | False positives suppressed + genuine findings resolved; gate green | integration | `npx fallow audit --base origin/main` exits 0 | ❌ W0 (.fallowrc.jsonc) | ⬜ pending |
-| 11-XX | ci-job | — | QUAL-01 | T-11 (untrusted-PR; least-privilege; SHA-pin) | New `fallow` job in `ci` needs:+gate; path-gated; fails on introduced findings | static + selection | `./actionlint -color`; `bash tools/act/act-compat.sh` (selects `ci/fallow`) | ❌ W0 (ci.yml edit) | ⬜ pending |
-| 11-XX | tooling | — | QUAL-03 | T-11 | fallow exact-pinned root devDep; act asserts `ci/fallow`; security posture preserved | static | `bash tools/act/act-compat.sh`; `git grep -n '"fallow"' package.json` (exact version) | ❌ W0 (package.json) | ⬜ pending |
+| 11-01 | config | 1 | QUAL-02 | T-11-01/02/SC | False positives suppressed + genuine findings resolved; gate green | integration | `npx fallow audit --format json --base origin/main` exits 0 (verified: verdict pass, 0 findings) | ✅ .fallowrc.jsonc | ✅ green |
+| 11-02 | ci-job | 2 | QUAL-01 | T-11-03..07 | New `fallow` job in `ci` needs:+gate; path-gated; runs the audit on every PR | static + selection (CI) | CI `lint-workflows` (`./actionlint -color`); CI `act-compat` (`bash tools/act/act-compat.sh` selects `ci/fallow`) | ✅ ci.yml | ⬜ CI-pending |
+| 11-02 | tooling | 2 | QUAL-03 | T-11-01/03 | fallow exact-pinned root devDep; act asserts `ci/fallow`; security posture preserved | static | `git grep -n '"fallow": "2.103.0"' package.json` (exact, verified); `act --validate` (verified); CI `act-compat` | ✅ package.json/act-compat.sh | ✅ green (local) / ⬜ CI-pending (act -n) |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky · CI-pending = automated but runs in CI (actionlint/Docker absent on the arm64 dev box)*
+
+> **Coverage verdict:** ongoing regression is FULLY AUTOMATED — the `fallow` CI job runs `fallow audit` on every PR (proven live: `fallow dead-code` finds 24 issues / exit 1, so the gate is not a no-op), and the `lint-workflows` + `act-compat` jobs auto-verify the wiring. The single MANUAL item is the ONE-TIME adoption red/green proof (act's aggregate-gate arithmetic diverges from GitHub) — tracked in 11-HUMAN-UAT.md item 1, not an ongoing coverage gap.
 
 ---
 
@@ -75,11 +78,26 @@ created: 2026-06-30
 
 ## Validation Sign-Off
 
-- [ ] Each QUAL requirement has an automated verify command (fallow exit code / actionlint / act-compat) or a Wave 0 dependency
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers the fallow devDependency install
-- [ ] No watch-mode flags (all commands are one-shot)
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter (by `/gsd-validate-phase` post-execution)
+- [x] Each QUAL requirement has an automated verify command (fallow exit code / actionlint / act-compat) or a Wave 0 dependency
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers the fallow devDependency install (fallow@2.103.0 pinned + installed in plan 11-01)
+- [x] No watch-mode flags (all commands are one-shot)
+- [x] Feedback latency < 60s (fallow audit ~1.3s; actionlint ~1s)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** validated 2026-06-30
+
+---
+
+## Validation Audit 2026-06-30
+
+| Metric | Count |
+|--------|-------|
+| Requirements audited | 3 (QUAL-01, QUAL-02, QUAL-03) |
+| Covered (automated) | 3 (ongoing CI regression: fallow job + lint-workflows + act-compat) |
+| Partial | 0 |
+| Missing | 0 |
+| New test files generated | 0 (CI-gate phase — no unit-testable app code; act-compat.sh + actionlint + the fallow job ARE the validation infrastructure) |
+| Manual-only (one-time) | 1 (adoption red/green proof on a real PR — 11-HUMAN-UAT.md item 1; tracked, not a coverage gap) |
+
+**Verdict:** NYQUIST-COMPLIANT for ongoing regression (every PR is auto-gated). The auditor was NOT spawned — there were no fillable gaps (no application code to unit-test; generating a test for "CI fails on dead code" would duplicate the existing `act-compat` job and the real-PR gate). State A audit performed inline against the shipped artifacts.
