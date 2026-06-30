@@ -106,11 +106,13 @@ describe('filterDiagnostics', () => {
   });
 
   // RES-03 / D-08: a throwing options.realpath() (EACCES / permission-denied
-  // junction / broken symlink) must be CAUGHT inside createCanonicalizer and fall
-  // back to the unresolved raw path -- the throw must NOT escape filterDiagnostics
-  // and abort the whole type-check pass. The fallback path is still normalized +
-  // case-folded, so an in-project diagnostic classifies in-project and is kept.
-  // Mirrors the injected-realpath idiom above, with a stub that throws.
+  // junction / broken symlink) must be CAUGHT inside createCanonicalizer (the
+  // throw must NOT escape filterDiagnostics and abort the whole type-check pass)
+  // and signal `undefined`, so the diagnostic is KEPT (fail-safe -- a throw cannot
+  // prove the file is out-of-project). This in-project input is kept like every
+  // keep-on-throw case; the out-of-project companion below proves the bias holds
+  // regardless of the raw path's classification. Mirrors the injected-realpath
+  // idiom above, with a stub that throws.
   it('RES-03: a throwing realpath is caught; the in-project diagnostic is still kept', () => {
     const result = filterDiagnostics([diag('/ws/proj/src/a.component.ts')], {
       basePath: '/ws/proj',
