@@ -12,6 +12,17 @@ Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale t
 
 Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular projects cannot use that fast path -- Angular lacks TypeScript project-references support -- and it would not surface Angular template type-check or extended (NG8xxx) diagnostics anyway. angular-typechecker is the Angular-aware whole-program no-emit type-check that fills that gap.
 
+## Current Milestone: v0.0.3 Engine hardening
+
+**Goal:** Harden the existing whole-program no-emit `runTypecheck` engine -- close real correctness/completeness holes, make diagnostic gathering resilient instead of all-or-nothing, and make Angular-version drift fail loudly -- all verified against stable Angular 22.0.4 and WITHOUT migrating off `performCompilation` to `NgtscProgram`.
+
+**Target features (3 clusters):**
+- **Correctness & completeness:** detect config-resolution infra crashes (re-throw as infra, do not count as type errors); surface global / location-less TS diagnostics (`getGlobalDiagnostics`); stop suppressing empty-`fileName` diagnostics.
+- **Resilience:** per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest (opens with a GATED spike deciding simple per-file loop vs. hybrid gather); `realpath()` try/catch in the boundary filter; `suppressOutputPathCheck`.
+- **Drift-hardening:** a build-time `tsconfig.drift.json` assertion that the vendored shim stays in sync with the real `api.Program` getter set + NG error-code encoding; fix the fabricated `EmitFlags.None`; vendor-marker comments; KEEP the no-op `getNgStructuralDiagnostics()` call under the drift assertion (forward-compat).
+
+Grounded in `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` (verified against `@angular/build` + `@angular/compiler-cli` at stable 22.0.4). The engine is already complete and faithful to `@angular/build`; this milestone is hardening, not a rewrite. Deferred: `totalFilesCount` observability field; the v0.0.1 deferred feature families (INF/GEN/SUR/REP/SUP) remain out of scope.
+
 ## Current State
 
 **Shipped v0.0.1 (2026-06-29)** -- published live to npm as `angular-typechecker@0.0.1` and `@0.0.2` (tokenless OIDC Trusted Publisher + SLSA v1 provenance).
@@ -21,6 +32,7 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - **Codebase:** ~1,162 LOC TypeScript across 33 `.ts` files in `packages/angular-typechecker/` (incl. tests); plus e2e fixture projects and CI/release workflows.
 - **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers.
 - **Known issues / debt:** documentation-drift and INFO-level only (see `.planning/milestones/v0.0.1-MILESTONE-AUDIT.md`); `.npmrc legacy-peer-deps=true` is a dev-repo concern that does not reach consumers.
+- **v0.0.3 progress:** ALL phases COMPLETE 2026-06-30 (pending the milestone PR #9 merge). Phase 8 (Correctness & Completeness, COR-01..04) -- config-resolution 500 re-thrown as infrastructure, global TS diagnostics via `getGlobalDiagnostics()`, empty-`fileName` diagnostics kept, pure core `toExitCode` 0/1/2 policy. Phase 9 (Resilience, RES-01..04) -- HYBRID per-file fault isolation (gated spike) so one `FatalDiagnosticError` no longer collapses the run, `realpath()` try/catch, `suppressOutputPathCheck`. Phase 10 (Drift-hardening, HARD-01..05) -- build-time `tsconfig.drift.json` + `typecheck-drift` CI target, `EmitFlags` fix, vendor markers, retained no-op getter, no-`TS-99`-leak spec. Phase 11 (Code-Quality Gate, QUAL-01..03) -- `fallow@2.103.0` adopted as a path-gated CI quality gate (`--format human`, exit-code-gated, least-privilege `contents: read`), current findings resolved (gate green on adoption), proven RED on introduced dead code via a throwaway PR. Engine suite 147/147 green.
 
 ## Requirements
 
@@ -41,9 +53,14 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - [x] CI: GitHub Actions, Node 22/24/26 x Linux/Windows/macOS (heavy e2e gate Linux-only). -- v0.0.1
 - [x] Release-PR workflow: PR-only `main`, version/changelog via PR, tag-the-merge-commit publish, clean public changelog (no GSD phase/plan scopes). -- v0.0.1
 
-### Active (next milestone -- not yet scoped)
+### Active (v0.0.3 Engine hardening -- in progress)
 
-No active milestone. Run `/gsd-new-milestone` to scope the next one. The deferred requirement families carried forward from v0.0.1 are the natural candidates (see Out of Scope below and `.planning/milestones/v0.0.1-REQUIREMENTS.md`): inferred targets (INF), install/generators (GEN), other surfaces (SUR), reporters/performance (REP), broader support (SUP).
+Scoped requirements with REQ-IDs live in `.planning/REQUIREMENTS.md`. Summary by cluster:
+- **Correctness & completeness:** config-resolution-crash detection, global TS diagnostics, empty-`fileName` handling.
+- **Resilience:** per-file fault isolation (gated spike), `realpath()` robustness, `suppressOutputPathCheck`.
+- **Drift-hardening:** build-time shim + error-code drift assertion, `EmitFlags` fix, vendor markers, retained-getter-under-assertion.
+
+This milestone improves the EXISTING engine only. The deferred families carried forward from v0.0.1 (inferred targets INF, install/generators GEN, other surfaces SUR, reporters/performance REP, broader support SUP) remain Out of Scope (below) and are the natural candidates for a later milestone.
 
 ### Out of Scope (deferred to later milestones, not abandoned)
 
@@ -126,4 +143,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-29 after v0.0.1 milestone completion (full evolution review; all v0.0.1 requirements moved to Validated; Key Decisions outcomes closed).*
+*Last updated: 2026-06-30 -- v0.0.3 ALL phases (8-11) complete and verified; Phase 11 (QUAL-01..03) adopted the `fallow` CI quality gate (proven green-on-clean + red-on-dead-code on real CI). Milestone functionally complete, pending the PR #9 merge + `/gsd-audit-milestone`. Engine suite 147/147 green.*

@@ -42,6 +42,23 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "typecheck-drift": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/src/core/compiler-cli-types.drift.ts",
+        "{projectRoot}/src/core/compiler-cli-types.ts",
+        "{projectRoot}/tsconfig.drift.json",
+        "{workspaceRoot}/tsconfig.base.json",
+        {
+          "externalDependencies": ["typescript", "@angular/compiler-cli"]
+        }
+      ],
+      "options": {
+        "command": "tsc --noEmit -p packages/angular-typechecker/tsconfig.drift.json",
+        "cwd": "."
+      }
+    },
     "test": {
       "executor": "@nx/vitest:test",
       "dependsOn": ["build"],

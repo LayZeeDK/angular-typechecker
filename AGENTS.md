@@ -237,3 +237,82 @@ repo admins can edit a ruleset even though they cannot bypass it. Toggle the rul
 `enforcement` to `disabled`, push the fix, then re-enable `enforcement: active`. Prefer this
 temporary enforcement toggle over adding a standing bypass actor (a standing bypass would
 permanently weaken the PR-only guarantee).
+
+## Parallel execution in git worktrees: the `node_modules` junction
+
+When an agent runs phase plans in PARALLEL, each plan's executor works in an isolated git
+worktree. A fresh worktree branches from a clean tree where `node_modules` is gitignored and
+therefore ABSENT. An executor with no `node_modules` cannot run `nx build` / `nx test` /
+`tsc`, so it cannot verify its own work -- unacceptable for a type-checking tool whose entire
+value is correctness. Provision the worktree's dependencies before any verification, using
+ONE of the two patterns below.
+
+### Pattern A -- share via a `node_modules` junction (DEFAULT, only when deps are unchanged)
+
+When a plan changes NO dependencies (pure source/test edits -- the common case), share the
+main checkout's already-installed, lockfile-pinned `node_modules` instead of re-installing.
+As the executor's FIRST action AFTER the worktree HEAD/branch assertion (and BEFORE any
+`nx`/`tsc`/`vitest`), create a directory junction (Windows) or symlink (POSIX) from the
+worktree's `node_modules` to the main checkout's `node_modules`, then verify it resolves:
+
+```bash
+# Windows (the primary dev environment): a directory junction.
+cmd //c "mklink /J node_modules <ABS-PATH-TO-MAIN-CHECKOUT>\node_modules"
+# POSIX equivalent: ln -s <abs-path-to-main-checkout>/node_modules node_modules
+test -d node_modules/typescript && test -d node_modules/@angular/compiler-cli \
+  || { echo "FATAL: node_modules junction failed"; exit 1; }
+```
+
+Run these FROM THE WORKTREE ROOT -- the `node_modules` paths are relative to it. The
+`cmd //c` prefix is the Git Bash spelling (the double slash stops MSYS from rewriting the
+`/c` argument into a Windows path); from PowerShell use `cmd /c "mklink /J ..."` or
+`New-Item -ItemType Junction`.
+The `test -d` assertion runs under Git Bash on any OS.
+
+**VALIDITY CONDITION (do not skip):** sharing is correct ONLY when `package.json`,
+`package-lock.json`, and the Node version are identical between the worktree and the main
+checkout. That holds for any plan that does not touch dependencies. If a plan ADDS, REMOVES,
+or UPGRADES a dependency, Pattern A is INVALID for that worktree -- use Pattern B.
+
+### Pattern B -- per-worktree install (when a plan changes dependencies)
+
+If the plan modifies `package.json` / `package-lock.json`, the worktree needs its OWN
+`npm ci` so it builds against the deps the plan declares -- never a junction into the main
+checkout's stale tree.
+
+### Worktree base, concurrency, and teardown rules
+
+- **Base ref.** The dev environment sets `worktree.baseRef: "head"` in Claude Code
+  `settings.json` so worktrees branch from local HEAD, not `origin/HEAD`. Whatever the
+  runtime, a DEPENDENT wave's worktree MUST start from a commit that already contains the
+  prerequisite plan's work; otherwise it builds against stale sources.
+- **Concurrency under a shared junction.** When multiple worktrees share one junctioned
+  `node_modules` and run `nx` concurrently, set `NX_DAEMON=false` and pass `--skip-nx-cache`
+  so concurrent runs do not race on the shared `node_modules/.cache/nx`. Each worktree keeps
+  its own `dist/` and `.nx/`, so only the shared cache path needs guarding.
+- **Teardown is LINK-ONLY and orchestrator-owned (load-bearing safety).** After EVERY agent
+  in the wave has returned, the orchestrator removes each worktree's `node_modules` junction
+  LINK-ONLY before `git worktree remove`:
+  ```bash
+  cmd //c "rmdir <ABS-PATH-TO-WORKTREE>\node_modules"   # removes the junction link, NOT its target
+  # POSIX symlink: rm <abs-path-to-worktree>/node_modules   (removes the link, not the target)
+  ```
+  Target the specific worktree's path explicitly: teardown is orchestrator-owned and the
+  orchestrator's CWD is the MAIN checkout, so a bare relative `node_modules` would resolve to
+  the wrong tree. NEVER `rm -rf node_modules` and never run a RECURSIVE delete on a worktree
+  that still contains the junction -- a recursive delete follows the junction and wipes the
+  MAIN checkout's deps. This LINK-ONLY rule applies ONLY to Pattern A (junctioned) worktrees;
+  a Pattern B worktree has a REAL `node_modules`, so `git worktree remove` cleans it normally.
+  After teardown, verify the main checkout's `node_modules` entry count is unchanged. (If it
+  is ever lost, `npm ci` restores it -- cheap, but the correct teardown order avoids needing
+  it.) Never let one worktree's teardown fire while a sibling executor is still using the
+  shared `node_modules`; defer all teardown until the wave completes.
+- **Single-plan wave: skip worktrees.** When there is no parallelism to gain, run the
+  executor sequentially on the main checkout (no worktree isolation) so it has real
+  `node_modules` with zero provisioning.
+- **Post-merge gate.** Per-worktree self-checks pass in isolation but cannot catch cross-plan
+  integration breaks. After merging a wave's worktree branches back, run the full build +
+  test on the MERGED main checkout as the authoritative gate.
+
+CI does NOT use worktrees -- it runs a fresh `npm ci` per job (see `.github/workflows/ci.yml`),
+so the junction is a local parallel-execution mechanism only.

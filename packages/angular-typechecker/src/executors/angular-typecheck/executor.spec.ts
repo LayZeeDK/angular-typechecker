@@ -1,13 +1,6 @@
 import type { ExecutorContext } from '@nx/devkit';
 
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CoreResult } from '../../core/run-typecheck';
 
@@ -31,15 +24,15 @@ const mocks = vi.hoisted(() => {
     })),
     loggerError: vi.fn(),
     loggerInfo: vi.fn(),
+    loggerWarn: vi.fn(),
   };
 });
 
 // Keep the REAL TypecheckInfrastructureError class so the executor's
 // `instanceof` catch works; only stub `runTypecheck`.
 vi.mock('../../core/run-typecheck', async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import('../../core/run-typecheck')
-  >();
+  const actual =
+    await importOriginal<typeof import('../../core/run-typecheck')>();
 
   return {
     ...actual,
@@ -61,7 +54,11 @@ vi.mock('./normalize-options', () => {
 
 vi.mock('@nx/devkit', () => {
   return {
-    logger: { error: mocks.loggerError, info: mocks.loggerInfo },
+    logger: {
+      error: mocks.loggerError,
+      info: mocks.loggerInfo,
+      warn: mocks.loggerWarn,
+    },
     joinPathFragments: (...parts: string[]) => parts.join('/'),
   };
 });
@@ -75,6 +72,15 @@ function coreResult(errorCount: number): CoreResult {
     warningCount: 0,
     suppressedCount: 0,
     durationMs: 1,
+  };
+}
+
+// RES-02 (reframe): a CoreResult that carries the TCB-generation-abort flag the
+// adapter must turn into a loud logger.warn naming the offending file.
+function abortedCoreResult(fileName: string | undefined): CoreResult {
+  return {
+    ...coreResult(1),
+    templateCheckAborted: { code: -993004, fileName },
   };
 }
 
@@ -138,6 +144,78 @@ describe('angularTypecheckExecutor (D-01/D-04)', () => {
     expect(mocks.loggerInfo).not.toHaveBeenCalled();
   });
 
+  it('RES-02 reframe: emits a loud logger.warn naming the file when templateCheckAborted is set', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      abortedCoreResult('/ws/libs/x/poison.component.ts'),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    // The notice is a WARN (not the infra error), names the offending file, and
+    // states the template check is incomplete -- so the suppression is never
+    // silent. The verdict path is untouched (no logger.error).
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/x/poison.component.ts'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('NG3004'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('SUPPRESSED'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('RES-02 reframe: the warn names a fallback when templateCheckAborted has no file', async () => {
+    mocks.runTypecheck.mockResolvedValue(abortedCoreResult(undefined));
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('an unknown file'),
+    );
+  });
+
+  it('RES-02 reframe: does NOT warn when templateCheckAborted is unset (no false positive)', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  // S3 (09-RES-02-DECISION.md, advisory-not-verdict): a TCB-generation abort with
+  // ZERO errors STILL yields { success: true } -- the abort is a WARN, NEVER a
+  // forced success:false. The existing abortedCoreResult builds on coreResult(1)
+  // (errorCount 1); this pins the DISTINCT abort-with-zero-errors case. The
+  // executor delegates the verdict to evaluateResult (stubbed { success: true }
+  // here, modelling errorCount 0), so the abort never overrides it.
+  it('RES-02 reframe: abort + errorCount 0 stays { success: true } with the loud warn (advisory-not-verdict)', async () => {
+    mocks.runTypecheck.mockResolvedValue({
+      ...coreResult(0),
+      templateCheckAborted: {
+        code: -993004,
+        fileName: '/ws/libs/x/poison.component.ts',
+      },
+    });
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    const result = await executor(options, context);
+
+    expect(result).toEqual({ success: true });
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
   it('catches a TypecheckInfrastructureError -> logger.error + { success: false } (D-01)', async () => {
     const { TypecheckInfrastructureError } = await import(
       '../../core/run-typecheck'
@@ -151,6 +229,11 @@ describe('angularTypecheckExecutor (D-01/D-04)', () => {
 
     expect(result).toEqual({ success: false });
     expect(mocks.loggerError).toHaveBeenCalledOnce();
+    // COR-04 / D-08: lock the DISTINCT operator message so an infra failure is
+    // never reported as a plain type-error verdict. Matches executor.ts:54.
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect.stringContaining('infrastructure error'),
+    );
   });
 
   it('RE-THROWS a non-infrastructure error (never swallows an unknown failure) (D-01)', async () => {

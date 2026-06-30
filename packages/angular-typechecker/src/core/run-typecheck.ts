@@ -2,11 +2,9 @@ import { dirname } from 'node:path';
 
 import type ts from 'typescript';
 
-import type {
-  EmitFlags,
-  ParsedConfiguration,
-} from './compiler-cli-types';
+import type { EmitFlags, ParsedConfiguration } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
+import { TCB_GENERATION_FATAL_DIAGNOSTIC_CODE } from './diagnostic-codes';
 import { filterDiagnostics } from './filter-diagnostics';
 import { gatherAllDiagnostics } from './gather-diagnostics';
 
@@ -51,6 +49,41 @@ export interface CoreResult {
   // zero-rootNames guard path (no Program) and whenever `includeDeps` is true.
   suppressedCount: number;
   durationMs: number;
+  // RES-02 (reframe; 09-RES-02-DECISION.md, Option A): set when a TCB-generation
+  // `FatalDiagnosticError` (IMPORT_GENERATION_FAILURE, NG3004 -- the ONLY Fatal
+  // thrown from the Type-Check-Block path at v22.0.4) is present in the gathered
+  // diagnostics. Detection scans the PRE-filter set in `finalize`, so a Fatal on
+  // an out-of-project file is never silently dropped by the project-boundary
+  // filter before the notice fires (I-1). That Fatal is thrown DURING the shared
+  // `ensureAllShimsForAllFiles()`
+  // priming `OptimizeFor.WholeProgram` triggers, which aborts shim generation for
+  // ALL files -- so surviving files' Angular template/extended (NG8xxx)
+  // diagnostics are SUPPRESSED. This is a PURE detection field (set by scanning
+  // diagnostics in `finalize`, no `console`/`process`); the adapter renders the
+  // loud, file-named notice (executor `logger.warn`). `undefined` when no such
+  // Fatal is present -- the common case -- so consumers branch on presence.
+  //
+  // This is ADDITIVE signalling on the normal result path. It does NOT touch the
+  // infra-vs-type policy (D-05): a non-fatal/infra throw still surfaces as
+  // UNKNOWN_ERROR_CODE 500 -> TypecheckInfrastructureError; the notice is a
+  // warning, NOT a reclassification of the verdict.
+  templateCheckAborted?: TemplateCheckAborted;
+}
+
+/**
+ * RES-02: details of a detected TCB-generation Fatal that suppressed surviving
+ * files' Angular template/extended diagnostics. `code` is the NEGATIVE-encoded
+ * `ts.Diagnostic.code` (`NG(3004) === -993004`); `fileName` is the offending
+ * diagnostic's `file?.fileName` when the compiler attached one (it may be
+ * `undefined` for a file-less synthesized Fatal).
+ */
+export interface TemplateCheckAborted {
+  // S2: RETAINED as the detector's public shape (always `NG(3004) === -993004` at
+  // v22.0.4) and pinned by the detector/drift tests (infra-failure.spec.ts,
+  // run-typecheck.spec.ts), even though the current adapter consumes only
+  // `fileName`. Do NOT drop it -- removing it breaks those assertions.
+  code: number;
+  fileName: string | undefined;
 }
 
 // Private synthesized-diagnostic code for the D-03 zero-rootNames guard. Chosen
@@ -102,7 +135,47 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   const ng = await loadCompilerCli();
   const ts = await loadTypescript();
 
-  const parsed = ng.readConfiguration(options.tsConfigPath);
+  // RES-04 / D-09: pass `suppressOutputPathCheck: true` as the `existingOptions`
+  // second arg, matching `@angular/build`'s `loadConfiguration`
+  // (`angular-compilation.ts:51` @ v22.0.4) EXACTLY. The output-path overwrite
+  // check fires in TypeScript's `verifyCompilerOptions()` at the END of
+  // `createProgram`, gated by `!options.noEmit && !options.suppressOutputPathCheck`
+  // (verifyCompilerOptions, TS 6.0.3) -- NOT in `readConfiguration` (Pitfall 3, RESOLVED).
+  // The engine's emit-neutralizing override below already sets `noEmit: true`,
+  // which ALONE suppresses the check; this is belt-and-suspenders parity with the
+  // build so an output-path config nuisance (TS5055 / overwrite-class) never
+  // surfaces as a type error in the type-only verdict. `ts.CompilerOptions`
+  // carries an index signature, so the extra key type-checks (no shim change).
+  const parsed = ng.readConfiguration(options.tsConfigPath, {
+    suppressOutputPathCheck: true,
+  });
+
+  // COR-01 / D-01..D-03: a config-resolution CRASH surfaces here as a code-500
+  // (UNKNOWN_ERROR_CODE) in `parsed.errors` -- the `readConfiguration` outer
+  // catch wraps a real throw (a nonexistent tsconfig path's ENOENT, a circular
+  // `extends` RangeError) into a single synthesized Error diagnostic. Detect it
+  // by CODE only (D-02; never `source`/message text -- the same predicate as the
+  // post-`performCompilation` scan below) and re-throw as infrastructure.
+  //
+  // This scan MUST precede the zero-rootNames guard: the 500 case returns
+  // `rootNames: []`, so a late scan would be unreachable -- the guard returns
+  // first and the 500 would be folded into `configDiagnostics` and mis-counted
+  // as a type error (a crash masquerading as a clean/typed verdict). Both 500
+  // scans coexist (D-02 defense-in-depth at two distinct stages). Only code 500
+  // is infrastructure: every OTHER `parsed.errors` entry (e.g. a 5012 missing
+  // `extends` target) stays folded into `configDiagnostics` below (D-03).
+  const configInfrastructureFailure = parsed.errors.find(
+    (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
+  );
+
+  if (configInfrastructureFailure !== undefined) {
+    throw new TypecheckInfrastructureError(
+      ts.flattenDiagnosticMessageText(
+        configInfrastructureFailure.messageText,
+        '\n',
+      ),
+    );
+  }
 
   // D-03 part 1 (fixes MD-01): NEVER drop `parsed.errors`. A malformed,
   // unreadable, or nonexistent tsconfig surfaces here and is prepended to the
@@ -175,6 +248,27 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   if (infrastructureFailure !== undefined) {
     throw new TypecheckInfrastructureError(
       ts.flattenDiagnosticMessageText(infrastructureFailure.messageText, '\n'),
+    );
+  }
+
+  // #3 DEFENSE-IN-DEPTH: the real PerformCompilationResult.program is OPTIONAL
+  // (the optional `program?` field of `PerformCompilationResult`); the vendored
+  // shim narrows it to non-optional (compiler-cli-types.ts) to match the engine's
+  // guarded usage below. A `{ program: undefined }` return WITHOUT an
+  // UNKNOWN_ERROR_CODE (500) diagnostic is type-permitted but NOT observed in
+  // @angular/compiler-cli@22.0.4 source -- this guard converts that hypothetical
+  // bare TypeError (from the `result.program.getTsProgram()` access in the
+  // `finalize` CALL ARGS below (within `runTypecheck`)) into the SAME
+  // infra-class failure as the rest of the path. It is DISJOINT from the
+  // post-compilation 500 scan above (which handles UNKNOWN_ERROR_CODE), so there
+  // is no double-handling. This is a RUNTIME defense, not a type change -- the
+  // shim `program` stays non-optional, so TS treats the access as always-defined.
+  if (result.program === undefined) {
+    throw new TypecheckInfrastructureError(
+      'angular-typecheck: the Angular compiler returned no Program ' +
+        '(performCompilation produced neither a Program nor an ' +
+        'UNKNOWN_ERROR_CODE diagnostic). This is an infrastructure failure, ' +
+        'not a type error.',
     );
   }
 
@@ -288,6 +382,14 @@ interface FinalizeFilter {
  * never by subtracting errors from the total. Suggestion + Message categories
  * stay in `diagnostics` but are not counted, preserving the invariant
  * `errorCount + warningCount <= diagnostics.length`.
+ *
+ * RES-02 (reframe): it also scans the PRE-filter `diagnostics` arg (the raw
+ * gathered set before the boundary filter + dedup, a SUPERSET of `reported`) for
+ * a TCB-generation Fatal (NG3004) and, when present, sets `templateCheckAborted`
+ * so the adapter can surface the loud suppression notice. Scanning the pre-filter
+ * set also catches an out-of-basePath poison the boundary filter would suppress
+ * from `reported`. This is pure detection -- it never mutates the verdict or
+ * touches the infra-500 path (D-05).
  */
 function finalize(
   ts: typeof import('typescript'),
@@ -326,6 +428,21 @@ function finalize(
     (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Warning,
   ).length;
 
+  // RES-02 (reframe; 09-RES-02-DECISION.md): PURE detection of a TCB-generation
+  // Fatal in the PRE-filter `diagnostics` arg -- the raw gathered set BEFORE the
+  // boundary filter and dedup -- NOT the post-filter `reported` set. Detect by
+  // CODE only (the same code-only discipline the infra-500 scans use -- never
+  // `source`/message text). The abort is whole-program: it aborts shim generation
+  // for ALL files, so survivors' template diagnostics are gone no matter where the
+  // offending shim lives. An out-of-basePath poison is SUPPRESSED from `reported`
+  // by the boundary filter, so scanning `reported` would silently miss it; the
+  // pre-filter arg is a SUPERSET of `reported`, so this catches BOTH the in-project
+  // and the out-of-basePath case while remaining order/dedup-independent (a pure
+  // code-only `.find`). It never affects counts -- errorCount/warningCount derive
+  // from `reported` -- so this is purely additive signalling. `undefined` when no
+  // such Fatal is present (the common path).
+  const templateCheckAborted = detectTemplateCheckAborted(diagnostics);
+
   return {
     tsConfigPath,
     rootNamesCount,
@@ -334,7 +451,70 @@ function finalize(
     warningCount,
     suppressedCount,
     durationMs: performance.now() - start,
+    ...(templateCheckAborted !== undefined ? { templateCheckAborted } : {}),
   };
+}
+
+/**
+ * RES-02: scans the given diagnostics for the TCB-generation Fatal code
+ * (`TCB_GENERATION_FATAL_DIAGNOSTIC_CODE === NG(3004)`) and, if found, returns
+ * the abort details (the negative code + the offending file when attached). Pure:
+ * no `console`/`process`. Returns `undefined` when no TCB-generation Fatal is in
+ * the set -- the common case -- so the adapter renders the notice only on
+ * presence. `finalize` passes the PRE-filter diagnostics (NOT the boundary-
+ * filtered `reported` set), so an out-of-project Fatal still fires the notice
+ * (I-1); `find` returns the first match, and the compiler attaches the
+ * TCB-generation Fatal to a single shim, so first-match is the offending
+ * diagnostic.
+ *
+ * Exported for the RES-02 unit tier: a synthesized diagnostic set lets the
+ * detection logic be proven WITHOUT a real cold-compiler run (the integration
+ * tier proves it end-to-end against the poison fixture).
+ */
+export function detectTemplateCheckAborted(
+  diagnostics: readonly ts.Diagnostic[],
+): TemplateCheckAborted | undefined {
+  const fatal = diagnostics.find(
+    (diagnostic) => diagnostic.code === TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+  );
+
+  if (fatal === undefined) {
+    return undefined;
+  }
+
+  return {
+    code: fatal.code,
+    fileName: normalizeShimFileName(fatal.file?.fileName),
+  };
+}
+
+/**
+ * RES-02: maps a generated Angular type-check SHIM path back to its SOURCE
+ * component. The TCB-generation Fatal attaches to the synthesized
+ * `<name>.ngtypecheck.ts` shim (empirically confirmed -- 09-02-SUMMARY.md and the
+ * HYBRID-gatherer header), NOT the authored `<name>.ts`. The notice must point at
+ * a file the consumer can actually open and fix, so this strips the
+ * `.ngtypecheck` infix that the compiler injects via
+ * `fileName.replace(/\.tsx?$/, ".ngtypecheck.ts")` (verified at v22.0.4). A
+ * non-shim (already-source) path or `undefined` passes through unchanged.
+ *
+ * LIMITATION (WR-01): the compiler collapses BOTH `.ts` and `.tsx` sources to the
+ * SAME `<name>.ngtypecheck.ts` shim, so the original extension is unrecoverable
+ * from the shim name alone -- a `.tsx`-sourced component is therefore named as
+ * `<name>.ts` here. This affects ONLY the advisory notice's path string, never the
+ * verdict, the counts, or the diagnostic's own codeframe (which renders the real
+ * path independently). `.tsx` Angular component sources are vanishingly rare (no
+ * JSX in Angular). If `.tsx` support is ever in scope, resolve the offending
+ * source via the program's source-file map rather than this string surgery.
+ */
+function normalizeShimFileName(
+  fileName: string | undefined,
+): string | undefined {
+  if (fileName === undefined) {
+    return undefined;
+  }
+
+  return fileName.replace(/\.ngtypecheck\.ts$/, '.ts');
 }
 
 let cachedTypescript: typeof ts | undefined;

@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.0.1
-milestone_name: milestone
-status: milestone_complete
-stopped_at: v0.0.1 milestone complete (archived)
-last_updated: "2026-06-29T13:13:54.000Z"
-last_activity: 2026-06-29
+milestone: v0.0.3
+milestone_name: Engine hardening
+status: completed
+stopped_at: "v0.0.3 milestone shipped -- PR #11 (open into main, CI running). Milestone audit passed (16/16 reqs, 18/18 integration); all 5 Phase-11 human-UAT items confirmed green on real CI (draft PR #9 green, throwaway PR #10 red-path). Awaiting CI green + user approval to merge (main is PR-only, empty-bypass ruleset)."
+last_updated: "2026-06-30T07:30:48.424Z"
+last_activity: 2026-06-30
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 29
-  completed_plans: 29
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -21,23 +21,29 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Planning the next milestone (run `/gsd-new-milestone`).
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Milestone: v0.0.1 -- COMPLETE (archived 2026-06-29)
-Phases: 8/8 complete (1-7 + inserted 5.1); 29/29 plans
-Status: Shipped to npm (0.0.1 + 0.0.2). Milestone archived to .planning/milestones/.
-Next: scope the next milestone with `/gsd-new-milestone`.
-Last activity: 2026-06-29
+Phase: 11
+Plan: Not started
+Status: v0.0.3 milestone shipped -- PR #11 (open, CI running)
+Last activity: 2026-06-30
 
-Progress: [==========] 100%
+### v0.0.3 phase map
+
+| Phase | Goal | Requirements | Notes |
+|-------|------|--------------|-------|
+| 8. Correctness & Completeness Fixes | Report the diagnostics we miss; classify config crashes as infra | COR-01, COR-02, COR-03, COR-04 | Independent; each test-gated |
+| 9. Resilience (per-file fault isolation + boundary robustness) | Report as much as possible instead of aborting on one fault | RES-01, RES-02, RES-03, RES-04 | INTERNAL GATE: RES-01 spike first, gates RES-02 |
+| 10. Drift-hardening & Maintainability | Make Angular `api.Program` / error-code drift break CI loudly | HARD-01, HARD-02, HARD-03, HARD-04, HARD-05 | Independent; touches vendored shim + new drift CI target |
+| 11. Fallow code-quality CI gate | Adopt fallow as a CI quality gate; resolve current findings so it is green on adoption | TBD (new code-quality-gate req added in planning) | Not planned; depends on Phase 10 shim/tripwire files |
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 18
+- Total plans completed: 28
 - Average duration: ~31 min
 - Total execution time: ~1.5 hours
 
@@ -50,6 +56,9 @@ Progress: [==========] 100%
 | 03 | 4 | - | - |
 | 4 | 3 | - | - |
 | 6 | 5 | - | - |
+| 8 | 3 | - | - |
+| 9 | 5 | - | - |
+| 11 | 2 | - | - |
 
 **Recent Trend:**
 
@@ -73,13 +82,30 @@ Progress: [==========] 100%
 | Phase 07 P01 | ~4 min | 3 tasks | 3 files |
 | Phase 07 P02 | ~9 min | 2 tasks | 1 files |
 | Phase 07 P03 | 7min | 1 tasks | 1 files |
+| Phase 08 P01 | 5min | 2 tasks | 3 files |
+| Phase 08 P02 | 14min | 2 tasks | 6 files |
+| Phase 08 P03 | 5min | 2 tasks | 5 files |
+| Phase 09 P01 | 14min | 2 tasks | 9 files |
+| Phase 10 P10-01 | 3 min | 3 tasks | 2 files |
+| Phase 10 P10-02 | 4 min | 3 tasks | 7 files |
+| Phase 11 P01 | 12 min | 3 tasks | 3 files |
+| Phase 11 P02 | ~6 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
+- v0.0.3 (Engine hardening) roadmapped 2026-06-29: 3 phases (8-10) derived from the 13 v0.0.3 requirements in three coherent, mostly-independent clusters -- Correctness & Completeness (Phase 8), Resilience (Phase 9, with an internal GATED spike RES-01 -> RES-02), Drift-hardening & Maintainability (Phase 10). Grounded in `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` (verified vs @angular/build + @angular/compiler-cli at stable 22.0.4). No `NgtscProgram` migration; no new feature surfaces.
+- Phase 9 carries the one load-bearing open question (gates RES-02): `NgCompiler.getDiagnosticsForFile` filters non-template diagnostics by `d.file === file`, so a naive per-file loop could DROP file-less `traitCompiler`/`checkForPrivateExports` diagnostics. The RES-01 spike settles simple per-file loop vs. HYBRID before RES-02 implements isolation. Modeled on v0.0.1's Phase-1 GATED spike.
+- Phase 11 added 2026-06-29 (Fallow code-quality CI gate): adopt fallow v2.x as a CI quality gate (a new `fallow` job wired into the `ci` aggregate's `needs:`, plus a `.fallowrc.jsonc` config) AND resolve the current fallow findings -- the phase-10 drift/shim false positives (`10-REVIEW.md` IN-02..IN-05) plus any genuine inherited dead code -- so the gate is green on adoption. Reopens v0.0.3 (was 100% at Phase 10). Gate strictness (`--gate new-only` vs `all`) decided in discuss/plan. OUT OF SCOPE: fixing GSD's broken fallow structural pre-pass (fallow 2.x CLI flag drift, documented in global CLAUDE.md). Triggered after the Phase-10 deep code review surfaced fallow's value and the CLI drift.
+
+<details>
+<summary>v0.0.1 roadmap-evolution log (historical)</summary>
+
 - Phase 5.1 inserted after Phase 5: 0.0.2 = first OIDC steady-state publish; the only unproven link after the 0.0.1 token-seed; if it 404s on auth, drop registry-url from setup-node (empty-_authToken trap, documented inline in release.yml) (URGENT)
 - Phase 7 added: Release-PR workflow + branch-protection switch (enable Default branch ruleset, delete v0.0.1 ruleset) + clean changelog (no GSD phase/plan numbers)
+
+</details>
 
 ### Decisions
 
@@ -152,6 +178,20 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 
 </details>
 
+- [Phase ?]: [08-01] COR-01: early parsed.errors UNKNOWN_ERROR_CODE (500) scan in run-typecheck.ts re-throws TypecheckInfrastructureError immediately after readConfiguration and BEFORE the zero-rootNames guard (the 500 case has rootNames: [], so a late scan is swallowed + mis-counted as a type error); existing post-performCompilation 500 scan kept unchanged (D-02 two-stage defense-in-depth); only code 500 is infra, every other parsed.errors entry (e.g. 5012) stays folded (D-03); integration fixture is a nonexistent tsconfig path (deterministic ENOENT, no fixture file).
+- [Phase ?]: [08-02] COR-02: gatherAllDiagnostics gained a 7th unconditional getter program.getTsProgram().getGlobalDiagnostics() so global/location-less TS diagnostics (e.g. TS2318) are gathered; no compiler-cli-types.ts edit (getGlobalDiagnostics is on the public ts.Program reached via getTsProgram()); placement safe via finalize sortAndDeduplicateDiagnostics. Fixture fixtures/global-diagnostics uses noLib+types:[] (NOT extending base) for a real TS2318, asserted as raw 2318 through result.diagnostics. Raised vitest testTimeout to 30000ms to kill a pre-existing rotating cold-compiler timeout flake. Phase-10 HARD-01 must add this getter to the drift assertion (D-05).
+- [Phase ?]: [08-03] COR-03: widened the filter-diagnostics file-less guard to (file === undefined || file.fileName === '') so a present-but-empty fileName (synthesized-diagnostic edge canonicalizing to '') is treated as file-less and always kept, never suppressed by the boundary filter (D-06); canonicalizer/segment/isUnderDir untouched.
+- [Phase ?]: [08-03] COR-04: new pure core/exit-codes.ts toExitCode(input) -> 0|1|2 (ngc-parallel: 2 infra via instanceof TypecheckInfrastructureError, 1 errorCount>0, else 0), imports only ./run-typecheck, no process/console/@nx (passes core/** boundary lint), NOT imported by run-typecheck.ts (no cycle). D-08: executor.ts unchanged, toExitCode NOT wired into the executor return; only the infra-catch spec assertion tightened to lock the distinct 'infrastructure error' message.
+- [Phase ?]: [09-01] RES-01 GATE = GO=HYBRID: SIMPLE rejected (could not positively enumerate the non-template diagnostic universe; checkForPrivateExports/A2 not exercised) and counter-evidence found (IMPORT_GENERATION_FAILURE attaches to a .ngtypecheck.ts shim, not the iterated .component.ts). Per D-03 inconclusive -> HYBRID (keep whole-program getNgSemanticDiagnostics() + add per-file loop; finalize dedups). Recorded in 09-RES-01-SPIKE.md; gates plan 09-02.
+- [Phase ?]: [10-01] HARD-02: shim EmitFlags now mirrors the real @angular/compiler-cli@22.0.4 members (DTS=1..All=31), fabricated zero-valued member dropped; the 0 as EmitFlags cast at run-typecheck.ts:229 is load-bearing and untouched (bare : EmitFlags = 0 errors TS2322).
+- [Phase ?]: [10-01] HARD-03: every divergent construct in compiler-cli-types.ts carries a greppable // angular-typechecker: vendored marker (6 total: TsProgram, Program, EmitFlags, UNKNOWN_ERROR_CODE, ParsedConfiguration, PerformCompilationResult.program).
+- [Phase ?]: [10-01] HARD-04: getNgStructuralDiagnostics() RETAINED + documented forward-compatible/no-op-tolerant (D-10); returns [] at 22.0.4 but kept under the HARD-01 drift probe + runtime getter-set spec + existing call-order assertion so a future reactivation cannot silently under-gather.
+- [Phase ?]: [10-02] HARD-01 build-time half: new compiler-cli-types.drift.ts asserts the real @angular/compiler-cli api.Program is assignable TO the shim -- per-member real->shim AssertAssignable tuple for the 6 diagnostic getters; getTsProgram special-cased as ReturnType -> ts.Program (the shim widens its return with useCaseSensitiveFileNames, so a member pair fails TS2322); call-site arity probes defend the optional->required silent gap; value-level UNKNOWN_ERROR_CODE=500 + the 7 EmitFlags member pins. tsconfig.drift.json (classic node, ignoreDeprecations 6.0, noEmit, files=[drift file]). Compiled ONLY there; excluded from tsconfig.lib.json AND tsconfig.spec.json so it never breaks nx build/test under nodenext (real barrel resolves EMPTY -> TS2305).
+- [Phase ?]: [10-02] Drift-file value-level imports (EmitFlags, UNKNOWN_ERROR_CODE) use a regular import, NOT import type (the pins read them as values; import type errored TS1361); Program stays import type. typecheck-drift target = nx:run-commands tsc --noEmit -p tsconfig.drift.json, cache:true with the installed compiler-cli index.d.ts + api.d.ts as inputs (upgrade invalidates the cache = the drift trigger), no outputs; folded into the existing path-gated CI test job run-many (Option A); ci.yml security envelope byte-unchanged.
+- [Phase ?]: [10-02] D-07: HARD-01 REQUIREMENTS.md wording corrected (removed/renamed/sig-changed called getter breaks the build via real->shim; ADDED getters are NOT a build failure, surfaced by the Plan 03 runtime spec). ROADMAP SC1 already carried the corrected wording. Rides the phase code-review gate per AGENTS.md.
+- [Phase ?]: [11-01] QUAL-02/QUAL-03: authored .fallowrc.jsonc resolving all current fallow@2.103.0 findings (entry for drift tripwire IN-02; ignoreExports UNKNOWN_ERROR_CODE IN-04; overrides EmitFlags-off IN-03 + repo-root fixtures/fault-isolation/** off; unused-dev-dependencies off D-06; audit.gate new-only D-02). fallow@2.103.0 exact-pinned root devDep; @angular/forms removed (zero usage). npx fallow audit --base origin/main exits 0 / verdict pass / 0 findings; engine suite green.
+- [Phase ?]: [11-02] QUAL-01/QUAL-03: added a dedicated path-gated SHA-pinned `fallow` job to ci.yml (copies the e2e job + two deltas: fetch-depth: 0 for new-only base-snapshot attribution against origin/main, and `npx fallow audit --format json --base origin/main` + FALLOW_AUDIT_BASE; D-12/D-13/D-14), wired it into the `ci` aggregate `needs:` after e2e (the contains(needs.*.result, ...) gate auto-includes it; D-10), and added `assert_selected "$PR_PLAN" "ci/fallow" "pull_request"` to act-compat.sh (D-15). Reused the EXACT existing checkout/setup-node SHA pins; no SARIF/--ci, no job permissions re-grant, no PR-metadata interpolation; top-level contents: read + threat-model header byte-unchanged; single required check stays `ci` (no ruleset change). Verified: `npx fallow audit --format json --base origin/main` exits 0 / verdict pass / 0 introduced+inherited findings (gate new-only); `act --validate` passes (both workflows parse). actionlint deferred to CI lint-workflows (absent on dev box, Phase 6/7 precedent); changes-dependent `act -n` selection (incl. ci/fallow) deferred to CI act-compat (Docker not running locally, Phase 7 precedent).
+
 ### Pending Todos
 
 [From .planning/todos/pending/ -- ideas captured during sessions]
@@ -160,9 +200,11 @@ None yet.
 
 ### Blockers/Concerns
 
-v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now addressed. One dev-repo caveat carries forward to the next milestone:
+v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now addressed. Carried forward into v0.0.3:
 
-- **CARRIED FORWARD:** `.npmrc legacy-peer-deps=true` is required in this dev repo because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is Angular 22. It does NOT reach consumers (a clean tarball install on stable Angular 22.0.4 + Nx 23.0.1 needs no override). Revisit/drop when a stable `@nx/angular` admits Angular 22 in its peers.
+- **CARRIED FORWARD (dev-repo):** `.npmrc legacy-peer-deps=true` is required in this dev repo because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is Angular 22. It does NOT reach consumers (a clean tarball install on stable Angular 22.0.4 + Nx 23.0.1 needs no override). Revisit/drop when a stable `@nx/angular` admits Angular 22 in its peers.
+- **PHASE-9 INPUT (open question, gates RES-02):** `NgCompiler.getDiagnosticsForFile` filters non-template diagnostics by `d.file === file` (`compiler.ts:618` per PRIOR-ART-SUMMARY), so a naive per-file `getNgSemanticDiagnostics(fileName)` loop could DROP file-less `traitCompiler`/`checkForPrivateExports` diagnostics. The RES-01 spike MUST settle this before RES-02: simple per-file loop vs. HYBRID (whole-program non-template set ONCE + per-file template/extended loop). This is the only true unknown in the milestone.
+- **PHASE-10 INPUT (vendored shim debt):** `compiler-cli-types.ts` currently fabricates `EmitFlags.None = 0` (the real enum has 7 members incl. `I18nBundle = 8`, no `None`) -- HARD-02 corrects this. The shim is a deliberate subset of the real `api.Program`; HARD-01's drift tsconfig asserts the real->shim assignability and the `ngErrorCode`/`UNKNOWN_ERROR_CODE` encoding, and HARD-04 keeps `getNgStructuralDiagnostics()` under that assertion.
 
 <details>
 <summary>v0.0.1 blockers/concerns log (historical -- all resolved or addressed)</summary>
@@ -183,16 +225,25 @@ v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now
 
 </details>
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260630-dyd | Address all PR #11 review findings (I-1 silent-notice fix + T1/T3/S-types test gaps + S-code/S-test/S-comments cleanups; T2 dropped as refuted) | 2026-06-30 | 53c8c18 | Verified | [260630-dyd-address-all-review-findings](./quick/260630-dyd-address-all-review-findings/) |
+| 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined) | 2026-06-30 | 95d6f58 | Verified | [260630-fg0-address-second-round-pr-review-findings](./quick/260630-fg0-address-second-round-pr-review-findings/) |
+| 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified | [260630-jnl-address-third-round-pr-review-findings](./quick/260630-jnl-address-third-round-pr-review-findings/) |
+
 ## Deferred Items
 
 Items acknowledged and carried forward from previous milestone close:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| *(none)* | | | |
+| Observability | OBS-01 `totalFilesCount` field on `CoreResult` (@nx/js parity) | Deferred pending charter-fit | v0.0.3 requirements definition |
+| Feature families | INF / GEN / SUR / REP / SUP carried from v0.0.1 | Deferred (later milestone) | v0.0.1 close |
 
 ## Session Continuity
 
-Last session: 2026-06-29T10:25:57.899Z
-Stopped at: Phase 7 context gathered
-Resume file: None
+Last session: 2026-06-30 - quick task 260630-jnl (third-round PR #11 review findings)
+Stopped at: v0.0.3 milestone shipped via /gsd-ship -- PR #11 open into main. THREE review->fix rounds via /gsd-quick --full: r1 (260630-dyd) I-1 silent-notice; r2 (260630-fg0) realpath keep-on-throw false-negative + program guard + polish; r3 (260630-jnl) de-tautologized the S5c warningCount test + covered the two new defensive branches (undefined-base filter, program-undefined guard) + de-pinned a stale ref. Engine suite green (155 passed), verification passed 6/6, code review clean (2 cosmetic suggestions declined; prettier is NOT CI-gated and the repo has pre-existing >80col lines, so the new lines are left consistent with existing style -- no scope-creep reformat). Rounds are converging to cosmetic-only. Pending: push round-3 commits to update PR #11, then CI green + user approval to merge (main is PR-only).
+Resume file: https://github.com/LayZeeDK/angular-typechecker/pull/11

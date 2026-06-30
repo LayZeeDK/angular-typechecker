@@ -23,9 +23,13 @@ import type ts from 'typescript';
  * (`toLowerCase()` + bare `startsWith` + `includes('node_modules')`) that breaks
  * on pnpm symlinks, case-sensitive Linux CI, and the `node_modules-tools` case.
  *
- * D-03: file-less diagnostics (config errors from `parsed.errors`, the
- * zero-rootNames guard) are NEVER filtered -- they have no path to classify and
- * dropping one would produce a false PASS.
+ * D-03 + COR-03/D-06: file-less diagnostics (config errors from `parsed.errors`,
+ * the zero-rootNames guard) are NEVER filtered -- they have no path to classify
+ * and dropping one would produce a false PASS. This also covers a diagnostic
+ * whose `file` is present but whose `fileName` is the empty string (a
+ * synthesized-diagnostic edge): it canonicalizes to '' and would otherwise be
+ * suppressed by the boundary filter (`isUnderDir('', base) === false`), so it is
+ * treated as file-less and always kept.
  *
  * D-07: `includeDeps: true` turns the boundary filter OFF -- every diagnostic is
  * kept and `suppressedCount` resets to 0. It is orthogonal to the consumer's
@@ -72,15 +76,32 @@ export function filterDiagnostics(
   let suppressedCount = 0;
 
   for (const diagnostic of diagnostics) {
-    // D-03: NEVER filter a file-less diagnostic (config error / zero-rootNames
-    // guard) -- it has no path to classify and dropping it is a false PASS.
-    if (diagnostic.file === undefined) {
+    // D-03 + COR-03/D-06: NEVER filter a file-less diagnostic -- either
+    // `file === undefined` (config error / zero-rootNames guard) OR a
+    // present-but-empty `fileName` (a synthesized-diagnostic edge). Both have no
+    // path to classify and dropping one is a false PASS. An empty `fileName`
+    // canonicalizes to '' and `isUnderDir('', base) === false`, so without this
+    // it would be silently suppressed.
+    if (diagnostic.file === undefined || diagnostic.file.fileName === '') {
       kept.push(diagnostic);
 
       continue;
     }
 
     const canonicalFile = canonicalize(diagnostic.file.fileName);
+
+    // RES-03 fail-safe: a throwing realpath canonicalizes to `undefined`. A throw
+    // cannot prove the file is out-of-project, so KEEP the diagnostic -- identical
+    // accounting to the file-less keep above (push + continue, no suppressedCount).
+    // Never silently drop a diagnostic on an unprovable boundary. `canonicalBase`
+    // can be `undefined` too (a throwing realpath on basePath), but that only
+    // matters once a file DID resolve; isUnderDir below treats an undefined base as
+    // "cannot classify", which is the over-keep-safe direction.
+    if (canonicalFile === undefined) {
+      kept.push(diagnostic);
+
+      continue;
+    }
 
     if (
       isNodeModulesPath(canonicalFile) ||
@@ -106,17 +127,34 @@ export function filterDiagnostics(
  */
 function createCanonicalizer(
   options: Pick<FilterOptions, 'useCaseSensitiveFileNames' | 'realpath'>,
-): (filePath: string) => string {
+): (filePath: string) => string | undefined {
   const cache = new Map<string, string>();
 
-  return (filePath: string): string => {
+  return (filePath: string): string | undefined => {
     const cached = cache.get(filePath);
 
     if (cached !== undefined) {
       return cached;
     }
 
-    const real = options.realpath(filePath).replace(/\\/g, '/');
+    let resolved: string;
+
+    try {
+      resolved = options.realpath(filePath);
+    } catch {
+      // D-08 (RES-03): a throwing realpath (EACCES / permission-denied junction /
+      // broken symlink) must NOT abort the whole type-check pass AND must NOT cause
+      // a false PASS. A throw cannot PROVE the file is out-of-project, so signal
+      // `undefined` and let the caller KEEP the diagnostic (fail-safe bias for a
+      // correctness tool) rather than classify an unresolved raw path that could be
+      // a symlink resolving back in-project. Do NOT cache `undefined` -- a transient
+      // EACCES could resolve on a later call (the loop is single-pass, so not
+      // caching the failure is the conservative choice). Silent -- core is PURE (no
+      // logging, no process; eslint bans both in **/src/core/**).
+      return undefined;
+    }
+
+    const real = resolved.replace(/\\/g, '/');
     const canonical = options.useCaseSensitiveFileNames
       ? real
       : real.toLowerCase();
@@ -139,8 +177,18 @@ function isNodeModulesPath(canonicalFile: string): boolean {
 /**
  * Segment-bounded containment (D-06): equal, or under `dir + '/'`. A bare
  * `startsWith(dir)` would wrongly accept `/foo/bar-other` as under `/foo/bar`.
+ * A `undefined` dir means the basePath realpath threw (RES-03): we cannot classify,
+ * so treat the file as in-project (over-keep-safe) -- a non-node_modules file is
+ * then KEPT rather than silently suppressed against an unprovable baseline.
  */
-function isUnderDir(canonicalFile: string, canonicalDir: string): boolean {
+function isUnderDir(
+  canonicalFile: string,
+  canonicalDir: string | undefined,
+): boolean {
+  if (canonicalDir === undefined) {
+    return true;
+  }
+
   if (canonicalFile === canonicalDir) {
     return true;
   }

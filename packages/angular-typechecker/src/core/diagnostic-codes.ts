@@ -48,3 +48,47 @@ export const NG = (code: number): number => -990000 - code;
  * differently-shaped input yields a wrong code (see the `NG()` precondition).
  */
 export const ngCodeOf = (code: number): number => Math.abs(code) - 990000;
+
+/**
+ * RES-02 (reframe; 09-RES-02-DECISION.md): the human 4-digit Angular `ErrorCode`
+ * for `IMPORT_GENERATION_FAILURE`.
+ *
+ * angular-typechecker: vendored -- mirrors `@angular/compiler-cli` v22.0.4
+ * `ErrorCode.IMPORT_GENERATION_FAILURE = 3004`
+ * (`src/ngtsc/diagnostics/src/error_code.d.ts:170`). Kept as a bare literal here
+ * (NOT an `@angular/compiler-cli` import) so this module stays dependency-free
+ * (see the module header) and the core never pins to the ESM-only compiler.
+ *
+ * WHY THIS CODE SPECIFICALLY: it is the ONLY `FatalDiagnosticError` thrown from
+ * the TCB-generation (Type-Check-Block) path that reaches `NgCompiler`'s per-file
+ * `getDiagnosticsForFile` -> `getTemplateDiagnosticsForFile` `isFatalDiagnosticError`
+ * catch (verified at v22.0.4: the typecheck bundle throws it at the reference
+ * emitter's `referenceTcbValue`, and that bundle throws NO other Fatal code).
+ * Because the TCB-generation Fatal is thrown DURING the shared
+ * `ensureAllShimsForAllFiles()` priming that `OptimizeFor.WholeProgram` triggers,
+ * it aborts shim generation for ALL files -- so surviving files' Angular
+ * template/extended (NG8xxx) diagnostics are SUPPRESSED. Detecting this code in
+ * the PRE-filter gathered set (the raw `diagnostics` `finalize` receives), NOT
+ * the post-boundary-filter `reported` set, is the signal that drives the loud
+ * RES-02 suppression notice.
+ *
+ * The sibling structural codes `SYMBOL_NOT_EXPORTED = 3001` and
+ * `IMPORT_CYCLE_DETECTED = 3003` are deliberately EXCLUDED: at v22.0.4 they are
+ * thrown during component ANALYSIS (a separate bundle), surface through the
+ * structural / non-template getters, and do NOT abort shared TCB-generation
+ * shim priming -- so they do not suppress survivors' template diagnostics.
+ */
+export const IMPORT_GENERATION_FAILURE_CODE = 3004;
+
+/**
+ * RES-02: the NEGATIVE (`ts.Diagnostic.code`) encoding of the TCB-generation
+ * `IMPORT_GENERATION_FAILURE` Fatal -- `NG(3004) === -993004`. This is the value
+ * actually seen on a reported diagnostic (the compiler's `makeDiagnostic` runs
+ * `code: ngErrorCode(this.code)` on the caught Fatal at v22.0.4). `finalize`
+ * scans the PRE-filter gathered set (the raw `diagnostics` `finalize` receives),
+ * NOT the post-boundary-filter `reported` set, for this exact value to flag the
+ * template-check abort.
+ */
+export const TCB_GENERATION_FATAL_DIAGNOSTIC_CODE = NG(
+  IMPORT_GENERATION_FAILURE_CODE,
+);

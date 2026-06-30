@@ -60,6 +60,21 @@ describe('filterDiagnostics', () => {
     expect(result.suppressedCount).toBe(0);
   });
 
+  // COR-03 / D-06: a present-but-empty fileName is a synthesized-diagnostic edge
+  // that canonicalizes to '' (isUnderDir('', base) === false), so without the
+  // widened file-less guard it is SUPPRESSED -- a real error dropped by a path
+  // edge (a false PASS). It must be treated as file-less and ALWAYS kept.
+  // Failing-then-passing: pre-fix this asserts kept.length === 0; post-fix 1.
+  it('keeps a diagnostic whose file.fileName is present-but-empty (COR-03/D-06)', () => {
+    const result = filterDiagnostics([diag('')], {
+      ...base,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(1);
+    expect(result.suppressedCount).toBe(0);
+  });
+
   it('does NOT misclassify node_modules-tools as node_modules (segment test, D-06)', () => {
     const result = filterDiagnostics(
       [diag('/ws/proj/node_modules-tools/z.ts')],
@@ -83,6 +98,49 @@ describe('filterDiagnostics', () => {
       basePath: '/ws/proj',
       useCaseSensitiveFileNames: true,
       realpath,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(1);
+    expect(result.suppressedCount).toBe(0);
+  });
+
+  // RES-03 / D-08: a throwing options.realpath() (EACCES / permission-denied
+  // junction / broken symlink) must be CAUGHT inside createCanonicalizer (the
+  // throw must NOT escape filterDiagnostics and abort the whole type-check pass)
+  // and signal `undefined`, so the diagnostic is KEPT (fail-safe -- a throw cannot
+  // prove the file is out-of-project). This in-project input is kept like every
+  // keep-on-throw case; the out-of-project companion below proves the bias holds
+  // regardless of the raw path's classification. Mirrors the injected-realpath
+  // idiom above, with a stub that throws.
+  it('RES-03: a throwing realpath is caught; the in-project diagnostic is still kept', () => {
+    const result = filterDiagnostics([diag('/ws/proj/src/a.component.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath: () => {
+        throw new Error('EACCES');
+      },
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(1);
+    expect(result.suppressedCount).toBe(0);
+  });
+
+  // T1 / RES-03: a throwing realpath cannot PROVE the file is out-of-project, so
+  // the canonicalizer signals `undefined` and the diagnostic is KEPT (fail-safe
+  // bias for a correctness tool). Accepts a minor over-keep -- a genuinely
+  // out-of-project file whose realpath throws is now reported -- which is the
+  // correct direction: never silently drop a diagnostic on an unprovable boundary.
+  // This is a failing-then-passing change: pre-fix this asserted kept 0 /
+  // suppressed 1 (the buggy suppress-on-throw behavior).
+  it('RES-03: a throwing realpath is caught and the diagnostic is KEPT (cannot prove out-of-project, fail-safe)', () => {
+    const result = filterDiagnostics([diag('/ws/sibling-lib/src/b.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath: () => {
+        throw new Error('EACCES');
+      },
       includeDeps: false,
     });
 
@@ -232,6 +290,33 @@ describe('filterDiagnostics', () => {
     );
 
     expect(result.kept).toHaveLength(3);
+    expect(result.suppressedCount).toBe(0);
+  });
+
+  // RES-03 / isUnderDir undefined-dir branch: a realpath that throws for the BASE
+  // ('/ws/proj') ONLY -- files resolve normally -- canonicalizes the file fine (the
+  // line-100 `canonicalFile === undefined` short-circuit does NOT fire) but leaves
+  // `canonicalBase` undefined. That is the ONLY path that reaches `isUnderDir(file,
+  // undefined)`, whose undefined-dir branch returns true (over-keep-safe) so the
+  // in-project file is KEPT. The existing throwing-realpath tests throw for EVERY
+  // input and short-circuit at line 100, so they never reach this branch.
+  it('RES-03: a realpath that throws for the base only still KEEPS in-project files (isUnderDir undefined-dir branch)', () => {
+    const realpath = (p: string): string => {
+      if (p === '/ws/proj') {
+        throw new Error('EACCES'); // base only
+      }
+
+      return p; // files resolve (identity)
+    };
+
+    const result = filterDiagnostics([diag('/ws/proj/src/a.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(1);
     expect(result.suppressedCount).toBe(0);
   });
 });

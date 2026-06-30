@@ -24,5 +24,8 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx",
     "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.drift.ts"
   ]
 }

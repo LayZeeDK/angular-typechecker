@@ -34,6 +34,7 @@
     "angular-eslint": "^22.0.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
+    "fallow": "2.103.0",
     "jsdom": "^27.1.0",
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "23.0.1",
@@ -49,7 +50,6 @@
     "@angular/common": "22.0.4",
     "@angular/compiler": "22.0.4",
     "@angular/core": "22.0.4",
-    "@angular/forms": "22.0.4",
     "@angular/platform-browser": "22.0.4",
     "@angular/router": "22.0.4",
     "rxjs": "~7.8.0"

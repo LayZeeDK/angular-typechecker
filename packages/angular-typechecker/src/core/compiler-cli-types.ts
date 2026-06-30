@@ -41,6 +41,10 @@ import type * as ts from 'typescript';
  * expose it -- the engine reads it in `run-typecheck.ts` to mirror the case-fold
  * used when diagnostics were produced. Declared as an intersection so the call
  * type-checks structurally without re-introducing a deep compiler-cli import.
+ *
+ * angular-typechecker: vendored -- intersection over `ts.Program` (v22.0.4) that
+ * ADDS the synthetic `useCaseSensitiveFileNames()` not on the public `ts.Program`
+ * type (the runtime `getTsProgram()` instance exposes it; the type does not).
  */
 export type TsProgram = ts.Program & {
   useCaseSensitiveFileNames(): boolean;
@@ -53,6 +57,10 @@ export type TsProgram = ts.Program & {
  * for `useCaseSensitiveFileNames`) are declared. Each getter returns the shared
  * `ts.Diagnostic` shape (Angular extended codes are encoded NEGATIVE on
  * `ts.Diagnostic.code`).
+ *
+ * angular-typechecker: vendored -- a deliberate SUBSET of the real
+ * `@angular/compiler-cli` v22.0.4 `api.Program` (`src/transformers/api.d.ts`):
+ * declares only the diagnostic getters the gatherer calls plus `getTsProgram()`.
  */
 export interface Program {
   getTsProgram(): TsProgram;
@@ -80,14 +88,33 @@ export interface Program {
 }
 
 /**
- * The bitflag enum `performCompilation` accepts as `emitFlags`. The engine only
- * ever passes `0` (the emit-neutralizing value, with `noEmit: true`). Declared
- * as an ambient enum so it is usable both as a TYPE (`0 as EmitFlags`) and as a
+ * The bitflag enum `performCompilation` accepts as `emitFlags`. The members now
+ * MIRROR the real `@angular/compiler-cli@22.0.4` enum verbatim
+ * (`src/transformers/api.d.ts:74-82`): `DTS=1, JS=2, Metadata=4, I18nBundle=8,
+ * Codegen=16, Default=19, All=31` -- the real enum has NO `None` member (the
+ * earlier fabricated zero-valued member is removed, HARD-02). The engine only ever passes
+ * the literal `0` (the emit-neutralizing value, with `noEmit: true`); `0` is not
+ * a declared member, so the call site uses an explicit CAST
+ * (`emitFlags: 0 as EmitFlags` at the `performCompilation` call site in
+ * run-typecheck.ts) -- a bare `: EmitFlags = 0`
+ * ERRORS TS2322 at tsc 6.0.3, the cast is what keeps `0` acceptable. Declared as
+ * an ambient enum so it is usable both as a TYPE (`0 as EmitFlags`) and as a
  * VALUE namespace (`readonly EmitFlags: typeof EmitFlags` on `CompilerCli`);
  * `declare` means no runtime code is emitted (the shim stays erased-at-emit).
+ *
+ * angular-typechecker: vendored -- mirrors the real `@angular/compiler-cli`
+ * v22.0.4 `EmitFlags` members (`src/transformers/api.d.ts:74-82`); declares only
+ * what `performCompilation` accepts as `emitFlags` (no `loadNgStructureAsync`/
+ * `emit`-orchestration members the engine never touches).
  */
 export declare enum EmitFlags {
-  None = 0,
+  DTS = 1,
+  JS = 2,
+  Metadata = 4,
+  I18nBundle = 8,
+  Codegen = 16,
+  Default = 19,
+  All = 31,
 }
 
 /**
@@ -96,6 +123,10 @@ export declare enum EmitFlags {
  * Declared as an ambient numeric constant so it is usable both as a TYPE and as
  * the VALUE member `readonly UNKNOWN_ERROR_CODE` on `CompilerCli`. `declare`
  * emits no runtime code.
+ *
+ * angular-typechecker: vendored -- hand-declared `= 500` mirroring the real
+ * `@angular/compiler-cli` v22.0.4 `UNKNOWN_ERROR_CODE` (`src/transformers/api.d.ts:11`)
+ * instead of importing the ESM-only real const (kept dependency-free).
  */
 export declare const UNKNOWN_ERROR_CODE = 500;
 
@@ -105,6 +136,10 @@ export declare const UNKNOWN_ERROR_CODE = 500;
  * options (carrying the injected absolute `basePath` the boundary filter keys
  * off), any config-parse errors, and the optional project references the
  * zero-rootNames guard branches on.
+ *
+ * angular-typechecker: vendored -- a SUBSET of the real `@angular/compiler-cli`
+ * v22.0.4 `ParsedConfiguration` (`src/perform_compile.d.ts:14-21`); `options`
+ * widens to `ts.CompilerOptions & { basePath?: string }` (the injected basePath).
  */
 export interface ParsedConfiguration {
   project: string;
@@ -139,6 +174,11 @@ export interface PerformCompilationOptions {
  * own declaration types it optional; narrowing it here matches the engine's
  * guarded usage and keeps the build (the drift guard) green under the engine's
  * non-strict-null compiler options.
+ *
+ * angular-typechecker: vendored -- narrows the real `@angular/compiler-cli`
+ * v22.0.4 `PerformCompilationResult.program?` (OPTIONAL at
+ * `src/perform_compile.d.ts:29`) to NON-optional to match the engine's guarded
+ * usage (the infra-failure path re-throws before any `result.program` access).
  */
 export interface PerformCompilationResult {
   diagnostics: readonly ts.Diagnostic[];
