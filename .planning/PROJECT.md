@@ -21,9 +21,25 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - **Codebase:** ~1,777 LOC production TypeScript across 15 non-test `.ts` files in `packages/angular-typechecker/src/`; ~5,263 LOC including the test suite (41 `.ts` files total); plus e2e fixture projects, CI/release workflows, and a `tsconfig.drift.json` build-time drift tripwire.
 - **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers. CI quality gate: `fallow@2.103.0` (path-gated, new-only).
 - **Known issues / debt:** none accumulated in v0.0.3 (audit: zero tech debt). Residual items are documentation-drift / INFO-level only (see the milestone audits); `.npmrc legacy-peer-deps=true` remains a dev-repo concern that does not reach consumers.
-- **Next milestone:** not yet scoped. Run `/gsd-new-milestone`. Natural candidates (from Out of Scope below): `createNodesV2` inferred targets, machine-readable reporters (JSON/SARIF), the `NgtscProgram` incremental engine + REP-RES-02b (faithful per-file template recovery), or `nx add`/`ng add` schematics.
+- **Current milestone:** **v0.0.4 -- typecheck-configuration generator and extended testing strategy** (in planning). Ships the deferred `typecheck-configuration` Nx generator and adopts the sandbox/Connect testing-technique stack (bespoke FsTree utilities, generator tests, in-memory executor variant, per-introduction-version diagnostic catalog, generator e2e, CI jobs). See `## Current Milestone` below.
 
 v0.0.3 delivered in four phases: **Phase 8** (Correctness & Completeness, COR-01..04) -- config-resolution 500 re-thrown as infrastructure, global TS diagnostics via `getGlobalDiagnostics()`, empty-`fileName` diagnostics kept, pure core `toExitCode` 0/1/2 policy. **Phase 9** (Resilience, RES-01..04) -- HYBRID per-file fault isolation (gated spike) so one `FatalDiagnosticError` no longer collapses the run + a loud TCB-abort notice, `realpath()` try/catch, `suppressOutputPathCheck`. **Phase 10** (Drift-hardening, HARD-01..05) -- build-time `tsconfig.drift.json` + `typecheck-drift` CI target, `EmitFlags` fix, vendor markers, retained no-op getter, no-`TS-99`-leak spec. **Phase 11** (Code-Quality Gate, QUAL-01..03) -- `fallow@2.103.0` adopted as a path-gated CI quality gate (`--format human`, exit-code-gated, least-privilege `contents: read`), current findings resolved (gate green on adoption), proven RED on introduced dead code via a throwaway PR.
+
+## Current Milestone: v0.0.4 -- typecheck-configuration generator and extended testing strategy
+
+**Goal:** Ship the deferred `typecheck-configuration` Nx generator (the GEN-family config generator that wires the `angular-typecheck` target into a project) AND adopt the full testing-technique stack proven in the sandbox + Connect prior art -- using the generator as the vehicle for the missing FsTree generator-testing technique -- closing the gaps in test utilities, test files, test cases, and CI jobs. A `feat` (the generator) bumps 0.0.3 -> 0.0.4 under 0.x conventional commits, so this milestone carries a version.
+
+**Target features:**
+- `typecheck-configuration` Nx generator (Nx 23 devkit): adds/configures the `angular-typecheck` target for a project; hand-authored schema; idempotent re-runs.
+- Bespoke FsTree test utilities (`createFsTree` / `flushFsTreeChanges`) authored fresh over the nx-internal `FsTree` + `flushChanges` (`nx/src/generators/tree`; resolves to `dist/src/generators/tree.js` and returns both on `nx@23.0.1`), quarantined with `eslint-disable` + a drift tripwire on the internal import. (Substrate -- real-disk wrapper vs. the public in-memory `createTreeWithEmptyWorkspace` from `@nx/devkit/testing` -- finalized at requirements; default leans real-disk wrapper to stay faithful to the prior art.)
+- Generator tests as in the sandbox/Connect prior art: FsTree-based generator unit tests + a generator e2e (sandbox `nx-plugin-e2e` style; Connect target-wiring-per-project-type patterns, sanitized).
+- Complete extended-diagnostic coverage: assert EVERY Angular extended (NG8xxx) diagnostic in the catalog by exact code/count (the introduction-version taxonomy in `research/DIAGNOSTIC-CATALOG.md` -- baseline + extended). The test-file / test-name / test-case ORGANIZATION is research-informed (sandbox/Connect prior art + web prior art used as inspiration in earlier milestones) -- e.g. the per-introduction-version `executor.angularNN.integration.spec.ts` split, which v0.0.1 collapsed.
+- Other existing-surface testing gaps: in-memory executor variant alignment, a drift-gate negative ("does it actually fail?") test, plus any gaps surfaced by research.
+- CI jobs covering the new generator + test files/tiers.
+
+**Out of scope (unchanged):** `ng add` / `nx add` install schematics (only the config generator lands), machine-readable reporters (JSON/SARIF), `NgtscProgram` incremental/`--watch`, `createNodesV2` inference, Jest, Storybook story type-check, standalone CLI.
+
+**Key context:** The FsTree utilities were PLANNED as a v0.0.1 Phase-3 deliverable but were never delivered to source (no generator consumer existed) -- documentation drift corrected below; v0.0.4 authors them for real. Connect prior art is read READ-ONLY and fully sanitized (no proprietary identifiers ever reach this repo).
 
 ## Requirements
 
@@ -54,14 +70,16 @@ v0.0.3 delivered in four phases: **Phase 8** (Correctness & Completeness, COR-01
 
 Full detail with outcomes: `.planning/milestones/v0.0.3-REQUIREMENTS.md`.
 
-### Active (next milestone -- not yet scoped)
+### Active (v0.0.4 -- in planning)
 
-No active requirements -- v0.0.3 is shipped and the next milestone is not yet scoped (run `/gsd-new-milestone`). The deferred families carried forward from v0.0.1 (inferred targets INF, install/generators GEN, other surfaces SUR, reporters/performance REP incl. the `NgtscProgram` incremental engine + REP-RES-02b, broader support SUP) plus the `totalFilesCount` observability field (OBS-01) remain Out of Scope (below) and are the natural candidates for the next milestone.
+Scoped this milestone (REQ-IDs assigned during requirements definition): the `typecheck-configuration` Nx generator (the GEN-family config generator only -- `ng add`/`nx add` install schematics stay deferred) and an extended testing strategy that adopts the sandbox/Connect prior-art techniques. Concretely: the bespoke FsTree test utilities, FsTree-based generator unit tests, a generator e2e, the per-introduction-version diagnostic-catalog spec split, an in-memory executor variant, a drift-gate negative test, and the CI jobs to run them. Full requirements: `.planning/REQUIREMENTS.md` (written by this milestone).
+
+The remaining deferred families carried from v0.0.1 (inferred targets INF, install schematics GEN-`ng add`/`nx add`, other surfaces SUR, reporters/performance REP incl. the `NgtscProgram` incremental engine + REP-RES-02b, broader support SUP) plus the `totalFilesCount` observability field (OBS-01) remain Out of Scope (below).
 
 ### Out of Scope (deferred to later milestones, not abandoned)
 
 - `createNodesV2` inferred `angular-typecheck` targets (+ optional `typecheck` target override) -- next milestone.
-- `nx add` + `ng add` schematics; a minimal config generator.
+- `nx add` + `ng add` install schematics. (The minimal `typecheck-configuration` config generator is PROMOTED into v0.0.4 -- see Current Milestone.)
 - Standalone `angular-typecheck` CLI binary (non-Nx use).
 - Storybook story (`*.stories.ts`) type-check support.
 - Angular CLI surface for non-Nx `angular.json` workspaces: our Nx executor re-exported as an Angular **builder** via `convertNxExecutor`, and our generator as a **schematic** via `convertNxGenerator` (thin re-exports over the same core + Nx executor/generator -- NOT a hand-written `@angular-devkit/architect` builder; these `@nx/devkit` APIs are current, not deprecated).
@@ -74,8 +92,8 @@ No active requirements -- v0.0.3 is shipped and the next milestone is not yet sc
 
 Prior art: the project was prototyped twice -- a personal sandbox (`D:/projects/sandbox/nx19-8-angular18-2-...`, Nx 19.8 / Angular 18.2) and a proprietary work repo (no proprietary details retained here). Both converged on the same engine: programmatic `@angular/compiler-cli` `performCompilation` with a *custom all-diagnostics gatherer*. Both are version-bound to an older stack, so they are treated as reference only and every borrowed pattern is re-validated against Nx 23 / Angular 22 / TS 6 / Node 24.
 
-Reusable artifacts carried forward:
-- Test helpers `createFsTree()` / `flushFsTreeChanges()` wrapping the nx-internal `FsTree` + `flushChanges` from `nx/src/generators/tree` (no public alternative exists; confirmed still exported on Nx 23.0.1; quarantined in dedicated files with eslint-disable).
+Reusable artifacts identified from the prior art:
+- Test helpers `createFsTree()` / `flushFsTreeChanges()` -- bespoke wrappers around the nx-internal `FsTree` + `flushChanges` (`nx/src/generators/tree`, resolving to `dist/src/generators/tree.js` and returning both on `nx@23.0.1`; no public re-export -- the public alternative is the in-memory `createTreeWithEmptyWorkspace` from `@nx/devkit/testing`). PLANNED as a v0.0.1 deliverable but NOT delivered to source (no generator consumer existed); authored for real in v0.0.4 with the `typecheck-configuration` generator, quarantined with eslint-disable + a drift tripwire on the internal import.
 - The Angular diagnostic catalog organized by the Angular major that introduced each check (v13 baseline through v21's NG8021), all asserted on Angular 22 plus any v22 additions.
 
 Engine verified against local Angular source (framework v22.1.0-next.3, CLI v22.1.0-next.1): `ngc` / `defaultGatherDiagnostics` short-circuits by phase (skips `getNgSemanticDiagnostics`, i.e. template + extended diagnostics, when an earlier phase errors). The modern `@angular/build:application` builder does NOT short-circuit -- it gathers option/syntactic/semantic independently and calls `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)` per file unconditionally. angular-typechecker models `@angular/build`, giving the complete diagnostic set in one pass -- more complete than the bare `ngc --noEmit` that AnalogJS and the Brandon Roberts article recommend as the separate type-check step.
@@ -114,7 +132,8 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 | Cacheable target (`cache:true`, `outputs:[]`, @nx/js-style inputs) | Fast feedback; whole-program -> per-target cache | [OK] Validated v0.0.1 |
 | Tests assert exact diagnostic codes across v13->v22 catalog | Improves on priors' pass/fail-only assertions | [OK] Validated v0.0.1 |
 | e2e blends both prior approaches under Vitest (fixtures fast tier + tarball CI gate) | Fast agent loop + publish/install fidelity | [OK] Validated v0.0.1 |
-| Capture `createFsTree`/`flushFsTreeChanges` (nx-internal FsTree) | Drive generators against real disk in tests; no public alt | [OK] Validated v0.0.1 |
+| Capture `createFsTree`/`flushFsTreeChanges` (nx-internal FsTree) | Drive generators against real disk in tests; no public alt | [DEFERRED] Planned v0.0.1, NOT delivered (no generator to test); scheduled for v0.0.4 with the `typecheck-configuration` generator |
+| Promote `typecheck-configuration` config generator into v0.0.4 (vehicle for the FsTree generator-testing technique); `ng add`/`nx add` stay deferred | "Extended testing strategy" needs a real generator to exercise FsTree tests; the config generator is the smallest GEN slice | Scoped v0.0.4 |
 | Release via `nx release`; manual target wiring in v0.0.1 | Dogfoods Nx; generator/ng-add/nx-add deferred | [OK] Validated v0.0.1 |
 | Publish hardening: npm Trusted Publishers (OIDC) + provenance + hardened CI + SECURITY.md + tarball audit (publint/attw) | Supply-chain (s1ngularity); registry listing | [OK] Validated v0.0.1 |
 | Diagnostics: absolute-realpath filter; workspace-root-relative CI paths; agent-ready output | Correct project-boundary filter + GitHub annotations; AI/CI consumers | [OK] Validated v0.0.1 |
@@ -144,4 +163,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-30 after v0.0.3 milestone completion -- Engine hardening shipped (Phases 8-11; published `angular-typechecker@0.0.3`). Audit passed 16/16 requirements with zero accumulated tech debt. v0.0.3 requirements moved to Validated; the next milestone is not yet scoped.*
+*Last updated: 2026-06-30 -- milestone v0.0.4 (typecheck-configuration generator and extended testing strategy) opened and scoped. v0.0.3 (engine hardening) shipped + archived; its requirements are Validated. Corrected the FsTree documentation-drift (`createFsTree`/`flushFsTreeChanges` were planned in v0.0.1 but never delivered -- they land in v0.0.4 alongside the generator).*

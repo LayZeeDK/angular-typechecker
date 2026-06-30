@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.0.3
-milestone_name: Engine hardening
-status: completed
-stopped_at: "v0.0.3 (Engine hardening) shipped, audited (passed, 16/16, zero tech debt), and ARCHIVED. Published live as angular-typechecker@0.0.3. Next milestone not yet scoped."
-last_updated: "2026-06-30"
+milestone: v0.0.4
+milestone_name: typecheck-configuration generator and extended testing strategy
+status: planning
+last_updated: "2026-06-30T20:48:05.263Z"
 last_activity: 2026-06-30
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,17 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-30 after v0.0.3 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Planning next milestone -- run `/gsd-new-milestone`.
+**Current focus:** Milestone v0.0.4 -- typecheck-configuration generator and extended testing strategy (in planning: research -> requirements -> roadmap).
 
 ## Current Position
 
-Milestone: v0.0.3 (Engine hardening) -- COMPLETE and archived.
-Status: shipped (published `angular-typechecker@0.0.3`); no active phase.
-Next: next milestone not yet scoped. Natural candidates (Out of Scope in PROJECT.md): `createNodesV2` inferred targets, machine-readable reporters (JSON/SARIF), the `NgtscProgram` incremental engine + REP-RES-02b, or `nx add`/`ng add` schematics.
-
-Shipped milestones (historical record): `.planning/MILESTONES.md`.
-Full roadmap: `.planning/ROADMAP.md` (v0.0.1 + v0.0.3 collapsed to SHIPPED).
-Phase execution history: `.planning/milestones/v0.0.1-phases/` and `.planning/milestones/v0.0.3-phases/`.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-30 — Milestone v0.0.4 started
 
 ## Accumulated Context
 
@@ -39,6 +35,7 @@ Phase execution history: `.planning/milestones/v0.0.1-phases/` and `.planning/mi
 
 All milestone decisions (v0.0.1 + v0.0.3) are logged in PROJECT.md Key Decisions
 (outcomes closed) and in the per-milestone archives:
+
 - v0.0.3 decision summary: `.planning/milestones/v0.0.3-ROADMAP.md` (Milestone Summary) + the phase SUMMARYs under `.planning/milestones/v0.0.3-phases/`.
 - v0.0.1 decision log: `.planning/milestones/v0.0.1-ROADMAP.md` + `.planning/milestones/v0.0.1-phases/`.
 
