@@ -78,6 +78,10 @@ export interface CoreResult {
  * `undefined` for a file-less synthesized Fatal).
  */
 export interface TemplateCheckAborted {
+  // S2: RETAINED as the detector's public shape (always `NG(3004) === -993004` at
+  // v22.0.4) and pinned by the detector/drift tests (infra-failure.spec.ts,
+  // run-typecheck.spec.ts), even though the current adapter consumes only
+  // `fileName`. Do NOT drop it -- removing it breaks those assertions.
   code: number;
   fileName: string | undefined;
 }

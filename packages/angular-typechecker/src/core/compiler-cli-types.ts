@@ -95,7 +95,8 @@ export interface Program {
  * earlier fabricated zero-valued member is removed, HARD-02). The engine only ever passes
  * the literal `0` (the emit-neutralizing value, with `noEmit: true`); `0` is not
  * a declared member, so the call site uses an explicit CAST
- * (`emitFlags: 0 as EmitFlags`, run-typecheck.ts:229) -- a bare `: EmitFlags = 0`
+ * (`emitFlags: 0 as EmitFlags` at the `performCompilation` call site in
+ * run-typecheck.ts) -- a bare `: EmitFlags = 0`
  * ERRORS TS2322 at tsc 6.0.3, the cast is what keeps `0` acceptable. Declared as
  * an ambient enum so it is usable both as a TYPE (`0 as EmitFlags`) and as a
  * VALUE namespace (`readonly EmitFlags: typeof EmitFlags` on `CompilerCli`);

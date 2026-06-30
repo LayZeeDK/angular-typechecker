@@ -68,7 +68,9 @@ export const ngCodeOf = (code: number): number => Math.abs(code) - 990000;
  * `ensureAllShimsForAllFiles()` priming that `OptimizeFor.WholeProgram` triggers,
  * it aborts shim generation for ALL files -- so surviving files' Angular
  * template/extended (NG8xxx) diagnostics are SUPPRESSED. Detecting this code in
- * the reported set is the signal that drives the loud RES-02 suppression notice.
+ * the PRE-filter gathered set (the raw `diagnostics` `finalize` receives), NOT
+ * the post-boundary-filter `reported` set, is the signal that drives the loud
+ * RES-02 suppression notice.
  *
  * The sibling structural codes `SYMBOL_NOT_EXPORTED = 3001` and
  * `IMPORT_CYCLE_DETECTED = 3003` are deliberately EXCLUDED: at v22.0.4 they are
@@ -83,7 +85,9 @@ export const IMPORT_GENERATION_FAILURE_CODE = 3004;
  * `IMPORT_GENERATION_FAILURE` Fatal -- `NG(3004) === -993004`. This is the value
  * actually seen on a reported diagnostic (the compiler's `makeDiagnostic` runs
  * `code: ngErrorCode(this.code)` on the caught Fatal at v22.0.4). `finalize`
- * scans the reported set for this exact value to flag the template-check abort.
+ * scans the PRE-filter gathered set (the raw `diagnostics` `finalize` receives),
+ * NOT the post-boundary-filter `reported` set, for this exact value to flag the
+ * template-check abort.
  */
 export const TCB_GENERATION_FATAL_DIAGNOSTIC_CODE = NG(
   IMPORT_GENERATION_FAILURE_CODE,
