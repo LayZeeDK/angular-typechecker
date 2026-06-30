@@ -144,9 +144,10 @@ jobs:
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
-  # gate (.fallowrc.jsonc `audit.gate: new-only`); --format json is for the CI log
-  # only, the exit code gates. NO --ci/SARIF (would need security-events: write,
-  # contradicting the top-level contents: read). fallow is an exact-pinned root
+  # gate (.fallowrc.jsonc `audit.gate: new-only`); --format human renders a readable
+  # report in the CI log, the exit code gates. SARIF output (--ci) is DEFERRED to a
+  # later milestone -- it would need security-events: write, contradicting the
+  # top-level contents: read. fallow is an exact-pinned root
   # devDependency installed by `npm ci`; `npx fallow` resolves the locked version
   # (never @latest) so a fallow release cannot silently flip the gate.
   #
@@ -170,7 +171,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx fallow audit --format json --base origin/main
+      - run: npx fallow audit --format human --base origin/main
         env:
           FALLOW_AUDIT_BASE: origin/main
 

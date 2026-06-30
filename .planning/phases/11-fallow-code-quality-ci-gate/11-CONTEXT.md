@@ -50,7 +50,7 @@ Adopt `fallow` (npm, the dead-code / duplication / complexity analyzer, v2.x -- 
 ### CI wiring (GA-5)
 - **D-10:** Dedicated `fallow` job added to the `ci` aggregate's `needs:` list AND its `contains(needs.*.result, 'failure'|'cancelled')` gate. The single required status check stays `ci` -- NO Default-branch ruleset change.
 - **D-11:** Install via exact-pinned `fallow` ROOT devDependency (in `package-lock.json`); CI runs `npm ci` then `npx fallow` (resolves the locked version) -- NOT `npx fallow@latest`. Catches IN-05's lesson: pin the analyzer so a fallow release can't silently change the gate.
-- **D-12:** Gate command: `npx fallow audit --format json --base origin/main`. The audit EXIT CODE gates (1 on `fail`); `--format json` is for the CI log artifact. Do NOT use `--ci`/SARIF -- it needs `security-events: write`, contradicting ci.yml's `contents: read`.
+- **D-12 [UPDATED 2026-06-30 per user direction]:** Gate command: `npx fallow audit --format human --base origin/main`. The audit EXIT CODE gates (1 on `fail`); `--format human` renders a readable report in the CI log (changed from the initial `--format json` -- the log is for humans reading a red run, and the gate is the exit code, format-independent). SARIF output (`--ci`) is DEFERRED to a LATER MILESTONE -- it needs `security-events: write`, contradicting ci.yml's `contents: read`.
 - **D-13:** `actions/checkout` with `fetch-depth: 0` (+ `persist-credentials: false` like every other checkout). `new-only` attribution runs a base-snapshot pass that needs `origin/main`'s merge-base reachable; a shallow checkout breaks new-vs-inherited attribution (research caveat 5). Optionally pin `FALLOW_AUDIT_BASE=origin/main`.
 - **D-14:** Path-gate the job with the SAME `if: ${{ needs.changes.outputs.code != 'false' }}` NEGATIVE form as `test`/`e2e` (so a planning/docs-only PR skips it AND it stays in the `act -n` plan under empty filter output). Runs on `ubuntu-latest`, Node 24 (matching the e2e/release Node), SHA-pinned actions, Dependabot-tracked.
 - **D-15:** Add `assert_selected "$PR_PLAN" "ci/fallow"` to `tools/act/act-compat.sh` (job id `fallow` -> act label `ci/fallow`); actionlint stays green.
@@ -117,7 +117,8 @@ Adopt `fallow` (npm, the dead-code / duplication / complexity analyzer, v2.x -- 
 <deferred>
 ## Deferred Ideas
 
-- Migrating fallow output to GitHub code-scanning via SARIF (`--ci`) -- deferred: requires `security-events: write`, contradicting ci.yml's least-privilege posture. Revisit only if the security-events permission is ever justified independently.
+- Migrating fallow output to GitHub code-scanning via SARIF (`--ci`) -- deferred to a LATER MILESTONE (reaffirmed by user 2026-06-30): requires `security-events: write`, contradicting ci.yml's least-privilege posture. Revisit only if the security-events permission is ever justified independently.
+- Posting fallow findings INTO the PR UI via `--format review-github` (inline, line-anchored PR review comments) or `--format pr-comment-github` (a single summary PR comment) -- deferred to a LATER MILESTONE (user 2026-06-30): both need `pull-requests: write` (the review path is heavier), broadening beyond the gate's least-privilege `contents: read`. The gate stays exit-code + human-readable log; PR-UI feedback is a separate, deliberate posture change. (`review-gitlab`/`pr-comment-gitlab` are the GitLab equivalents, also deferred / N/A.)
 - Fixing GSD's broken fallow structural pre-pass (fallow 2.x flag drift) -- explicitly out of scope (roadmap item 5); a GSD-tooling concern, not this repo's gate.
 - Tuning duplication/complexity thresholds -- deferred until a real finding proves a default wrong (repo is clean on both today).
 
