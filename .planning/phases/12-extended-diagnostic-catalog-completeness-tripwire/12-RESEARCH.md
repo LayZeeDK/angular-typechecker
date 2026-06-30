@@ -424,6 +424,19 @@ Not a rename/refactor/migration phase — but it has a doc-rewrite (CAT-05) and 
 
 ## Open Questions
 
+> **ORCHESTRATOR RESOLUTION (2026-07-01) -- OQ1 is RESOLVED; treat the entry below as historical.**
+> NG8011 IS promotable, confirmed three independent ways: docs (general `defaultCategory` rule +
+> NG8113 is documented-yet-out-of-band) + `@angular/compiler-cli@22.0.4` source (read at tag
+> `v22.0.4`: `SUPPORTED_DIAGNOSTIC_NAMES` lists all 18; `core/src/compiler.ts:1112-1115` wires
+> both out-of-band fields to `defaultCategory`; `extended_template_checker.ts:40-44` for the 16
+> factories) + an empirical `runTypecheck` probe (NG8011 = Warning by default, = Error under
+> `defaultCategory:"error"`; single diagnostic `-998011`). The user chose "Correct it": the
+> catalog treats NG8011 as a normal promotable member -- NO `it.skip` for promotion, NO "not
+> promotable" framing, and NO test asserting it stays a Warning under `defaultCategory:"error"`.
+> CONTEXT.md D-09 is corrected; D-13 flags CAT-02/CONSENSUS as superseded for the milestone audit
+> (their text is left as-is, no re-ratification this phase). CAT-02 stays satisfied by the single
+> NG8101 promotion proof (D-08).
+
 1. **D-09 contradiction — is NG8011 "not promotable"? (HIGH IMPACT, re-open required.)**
    - What we know: the runtime bundle + `@angular/compiler` source prove NG8011 (and NG8113) DO honor `extendedDiagnostics.defaultCategory: "error"` and emit an Error when promoted. `[VERIFIED: compiler.mjs:32010; chunk-33J3WRHI.js:3986, 4924-4925]`
    - What's unclear: nothing technical — the source is unambiguous. What's unclear is the DECISION: D-09 (a locked decision) instructs the catalog to treat NG8011 as not promotable and skip its promotion case. This is a HIGH-IMPACT, hard-to-reverse documentation/test claim that contradicts the phase's own source.

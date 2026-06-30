@@ -83,10 +83,24 @@ are handed to plan-phase research (`--research`) as the directives below.
 - **D-08:** Keep ONE promotion proof -- NG8101 via the existing `fixtures/extended-promoted/`
   tsconfig (`extendedDiagnostics.defaultCategory: "error"` flips the warning-default to an
   error) -- per CAT-02 / consensus "at least one". Per-member promotion testing is YAGNI.
-- **D-09:** NG8011 (`controlFlowPreventingContentProjection`) is asserted at its OBSERVED
-  category, and its promotion case is explicitly `it.skip` WITH A REASON (emitted out-of-band,
-  no `extended/checks/` factory, NOT promotable via `extendedDiagnostics`). 17 of 18 are
-  promotable; NG8011 is the one exception.
+- **D-09 (CORRECTED 2026-07-01 -- docs + source + runtime verified):** ALL 18 extended
+  diagnostics -- INCLUDING NG8011 (`controlFlowPreventingContentProjection`) -- are promotable
+  to `Error` via `angularCompilerOptions.extendedDiagnostics.defaultCategory: "error"`. NG8011
+  is asserted in the catalog like any other member (default `Warning`, promotable to `Error`);
+  it is NOT `it.skip`-ped and NOT special-cased as "not promotable". The only real distinction
+  among the 18 is emission MECHANISM, not promotability: 16 have an `extended/checks/<name>/`
+  factory; 2 (NG8011 + NG8113 `unusedStandaloneImports`) are emitted out-of-band -- but BOTH
+  out-of-band fields read `defaultCategory` (`core/src/compiler.ts:1112-1115` /
+  `extended/src/extended_template_checker.ts:40-44`), and Angular's own
+  `SUPPORTED_DIAGNOSTIC_NAMES` (`extended/index.ts`) lists all 18 as configurable.
+  **Verification (triple):** docs (general `defaultCategory` rule + NG8113 is
+  documented-yet-out-of-band) + source (`@angular/compiler-cli@22.0.4`, read at tag `v22.0.4`)
+  + an empirical `runTypecheck` probe (NG8011 = Warning by default, = Error under
+  `defaultCategory:"error"`; single diagnostic, code `-998011`). **This SUPERSEDES the board
+  CONSENSUS D2 nuance and requirement CAT-02's parenthetical ("NG8011 excepted: out-of-band /
+  not promotable") -- both are factually wrong; see D-13.** CAT-02's core ask (at least one
+  promotion proof) is still satisfied by D-08 (NG8101). A test asserting NG8011 stays a Warning
+  under `defaultCategory:"error"` would FAIL against real Angular 22.0.4.
 
 ### GA-5 -- `DIAGNOSTIC-CATALOG.md` correction scope (CAT-05)
 - **D-10:** FULL rewrite of the extended-diagnostics section of
@@ -101,6 +115,17 @@ are handed to plan-phase research (`--research`) as the directives below.
   but are NOT configurable extended diagnostics (not in the enum). Replace the stale
   per-version-file-split "Test organization" guidance with the single enum-keyed `it.each` +
   completeness-tripwire decision (D-01/D-05).
+- **D-13 (requirement-correction flag for the milestone audit):** Requirement CAT-02's
+  parenthetical "(NG8011 excepted: out-of-band / not promotable -- assert its observed category)"
+  and board CONSENSUS D2's matching nuance are FACTUALLY WRONG -- NG8011 IS promotable (see D-09,
+  triple-verified). Per the user's "Correct it" decision (2026-07-01), the implementation follows
+  the verified truth; `REQUIREMENTS.md` (CAT-02) and `CONSENSUS.md` text are LEFT AS-IS (no
+  re-ratification this phase) but are flagged HERE as superseded so the milestone audit reconciles
+  them. CAT-02 remains satisfied: one promotion proof via NG8101 (D-08). Also for the CAT-05
+  rewrite: angular.dev lists only 16 extended diagnostics, but the `ExtendedTemplateDiagnosticName`
+  enum has 18 -- the 2 enum-only members are NG8011 and NG8112 (`unusedLetDeclaration`); NG8113
+  (`unusedStandaloneImports`) is the documented-yet-out-of-band twin proving "no factory" !=
+  "not configurable".
 
 ### Claude's Discretion (research directives for plan-phase `--research`)
 The following are NOT user gray areas -- they are facts/choices for the researcher to PIN and
@@ -121,9 +146,11 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
    resolution (mirror how `compiler-cli-types.drift.ts` imports real types), and whether the
    set-equality assertion compares the enum's string-VALUE union (`\`${ExtendedTemplateDiagnosticName}\``)
    or its member-NAME keys against the catalog's `as const` list.
-4. **Verify the promotability nuance** (17 promotable, NG8011 not) against the
-   `extended/checks/` factory registration set, and confirm each member's default
-   `DiagnosticCategory`.
+4. **Promotability -- RESOLVED 2026-07-01 (no longer open):** ALL 18 are promotable via
+   `defaultCategory` (see corrected D-09; verified by docs + source + an empirical
+   `runTypecheck` probe). 16 factory checks + 2 out-of-band (NG8011, NG8113), all wired to
+   `defaultCategory`. The only remaining research task is to confirm each member's DEFAULT
+   `DiagnosticCategory` -- all 18 default to `Warning` under `strictTemplates` (verified).
 </decisions>
 
 <canonical_refs>
