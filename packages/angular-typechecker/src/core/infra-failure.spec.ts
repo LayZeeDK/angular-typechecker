@@ -43,7 +43,6 @@ vi.mock('./compiler-loader', () => {
           readConfiguration: compilerCliStub.readConfiguration,
           performCompilation: compilerCliStub.performCompilation,
           defaultGatherDiagnostics: vi.fn(() => []),
-          EmitFlags: { None: 0 },
           UNKNOWN_ERROR_CODE,
         }) as unknown as CompilerCli,
     ),
@@ -158,7 +157,7 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
   // `readConfiguration`, matching `@angular/build`'s `loadConfiguration`
   // (`angular-compilation.ts:51` @ v22.0.4) EXACTLY. The output-path overwrite
   // check fires in TypeScript's `verifyCompilerOptions()` gated by
-  // `!options.noEmit && !options.suppressOutputPathCheck` (typescript.js:129892),
+  // `!options.noEmit && !options.suppressOutputPathCheck` (verifyCompilerOptions, TS 6.0.3),
   // so this is belt-and-suspenders parity (the engine's `noEmit:true` already
   // suppresses it). A spy assertion is the deterministic proof of the placement;
   // the no-nuisance behavior under the real compiler is proven by the companion

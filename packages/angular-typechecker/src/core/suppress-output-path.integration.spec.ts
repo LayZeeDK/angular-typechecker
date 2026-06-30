@@ -24,7 +24,7 @@ import { runTypecheck } from './run-typecheck';
 // SAFE-UNDER-noEmit caveat (RESEARCH A3 / Pitfall 3): the output-path overwrite
 // check is in TypeScript's `verifyCompilerOptions()` at the END of
 // `createProgram`, gated by `!options.noEmit && !options.suppressOutputPathCheck`
-// (typescript.js:129892). The engine's emit-neutralizing override sets
+// (verifyCompilerOptions, TS 6.0.3). The engine's emit-neutralizing override sets
 // `noEmit:true`, which is the PRIMARY suppressor; `suppressOutputPathCheck` is
 // the `@angular/build`-parity belt. So the nuisance is inert in this flow by
 // design -- the assertion below is the absence-under-suppression evidence for
