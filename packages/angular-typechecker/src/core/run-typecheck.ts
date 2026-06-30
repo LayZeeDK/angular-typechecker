@@ -133,7 +133,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // (`angular-compilation.ts:51` @ v22.0.4) EXACTLY. The output-path overwrite
   // check fires in TypeScript's `verifyCompilerOptions()` at the END of
   // `createProgram`, gated by `!options.noEmit && !options.suppressOutputPathCheck`
-  // (typescript.js:129892) -- NOT in `readConfiguration` (Pitfall 3, RESOLVED).
+  // (verifyCompilerOptions, TS 6.0.3) -- NOT in `readConfiguration` (Pitfall 3, RESOLVED).
   // The engine's emit-neutralizing override below already sets `noEmit: true`,
   // which ALONE suppresses the check; this is belt-and-suspenders parity with the
   // build so an output-path config nuisance (TS5055 / overwrite-class) never
