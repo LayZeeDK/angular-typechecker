@@ -119,10 +119,14 @@ Plans:
   4. Gate strictness (`fallow --gate new-only` vs `all`) decided in discuss/plan; intent is to RESOLVE the current findings in this phase, not baseline them.
   5. Project keeps `code_quality.fallow.enabled: true` (the GSD global default is now `false`); fixing GSD's broken fallow structural pre-pass (fallow 2.x CLI flag drift, documented in global CLAUDE.md) is OUT OF SCOPE.
 
-**Plans:** 0 plans
+**Plans:** 2 plans (2 waves; the CI job/audit depends on the config + fallow devDep existing first)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 11 to break down)
+**Wave 1**
+- [ ] 11-01-PLAN.md -- QUAL-02 + QUAL-03 (devDep): author the run-verified `.fallowrc.jsonc` resolving all current findings, pin `fallow@2.103.0` exact root devDep, remove the unused `@angular/forms` prod dep; `npx fallow audit --base origin/main` exits 0 on a 0-finding tree
+
+**Wave 2** *(depends_on 11-01: `npm ci` + the gate need the lockfile + config)*
+- [ ] 11-02-PLAN.md -- QUAL-01 + QUAL-03 (CI/posture): add the path-gated SHA-pinned `fallow` CI job (fetch-depth: 0, new-only) wired into the `ci` aggregate `needs:`, add the `ci/fallow` act-compat assertion; actionlint + ci.yml security posture preserved
 
 ## Progress
 
@@ -139,4 +143,4 @@ Plans:
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete    | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete   | 2026-06-29 |
-| 11. Fallow code-quality CI gate | v0.0.3 | 0/0 | Not planned | - |
+| 11. Fallow code-quality CI gate | v0.0.3 | 0/2 | Planned | - |
