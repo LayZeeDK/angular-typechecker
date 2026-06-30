@@ -12,27 +12,18 @@ Why this matters (validated by Brandon Roberts' 2026-06-26 analysis): at scale t
 
 Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular projects cannot use that fast path -- Angular lacks TypeScript project-references support -- and it would not surface Angular template type-check or extended (NG8xxx) diagnostics anyway. angular-typechecker is the Angular-aware whole-program no-emit type-check that fills that gap.
 
-## Current Milestone: v0.0.3 Engine hardening
-
-**Goal:** Harden the existing whole-program no-emit `runTypecheck` engine -- close real correctness/completeness holes, make diagnostic gathering resilient instead of all-or-nothing, and make Angular-version drift fail loudly -- all verified against stable Angular 22.0.4 and WITHOUT migrating off `performCompilation` to `NgtscProgram`.
-
-**Target features (3 clusters):**
-- **Correctness & completeness:** detect config-resolution infra crashes (re-throw as infra, do not count as type errors); surface global / location-less TS diagnostics (`getGlobalDiagnostics`); stop suppressing empty-`fileName` diagnostics.
-- **Resilience:** per-file fault isolation so one `FatalDiagnosticError` does not abandon the rest (opens with a GATED spike deciding simple per-file loop vs. hybrid gather); `realpath()` try/catch in the boundary filter; `suppressOutputPathCheck`.
-- **Drift-hardening:** a build-time `tsconfig.drift.json` assertion that the vendored shim stays in sync with the real `api.Program` getter set + NG error-code encoding; fix the fabricated `EmitFlags.None`; vendor-marker comments; KEEP the no-op `getNgStructuralDiagnostics()` call under the drift assertion (forward-compat).
-
-Grounded in `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` (verified against `@angular/build` + `@angular/compiler-cli` at stable 22.0.4). The engine is already complete and faithful to `@angular/build`; this milestone is hardening, not a rewrite. Deferred: `totalFilesCount` observability field; the v0.0.1 deferred feature families (INF/GEN/SUR/REP/SUP) remain out of scope.
-
 ## Current State
 
-**Shipped v0.0.1 (2026-06-29)** -- published live to npm as `angular-typechecker@0.0.1` and `@0.0.2` (tokenless OIDC Trusted Publisher + SLSA v1 provenance).
+**Shipped v0.0.3 (2026-06-30)** -- the latest release, published live to npm as `angular-typechecker@0.0.3` (tokenless OIDC Trusted Publisher + SLSA v1 provenance), following v0.0.1 and v0.0.2 (shipped 2026-06-28/29).
 
-The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS adapter over a framework-agnostic core (`runTypecheck`) that loads ESM `@angular/compiler-cli` via `await import()` and gathers the complete diagnostic set unconditionally. Validated across all five project types against the installed tarball, made Nx-cacheable with a dependency-error-busts-cache correctness gate, and gated by a Node 22/24/26 x Linux/Windows/macOS CI matrix. `main` is PR-only with a Release-PR flow and a curated public changelog.
+The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS adapter over a framework-agnostic core (`runTypecheck`) that loads ESM `@angular/compiler-cli` via `await import()` and gathers the complete diagnostic set unconditionally. Validated across all five project types against the installed tarball, made Nx-cacheable with a dependency-error-busts-cache correctness gate, and gated by a Node 22/24/26 x Linux/Windows/macOS CI matrix. v0.0.3 hardened that engine (correctness, resilience, drift-hardening) and added a `fallow` CI code-quality gate. `main` is PR-only with a Release-PR flow and a curated public changelog.
 
-- **Codebase:** ~1,162 LOC TypeScript across 33 `.ts` files in `packages/angular-typechecker/` (incl. tests); plus e2e fixture projects and CI/release workflows.
-- **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers.
-- **Known issues / debt:** documentation-drift and INFO-level only (see `.planning/milestones/v0.0.1-MILESTONE-AUDIT.md`); `.npmrc legacy-peer-deps=true` is a dev-repo concern that does not reach consumers.
-- **v0.0.3 progress:** ALL phases COMPLETE 2026-06-30 (pending the milestone PR #9 merge). Phase 8 (Correctness & Completeness, COR-01..04) -- config-resolution 500 re-thrown as infrastructure, global TS diagnostics via `getGlobalDiagnostics()`, empty-`fileName` diagnostics kept, pure core `toExitCode` 0/1/2 policy. Phase 9 (Resilience, RES-01..04) -- HYBRID per-file fault isolation (gated spike) so one `FatalDiagnosticError` no longer collapses the run, `realpath()` try/catch, `suppressOutputPathCheck`. Phase 10 (Drift-hardening, HARD-01..05) -- build-time `tsconfig.drift.json` + `typecheck-drift` CI target, `EmitFlags` fix, vendor markers, retained no-op getter, no-`TS-99`-leak spec. Phase 11 (Code-Quality Gate, QUAL-01..03) -- `fallow@2.103.0` adopted as a path-gated CI quality gate (`--format human`, exit-code-gated, least-privilege `contents: read`), current findings resolved (gate green on adoption), proven RED on introduced dead code via a throwaway PR. Engine suite 147/147 green.
+- **Codebase:** ~1,777 LOC production TypeScript across 15 non-test `.ts` files in `packages/angular-typechecker/src/`; ~5,263 LOC including the test suite (41 `.ts` files total); plus e2e fixture projects, CI/release workflows, and a `tsconfig.drift.json` build-time drift tripwire.
+- **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers. CI quality gate: `fallow@2.103.0` (path-gated, new-only).
+- **Known issues / debt:** none accumulated in v0.0.3 (audit: zero tech debt). Residual items are documentation-drift / INFO-level only (see the milestone audits); `.npmrc legacy-peer-deps=true` remains a dev-repo concern that does not reach consumers.
+- **Next milestone:** not yet scoped. Run `/gsd-new-milestone`. Natural candidates (from Out of Scope below): `createNodesV2` inferred targets, machine-readable reporters (JSON/SARIF), the `NgtscProgram` incremental engine + REP-RES-02b (faithful per-file template recovery), or `nx add`/`ng add` schematics.
+
+v0.0.3 delivered in four phases: **Phase 8** (Correctness & Completeness, COR-01..04) -- config-resolution 500 re-thrown as infrastructure, global TS diagnostics via `getGlobalDiagnostics()`, empty-`fileName` diagnostics kept, pure core `toExitCode` 0/1/2 policy. **Phase 9** (Resilience, RES-01..04) -- HYBRID per-file fault isolation (gated spike) so one `FatalDiagnosticError` no longer collapses the run + a loud TCB-abort notice, `realpath()` try/catch, `suppressOutputPathCheck`. **Phase 10** (Drift-hardening, HARD-01..05) -- build-time `tsconfig.drift.json` + `typecheck-drift` CI target, `EmitFlags` fix, vendor markers, retained no-op getter, no-`TS-99`-leak spec. **Phase 11** (Code-Quality Gate, QUAL-01..03) -- `fallow@2.103.0` adopted as a path-gated CI quality gate (`--format human`, exit-code-gated, least-privilege `contents: read`), current findings resolved (gate green on adoption), proven RED on introduced dead code via a throwaway PR.
 
 ## Requirements
 
@@ -53,14 +44,19 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - [x] CI: GitHub Actions, Node 22/24/26 x Linux/Windows/macOS (heavy e2e gate Linux-only). -- v0.0.1
 - [x] Release-PR workflow: PR-only `main`, version/changelog via PR, tag-the-merge-commit publish, clean public changelog (no GSD phase/plan scopes). -- v0.0.1
 
-### Active (v0.0.3 Engine hardening -- in progress)
+### Validated (v0.0.3 -- shipped and verified 2026-06-30)
 
-Scoped requirements with REQ-IDs live in `.planning/REQUIREMENTS.md`. Summary by cluster:
-- **Correctness & completeness:** config-resolution-crash detection, global TS diagnostics, empty-`fileName` handling.
-- **Resilience:** per-file fault isolation (gated spike), `realpath()` robustness, `suppressOutputPathCheck`.
-- **Drift-hardening:** build-time shim + error-code drift assertion, `EmitFlags` fix, vendor markers, retained-getter-under-assertion.
+- [x] Correctness: config-resolution `UNKNOWN_ERROR_CODE` (500) re-thrown as `TypecheckInfrastructureError` (never counted as a type error); global / location-less TS diagnostics surfaced via `getGlobalDiagnostics()`; present-but-empty `file.fileName` diagnostics kept (not dropped by the boundary filter). -- v0.0.3 (COR-01..03)
+- [x] Exit-code policy: pure framework-agnostic `toExitCode` -> `0`/`1`/`2` (clean/type-error/infra); Nx executor surfaces infra distinctly within Nx's `{ success }` contract; literal OS exit `2` deferred to the standalone CLI. -- v0.0.3 (COR-04)
+- [x] Resilience: HYBRID per-file fault isolation (GATED spike) so one `FatalDiagnosticError` no longer collapses the run -- surviving files' TS + non-template diagnostics still reported -- with a loud, never-silent TCB-generation suppression notice; `realpath()` try/catch with raw-path fallback; `suppressOutputPathCheck: true`. -- v0.0.3 (RES-01..04)
+- [x] Drift-hardening: build-time `tsconfig.drift.json` + `typecheck-drift` CI target asserts the real `api.Program` stays assignable to the vendored shim (real->shim) and pins the NG error-code encoding; `EmitFlags.None` fabrication corrected; greppable `// angular-typechecker: vendored` markers; `getNgStructuralDiagnostics()` retained under the assertion; no-`TS-99`-leak regression spec. -- v0.0.3 (HARD-01..05)
+- [x] Code-quality gate: `fallow@2.103.0` adopted as a path-gated, SHA-pinned, new-only CI job wired into the `ci` aggregate (single required check unchanged); current findings resolved (green on adoption) via `.fallowrc.jsonc`; proven RED on introduced dead code. -- v0.0.3 (QUAL-01..03)
 
-This milestone improves the EXISTING engine only. The deferred families carried forward from v0.0.1 (inferred targets INF, install/generators GEN, other surfaces SUR, reporters/performance REP, broader support SUP) remain Out of Scope (below) and are the natural candidates for a later milestone.
+Full detail with outcomes: `.planning/milestones/v0.0.3-REQUIREMENTS.md`.
+
+### Active (next milestone -- not yet scoped)
+
+No active requirements -- v0.0.3 is shipped and the next milestone is not yet scoped (run `/gsd-new-milestone`). The deferred families carried forward from v0.0.1 (inferred targets INF, install/generators GEN, other surfaces SUR, reporters/performance REP incl. the `NgtscProgram` incremental engine + REP-RES-02b, broader support SUP) plus the `totalFilesCount` observability field (OBS-01) remain Out of Scope (below) and are the natural candidates for the next milestone.
 
 ### Out of Scope (deferred to later milestones, not abandoned)
 
@@ -124,6 +120,11 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 | Diagnostics: absolute-realpath filter; workspace-root-relative CI paths; agent-ready output | Correct project-boundary filter + GitHub annotations; AI/CI consumers | [OK] Validated v0.0.1 |
 | Angular CLI surface (deferred) via `convertNxExecutor`/`convertNxGenerator` re-exports | Current @nx/devkit APIs; thin adapters over same core | [OK] Validated v0.0.1 |
 | GSD: YOLO, Standard granularity, parallel, quality/Opus, Vertical MVP | Correctness-critical tooling with a gating spike | [OK] Validated v0.0.1 |
+| v0.0.3 hardens the existing `api.Program` engine; NO `NgtscProgram` migration | Targeted hardening, not a rewrite; verified faithful to `@angular/build` at 22.0.4 | [OK] Validated v0.0.3 |
+| Config-resolution 500 -> `TypecheckInfrastructureError`; pure `toExitCode` 0/1/2 policy (executor stays in Nx `{success}`) | A "clean" verdict must never be a false negative; Nx hard-maps `{success}` to 0/1, so literal exit 2 belongs to the deferred CLI | [OK] Validated v0.0.3 |
+| Resilience = HYBRID per-file fault isolation (gated spike GO) + loud TCB-abort notice; per-file template recovery deferred (REP-RES-02b) | Report as much as possible instead of all-or-nothing; faithful per-file template recovery needs `NgtscProgram`/`OptimizeFor.SingleFile` | [OK] Validated v0.0.3 |
+| Build-time `tsconfig.drift.json` drift gate (real `api.Program` -> shim assignability) | An Angular upgrade that drifts the getter set / error-code encoding must break CI loudly, not silently under-gather | [OK] Validated v0.0.3 |
+| `fallow` adopted as a path-gated, new-only, least-privilege CI quality gate (single required check unchanged) | Newly-introduced dead code / duplication / over-complexity should break CI; resolve findings rather than baseline | [OK] Validated v0.0.3 |
 
 ## Evolution
 
@@ -143,4 +144,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-30 -- v0.0.3 ALL phases (8-11) complete and verified; Phase 11 (QUAL-01..03) adopted the `fallow` CI quality gate (proven green-on-clean + red-on-dead-code on real CI). Milestone functionally complete, pending the PR #9 merge + `/gsd-audit-milestone`. Engine suite 147/147 green.*
+*Last updated: 2026-06-30 after v0.0.3 milestone completion -- Engine hardening shipped (Phases 8-11; published `angular-typechecker@0.0.3`). Audit passed 16/16 requirements with zero accumulated tech debt. v0.0.3 requirements moved to Validated; the next milestone is not yet scoped.*

@@ -49,6 +49,55 @@
 
 ---
 
+## Milestone: v0.0.3 -- Engine hardening
+
+**Shipped:** 2026-06-30
+**Phases:** 4 (8-11) | **Plans:** 14 | **Commits:** ~150 | **Timeline:** 2 days
+
+### What Was Built
+
+- Correctness/completeness fixes on the existing engine: config-resolution 500 re-thrown as infrastructure, global TS diagnostics via `getGlobalDiagnostics()`, empty-`fileName` diagnostics kept, and a pure `toExitCode` 0/1/2 policy.
+- Run-level resilience via a GATED-spike-chosen HYBRID per-file fault isolation (one `FatalDiagnosticError` no longer collapses the run) plus a loud, never-silent TCB-generation suppression notice, a `realpath()` try/catch, and `suppressOutputPathCheck`.
+- A build-time `tsconfig.drift.json` + `typecheck-drift` CI target that breaks the build when the real `@angular/compiler-cli` `api.Program` drifts from the vendored shim or the NG error-code encoding changes; the `EmitFlags.None` fabrication corrected; greppable vendor markers.
+- `fallow@2.103.0` adopted as a path-gated, SHA-pinned, new-only CI quality gate (least-privilege `contents: read`, single required check unchanged), green on adoption and proven RED on introduced dead code.
+
+### What Worked
+
+- **The gated spike paid off again (RES-01).** Probing the live `api.Program` for file-less non-template diagnostics BEFORE writing isolation code settled the SIMPLE-vs-HYBRID question with evidence (GO = HYBRID) instead of a guess, and surfaced the real `WholeProgram`-priming limitation early.
+- **Every requirement grounded in verified prior art.** Tracing each COR/RES/HARD item to a numbered finding in `PRIOR-ART-SUMMARY.md` (re-verified against `@angular/build` + compiler-cli at 22.0.4) kept the milestone targeted and rejected speculative scope.
+- **Honest, evidence-backed deferral over a forced feature.** RES-02 was reframed (run-level resilience + a loud notice) and the impossible-on-this-surface part (per-file template recovery) was deferred to REP-RES-02b, backed by a 5-lens Opus panel -- rather than forcing `OptimizeFor.SingleFile` semantics onto the `WholeProgram` surface.
+- **Build-time drift tripwire as a maintainability seam.** Encoding the vendored-shim contract as a compiled `tsconfig.drift.json` assertion turns a silent future under-gather into a loud CI failure.
+- **A deep code review created real value mid-milestone.** Phase 11 (the `fallow` gate) was an emergent phase the Phase-10 review surfaced; acting on it produced a durable CI quality gate.
+
+### What Was Inefficient
+
+- **Requirement-status lag RECURRED.** HARD-01/HARD-05 checkboxes stayed `[ ]` while their traceability + VERIFICATION already said Complete, and Phase 10 SUMMARY frontmatter `requirements_completed` was empty for 10-01/02/04 (IDs only in `tags:`/body). This is the SAME lesson v0.0.1 logged ("close statuses at phase verification") -- it was not fully internalized and the milestone audit again did cleanup.
+- **PR-review rounds converged to cosmetic.** Three `/gsd-quick --full` review-fix rounds on PR #11 (260630-dyd/fg0/jnl) trended to cosmetic-only by round 3 (de-pinning comments, de-tautologizing a test) -- each still a full quick-task cycle.
+- **Upstream tool drift cost a workaround.** GSD's `fallow` structural pre-pass is a silent no-op on fallow 2.x (CLI flag drift); the phase had to wire a gate around the manually-verified 2.x invocation rather than trust the integration.
+- **The milestone-close audit mis-flagged complete quick tasks.** The `audit-open` scanner reads a bare `SUMMARY.md` while `/gsd-quick` writes `<id>-SUMMARY.md`, so three verified+shipped tasks showed as incomplete at close (resolved with marker files).
+
+### Patterns Established
+
+- **Build-time drift tripwire** (`tsconfig.drift.json` + a dedicated CI target) asserting a vendored-shim contract against the real upstream types.
+- **Greppable vendored-divergence markers** (`// angular-typechecker: vendored -- <reason>`) so every intentional shim divergence is discoverable.
+- **Never-silent incompleteness:** when a whole-program signal (TCB-generation Fatal) suppresses some diagnostics, emit a LOUD notice naming the offending file rather than silently under-reporting.
+- **`fallow` as a new-only, least-privilege CI gate:** resolve current findings (not baseline them), keep `contents: read`, path-gate it, and keep the single required check stable so no branch-ruleset change is needed.
+- **Evidence-backed deferral:** record a mechanically-impossible-here feature as a Future Requirement with a multi-lens verification trail, instead of forcing it onto the wrong engine surface.
+
+### Key Lessons
+
+1. **The "close statuses at phase verification" lesson must be enforced, not just noted.** It recurred in v0.0.3 (HARD checkboxes + empty SUMMARY frontmatter). Flip requirement checkboxes and fill `requirements_completed` at each phase's verification, not at the milestone audit.
+2. **Add a stopping rule for review-fix rounds.** Once a review round produces only cosmetic findings, fold them into a single follow-up rather than spinning another full quick-task cycle.
+3. **When an upstream CLI drifts, gate on the manually-verified invocation, not the stale integration.** The `fallow` pre-pass was a silent no-op; the working path was to run the real 2.x command in CI directly.
+4. **Prefer an honest, evidence-backed deferral to an impossible feature.** REP-RES-02b deferral (with a 5-lens panel) was the right call over forcing per-file template recovery onto the `WholeProgram` surface.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for all GSD planning/execution/verification agents (per `config.json model_overrides`).
+- Notable: a small, independent-cluster phase structure (8/9/10 mostly parallel, single internal gate in 9) kept execution cheap; the costs concentrated in the RES-01 spike, the RES-02 reframe analysis, and the three PR-review rounds.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
