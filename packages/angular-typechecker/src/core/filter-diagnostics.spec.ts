@@ -292,4 +292,31 @@ describe('filterDiagnostics', () => {
     expect(result.kept).toHaveLength(3);
     expect(result.suppressedCount).toBe(0);
   });
+
+  // RES-03 / isUnderDir undefined-dir branch: a realpath that throws for the BASE
+  // ('/ws/proj') ONLY -- files resolve normally -- canonicalizes the file fine (the
+  // line-100 `canonicalFile === undefined` short-circuit does NOT fire) but leaves
+  // `canonicalBase` undefined. That is the ONLY path that reaches `isUnderDir(file,
+  // undefined)`, whose undefined-dir branch returns true (over-keep-safe) so the
+  // in-project file is KEPT. The existing throwing-realpath tests throw for EVERY
+  // input and short-circuit at line 100, so they never reach this branch.
+  it('RES-03: a realpath that throws for the base only still KEEPS in-project files (isUnderDir undefined-dir branch)', () => {
+    const realpath = (p: string): string => {
+      if (p === '/ws/proj') {
+        throw new Error('EACCES'); // base only
+      }
+
+      return p; // files resolve (identity)
+    };
+
+    const result = filterDiagnostics([diag('/ws/proj/src/a.ts')], {
+      basePath: '/ws/proj',
+      useCaseSensitiveFileNames: true,
+      realpath,
+      includeDeps: false,
+    });
+
+    expect(result.kept).toHaveLength(1);
+    expect(result.suppressedCount).toBe(0);
+  });
 });

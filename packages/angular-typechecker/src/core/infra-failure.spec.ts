@@ -75,6 +75,21 @@ function warningDiagnostic(code: number, message: string): ts.Diagnostic {
   } as ts.Diagnostic;
 }
 
+// S5c: a file-less SUGGESTION diagnostic (category 2) -- retained in
+// CoreResult.diagnostics but NEVER counted in errorCount/warningCount, so it makes
+// diagnostics.length STRICTLY exceed errorCount+warningCount and breaks the MD-02
+// `length - errorCount` tautology (a 2-element Error+Warning set could not).
+function suggestionDiagnostic(code: number, message: string): ts.Diagnostic {
+  return {
+    category: 2, // ts.DiagnosticCategory.Suggestion
+    code,
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    messageText: message,
+  } as ts.Diagnostic;
+}
+
 // RES-02 / I-1: a FILE-carrying Error diagnostic (the file-less `errorDiagnostic`
 // cannot exercise the boundary-filter classification). The detector reads only
 // `.code` and `.file?.fileName`, so the minimal `{ fileName }` shim is enough.
@@ -250,6 +265,7 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
       diagnostics: [
         errorDiagnostic(TS2322, 'Type string is not assignable to type number'),
         warningDiagnostic(6133, "'unused' is declared but its value is never read."),
+        suggestionDiagnostic(6138, "'x' is declared but its value is never read."),
       ],
       program: fakeProgram(),
     });
@@ -262,6 +278,34 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
 
     expect(result.errorCount).toBe(1);
     expect(result.warningCount).toBe(1);
+    // MD-02 anti-tautology: the Suggestion is retained but uncounted, so the explicit
+    // split is STRICTLY less than length. Under the buggy `length - errorCount`,
+    // warningCount would be 2 -> 1+2 === 3, NOT < 3 -> this FAILS as intended.
+    expect(result.errorCount + result.warningCount).toBeLessThan(result.diagnostics.length);
+  });
+
+  // #3 DEFENSE-IN-DEPTH guard: a `{ program: undefined }` return with an EMPTY
+  // diagnostics set (NO UNKNOWN_ERROR_CODE/500) skips the post-compilation 500 scan
+  // and reaches the DISTINCT program-undefined guard in `runTypecheck`. The existing
+  // 500 test plants a code-500 and exits via that scan, so it never reaches this
+  // guard -- this case proves the guard re-throws the SAME infra-class failure.
+  it('#3: RE-THROWS a TypecheckInfrastructureError when performCompilation returns NO Program and NO 500', async () => {
+    compilerCliStub.performCompilation.mockReturnValue({
+      diagnostics: [],
+      program: undefined,
+    });
+
+    const { runTypecheck, TypecheckInfrastructureError } = await import(
+      './run-typecheck'
+    );
+
+    await expect(
+      runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
+    ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+
+    await expect(
+      runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
+    ).rejects.toThrow(/returned no Program/);
   });
 });
 
