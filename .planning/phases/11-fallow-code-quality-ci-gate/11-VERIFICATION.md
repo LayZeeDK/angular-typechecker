@@ -1,9 +1,10 @@
 ---
 phase: 11-fallow-code-quality-ci-gate
 verified: 2026-06-30T03:15:00Z
-status: human_needed
+status: passed
 score: 14/14 must-haves verified
 overrides_applied: 0
+human_verification_resolved: "2026-06-30 -- all 5 human_verification items confirmed on REAL CI. Items 2-5: draft PR #9 (ci run 28423475278) all checks green with the fallow job present. Item 1: throwaway PR #10 (ci run 28423739251) -- fallow job FAIL (exit 1, introduced finding) -> ci aggregate FAIL, all other jobs green (red isolated to the gate); PR/branch deleted after proof. See 11-HUMAN-UAT.md (status: complete, 5/5)."
 human_verification:
   - test: "On a throwaway branch, add an obviously-unused exported symbol, push a draft PR; confirm the `fallow` job (and thus the aggregate `ci` check) goes RED; then confirm a clean PR is green."
     expected: "fallow job fails the PR with a `new-only` introduced dead-code finding; the single required `ci` check goes red. A clean PR keeps `ci` green."

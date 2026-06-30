@@ -1,5 +1,5 @@
 ---
-status: partial
+status: complete
 phase: 11-fallow-code-quality-ci-gate
 source: [11-VERIFICATION.md]
 started: 2026-06-30
@@ -8,7 +8,7 @@ updated: 2026-06-30
 
 ## Current Test
 
-[items 2-5 CONFIRMED by draft PR #9 CI run 28423475278 (all checks green); item 1 (red-path proof) optional, pending]
+[ALL 5 items CONFIRMED on real CI: items 2-5 via draft PR #9 (run 28423475278, all green); item 1 via throwaway PR #10 (run 28423739251, fallow + ci RED on introduced dead code, all other jobs green). Throwaway PR/branch deleted.]
 
 ## Tests
 
@@ -19,7 +19,7 @@ updated: 2026-06-30
 
 ### 1. Gate fails a PR that introduces dead code (QUAL-01 authoritative)
 expected: On a throwaway branch, add an obviously-unused exported symbol and open a draft PR; the `fallow` job (and thus the `ci` aggregate) goes RED.
-result: [pending]
+result: PASSED 2026-06-30 -- throwaway PR #10 (branch `redpath/fallow-probe`, one unused exported file) ci run 28423739251: `fallow` job FAIL (exit 1, 1 introduced unused finding) -> `ci` aggregate FAIL (Gate step); ALL other jobs (6 test cells, e2e, act-compat, lint-workflows, CodeQL) green -- red isolated to the gate. Locally reproduced first (`fallow audit --base origin/main` exit 1). Throwaway PR closed + branch deleted (remote+local); milestone HEAD unchanged.
 
 ### 2. Gate is green on adoption (QUAL-02 canonical proof)
 expected: The Phase 11 PR's own `ci` check is GREEN with the new `fallow` job present (a clean tree introduces 0 findings).
@@ -40,9 +40,9 @@ result: PASSED 2026-06-30 -- PR #9 `act-compat` job green (1m7s); the `ci/fallow
 ## Summary
 
 total: 5
-passed: 4
+passed: 5
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
