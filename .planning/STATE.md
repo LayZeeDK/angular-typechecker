@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Phase 11 context gathered
-last_updated: "2026-06-30T00:40:04.214Z"
-last_activity: 2026-06-30 -- Phase 11 planning complete
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-06-30T00:48:13.462Z"
+last_activity: 2026-06-30
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 14
-  completed_plans: 12
-  percent: 75
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 11 -- Fallow code-quality CI gate (added to v0.0.3; not planned yet)
+**Current focus:** Phase 11 — fallow-code-quality-ci-gate
 
 ## Current Position
 
-Phase: 11 (Fallow code-quality CI gate) -- NOT PLANNED
-Plan: 0 of 0
+Phase: 11 (fallow-code-quality-ci-gate) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-06-30 -- Phase 11 planning complete
+Last activity: 2026-06-30
 
 ### v0.0.3 phase map
 
@@ -87,6 +87,7 @@ Last activity: 2026-06-30 -- Phase 11 planning complete
 | Phase 09 P01 | 14min | 2 tasks | 9 files |
 | Phase 10 P10-01 | 3 min | 3 tasks | 2 files |
 | Phase 10 P10-02 | 4 min | 3 tasks | 7 files |
+| Phase 11 P01 | 12 min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -186,6 +187,7 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 - [Phase ?]: [10-02] HARD-01 build-time half: new compiler-cli-types.drift.ts asserts the real @angular/compiler-cli api.Program is assignable TO the shim -- per-member real->shim AssertAssignable tuple for the 6 diagnostic getters; getTsProgram special-cased as ReturnType -> ts.Program (the shim widens its return with useCaseSensitiveFileNames, so a member pair fails TS2322); call-site arity probes defend the optional->required silent gap; value-level UNKNOWN_ERROR_CODE=500 + the 7 EmitFlags member pins. tsconfig.drift.json (classic node, ignoreDeprecations 6.0, noEmit, files=[drift file]). Compiled ONLY there; excluded from tsconfig.lib.json AND tsconfig.spec.json so it never breaks nx build/test under nodenext (real barrel resolves EMPTY -> TS2305).
 - [Phase ?]: [10-02] Drift-file value-level imports (EmitFlags, UNKNOWN_ERROR_CODE) use a regular import, NOT import type (the pins read them as values; import type errored TS1361); Program stays import type. typecheck-drift target = nx:run-commands tsc --noEmit -p tsconfig.drift.json, cache:true with the installed compiler-cli index.d.ts + api.d.ts as inputs (upgrade invalidates the cache = the drift trigger), no outputs; folded into the existing path-gated CI test job run-many (Option A); ci.yml security envelope byte-unchanged.
 - [Phase ?]: [10-02] D-07: HARD-01 REQUIREMENTS.md wording corrected (removed/renamed/sig-changed called getter breaks the build via real->shim; ADDED getters are NOT a build failure, surfaced by the Plan 03 runtime spec). ROADMAP SC1 already carried the corrected wording. Rides the phase code-review gate per AGENTS.md.
+- [Phase ?]: [11-01] QUAL-02/QUAL-03: authored .fallowrc.jsonc resolving all current fallow@2.103.0 findings (entry for drift tripwire IN-02; ignoreExports UNKNOWN_ERROR_CODE IN-04; overrides EmitFlags-off IN-03 + repo-root fixtures/fault-isolation/** off; unused-dev-dependencies off D-06; audit.gate new-only D-02). fallow@2.103.0 exact-pinned root devDep; @angular/forms removed (zero usage). npx fallow audit --base origin/main exits 0 / verdict pass / 0 findings; engine suite green.
 
 ### Pending Todos
 
@@ -231,6 +233,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T00:05:40.531Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-fallow-code-quality-ci-gate/11-CONTEXT.md
+Last session: 2026-06-30T00:48:13.455Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: None
