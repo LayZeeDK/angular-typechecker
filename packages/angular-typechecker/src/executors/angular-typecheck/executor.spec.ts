@@ -192,6 +192,30 @@ describe('angularTypecheckExecutor (D-01/D-04)', () => {
     expect(mocks.loggerWarn).not.toHaveBeenCalled();
   });
 
+  // S3 (09-RES-02-DECISION.md, advisory-not-verdict): a TCB-generation abort with
+  // ZERO errors STILL yields { success: true } -- the abort is a WARN, NEVER a
+  // forced success:false. The existing abortedCoreResult builds on coreResult(1)
+  // (errorCount 1); this pins the DISTINCT abort-with-zero-errors case. The
+  // executor delegates the verdict to evaluateResult (stubbed { success: true }
+  // here, modelling errorCount 0), so the abort never overrides it.
+  it('RES-02 reframe: abort + errorCount 0 stays { success: true } with the loud warn (advisory-not-verdict)', async () => {
+    mocks.runTypecheck.mockResolvedValue({
+      ...coreResult(0),
+      templateCheckAborted: {
+        code: -993004,
+        fileName: '/ws/libs/x/poison.component.ts',
+      },
+    });
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    const result = await executor(options, context);
+
+    expect(result).toEqual({ success: true });
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
   it('catches a TypecheckInfrastructureError -> logger.error + { success: false } (D-01)', async () => {
     const { TypecheckInfrastructureError } = await import(
       '../../core/run-typecheck'

@@ -60,6 +60,21 @@ function errorDiagnostic(code: number, message: string): ts.Diagnostic {
   } as ts.Diagnostic;
 }
 
+// S5c: a file-less WARNING diagnostic (category 0) to exercise the EXPLICIT
+// errorCount/warningCount category split in `finalize` -- existing
+// multi-diagnostic tests are all-Error, so this guards the MD-02
+// `length - errorCount` anti-bug.
+function warningDiagnostic(code: number, message: string): ts.Diagnostic {
+  return {
+    category: 0, // ts.DiagnosticCategory.Warning
+    code,
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    messageText: message,
+  } as ts.Diagnostic;
+}
+
 // RES-02 / I-1: a FILE-carrying Error diagnostic (the file-less `errorDiagnostic`
 // cannot exercise the boundary-filter classification). The detector reads only
 // `.code` and `.file?.fileName`, so the minimal `{ fileName }` shim is enough.
@@ -223,6 +238,31 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
       '/elsewhere/poison.component.ts',
     );
   });
+
+  // S5c / MD-02: a MIXED Error+Warning diagnostic set proves the EXPLICIT category
+  // split in `finalize` (errorCount and warningCount counted INDEPENDENTLY, never
+  // `length - errorCount`). `finalize` is private, so this drives it through
+  // `runTypecheck` via the stubbed `performCompilation` -- the only harness that
+  // can return a mixed-category set. File-less builders keep both diagnostics past
+  // the boundary filter so the count logic is isolated.
+  it('S5c: counts errorCount and warningCount EXPLICITLY from a mixed Error+Warning set (MD-02)', async () => {
+    compilerCliStub.performCompilation.mockReturnValue({
+      diagnostics: [
+        errorDiagnostic(TS2322, 'Type string is not assignable to type number'),
+        warningDiagnostic(6133, "'unused' is declared but its value is never read."),
+      ],
+      program: fakeProgram(),
+    });
+
+    const { runTypecheck } = await import('./run-typecheck');
+
+    const result = await runTypecheck({
+      tsConfigPath: '/virtual/tsconfig.json',
+    });
+
+    expect(result.errorCount).toBe(1);
+    expect(result.warningCount).toBe(1);
+  });
 });
 
 // COR-01 / D-01..D-03 unit twin: the SECOND 500 scan, on `parsed.errors`. A
@@ -281,6 +321,42 @@ describe('runTypecheck config-resolution infrastructure-failure handling (COR-01
 
     // The scan must fire on the config parse alone -- performCompilation is
     // never reached on the 500 path.
+    expect(compilerCliStub.performCompilation).not.toHaveBeenCalled();
+  });
+
+  // S5a: the config-500 scan is rootNames-INDEPENDENT. The scan at
+  // run-typecheck.ts precedes BOTH the zero-rootNames guard and
+  // `performCompilation`, so a config-parse 500 with a NON-empty `rootNames` still
+  // re-throws (the sibling above uses `rootNames: []`). This pins that the scan
+  // never depends on rootNames being empty.
+  it('S5a: RE-THROWS for a config-parse 500 even with NON-empty rootNames, never reaching performCompilation', async () => {
+    compilerCliStub.readConfiguration.mockReturnValue({
+      project: '/virtual/tsconfig.json',
+      options: {},
+      rootNames: ['/virtual/error.component.ts'],
+      errors: [
+        {
+          category: 1, // ts.DiagnosticCategory.Error
+          code: UNKNOWN_ERROR_CODE,
+          source: 'angular',
+          file: undefined,
+          start: undefined,
+          length: undefined,
+          messageText:
+            "Error: ENOENT: no such file or directory, lstat '/virtual/tsconfig.json'",
+        },
+      ],
+      emitFlags: 0,
+    });
+
+    const { runTypecheck, TypecheckInfrastructureError } = await import(
+      './run-typecheck'
+    );
+
+    await expect(
+      runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
+    ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+
     expect(compilerCliStub.performCompilation).not.toHaveBeenCalled();
   });
 

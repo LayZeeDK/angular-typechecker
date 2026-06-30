@@ -136,6 +136,24 @@ describe('detectTemplateCheckAborted (RES-02 reframe)', () => {
     );
   });
 
+  // S5d: the shim regex `/\.ngtypecheck\.ts$/` is `.ts$`-anchored, so a
+  // `.ngtypecheck.tsx` name does NOT match and passes through UNCHANGED -- pinning
+  // the `$` anchor. Per the documented LIMITATION (run-typecheck.ts), `.tsx`
+  // sources collapse to `<name>.ngtypecheck.ts`, never `.tsx`, so this is a
+  // negative-case anchor guard; mirrors the `.ngtypecheck.ts` positive test above.
+  it('leaves a .ngtypecheck.tsx path unchanged (the .ts$ shim anchor does not match .tsx)', () => {
+    const reported = [
+      diagnostic(
+        TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+        '/ws/app/poison.component.ngtypecheck.tsx',
+      ),
+    ];
+
+    expect(detectTemplateCheckAborted(reported)?.fileName).toBe(
+      '/ws/app/poison.component.ngtypecheck.tsx',
+    );
+  });
+
   it('stays UNSET on a clean reported set (no false positive)', () => {
     const reported = [
       diagnostic(2322, '/ws/app/a.component.ts'),
