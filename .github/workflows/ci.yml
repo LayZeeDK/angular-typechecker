@@ -223,7 +223,7 @@ jobs:
   # post-merge `main` `ci` run (which has a real code diff vs its parent on a
   # code merge) is the second backstop.
   ci:
-    needs: [changes, test, e2e, act-compat, lint-workflows]
+    needs: [changes, test, e2e, fallow, act-compat, lint-workflows]
     runs-on: ubuntu-latest
     if: always()
     steps:
