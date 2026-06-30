@@ -3,6 +3,7 @@ import type ts from 'typescript';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CompilerCli } from './compiler-cli-types';
+import { TCB_GENERATION_FATAL_DIAGNOSTIC_CODE } from './diagnostic-codes';
 
 // D-06 re-throw proof -- the SINGLE justified mock in Phase 2 (RESEARCH Open Q2;
 // broad mocking is Phase-3 TEST-01). It stubs the loaded @angular/compiler-cli
@@ -57,6 +58,20 @@ function errorDiagnostic(code: number, message: string): ts.Diagnostic {
     start: undefined,
     length: undefined,
     messageText: message,
+  } as ts.Diagnostic;
+}
+
+// RES-02 / I-1: a FILE-carrying Error diagnostic (the file-less `errorDiagnostic`
+// cannot exercise the boundary-filter classification). The detector reads only
+// `.code` and `.file?.fileName`, so the minimal `{ fileName }` shim is enough.
+function fileDiagnostic(code: number, fileName: string): ts.Diagnostic {
+  return {
+    category: 1, // ts.DiagnosticCategory.Error
+    code,
+    file: { fileName } as ts.SourceFile,
+    start: undefined,
+    length: undefined,
+    messageText: 'x',
   } as ts.Diagnostic;
 }
 
@@ -155,6 +170,50 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
     expect(compilerCliStub.readConfiguration).toHaveBeenCalledWith(
       '/virtual/tsconfig.json',
       { suppressOutputPathCheck: true },
+    );
+  });
+
+  // RES-02 / I-1: an out-of-basePath TCB-generation Fatal (NG3004) is SUPPRESSED
+  // from the reported set by the boundary filter, yet it MUST still fire
+  // `templateCheckAborted` -- the abort is whole-program, so survivors' template
+  // diagnostics are gone regardless of where the offending shim lives. The mock
+  // `readConfiguration` returns `options: {}`, so `resolveFilterBasePath` falls
+  // back to `dirname('/virtual/tsconfig.json')` === `/virtual`; an NG3004 whose
+  // file sits at `/elsewhere/...` is therefore out-of-basePath and filtered out.
+  // This FAILS when detection scans the post-filter reported set (NG3004 absent ->
+  // `templateCheckAborted` undefined) and PASSES when detection scans the
+  // pre-filter `diagnostics` arg (the I-1 fix).
+  it('RES-02 / I-1: an out-of-basePath TCB-generation Fatal is SUPPRESSED yet still sets templateCheckAborted', async () => {
+    compilerCliStub.performCompilation.mockReturnValue({
+      diagnostics: [
+        fileDiagnostic(
+          TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+          '/elsewhere/poison.component.ngtypecheck.ts',
+        ),
+      ],
+      program: fakeProgram(),
+    });
+
+    const { runTypecheck } = await import('./run-typecheck');
+
+    const result = await runTypecheck({
+      tsConfigPath: '/virtual/tsconfig.json',
+    });
+
+    // The NG3004 was suppressed by the boundary filter (out of /virtual).
+    expect(result.suppressedCount).toBeGreaterThanOrEqual(1);
+    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain(
+      TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+    );
+
+    // YET the abort notice still fires, naming the SOURCE component (the
+    // `.ngtypecheck` shim infix is normalized back to `.ts`).
+    expect(result.templateCheckAborted).toBeDefined();
+    expect(result.templateCheckAborted?.code).toBe(
+      TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+    );
+    expect(result.templateCheckAborted?.fileName).toBe(
+      '/elsewhere/poison.component.ts',
     );
   });
 });

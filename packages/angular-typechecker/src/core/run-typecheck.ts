@@ -355,10 +355,13 @@ interface FinalizeFilter {
  * stay in `diagnostics` but are not counted, preserving the invariant
  * `errorCount + warningCount <= diagnostics.length`.
  *
- * RES-02 (reframe): it also scans the same reported set for a TCB-generation
- * Fatal (NG3004) and, when present, sets `templateCheckAborted` so the adapter
- * can surface the loud suppression notice. This is pure detection -- it never
- * mutates the verdict or touches the infra-500 path (D-05).
+ * RES-02 (reframe): it also scans the PRE-filter `diagnostics` arg (the raw
+ * gathered set before the boundary filter + dedup, a SUPERSET of `reported`) for
+ * a TCB-generation Fatal (NG3004) and, when present, sets `templateCheckAborted`
+ * so the adapter can surface the loud suppression notice. Scanning the pre-filter
+ * set also catches an out-of-basePath poison the boundary filter would suppress
+ * from `reported`. This is pure detection -- it never mutates the verdict or
+ * touches the infra-500 path (D-05).
  */
 function finalize(
   ts: typeof import('typescript'),
@@ -398,12 +401,19 @@ function finalize(
   ).length;
 
   // RES-02 (reframe; 09-RES-02-DECISION.md): PURE detection of a TCB-generation
-  // Fatal in the REPORTED set. Detect by CODE only (the same code-only discipline
-  // the infra-500 scans use -- never `source`/message text). The kept set is
-  // post-filter + deduped, so a poison whose file falls inside the project
-  // boundary survives the filter and is found here exactly once. `undefined` when
-  // no such Fatal is present (the common path).
-  const templateCheckAborted = detectTemplateCheckAborted(reported);
+  // Fatal in the PRE-filter `diagnostics` arg -- the raw gathered set BEFORE the
+  // boundary filter and dedup -- NOT the post-filter `reported` set. Detect by
+  // CODE only (the same code-only discipline the infra-500 scans use -- never
+  // `source`/message text). The abort is whole-program: it aborts shim generation
+  // for ALL files, so survivors' template diagnostics are gone no matter where the
+  // offending shim lives. An out-of-basePath poison is SUPPRESSED from `reported`
+  // by the boundary filter, so scanning `reported` would silently miss it; the
+  // pre-filter arg is a SUPERSET of `reported`, so this catches BOTH the in-project
+  // and the out-of-basePath case while remaining order/dedup-independent (a pure
+  // code-only `.find`). It never affects counts -- errorCount/warningCount derive
+  // from `reported` -- so this is purely additive signalling. `undefined` when no
+  // such Fatal is present (the common path).
+  const templateCheckAborted = detectTemplateCheckAborted(diagnostics);
 
   return {
     tsConfigPath,
