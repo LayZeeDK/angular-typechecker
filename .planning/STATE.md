@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
 status: executing
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-06-30T00:48:13.462Z"
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-06-30T03:00:00.000Z"
 last_activity: 2026-06-30
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-29 after v0.0.1 milestone completion)
 
 Phase: 11 (fallow-code-quality-ci-gate) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: All plans executed; awaiting phase verification
 Last activity: 2026-06-30
 
 ### v0.0.3 phase map
@@ -88,6 +88,7 @@ Last activity: 2026-06-30
 | Phase 10 P10-01 | 3 min | 3 tasks | 2 files |
 | Phase 10 P10-02 | 4 min | 3 tasks | 7 files |
 | Phase 11 P01 | 12 min | 3 tasks | 3 files |
+| Phase 11 P02 | ~6 min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -188,6 +189,7 @@ All v0.0.1 decisions are logged in PROJECT.md Key Decisions table (outcomes clos
 - [Phase ?]: [10-02] Drift-file value-level imports (EmitFlags, UNKNOWN_ERROR_CODE) use a regular import, NOT import type (the pins read them as values; import type errored TS1361); Program stays import type. typecheck-drift target = nx:run-commands tsc --noEmit -p tsconfig.drift.json, cache:true with the installed compiler-cli index.d.ts + api.d.ts as inputs (upgrade invalidates the cache = the drift trigger), no outputs; folded into the existing path-gated CI test job run-many (Option A); ci.yml security envelope byte-unchanged.
 - [Phase ?]: [10-02] D-07: HARD-01 REQUIREMENTS.md wording corrected (removed/renamed/sig-changed called getter breaks the build via real->shim; ADDED getters are NOT a build failure, surfaced by the Plan 03 runtime spec). ROADMAP SC1 already carried the corrected wording. Rides the phase code-review gate per AGENTS.md.
 - [Phase ?]: [11-01] QUAL-02/QUAL-03: authored .fallowrc.jsonc resolving all current fallow@2.103.0 findings (entry for drift tripwire IN-02; ignoreExports UNKNOWN_ERROR_CODE IN-04; overrides EmitFlags-off IN-03 + repo-root fixtures/fault-isolation/** off; unused-dev-dependencies off D-06; audit.gate new-only D-02). fallow@2.103.0 exact-pinned root devDep; @angular/forms removed (zero usage). npx fallow audit --base origin/main exits 0 / verdict pass / 0 findings; engine suite green.
+- [Phase ?]: [11-02] QUAL-01/QUAL-03: added a dedicated path-gated SHA-pinned `fallow` job to ci.yml (copies the e2e job + two deltas: fetch-depth: 0 for new-only base-snapshot attribution against origin/main, and `npx fallow audit --format json --base origin/main` + FALLOW_AUDIT_BASE; D-12/D-13/D-14), wired it into the `ci` aggregate `needs:` after e2e (the contains(needs.*.result, ...) gate auto-includes it; D-10), and added `assert_selected "$PR_PLAN" "ci/fallow" "pull_request"` to act-compat.sh (D-15). Reused the EXACT existing checkout/setup-node SHA pins; no SARIF/--ci, no job permissions re-grant, no PR-metadata interpolation; top-level contents: read + threat-model header byte-unchanged; single required check stays `ci` (no ruleset change). Verified: `npx fallow audit --format json --base origin/main` exits 0 / verdict pass / 0 introduced+inherited findings (gate new-only); `act --validate` passes (both workflows parse). actionlint deferred to CI lint-workflows (absent on dev box, Phase 6/7 precedent); changes-dependent `act -n` selection (incl. ci/fallow) deferred to CI act-compat (Docker not running locally, Phase 7 precedent).
 
 ### Pending Todos
 
@@ -233,6 +235,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T00:48:13.455Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-06-30T03:00:00.000Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
