@@ -142,6 +142,38 @@ jobs:
           npx nx run-many -t test
           -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e
 
+  # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
+  # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
+  # gate (.fallowrc.jsonc `audit.gate: new-only`); --format json is for the CI log
+  # only, the exit code gates. NO --ci/SARIF (would need security-events: write,
+  # contradicting the top-level contents: read). fallow is an exact-pinned root
+  # devDependency installed by `npm ci`; `npx fallow` resolves the locked version
+  # (never @latest) so a fallow release cannot silently flip the gate.
+  #
+  # fetch-depth: 0 is LOAD-BEARING -- new-only attribution runs a base-snapshot
+  # pass against origin/main's merge-base; a shallow checkout breaks new-vs-
+  # inherited attribution. FALLOW_AUDIT_BASE pins the base ref defensively.
+  #
+  # Path-gated (D-08), SAME NEGATIVE if: form as test/e2e -- skips a planning/docs-
+  # only PR yet stays in the `act -n` plan under the empty filter output.
+  fallow:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx fallow audit --format json --base origin/main
+        env:
+          FALLOW_AUDIT_BASE: origin/main
+
   # act-compatibility gate (RD-06): container-free `act --validate`
   # (parseability) + `act -n` per trigger (trigger/condition fidelity via the
   # if:-gated job selection). NEVER plain `act <event>` execution -- no nested
