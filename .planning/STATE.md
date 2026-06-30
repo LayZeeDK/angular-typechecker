@@ -230,6 +230,7 @@ v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now
 | # | Description | Date | Commit | Status | Directory |
 |---|-------------|------|--------|--------|-----------|
 | 260630-dyd | Address all PR #11 review findings (I-1 silent-notice fix + T1/T3/S-types test gaps + S-code/S-test/S-comments cleanups; T2 dropped as refuted) | 2026-06-30 | 53c8c18 | Verified | [260630-dyd-address-all-review-findings](./quick/260630-dyd-address-all-review-findings/) |
+| 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined) | 2026-06-30 | 95d6f58 | Verified | [260630-fg0-address-second-round-pr-review-findings](./quick/260630-fg0-address-second-round-pr-review-findings/) |
 
 ## Deferred Items
 
@@ -242,6 +243,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30 - quick task 260630-dyd (address all PR #11 review findings)
-Stopped at: v0.0.3 milestone shipped via /gsd-ship -- PR #11 open into main. After shipping, ran /pr-review-toolkit:review-pr (5 opus agents) then /gsd-quick --full to address findings: I-1 (silent template-check-aborted notice on out-of-boundary TCB fatals) FIXED + 6 atomic commits, engine suite green (149 passed), quick-task verification passed 6/6, code review clean. Pending: push the 6 commits to update PR #11, then CI green + user approval to merge (main is PR-only).
+Last session: 2026-06-30 - quick task 260630-fg0 (second-round PR #11 review findings)
+Stopped at: v0.0.3 milestone shipped via /gsd-ship -- PR #11 open into main. Two review->fix rounds via /gsd-quick --full: round 1 (260630-dyd) fixed I-1 (silent notice); round 2 (260630-fg0) fixed #1 realpath keep-on-throw false-negative (+ inverted the round-1 T1 test), the #3 program-undefined guard, and comment/test polish (S4 + S5b refuted, S6 declined). Engine suite green (153 passed), verification passed 8/8, code review clean. Pending: push the round-2 commits to update PR #11, then CI green + user approval to merge (main is PR-only).
 Resume file: https://github.com/LayZeeDK/angular-typechecker/pull/11
