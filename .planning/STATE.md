@@ -231,6 +231,7 @@ v0.0.1 is closed -- all entries below are RESOLVED or were phase-input notes now
 |---|-------------|------|--------|--------|-----------|
 | 260630-dyd | Address all PR #11 review findings (I-1 silent-notice fix + T1/T3/S-types test gaps + S-code/S-test/S-comments cleanups; T2 dropped as refuted) | 2026-06-30 | 53c8c18 | Verified | [260630-dyd-address-all-review-findings](./quick/260630-dyd-address-all-review-findings/) |
 | 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined) | 2026-06-30 | 95d6f58 | Verified | [260630-fg0-address-second-round-pr-review-findings](./quick/260630-fg0-address-second-round-pr-review-findings/) |
+| 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified | [260630-jnl-address-third-round-pr-review-findings](./quick/260630-jnl-address-third-round-pr-review-findings/) |
 
 ## Deferred Items
 
@@ -243,6 +244,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30 - quick task 260630-fg0 (second-round PR #11 review findings)
-Stopped at: v0.0.3 milestone shipped via /gsd-ship -- PR #11 open into main. Two review->fix rounds via /gsd-quick --full: round 1 (260630-dyd) fixed I-1 (silent notice); round 2 (260630-fg0) fixed #1 realpath keep-on-throw false-negative (+ inverted the round-1 T1 test), the #3 program-undefined guard, and comment/test polish (S4 + S5b refuted, S6 declined). Engine suite green (153 passed), verification passed 8/8, code review clean. Pending: push the round-2 commits to update PR #11, then CI green + user approval to merge (main is PR-only).
+Last session: 2026-06-30 - quick task 260630-jnl (third-round PR #11 review findings)
+Stopped at: v0.0.3 milestone shipped via /gsd-ship -- PR #11 open into main. THREE review->fix rounds via /gsd-quick --full: r1 (260630-dyd) I-1 silent-notice; r2 (260630-fg0) realpath keep-on-throw false-negative + program guard + polish; r3 (260630-jnl) de-tautologized the S5c warningCount test + covered the two new defensive branches (undefined-base filter, program-undefined guard) + de-pinned a stale ref. Engine suite green (155 passed), verification passed 6/6, code review clean (2 cosmetic suggestions declined; prettier is NOT CI-gated and the repo has pre-existing >80col lines, so the new lines are left consistent with existing style -- no scope-creep reformat). Rounds are converging to cosmetic-only. Pending: push round-3 commits to update PR #11, then CI green + user approval to merge (main is PR-only).
 Resume file: https://github.com/LayZeeDK/angular-typechecker/pull/11
