@@ -32,7 +32,7 @@ The `angular-typecheck` Nx executor is real and runnable: a sub-50-line CommonJS
 - **Codebase:** ~1,162 LOC TypeScript across 33 `.ts` files in `packages/angular-typechecker/` (incl. tests); plus e2e fixture projects and CI/release workflows.
 - **Tech stack:** Nx 23.0.1, Angular 22.0.4, TypeScript 6.0.3, Vitest 4, Node 22/24/26. `@nx/devkit` pinned dependency; `@angular/compiler-cli` + `typescript` peers.
 - **Known issues / debt:** documentation-drift and INFO-level only (see `.planning/milestones/v0.0.1-MILESTONE-AUDIT.md`); `.npmrc legacy-peer-deps=true` is a dev-repo concern that does not reach consumers.
-- **v0.0.3 progress (in flight):** Phase 8 (Correctness & Completeness, COR-01..04) COMPLETE 2026-06-29 -- config-resolution `UNKNOWN_ERROR_CODE` 500 re-thrown as infrastructure before the zero-rootNames guard, global/location-less TS diagnostics gathered via `getGlobalDiagnostics()`, present-but-empty-`fileName` diagnostics kept, and a pure core `toExitCode` 0/1/2 policy added (literal OS exit code deferred to the future standalone CLI; the Nx executor surfaces infra distinctly within its `{ success }` contract). Full suite 123/123 green. Phases 9 (Resilience) + 10 (Drift-hardening) remain.
+- **v0.0.3 progress:** ALL phases COMPLETE 2026-06-30 (pending the milestone PR #9 merge). Phase 8 (Correctness & Completeness, COR-01..04) -- config-resolution 500 re-thrown as infrastructure, global TS diagnostics via `getGlobalDiagnostics()`, empty-`fileName` diagnostics kept, pure core `toExitCode` 0/1/2 policy. Phase 9 (Resilience, RES-01..04) -- HYBRID per-file fault isolation (gated spike) so one `FatalDiagnosticError` no longer collapses the run, `realpath()` try/catch, `suppressOutputPathCheck`. Phase 10 (Drift-hardening, HARD-01..05) -- build-time `tsconfig.drift.json` + `typecheck-drift` CI target, `EmitFlags` fix, vendor markers, retained no-op getter, no-`TS-99`-leak spec. Phase 11 (Code-Quality Gate, QUAL-01..03) -- `fallow@2.103.0` adopted as a path-gated CI quality gate (`--format human`, exit-code-gated, least-privilege `contents: read`), current findings resolved (gate green on adoption), proven RED on introduced dead code via a throwaway PR. Engine suite 147/147 green.
 
 ## Requirements
 
@@ -143,4 +143,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-29 -- v0.0.3 Phase 8 (Correctness & Completeness, COR-01..04) complete and verified (123/123 green); SC4/COR-04 reframed (exit-code policy in core, literal OS code via the deferred standalone CLI). Phases 9-10 remain.*
+*Last updated: 2026-06-30 -- v0.0.3 ALL phases (8-11) complete and verified; Phase 11 (QUAL-01..03) adopted the `fallow` CI quality gate (proven green-on-clean + red-on-dead-code on real CI). Milestone functionally complete, pending the PR #9 merge + `/gsd-audit-milestone`. Engine suite 147/147 green.*
