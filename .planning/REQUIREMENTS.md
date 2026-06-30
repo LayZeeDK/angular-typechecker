@@ -62,31 +62,31 @@
 
 ## Traceability
 
-Populated during roadmap creation (each requirement maps to exactly one phase).
+Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's last phase 11).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GEN-01 | — | Pending |
-| GEN-02 | — | Pending |
-| GEN-03 | — | Pending |
-| GEN-04 | — | Pending |
-| GEN-05 | — | Pending |
-| GEN-06 | — | Pending |
-| CAT-01 | — | Pending |
-| CAT-02 | — | Pending |
-| CAT-03 | — | Pending |
-| CAT-04 | — | Pending |
-| CAT-05 | — | Pending |
-| DRIFT-01 | — | Pending |
-| GE2E-01 | — | Pending |
-| GE2E-02 | — | Pending |
-| GUARD-01 | — | Pending |
+| CAT-01 | Phase 12 | Pending |
+| CAT-02 | Phase 12 | Pending |
+| CAT-03 | Phase 12 | Pending |
+| CAT-04 | Phase 12 | Pending |
+| CAT-05 | Phase 12 | Pending |
+| DRIFT-01 | Phase 12 | Pending |
+| GEN-01 | Phase 13 | Pending |
+| GEN-02 | Phase 13 | Pending |
+| GEN-03 | Phase 13 | Pending |
+| GEN-04 | Phase 13 | Pending |
+| GEN-05 | Phase 13 | Pending |
+| GEN-06 | Phase 13 | Pending |
+| GE2E-01 | Phase 14 | Pending |
+| GE2E-02 | Phase 14 | Pending |
+| GUARD-01 | Phase 14 | Pending |
 
 **Coverage:**
 - v0.0.4 requirements: 15 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 15 (roadmap pending)
+- Mapped to phases: 15 (Phase 12: 6 · Phase 13: 6 · Phase 14: 3)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 after initial definition (board-ratified testing strategy)*
+*Last updated: 2026-07-01 after roadmap creation (15/15 requirements mapped across Phases 12-14)*
