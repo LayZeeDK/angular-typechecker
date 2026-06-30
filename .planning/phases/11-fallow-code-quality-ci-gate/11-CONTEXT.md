@@ -36,7 +36,7 @@ Adopt `fallow` (npm, the dead-code / duplication / complexity analyzer, v2.x -- 
   - `entry: ["packages/angular-typechecker/src/core/compiler-cli-types.drift.ts", ...]` -- declares the tsconfig-`files`-only drift tripwire reachable, killing the `unused_file` false positive (IN-02). KEEP the real source entry points too.
   - `overrides: [{ files: ["**/compiler-cli-types.ts"], rules: { "unused-enum-members": "off" } }]` -- scopes off the `EmitFlags` contract-mirror shim's 7 "unused" members (IN-03).
   - `ignoreExports: [{ file: "**/compiler-cli-types.ts", exports: ["UNKNOWN_ERROR_CODE"] }]` -- pins the value-mirrored type export (IN-04; currently `introduced:false` but suppress for determinism per D-02).
-  - `overrides: [{ files: ["**/fixtures/fault-isolation/**"], rules: { "unrendered-components": "off", "unused-component-inputs": "off" } }]` -- intentional test-fixture components rendered nowhere + one fixture `@Input`.
+  - `overrides: [{ files: ["fixtures/fault-isolation/**"], rules: { "unrendered-components": "off", "unused-component-inputs": "off" } }]` -- intentional test-fixture components rendered nowhere + one fixture `@Input`. **CORRECTED 2026-06-30 (research + pattern-map):** the fixtures live at REPO-ROOT `fixtures/fault-isolation/`, NOT `packages/angular-typechecker/fixtures/` -- the glob MUST be the repo-root form `fixtures/fault-isolation/**` (verified to clear the 4 introduced fixture findings; a package-prefixed glob matches nothing and the gate stays red).
 
 ### Analysis scope & dependency findings (GA-3)
 - **D-05:** Gate at REPO ROOT (per roadmap item 2: `npx fallow audit ... --base origin/main` from root) -- NOT scoped to `packages/angular-typechecker`. Preserves whole-repo dead-code/duplication/complexity coverage (fixtures, tools, the package).
@@ -77,7 +77,7 @@ Adopt `fallow` (npm, the dead-code / duplication / complexity analyzer, v2.x -- 
 - `packages/angular-typechecker/src/core/compiler-cli-types.drift.ts` -- tsconfig-`files`-only drift tripwire -> `entry`.
 - `packages/angular-typechecker/src/core/compiler-cli-types.ts` SS `EmitFlags` (L110-116) + `UNKNOWN_ERROR_CODE` (L130) -- contract-mirror shim -> `overrides` / `ignoreExports`.
 - `packages/angular-typechecker/project.json` (`typecheck-drift` target) + `packages/angular-typechecker/tsconfig.drift.json` (`files: ["src/core/compiler-cli-types.drift.ts"]`) -- WHY the drift file is reachable only via tsconfig `files`, invisible to fallow's import graph.
-- `packages/angular-typechecker/fixtures/fault-isolation/*.component.ts` -- intentional fixtures (NonTemplateError/Survivor/TcbPoison + `someInput`) -> fixture-scoped `overrides`.
+- `fixtures/fault-isolation/*.component.ts` (REPO ROOT, not under the package) -- intentional fixtures (NonTemplateError/Survivor/TcbPoison + `someInput`) -> fixture-scoped `overrides` keyed on `fixtures/fault-isolation/**`.
 
 ### CI / tooling to extend (preserve security posture)
 - `.github/workflows/ci.yml` -- the `changes` path-filter job (`needs.changes.outputs.code`), the `test`/`e2e` path-gating pattern (`!= 'false'` NEGATIVE form), and the `ci` aggregate (`needs:` list + `contains(needs.*.result, ...)` gate). Threat model header (SHA-pinned actions, `contents: read`, `persist-credentials: false`, no PR-metadata interpolation) MUST hold for the new job.
