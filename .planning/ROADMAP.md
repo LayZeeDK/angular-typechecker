@@ -119,7 +119,7 @@ Plans:
   4. Gate strictness (`fallow --gate new-only` vs `all`) decided in discuss/plan; intent is to RESOLVE the current findings in this phase, not baseline them.
   5. Project keeps `code_quality.fallow.enabled: true` (the GSD global default is now `false`); fixing GSD's broken fallow structural pre-pass (fallow 2.x CLI flag drift, documented in global CLAUDE.md) is OUT OF SCOPE.
 
-**Plans:** 2/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
@@ -143,4 +143,4 @@ Plans:
 | 8. Correctness & Completeness Fixes | v0.0.3 | 3/3 | Complete    | 2026-06-29 |
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete    | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete   | 2026-06-29 |
-| 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Awaiting Verification | 2026-06-30 |
+| 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete    | 2026-06-30 |
