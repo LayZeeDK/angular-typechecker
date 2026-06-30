@@ -110,7 +110,7 @@ Plans:
 
 **Goal**: Adopt fallow (the dead-code / duplication / complexity analyzer, npm `fallow` v2.x) as a CI quality gate so newly-introduced dead code, duplication, or over-complexity breaks CI LOUDLY -- and resolve the current fallow findings so the gate is green on adoption.
 **Depends on**: Phase 10 (its drift shim + tripwire are the files needing fallow entry-point / ignore declarations).
-**Requirements**: TBD -- a new code-quality-gate requirement to be added to REQUIREMENTS.md during `/gsd-plan-phase`.
+**Requirements**: QUAL-01, QUAL-02, QUAL-03 (Code-Quality Gate cluster; added to REQUIREMENTS.md 2026-06-30 during `/gsd-plan-phase`).
 **Scope sketch** (firmed up in discuss/plan):
 
   1. `fallow` as a root devDependency; a `.fallowrc.jsonc` config (JSON family per preference, JSONC comments documenting each declaration) that declares `compiler-cli-types.drift.ts` as an entry point (tsconfig-`files`-reachable, not import-reachable) and scopes the `EmitFlags` contract-mirror shim so its members are not flagged dead -- the confirmed false positives in `phases/10-drift-hardening-maintainability/10-REVIEW.md` IN-02..IN-05 -- plus resolving any genuine inherited dead code.

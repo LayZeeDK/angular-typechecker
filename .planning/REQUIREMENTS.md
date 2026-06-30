@@ -31,6 +31,14 @@
 - [x] **HARD-04**: The `getNgStructuralDiagnostics()` call is RETAINED (documented as a deliberately forward-compatible no-op-tolerant call) and is covered by the HARD-01 getter-set assertion, so a future Angular version that reactivates it cannot silently under-gather. -- [#10, reversed from "drop it"].
 - [ ] **HARD-05**: A regression spec asserts that no `TS-99` substring (a raw, un-rewritten negative NG code) survives our `color: false` output path. -- [Q4 color-rewrite guard].
 
+### Code-Quality Gate (QUAL) -- added 2026-06-30 during Phase 11 planning
+
+These requirements were intentionally deferred to `/gsd-plan-phase` per the Phase 11 ROADMAP entry ("Requirements: TBD -- a new code-quality-gate requirement to be added to REQUIREMENTS.md during /gsd-plan-phase"). They adopt `fallow` (npm, the dead-code / duplication / complexity analyzer; v2.x -- 2.103.0 at research time) as a CI quality gate and resolve the repo's current findings so the gate is green on adoption. Grounded in `phases/11-fallow-code-quality-ci-gate/11-CONTEXT.md` (decisions D-01..D-15) and `11-DISCUSS-RESEARCH.md` (live `fallow@2.103.0` evidence).
+
+- [ ] **QUAL-01**: A dedicated, path-gated, SHA-pinned `fallow` CI job (ubuntu-latest, Node 24, `actions/checkout` with `fetch-depth: 0` + `persist-credentials: false`) runs `npx fallow audit --format json --base origin/main` (gate `new-only` -- fail only on findings INTRODUCED by the changeset) and is wired into the `ci` aggregate's `needs:` list AND its `contains(needs.*.result, 'failure'|'cancelled')` gate, so newly-introduced dead code / duplication / over-complexity breaks CI LOUDLY. The single required status check stays `ci` -- NO Default-branch ruleset change. The job is path-gated with the same `if: ${{ needs.changes.outputs.code != 'false' }}` NEGATIVE form as `test`/`e2e` (skips planning/docs-only PRs; stays in the `act -n` plan under empty filter output). -- [CONTEXT D-01, D-10, D-12, D-13, D-14; ROADMAP scope items 2, 4].
+- [ ] **QUAL-02**: A hand-authored `.fallowrc.jsonc` (JSON family per preference; both `.json`/`.jsonc` auto-discovered) RESOLVES the repo's current fallow findings so the gate is green on adoption -- NOT baselined. Confirmed false positives are suppressed in config with a documented JSONC comment each: the tsconfig-`files`-only drift tripwire `compiler-cli-types.drift.ts` declared as an `entry` point (IN-02); the `EmitFlags` contract-mirror shim members scoped off via `overrides` on `compiler-cli-types.ts` (IN-03); the value-mirrored `UNKNOWN_ERROR_CODE` type export pinned via `ignoreExports` (IN-04); the intentional `fixtures/fault-isolation/**` components scoped off (`unrendered-components`/`unused-component-inputs`). `unused-dev-dependencies` is set `off` (import-graph cannot see flat-config/CLI tooling deps), while `unused-dependencies` stays `error`; any genuine prod-dep finding (e.g. `@angular/forms`) is VERIFIED then resolved (removed if truly unused, else `ignoreDependencies` with a reason). All three families (dead-code + duplication + complexity) enabled at default thresholds. (IN-05 does NOT reproduce in 2.103.0 -- fallow analyzes the root `package.json`, not the published manifest -- so no IN-05 suppression.) The post-phase `fallow audit --base origin/main` exits 0. -- [CONTEXT D-02..D-09; ROADMAP scope items 1, 4].
+- [ ] **QUAL-03**: `fallow` is pinned as an EXACT root `devDependency` (run via `npx fallow` after `npm ci`, never `@latest`); `tools/act/act-compat.sh` asserts the new job's selection (`assert_selected "$PR_PLAN" "ci/fallow"`); actionlint (`lint-workflows`) stays green; and `ci.yml`'s security posture is preserved (every action SHA-pinned + Dependabot-tracked, top-level `contents: read`, no PR-metadata interpolation, `persist-credentials: false`). The project keeps `code_quality.fallow.enabled: true`; fixing GSD's broken fallow structural pre-pass is OUT OF SCOPE. SARIF/`--ci` output is NOT used (would require `security-events: write`). -- [CONTEXT D-11, D-15; ROADMAP scope items 3, 5].
+
 ## Future Requirements (deferred -- tracked, not in this roadmap)
 
 ### Observability (OBS)
@@ -74,12 +82,15 @@ Which phases cover which requirements. v0.0.3 phases continue from v0.0.1's last
 | HARD-03 | Phase 10 | Complete |
 | HARD-04 | Phase 10 | Complete |
 | HARD-05 | Phase 10 | Complete |
+| QUAL-01 | Phase 11 | Pending |
+| QUAL-02 | Phase 11 | Pending |
+| QUAL-03 | Phase 11 | Pending |
 
 **Coverage:**
-- v0.0.3 requirements: 13 total
-- Mapped to phases: 13 (Phase 8: COR-01..04; Phase 9: RES-01..04; Phase 10: HARD-01..05)
+- v0.0.3 requirements: 16 total
+- Mapped to phases: 16 (Phase 8: COR-01..04; Phase 9: RES-01..04; Phase 10: HARD-01..05; Phase 11: QUAL-01..03)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-29*
-*Last updated: 2026-06-29 after roadmap creation (milestone v0.0.3 Engine hardening): mapped all 13 requirements to Phases 8-10, coverage 13/13/0.*
+*Last updated: 2026-06-30 during Phase 11 planning: added the Code-Quality Gate (QUAL) cluster (QUAL-01..03) per the Phase 11 ROADMAP "Requirements: TBD" deferral; mapped to Phase 11; coverage 16/16/0.*
