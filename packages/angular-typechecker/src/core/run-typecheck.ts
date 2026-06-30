@@ -252,12 +252,13 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   }
 
   // #3 DEFENSE-IN-DEPTH: the real PerformCompilationResult.program is OPTIONAL
-  // (@angular/compiler-cli perform_compile.d.ts:29); the vendored shim narrows it
-  // to non-optional (compiler-cli-types.ts) to match the engine's guarded usage
-  // below. A `{ program: undefined }` return WITHOUT an UNKNOWN_ERROR_CODE (500)
-  // diagnostic is type-permitted but NOT observed in @angular/compiler-cli@22.0.4
-  // source -- this guard converts that hypothetical bare TypeError (from the
-  // `result.program.getTsProgram()` access in `finalize` below) into the SAME
+  // (the optional `program?` field of `PerformCompilationResult`); the vendored
+  // shim narrows it to non-optional (compiler-cli-types.ts) to match the engine's
+  // guarded usage below. A `{ program: undefined }` return WITHOUT an
+  // UNKNOWN_ERROR_CODE (500) diagnostic is type-permitted but NOT observed in
+  // @angular/compiler-cli@22.0.4 source -- this guard converts that hypothetical
+  // bare TypeError (from the `result.program.getTsProgram()` access in the
+  // `finalize` CALL ARGS below (within `runTypecheck`)) into the SAME
   // infra-class failure as the rest of the path. It is DISJOINT from the
   // post-compilation 500 scan above (which handles UNKNOWN_ERROR_CODE), so there
   // is no double-handling. This is a RUNTIME defense, not a type change -- the

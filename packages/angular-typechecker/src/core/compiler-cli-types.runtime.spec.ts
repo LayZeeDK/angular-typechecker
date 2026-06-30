@@ -115,7 +115,8 @@ describe('compiler-cli-types runtime drift (real NgtscProgram getter-set + NG en
     expect(typeof program.getTsProgram().getSourceFiles).toBe('function');
 
     // S-types reach-through: the boundary filter's case-fold reads
-    // `getTsProgram().useCaseSensitiveFileNames()` (`run-typecheck.ts:265-267`).
+    // `getTsProgram().useCaseSensitiveFileNames()` -- the
+    // `getTsProgram().useCaseSensitiveFileNames()` read in `runTypecheck`.
     // It is in neither GATHERED_GETTERS nor the build-time drift probe, so this is
     // the one production-read vendored runtime member otherwise unenforced.
     expect(typeof program.getTsProgram().useCaseSensitiveFileNames).toBe(
