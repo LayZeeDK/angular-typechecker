@@ -4,7 +4,7 @@
   // IN-02: the build-time drift tripwire is reachable ONLY via tsconfig.drift.json
   // `files` (classic node10 resolution), never via the import graph, so fallow
   // flags it `unused_file`. Declaring it an entry point clears that false positive.
-  // (The 56 real Angular component/source entry points are auto-detected by
+  // (The real Angular component/source entry points are auto-detected by
   // fallow's Angular plugin; do NOT re-list them here.)
   "entry": [
     "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts"
@@ -21,7 +21,7 @@
   ],
 
   "rules": {
-    // D-06: the 14 dev/tooling deps (ESLint flat-config plugins, swc register,
+    // D-06: the dev/tooling deps (ESLint flat-config plugins, swc register,
     // attw/publint CLIs, etc.) are structurally un-traceable by import graph and
     // will always false-positive. Dev-dep hygiene is owned by @nx/dependency-checks
     // (the published package) + manual review, not fallow.
