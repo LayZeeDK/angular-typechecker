@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.0.3
 milestone_name: Engine hardening
-status: executing
-stopped_at: Phase 11 (Fallow code-quality CI gate) added to v0.0.3 -- not planned yet; phases 8-10 remain complete (verified/secured/validated; drift tripwire live in CI)
-last_updated: "2026-06-29T23:39:09.000Z"
+status: completed
+stopped_at: Phase 11 context gathered
+last_updated: "2026-06-30T00:05:40.539Z"
 last_activity: 2026-06-29
 progress:
   total_phases: 4
@@ -231,6 +231,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T23:02:01.951Z
-Stopped at: Phase 10 complete -- v0.0.3 engine-hardening done (phases 8-10 verified/secured/validated; drift tripwire live in CI)
-Resume file: .planning/phases/10-drift-hardening-maintainability/10-VERIFICATION.md
+Last session: 2026-06-30T00:05:40.531Z
+Stopped at: Phase 11 context gathered
+Resume file: .planning/phases/11-fallow-code-quality-ci-gate/11-CONTEXT.md
