@@ -93,7 +93,8 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. Every fixture/consumer `project.json` referencing the old id (and any `angular-typecheck` target name) is updated to `angular-typechecker:typecheck`; all integration/unit/e2e specs referencing the old id pass.
   4. The README consumer recipe and any docs use the new id `angular-typechecker:typecheck`; no stale `angular-typecheck` executor reference remains in shipped source, config, or docs.
   5. The change is committed as a breaking `feat!` / `BREAKING CHANGE:` touching the package so `nx release` computes the 0.1.0 minor bump.
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 13.1-01-PLAN.md -- git mv the executor dir + rename the full executor identity (executors.json key/paths, schema `$id`, internal symbols, message prefixes), re-key both nx.json targetDefaults (WALK-02 value preserved), re-point every fixture/consumer/spec + README, then rebuild + run the full gate and commit the breaking `feat!` (EXEC-01)
 
 ### Phase 14: configuration + init generators, nx add
 **Goal**: A developer can run `nx g angular-typechecker:configuration <project>` (renamed from `typecheck-configuration`) to wire ONE minimal `typecheck` target (executor `angular-typechecker:typecheck`) at the project's solution `tsconfig.json` into `project.json`, with caching seeded into `nx.json` `targetDefaults` by a standalone `init` generator that `configuration` calls; `nx add angular-typechecker` runs `init` on install. Config-edit only (`project.json` + `nx.json`; no `generateFiles`), idempotent, relying on the Phase 13 walk -- no per-project-type detection, no separate spec target.
@@ -136,6 +137,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.1.0 | 4/4 | Complete | 2026-07-01 |
 | 13. Engine -- solution-tsconfig reference-walking | v0.1.0 | 6/6 | Complete | 2026-07-01 |
-| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 0/? | Not started | - |
+| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 0/1 | Planned | - |
 | 14. configuration + init generators, nx add | v0.1.0 | 0/? | Not started | - |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/? | Not started | - |
