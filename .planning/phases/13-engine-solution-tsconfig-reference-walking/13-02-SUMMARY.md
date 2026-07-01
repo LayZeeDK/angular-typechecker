@@ -137,3 +137,10 @@ plan specified.
 
 - 11b5d3f: test(core): upgrade solution-style fixture with app+spec walk leaves
 - 7993bc8: test(core): add five sibling walk fixtures (overlap/oop/empty/broken-ref/selfref)
+- e7c7363: docs(13-02): complete solution-style walk fixtures plan
+
+## Self-Check: PASSED
+
+All 16 created/modified fixture files exist on disk, the SUMMARY.md exists, and all three commits
+(11b5d3f, 7993bc8, e7c7363) are present in the git log. `fixtures/solution-style-broken-ref/tsconfig.missing.json`
+is confirmed ABSENT (the D-05 nonexistent-path requirement).
