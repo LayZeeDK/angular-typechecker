@@ -75,8 +75,8 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   4. `fixtures/solution-style` carries a KNOWN diagnostic plus a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking actually occurred; a references-less fixture covers the still-errors branch and an out-of-project-refs fixture covers the boundary guard.
   5. The walk target's Nx `targetDefaults` inputs use the `default` named input (NOT `production`, which excludes `*.spec.ts` and would under-hash spec sources -> stale PASS); `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default` are retained, and README consumer guidance is updated to the single-target walk recipe.
 **Plans**: 6 plans
-- [ ] 13-01-PLAN.md -- Export createCanonicalizer + isUnderDir from filter-diagnostics.ts (D-01/D-04 reuse) (WALK-01)
-- [ ] 13-02-PLAN.md -- Upgrade fixtures/solution-style + 5 sibling fixtures (overlap/oop/empty/broken-ref/selfref) (WALK-01)
+- [x] 13-01-PLAN.md -- Export createCanonicalizer + isUnderDir from filter-diagnostics.ts (D-01/D-04 reuse) (WALK-01)
+- [x] 13-02-PLAN.md -- Upgrade fixtures/solution-style + 5 sibling fixtures (overlap/oop/empty/broken-ref/selfref) (WALK-01)
 - [ ] 13-03-PLAN.md -- NEW pure core walk-references.ts (walk + boundary guard + 90002 fold-and-count) + unit spec (WALK-01)
 - [ ] 13-04-PLAN.md -- run-typecheck.ts D-03a three-way split + CoreResult.skippedReferences + index.ts export + executor logger.warn (WALK-01)
 - [ ] 13-05-PLAN.md -- Integration walk proofs + config-resolution rewrite + cross-leaf TCB unit + executor unit (WALK-01)
@@ -121,6 +121,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete | 2026-07-01 |
-| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 0/? | Not started | - |
+| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 2/6 | In Progress|  |
 | 14. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
 | 15. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |
