@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "ConfigurationGeneratorSchema",
+  "title": "angular-typechecker configuration generator",
+  "description": "Wire a typecheck target (executor angular-typechecker:typecheck) into a project's project.json.",
+  "cli": "nx",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The project to add a typecheck target to.",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "tsConfig": {
+      "type": "string",
+      "description": "Explicit tsconfig path (project-root-relative, or absolute). Overrides solution/flat resolution."
+    },
+    "targetName": {
+      "type": "string",
+      "default": "typecheck",
+      "description": "The target name to create."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting files with Prettier."
+    }
+  },
+  "required": ["project"],
+  "additionalProperties": false
+}
