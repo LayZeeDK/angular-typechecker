@@ -97,6 +97,48 @@ describe('detectTemplateCheckAborted (RES-02 reframe)', () => {
     });
   });
 
+  // WALK-01 (Phase 13) cross-leaf union scan: on the solution-tsconfig walk path,
+  // `finalize` receives the UNION of every walked leaf's raw diagnostics
+  // (run-typecheck.ts feeds `[...configDiagnostics, ...walk.rawDiagnostics]`).
+  // Because the detector is a pure code-only `.find` over that pre-filter union, a
+  // TCB-generation Fatal present in ANY leaf (here the SECOND) must fire the
+  // notice -- so a poison component in a solution's spec leaf is never silently
+  // suppressed. Detection is BY CODE only, order-independent.
+  it('fires on a TCB Fatal in the SECOND leaf of a synthesized cross-leaf union (walk path)', () => {
+    const leafAClean = [
+      diagnostic(2322, '/ws/app/leaf-a/survivor.component.ts'),
+      diagnostic(NG(8109), '/ws/app/leaf-a/other.component.ts'),
+    ];
+    const leafBWithTcbFatal = [
+      diagnostic(2339, '/ws/app/leaf-b/spec-only.ts'),
+      diagnostic(
+        TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+        '/ws/app/leaf-b/poison.component.ts',
+      ),
+    ];
+
+    const union = [...leafAClean, ...leafBWithTcbFatal];
+
+    expect(detectTemplateCheckAborted(union)).toEqual({
+      code: TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+      fileName: '/ws/app/leaf-b/poison.component.ts',
+    });
+  });
+
+  it('returns undefined for a cross-leaf union with NO TCB Fatal in any leaf', () => {
+    const leafAClean = [
+      diagnostic(2322, '/ws/app/leaf-a/survivor.component.ts'),
+    ];
+    const leafBClean = [
+      diagnostic(2339, '/ws/app/leaf-b/spec-only.ts'),
+      diagnostic(NG(8109), '/ws/app/leaf-b/other.component.ts'),
+    ];
+
+    const union = [...leafAClean, ...leafBClean];
+
+    expect(detectTemplateCheckAborted(union)).toBeUndefined();
+  });
+
   it('carries fileName undefined for a file-less TCB-generation Fatal', () => {
     const reported = [diagnostic(TCB_GENERATION_FATAL_DIAGNOSTIC_CODE)];
 
