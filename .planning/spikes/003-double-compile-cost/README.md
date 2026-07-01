@@ -34,13 +34,43 @@ combined program, and the walk; report medians over 7 iterations after warmup; d
 
 ## How to Run
 
+Authoritative timing (Vitest `bench` -- warmup + samples + p99 + RME):
+
+```
+npx vitest bench --config .planning/spikes/003-double-compile-cost/vitest.bench.config.mts --run
+```
+
+Assertion-bearing correctness cross-check + tax decomposition (standalone node process,
+production-representative absolutes):
+
 ```
 node .planning/spikes/003-double-compile-cost/harness.mjs
 ```
 
-Exits 0 on all-pass. Writes `forensic-log.json` (medians, mins, tax decomposition, deferred synergy).
+The node harness exits 0 on all-pass and writes `forensic-log.json` (medians, mins, tax
+decomposition, deferred synergy). Two runners are kept ON PURPOSE: Vitest `bench` gives standardized
+statistics but its absolute ms are inflated ~2.5x by the vite/vitest pool instrumentation; the
+standalone node process gives cleaner production-representative absolutes. They AGREE on the ratio.
 
 ## What to Expect (this machine: Windows arm64, node 24.18, ts 6.0.3, compiler-cli 22.0.4)
+
+**Vitest `bench` (authoritative statistics, 12 samples + 3 warmup):**
+
+```
+name                             hz       min       max      mean      p99      rme  samples
+floor (1 trivial component)  1.0272    507.91  1,775.32    973.50  1,775.32  ±22.10%   12
+lib leaf                     1.0476    712.88  1,199.45    954.54  1,199.45  ±11.00%   12
+spec leaf                    1.0685    726.97  1,136.34    935.85  1,136.34   ±7.48%   12
+dep-only                     0.9911    828.79  1,181.92  1,009.00  1,181.92   ±6.29%   12
+combined (single program)    1.1361    757.92  1,016.70    880.23  1,016.70   ±6.76%   12
+WALK (lib + spec)            0.5536  1,519.34  1,962.81  1,806.22  1,962.81   ±4.86%   12
+```
+Summary: combined (single program) is **2.05x faster than WALK (lib + spec)** -> tax ~105%. floor
+(973) ~ lib (954) ~ spec (936) ~ dep-only (1009): per-compile time is fixed-overhead-dominated;
+content barely moves it. (Absolute ms are ~2.5x the node-harness numbers below -- vite/vitest pool
+instrumentation overhead -- so read the RATIO, not the ms.)
+
+**Standalone node harness (production-representative absolutes, median of 7):**
 
 | Measurement | Median ms | Note |
 |-------------|-----------|------|
@@ -52,7 +82,8 @@ Exits 0 on all-pass. Writes `forensic-log.json` (medians, mins, tax decompositio
 | **WALK (lib + spec)** | **~762** | two full compiles |
 | **redundancy tax** | **~373 (95.7%)** | walk - combined |
 
-All 3 validity assertions PASS; `VERDICT: VALIDATED`.
+Both runners agree: **WALK ≈ 2x a single combined program** (vitest 2.05x / node 1.96x). All 3
+node-harness validity assertions PASS; `VERDICT: VALIDATED`.
 
 ## Investigation Trail
 
@@ -66,6 +97,12 @@ All 3 validity assertions PASS; `VERDICT: VALIDATED`.
    subtraction. Floor = ~356 ms; dep-only = ~385 ms -> dep marginal = ~30 ms. The floor is ~92% of a
    dep-only compile. Confirmed: at this scale the double-compile penalty is fixed-overhead-bound,
    not dep-size-bound.
+4. **Re-measured with Vitest `bench`** (`benchmark.bench.mts` + `vitest.bench.config.mts`, per the
+   maintainer's request) for standardized statistics (samples, p99, RME). It independently confirms
+   the ratio -- combined is 2.05x faster than the WALK, and floor/lib/spec/dep-only cluster together
+   -- validating the node-harness conclusion with a second, industry-standard measurement path. The
+   vitest absolutes run ~2.5x higher (pool instrumentation), so the ms are not production-representative
+   but the ratio is the durable signal.
 
 ## Results
 
