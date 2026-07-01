@@ -111,6 +111,7 @@ PR_PLAN="$(plan pull_request -e "$EVENTS/pull_request.json" --env GITHUB_REF=ref
 assert_selected "$PR_PLAN" "ci/test-" "pull_request"
 assert_selected "$PR_PLAN" "ci/e2e" "pull_request"
 assert_selected "$PR_PLAN" "ci/fallow" "pull_request"
+assert_selected "$PR_PLAN" "ci/format-lint" "pull_request"
 assert_selected "$PR_PLAN" "ci/act-compat" "pull_request"
 assert_selected "$PR_PLAN" "ci/lint-workflows" "pull_request"
 assert_selected "$PR_PLAN" "ci/ci" "pull_request"

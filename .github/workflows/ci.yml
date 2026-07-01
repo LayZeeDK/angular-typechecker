@@ -175,6 +175,41 @@ jobs:
         env:
           FALLOW_AUDIT_BASE: origin/main
 
+  # Format + lint quality gate (QUAL-02). OS-independent, Linux-only, single Node
+  # (Prettier/ESLint verdicts do not vary by OS or Node minor). nrwl/nx-set-shas
+  # derives the base/head SHAs so `nx format:check` inspects ONLY the files this
+  # PR/push range changed -- never the whole repo (the repo carries intentionally
+  # un-Prettier'd fixtures + a large .planning tree). `nx run-many -t lint` lints
+  # every project and fails on ANY warning: maxWarnings:0 is baked into the
+  # @nx/eslint:lint targetDefaults (nx.json), so NO CI flag is passed. fetch-depth:
+  # 0 is LOAD-BEARING -- nx-set-shas resolves the base commit from git history. On
+  # a PR it derives the exact merge-base/head; on a push it cannot read the last
+  # successful run under the top-level `contents: read` and falls back to HEAD~1
+  # (acceptable -- the post-merge diff is small). No job re-grants any permission.
+  # Path-gated (D-08), SAME negative if: form as test/e2e/fallow -- skips a
+  # planning/docs-only PR yet stays in the `act -n` plan under the empty filter
+  # output. Fixed target ids + flags only; no PR-metadata interpolation.
+  format-lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
+    env:
+      NX_DAEMON: false
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+        id: nx-shas
+      - run: npm ci
+      - run: npx nx format:check --base=${{ steps.nx-shas.outputs.base }} --head=${{ steps.nx-shas.outputs.head }}
+      - run: npx nx run-many -t lint
+
   # act-compatibility gate (RD-06): container-free `act --validate`
   # (parseability) + `act -n` per trigger (trigger/condition fidelity via the
   # if:-gated job selection). NEVER plain `act <event>` execution -- no nested
@@ -224,7 +259,7 @@ jobs:
   # post-merge `main` `ci` run (which has a real code diff vs its parent on a
   # code merge) is the second backstop.
   ci:
-    needs: [changes, test, e2e, fallow, act-compat, lint-workflows]
+    needs: [changes, test, e2e, fallow, format-lint, act-compat, lint-workflows]
     runs-on: ubuntu-latest
     if: always()
     steps:
