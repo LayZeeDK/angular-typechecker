@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
-status: planning
+status: executing
 stopped_at: Phase 14 context gathered
-last_updated: "2026-07-01T22:48:31.650Z"
-last_activity: "2026-07-02 - Phase 13.1 closed: executor rename shipped + secured + validated + learnings extracted"
+last_updated: "2026-07-01T23:31:28.198Z"
+last_activity: 2026-07-01 -- Phase 14 planning complete
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 11
+  total_plans: 14
   completed_plans: 11
   percent: 60
 ---
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 
 Phase: 14
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-07-02 - Phase 13.1 closed: executor rename shipped + secured + validated + learnings extracted
+Status: Ready to execute
+Last activity: 2026-07-01 -- Phase 14 planning complete
 
 Progress: [█████████░] 91%
 
