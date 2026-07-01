@@ -42,7 +42,7 @@
       "cache": true,
       "outputs": [],
       "inputs": [
-        "production",
+        "default",
         "{projectRoot}/tsconfig*.json",
         "{projectRoot}/package.json",
         "{workspaceRoot}/tsconfig.base.json",
@@ -58,7 +58,7 @@
       "cache": true,
       "outputs": [],
       "inputs": [
-        "production",
+        "default",
         "{projectRoot}/tsconfig*.json",
         "{projectRoot}/package.json",
         "{workspaceRoot}/tsconfig.base.json",
