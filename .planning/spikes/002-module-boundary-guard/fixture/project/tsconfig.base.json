@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": [],
+    "experimentalDecorators": false,
+    "emitDecoratorMetadata": false,
+    "paths": {
+      "@in/dep": ["./indep/src/index.ts"],
+      "@ext/dep": ["../external-dep/src/index.ts"]
+    }
+  }
+}

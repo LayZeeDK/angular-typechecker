@@ -1,0 +1,79 @@
+{
+  "spike": "002-module-boundary-guard",
+  "environment": {
+    "node": "v24.18.0",
+    "typescript": "6.0.3"
+  },
+  "solutionTsConfig": "<fx>/project/tsconfig.json",
+  "projectDir": "<fx>/project",
+  "allReferences": [
+    "<fx>/project/tsconfig.lib.json",
+    "<fx>/outsider/tsconfig.lib.json"
+  ],
+  "walked": [
+    "<fx>/project/tsconfig.lib.json"
+  ],
+  "skipped": [
+    "<fx>/outsider/tsconfig.lib.json"
+  ],
+  "guardedDefault": {
+    "errorCount": 1,
+    "suppressedCount": 1,
+    "files": [
+      "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/002-module-boundary-guard/fixture/project/indep/src/index.ts"
+    ]
+  },
+  "guardedIncludeDeps": {
+    "errorCount": 2,
+    "files": [
+      "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/002-module-boundary-guard/fixture/external-dep/src/index.ts",
+      "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/002-module-boundary-guard/fixture/project/indep/src/index.ts"
+    ]
+  },
+  "noGuardIncludeDeps": {
+    "errorCount": 3,
+    "files": [
+      "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/002-module-boundary-guard/fixture/external-dep/src/index.ts",
+      "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/002-module-boundary-guard/fixture/outsider/src/outsider.component.ts",
+      "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/002-module-boundary-guard/fixture/project/indep/src/index.ts"
+    ]
+  },
+  "assertions": [
+    {
+      "id": "M1a-guard-skips-out-of-project-reference",
+      "pass": true,
+      "detail": "walked=1 skipped=[\"<fx>\\\\outsider\\\\tsconfig.lib.json\"]"
+    },
+    {
+      "id": "M1b-outsider-absent-default",
+      "pass": true,
+      "detail": "outsider error absent under guarded includeDeps=false"
+    },
+    {
+      "id": "M1c-outsider-absent-even-with-includeDeps",
+      "pass": true,
+      "detail": "CRUX: includeDeps=true does NOT resurrect the out-of-project REFERENCE (guard skipped its leaf)"
+    },
+    {
+      "id": "M1d-no-guard-baseline-would-leak-outsider",
+      "pass": true,
+      "detail": "contrast: WITHOUT the guard, walking every reference + includeDeps=true DOES leak the outsider error -- so the guard is load-bearing"
+    },
+    {
+      "id": "M2a-external-dep-suppressed-default",
+      "pass": true,
+      "detail": "external dep source suppressed by existing filter (suppressedCount=1)"
+    },
+    {
+      "id": "M2b-external-dep-kept-with-includeDeps",
+      "pass": true,
+      "detail": "external dep source KEPT with includeDeps=true -- existing behavior UNCHANGED"
+    },
+    {
+      "id": "M2c-in-project-dep-reported-default",
+      "pass": true,
+      "detail": "local path-mapped dep source (under project) reported by default -- existing behavior UNCHANGED"
+    }
+  ],
+  "verdict": "VALIDATED"
+}

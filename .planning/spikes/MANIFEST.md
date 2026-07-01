@@ -46,7 +46,7 @@ Design decisions that emerged / are locked as spikes progress. Non-negotiable fo
 | # | Name | Obj | Type | Validates | Verdict | Tags |
 |---|------|-----|------|-----------|---------|------|
 | 001 | reference-walk-aggregation | 1 [Q2] | standard | solution `tsconfig.json` -> lib + spec leaves sharing a source; per-leaf `performCompilation` union+dedupe yields a complete, duplicate-free set with correct error/warning counts | **VALIDATED** | aggregation, dedupe, counts, engine |
-| 002 | module-boundary-guard | 2 | standard | out-of-project `references[]` are rejected/skipped at the walk boundary; local path-mapped dep sources stay governed by the existing `filter-diagnostics` + `includeDeps` | PENDING | boundary, security, engine |
+| 002 | module-boundary-guard | 2 | standard | out-of-project `references[]` are rejected/skipped at the walk boundary; local path-mapped dep sources stay governed by the existing `filter-diagnostics` + `includeDeps` | **VALIDATED** | boundary, security, engine |
 | 003 | double-compile-cost | 4 [Q1] | benchmark | measure the wall-clock cost of compiling a local non-buildable lib dep across the lib + spec leaves; record project-references / `NgtscProgram` incremental declaration-reuse as DEFERRED synergy | PENDING | performance, cost, engine |
 | 004 | d03a-surgical-split | 3 | standard | zero-rootNames guard splits surgically: references present -> walk; none -> still synthesize the deterministic error (rewrite `config-resolution.integration.spec.ts:124-130`) | PENDING | guard, regression, engine |
 | 005 | coarse-single-target-caching | 5 | standard | one Nx target (`outputs: []`, union of leaf inputs) yields a sound coarse cache key: any leaf/dep change busts, nothing under-hashes | PENDING | caching, nx, devex |
