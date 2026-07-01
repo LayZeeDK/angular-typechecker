@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false,
+    "types": ["vitest/globals", "node"]
+  },
+  "files": ["error.component.spec.ts"]
+}

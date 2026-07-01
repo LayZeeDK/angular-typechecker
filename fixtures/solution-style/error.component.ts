@@ -1,19 +1,21 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 
-// Solution-style fixture LEAF source (Plan 02-02, D-03 / D-03a). This is the
-// target of `tsconfig.app.json`'s reference. The component itself is minimal and
-// valid -- the regression proof is that the SOLUTION-style `tsconfig.json`
-// (files:[], references:[...]) produces ZERO rootNames regardless of whether the
-// leaf source is clean or broken, so the engine's zero-rootNames guard must fire
-// instead of reporting a false "0 files / 0 errors" clean. OUT OF the project
-// graph; kept out of the plugin build by tsconfig.lib.json's
-// include: ["src/**/*.ts"] scope (the fixtures live at the workspace root, not
-// under the package). Do NOT add @ts-nocheck.
+// Solution-style fixture APP-LEAF source (Phase 13, D-03a walk substrate). This
+// is the target of `tsconfig.app.json`'s reference. It plants ONE plain TS2322
+// (string assigned to a number-typed field) so the reference-walk union proves
+// the app/lib leaf was type-checked. The template is a plain string literal --
+// NO interpolated signal -- so no NG8117/NG8109 extended diagnostic co-fires
+// (Pitfall 3, spike 001). OUT OF the project graph; kept out of the plugin build
+// by tsconfig.lib.json's include: ["src/**/*.ts"] scope (the fixtures live at the
+// workspace root, not under the package). Do NOT add @ts-nocheck.
 @Component({
   selector: 'solution-style-leaf',
   standalone: true,
-  template: '<p>{{ status() }}</p>',
+  template: '<p>ready</p>',
 })
 export class SolutionStyleLeafComponent {
-  status = signal('ready');
+  // Planted TS2322: string assigned to number. Proves the app/lib leaf was
+  // type-checked. Plain TS error only -- no interpolated signal, so no NG8117 /
+  // NG8109 co-fire (spike 001).
+  count: number = 'not-a-number';
 }
