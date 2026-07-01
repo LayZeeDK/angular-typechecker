@@ -1,0 +1,4 @@
+<!-- NG8108: `ngSkipHydration` as a STATIC text attribute with a value other than
+     "true" or "" -- it only accepts "true", "", or no value at all. The static-text
+     form avoids the incidental NG8002 a `[ngSkipHydration]="x"` binding would raise. -->
+<div ngSkipHydration="yes">content</div>

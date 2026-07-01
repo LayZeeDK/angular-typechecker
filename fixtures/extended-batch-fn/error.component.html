@@ -1,0 +1,10 @@
+<!-- NG8111: a function referenced but not invoked in an event binding. -->
+<button (click)="handleClick">click</button>
+
+<!-- NG8115: the `@for` track function is referenced but not invoked. -->
+@for (item of items; track trackByName) {
+  <span>{{ item.id }}</span>
+}
+
+<!-- NG8112: a `@let` declaration that is never read. -->
+@let notUsed = 2;

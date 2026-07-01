@@ -1,0 +1,8 @@
+<!-- NG8011: an `@if` control-flow block with MORE THAN ONE root node is projected
+     at the root of the child, preventing its descendants from being projected. -->
+<extended-content-projection-child>
+  @if (flag) {
+    <div projectsIntoSlot>projected</div>
+    Text preventing the div from being projected
+  }
+</extended-content-projection-child>

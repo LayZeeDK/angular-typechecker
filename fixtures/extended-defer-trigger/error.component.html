@@ -1,0 +1,5 @@
+<!-- NG8021: `on immediate` together with another main trigger (`on timer`) makes
+     the additional trigger redundant/unreachable. -->
+@defer (on immediate; on timer(1s)) {
+  <p>Deferred content.</p>
+}
