@@ -27,11 +27,10 @@ import { runTypecheck } from './run-typecheck';
 // inputs. (The empty-project / none-in-project 90001 guard branches are proven by
 // the dedicated walk integration spec.)
 
-// Angular encodes extended codes negative: ngErrorCode(8109) = -998109. Assert NG
-// codes via the NG() helper, never the bare 8109 (PITFALL E / L-4). TS codes are
-// raw. The planted spec-file error is a plain TS2322.
+// The planted spec-file error is a plain TS2322 (raw positive). No NG8xxx code is
+// asserted here (PITFALL E / L-4), so no negative-encoding helper is needed
+// (Angular would encode extended codes negative, e.g. ngErrorCode(8109) = -998109).
 const TS2322 = 2322;
-const NG = (code: number): number => -990000 - code;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const workspaceRoot = join(packageRoot, '..', '..');

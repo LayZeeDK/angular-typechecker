@@ -35,15 +35,14 @@ import { runTypecheck, TypecheckInfrastructureError } from './run-typecheck';
 // Cold-compiler timeout is inherited from vitest.config.mts (testTimeout 30000);
 // do NOT add a per-file testTimeout.
 
-// Angular encodes extended codes negative: ngErrorCode(8109) = -998109. Assert NG
-// codes via the NG() helper, never the bare code (PITFALL E / L-4). TS codes are
-// raw. The planted leaf errors are plain TS2322. The synthesized guard/not-found
-// codes (90001/90002) are bare positive ints OUTSIDE both the TS and the NG
-// encoding ranges, so they are asserted directly.
+// The planted leaf errors are plain TS2322 (raw positive). The synthesized
+// guard/not-found codes (90001/90002) are bare positive ints OUTSIDE both the TS
+// and the Angular (negative-encoded, e.g. ngErrorCode(8109) = -998109) ranges, so
+// they are asserted directly. No NG8xxx code is asserted here (PITFALL E / L-4),
+// so no negative-encoding helper is needed.
 const TS2322 = 2322;
 const ZERO_ROOT_NAMES = 90001;
 const REFERENCE_NOT_FOUND = 90002;
-const NG = (code: number): number => -990000 - code;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const workspaceRoot = join(packageRoot, '..', '..');
