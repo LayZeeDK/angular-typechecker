@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.4
 milestone_name: typecheck-configuration generator and extended testing strategy
 status: executing
-stopped_at: "Completed 12-04-PLAN.md (CAT-05: DIAGNOSTIC-CATALOG.md rewritten to the authoritative 18-member ExtendedTemplateDiagnosticName enum set; commit 3791a73)"
-last_updated: "2026-07-01T06:39:42.228Z"
-last_activity: 2026-07-01 -- completed 12-04 (CAT-05 DIAGNOSTIC-CATALOG.md rewrite to the 18-member enum set)
+stopped_at: "Completed 12-02-PLAN.md (CAT-01/CAT-02/CAT-04: the 18-member extended-diagnostic it.each catalog + NG8101 promotion proof + 8 new fixtures; folded/deleted extended.angular13 + extended.promotion; commit 8ff2fe3)"
+last_updated: "2026-07-01T07:03:32.627Z"
+last_activity: 2026-07-01 -- completed 12-02 (18-row extended catalog it.each + NG8101 promotion + new fixtures; folded extended.angular13 + extended.promotion)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-30 after v0.0.3 milestone completion)
 ## Current Position
 
 Phase: 12 (extended-diagnostic-catalog-completeness-tripwire) — EXECUTING
-Plan: 12-04 complete (2 of 4 plans done: 12-01 + 12-04); 12-02 + 12-03 in the same wave
+Plan: 12-02 complete (3 of 4 plans done: 12-01 + 12-04 + 12-02); 12-03 remaining in the same wave
 Status: Executing (wave in progress)
-Last activity: 2026-07-01 -- completed 12-04 (CAT-05 DIAGNOSTIC-CATALOG.md rewrite to the 18-member enum set)
+Last activity: 2026-07-01 -- completed 12-02 (18-row extended catalog it.each + NG8101 promotion + new fixtures; folded extended.angular13 + extended.promotion)
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 75%
 
 ## v0.0.4 Phase Map
 
@@ -57,6 +57,7 @@ v0.0.4 testing strategy ratified by a unanimous 8-lens Opus board (record: `.pla
 - [Phase 12]: Phase 12 Plan 01 (DRIFT-01): the extended-diagnostic completeness tripwire deep-imports ExtendedTemplateDiagnosticName from the sub-barrel @angular/compiler-cli/src/ngtsc/diagnostics under classic resolution -- compiled green on first typecheck-drift run, no leaf-path fallback needed (Assumption A2 resolved).
 - [Phase 12]: Phase 12 Plan 01 (D-02): EXTENDED_DIAGNOSTIC_MEMBERS is the single dependency-free as-const source of truth (18 enum VALUES, declaration order) consumed by BOTH the Plan 02 catalog spec and the type-level tripwire; deliberate-RED proof confirmed it fails loudly (TS2344 at the CatalogCoversEnum probe) on drift and returns green when restored.
 - [Phase 12]: Phase 12 Plan 04 (CAT-05 / D-10..D-13): DIAGNOSTIC-CATALOG.md is now enum-driven -- the extended section lists all 18 ExtendedTemplateDiagnosticName members (adds NG8011 controlFlowPreventingContentProjection + NG8112 unusedLetDeclaration), notes NG8110/NG8118 as non-enum ErrorCodes, frames NG8011/NG8113 as out-of-band-but-promotable (all 18 promotable via defaultCategory), and replaces the per-version file-split + programmatic-injection test-org guidance with the single enum-keyed it.each + completeness-tripwire decision. The stale un-promotable-exception framing for NG8011 (CONSENSUS D2 / CAT-02 parenthetical) is superseded per D-13 and reconciled at the milestone audit, not re-ratified this phase.
+- [Phase 12]: Phase 12 Plan 02 (CAT-01/CAT-02/CAT-04, D-03..D-09): the 18-row extended-diagnostic it.each catalog (extended-catalog.integration.spec.ts) keyed on EXTENDED_DIAGNOSTIC_MEMBERS asserts every member by exact NG() code + DiagnosticCategory + occurrence count against real @angular/compiler-cli@22.0.4; ZERO it.skip rows (all 18 fire from a static fixture, RESEARCH A1 confirmed by a real run). NG8011 is a normal Warning-default promotable row (D-09), not skipped. The single NG8101 promotion proof + count invariant are folded in (D-08); extended.angular13 + extended.promotion deleted (D-07). Two D-03 fixture-count bugs auto-fixed: NG8105 split into its own CommonModule-importing fixture (bare *ngFor co-fires NG8103), and NG8108 uses the static ngSkipHydration="yes" text-attribute trigger ([ngSkipHydration] binding co-fires NG8002).
 
 ### Blockers/Concerns
 
@@ -92,6 +93,6 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-01T06:37:18.027Z
-Stopped at: Completed 12-04-PLAN.md (CAT-05: DIAGNOSTIC-CATALOG.md rewritten to the authoritative 18-member ExtendedTemplateDiagnosticName enum set; commit 3791a73)
-Next step: Complete the remaining Phase 12 plans in this wave -- 12-02 (the 18-row extended `it.each` catalog + NG8101 promotion + new extended fixtures) and 12-03 (the sibling baseline TS/NG `it.each` table + baseline fixtures) -- then run the post-merge full build + test gate and verify the phase goal.
+Last session: 2026-07-01T07:03:32.620Z
+Stopped at: Completed 12-02-PLAN.md (CAT-01/CAT-02/CAT-04: the 18-member extended-diagnostic it.each catalog + NG8101 promotion proof + 8 new fixtures; folded/deleted extended.angular13 + extended.promotion; commit 8ff2fe3)
+Next step: Complete the last Phase 12 plan in this wave -- 12-03 (the sibling baseline TS/NG `it.each` table + baseline fixtures; folds baseline.angular13 and lands the combined TESTING.md spec-count delta) -- then run the post-merge full build + test gate and verify the phase goal.
