@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 Phase: 14
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-07-01
+Last activity: 2026-07-01 - Completed quick task 260701-shh: CI format:check + lint gates, whole-repo Prettier format, action bumps
 
 Progress: [████████░░] 80%
 
@@ -80,11 +80,12 @@ None.
 
 ### Quick Tasks Completed
 
-| #          | Description                                                                                                                                                                                                                                        | Date       | Commit  | Status                      | Directory                                                                     |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------- | --------------------------- | ----------------------------------------------------------------------------- |
-| 260630-dyd | Address all PR #11 review findings (I-1 silent-notice fix + T1/T3/S-types test gaps + S-code/S-test/S-comments cleanups; T2 dropped as refuted)                                                                                                    | 2026-06-30 | 53c8c18 | Verified + shipped (v0.0.3) | [260630-dyd-...](./quick/260630-dyd-address-all-review-findings/)             |
-| 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined)                                         | 2026-06-30 | 95d6f58 | Verified + shipped (v0.0.3) | [260630-fg0-...](./quick/260630-fg0-address-second-round-pr-review-findings/) |
-| 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified + shipped (v0.0.3) | [260630-jnl-...](./quick/260630-jnl-address-third-round-pr-review-findings/)  |
+| #          | Description                                                                                                                                                                                                                                        | Date       | Commit  | Status                      | Directory                                                                      |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------- | --------------------------- | ------------------------------------------------------------------------------ |
+| 260630-dyd | Address all PR #11 review findings (I-1 silent-notice fix + T1/T3/S-types test gaps + S-code/S-test/S-comments cleanups; T2 dropped as refuted)                                                                                                    | 2026-06-30 | 53c8c18 | Verified + shipped (v0.0.3) | [260630-dyd-...](./quick/260630-dyd-address-all-review-findings/)              |
+| 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined)                                         | 2026-06-30 | 95d6f58 | Verified + shipped (v0.0.3) | [260630-fg0-...](./quick/260630-fg0-address-second-round-pr-review-findings/)  |
+| 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified + shipped (v0.0.3) | [260630-jnl-...](./quick/260630-jnl-address-third-round-pr-review-findings/)   |
+| 260701-shh | Add CI `format:check` + `lint` gates (nrwl/nx-set-shas base/head), bake `maxWarnings:0` into the lint target, Prettier-format the whole repo (2 diagnostic-sensitive templates + lockfiles excluded), bump actions/checkout v7 + setup-node v6     | 2026-07-01 | 4f0ccdf | Complete (verified locally) | [260701-shh-...](./quick/260701-shh-add-ci-format-check-lint-jobs-nx-set-sha/) |
 
 ## Deferred Items
 
