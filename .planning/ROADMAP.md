@@ -74,7 +74,13 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The D-03a zero-`rootNames` guard splits THREE-WAY: references present + >=1 in-project leaf -> walk; references present + 0 in-project leaves -> a new synthesized error (code 90001, distinct message); no references -> the unchanged empty-project error. The `rootNames > 0` direct-leaf path is untouched, no branch gates on TS18003, and `rootNamesCount` = the sum over the walked leaves. `config-resolution.integration.spec.ts:124-130` is rewritten to assert the walk.
   4. `fixtures/solution-style` carries a KNOWN diagnostic plus a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking actually occurred; a references-less fixture covers the still-errors branch and an out-of-project-refs fixture covers the boundary guard.
   5. The walk target's Nx `targetDefaults` inputs use the `default` named input (NOT `production`, which excludes `*.spec.ts` and would under-hash spec sources -> stale PASS); `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default` are retained, and README consumer guidance is updated to the single-target walk recipe.
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 13-01-PLAN.md -- Export createCanonicalizer + isUnderDir from filter-diagnostics.ts (D-01/D-04 reuse) (WALK-01)
+- [ ] 13-02-PLAN.md -- Upgrade fixtures/solution-style + 5 sibling fixtures (overlap/oop/empty/broken-ref/selfref) (WALK-01)
+- [ ] 13-03-PLAN.md -- NEW pure core walk-references.ts (walk + boundary guard + 90002 fold-and-count) + unit spec (WALK-01)
+- [ ] 13-04-PLAN.md -- run-typecheck.ts D-03a three-way split + CoreResult.skippedReferences + index.ts export + executor logger.warn (WALK-01)
+- [ ] 13-05-PLAN.md -- Integration walk proofs + config-resolution rewrite + cross-leaf TCB unit + executor unit (WALK-01)
+- [ ] 13-06-PLAN.md -- nx.json production->default input + cache-e2e stale-PASS proof + README walk recipe (WALK-02)
 
 ### Phase 14: typecheck-configuration generator
 **Goal**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire ONE `typecheck` target (executor `angular-typechecker:angular-typecheck`) pointed at the project's solution `tsconfig.json` into `project.json` (config-edit only, idempotent), with a hand-authored + registered schema and in-memory generator tests -- relying on the Phase 13 walk, so no per-project-type detection and no separate spec target are needed.
