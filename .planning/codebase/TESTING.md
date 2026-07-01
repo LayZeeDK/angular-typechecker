@@ -43,7 +43,7 @@ project.json`), so a build runs first. The e2e projects `implicitDependencies:
   `schema-parity.spec.ts` (26 plugin `.spec.ts` files).
 - Real-compiler integration (in the plugin): `<name>.integration.spec.ts` -- e.g.
   `run-typecheck.integration.spec.ts`, `fault-isolation.integration.spec.ts`
-  (10 `.integration.spec.ts` files).
+  (8 `.integration.spec.ts` files).
 - E2E (tarball/install/matrix): `<name>.int.spec.ts` -- e.g. `tarball-audit.int.spec.ts`,
   `matrix-5types.int.spec.ts` (7 e2e `.int.spec.ts` files).
 
