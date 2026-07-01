@@ -38,7 +38,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 ### v0.0.4 -- typecheck-configuration generator and extended testing strategy (Phases 12-14)
 
-- [ ] **Phase 12: Extended-diagnostic catalog + completeness tripwire** - Assert all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes by exact code/category/count/promotion in one enum-keyed `it.each` table, with an enum-vs-table tripwire that fails CI loudly on Angular drift.
+- [x] **Phase 12: Extended-diagnostic catalog + completeness tripwire** - Assert all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes by exact code/category/count/promotion in one enum-keyed `it.each` table, with an enum-vs-table tripwire that fails CI loudly on Angular drift. (completed 2026-07-01)
 - [ ] **Phase 13: typecheck-configuration generator** - Ship the `nx g angular-typechecker:typecheck-configuration <project>` generator that wires an `angular-typecheck` target into `project.json` (config-edit only, idempotent), with hand-authored schema and in-memory generator tests.
 - [ ] **Phase 14: Generator e2e + CI self-audit guard** - Fold a generator end-to-end scenario into `angular-typechecker-install-e2e` (install tarball -> `nx g` -> assert `project.json` -> run the target) and add a `-p` set-equality guard that turns a forgotten e2e project into a loud failure.
 
@@ -60,7 +60,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 **Plans**: 4 plans
 - [x] 12-01-PLAN.md -- Source-of-truth `EXTENDED_DIAGNOSTIC_MEMBERS` (`as const`) + the DRIFT-01 type-level enum-vs-list completeness tripwire wired into `typecheck-drift` (DRIFT-01)
 - [x] 12-02-PLAN.md -- The 18-row extended `it.each` catalog (exact code+category+count) + the NG8101 promotion proof + ~7 new extended fixtures; folds/deletes the two extended specs (CAT-01, CAT-02, CAT-04)
-- [ ] 12-03-PLAN.md -- The sibling baseline TS/NG `it.each` table + ~2 baseline fixtures; folds/deletes `baseline.angular13` and corrects the TESTING.md spec count (CAT-03)
+- [x] 12-03-PLAN.md -- The sibling baseline TS/NG `it.each` table + ~2 baseline fixtures; folds/deletes `baseline.angular13` and corrects the TESTING.md spec count (CAT-03)
 - [x] 12-04-PLAN.md -- Rewrite `research/DIAGNOSTIC-CATALOG.md` to the authoritative 18-member enum set (CAT-05)
 
 ### Phase 13: typecheck-configuration generator
@@ -101,6 +101,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
-| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 3/4 | In Progress|  |
+| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete   | 2026-07-01 |
 | 13. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
 | 14. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |
