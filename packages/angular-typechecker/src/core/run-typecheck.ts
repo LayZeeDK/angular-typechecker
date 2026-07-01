@@ -7,6 +7,8 @@ import { loadCompilerCli } from './compiler-loader';
 import { TCB_GENERATION_FATAL_DIAGNOSTIC_CODE } from './diagnostic-codes';
 import { filterDiagnostics } from './filter-diagnostics';
 import { gatherAllDiagnostics } from './gather-diagnostics';
+import type { SkippedReference } from './walk-references';
+import { walkReferences } from './walk-references';
 
 export interface CoreOptions {
   tsConfigPath: string;
@@ -68,6 +70,17 @@ export interface CoreResult {
   // UNKNOWN_ERROR_CODE 500 -> TypecheckInfrastructureError; the notice is a
   // warning, NOT a reclassification of the verdict.
   templateCheckAborted?: TemplateCheckAborted;
+  // D-02 (Phase 13): references skipped or reclassified during a solution-tsconfig
+  // walk. Present (and NON-EMPTY) ONLY when at least one reference was skipped
+  // (out-of-project / zero-root-names / self-reference) or reclassified
+  // (not-found -> 90002) during the walk. `undefined` on the direct single-leaf
+  // path AND on any walk where every reference walked cleanly -- core maps the
+  // walk's empty array `[]` -> `undefined` so consumers branch on presence. Like
+  // `templateCheckAborted`, this is PURE detection (set by the pure walk in
+  // walk-references.ts, no `console`/`process`); the executor adapter renders the
+  // loud, path-named `logger.warn` advisory. ADVISORY only -- recording a skip
+  // NEVER changes the verdict. Additive/non-breaking (0.x semver).
+  skippedReferences?: readonly SkippedReference[];
 }
 
 /**
@@ -182,17 +195,86 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // final diagnostics so it is counted -- never a silent "clean".
   const configDiagnostics = [...parsed.errors];
 
-  // D-03 part 2 / D-03a: gate on `rootNames.length === 0` (NEVER TS18003, which
-  // TypeScript suppresses when a config has a `references` array). A
-  // solution-style / references-only or empty config short-circuits here so
-  // `performCompilation` is skipped, and one synthesized Error is returned --
-  // giving agents/CI a deterministic non-zero signal instead of a false PASS.
+  // D-03 part 2 / D-03a (Phase 13 three-way split; L-3 / Spike 004): gate on
+  // `rootNames.length === 0` (NEVER TS18003, which TypeScript suppresses when a
+  // config has a `references` array). A solution-style / references-only or empty
+  // config skips the direct `performCompilation` and splits three ways:
+  //   1. references present + >=1 in-project leaf -> WALK the leaves and feed the
+  //      raw union into the SAME single `finalize` as the direct path.
+  //   2. references present + 0 in-project leaves (all skipped) -> synthesize the
+  //      references-present 90001 guard + attach the recorded skippedReferences.
+  //   3. no references (empty project) -> synthesize the empty-project 90001 guard
+  //      (UNCHANGED).
+  // Every path returns at least one synthesized/counted Error or a walked union so
+  // agents/CI get a deterministic non-zero signal instead of a false PASS.
   if (parsed.rootNames.length === 0) {
+    // Same references-present predicate `synthesizeZeroRootNamesDiagnostic` uses
+    // (below) so the branch classification and the guard message agree.
+    const hasReferences =
+      parsed.projectReferences !== undefined &&
+      parsed.projectReferences.length > 0;
+
+    if (hasReferences) {
+      const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
+      // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
+      // adapter's presence check is sufficient; mirror the templateCheckAborted
+      // conditional-spread idiom in `finalize`.
+      const skipped =
+        walk.skippedReferences.length > 0
+          ? { skippedReferences: walk.skippedReferences }
+          : {};
+
+      if (walk.rootNamesCount > 0) {
+        // >=1 in-project leaf walked: feed the RAW union into the SAME single
+        // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
+        // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
+        // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
+        // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
+        // available here (the walk owns and discards each leaf's Program), so the
+        // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
+        // Program used -- matching the direct path's `realpath` fallback.
+        const result = finalize(
+          ts,
+          options.tsConfigPath,
+          walk.rootNamesCount,
+          [...configDiagnostics, ...walk.rawDiagnostics],
+          start,
+          {
+            basePath: resolveFilterBasePath(
+              parsed.options.basePath,
+              options.tsConfigPath,
+            ),
+            includeDeps: options.includeDeps ?? false,
+            useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
+            realpath: (filePath: string): string =>
+              ts.sys.realpath?.(filePath) ?? filePath,
+          },
+        );
+
+        return { ...result, ...skipped };
+      }
+
+      // References present but 0 in-project leaves (every reference skipped /
+      // reclassified): synthesize the references-present none-in-project 90001
+      // guard and attach the (non-empty here) skippedReferences.
+      const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
+      const result = finalize(
+        ts,
+        options.tsConfigPath,
+        0,
+        [...configDiagnostics, guard],
+        start,
+      );
+
+      return { ...result, ...skipped };
+    }
+
+    // No references (empty project): UNCHANGED. No Program on this path: nothing
+    // to filter (the single guard diagnostic is file-less and would never be
+    // filtered anyway), so `suppressedCount` is 0 and `finalize` runs with
+    // `filter` omitted.
     const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
 
-    // No Program on this path: nothing to filter (the single guard diagnostic is
-    // file-less and would never be filtered anyway), so `suppressedCount` is 0
-    // and `finalize` runs with `filter` omitted.
     return finalize(
       ts,
       options.tsConfigPath,
