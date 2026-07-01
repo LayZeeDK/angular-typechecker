@@ -21,7 +21,7 @@
 - [ ] **CAT-02**: At least one severity-promotion case proves `angularCompilerOptions.extendedDiagnostics.defaultCategory: "error"` flips a warning-default diagnostic to an error (NG8011 excepted: out-of-band / not promotable — assert its observed category).
 - [ ] **CAT-03**: The baseline TS/NG codes (TS2322, TS2339, NG2003, NG2005, NG2007, NG2009, NG1001, NG3003, NG6100, NG8001, NG8002, NG8004) are asserted by exact code.
 - [ ] **CAT-04**: The catalog is a single data-driven `it.each` table keyed on the enum members (introduction-version is a row field, not a per-version file split); any member not reproducible by a static fixture under Angular 22.0.4 is `it.skip` with a written reason (the row remains in the catalog).
-- [ ] **CAT-05**: `research/DIAGNOSTIC-CATALOG.md` is corrected to the authoritative 18-member set (the `ExtendedTemplateDiagnosticName` enum incl. NG8011 + NG8021, both outside the 81xx range; NG8110 + NG8118 noted as `ErrorCode`s that are NOT configurable extended diagnostics).
+- [x] **CAT-05**: `research/DIAGNOSTIC-CATALOG.md` is corrected to the authoritative 18-member set (the `ExtendedTemplateDiagnosticName` enum incl. NG8011 + NG8021, both outside the 81xx range; NG8110 + NG8118 noted as `ErrorCode`s that are NOT configurable extended diagnostics).
 
 ### DRIFT — completeness tripwire
 
@@ -70,7 +70,7 @@ Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's
 | CAT-02 | Phase 12 | Pending |
 | CAT-03 | Phase 12 | Pending |
 | CAT-04 | Phase 12 | Pending |
-| CAT-05 | Phase 12 | Pending |
+| CAT-05 | Phase 12 | Complete |
 | DRIFT-01 | Phase 12 | Complete |
 | GEN-01 | Phase 13 | Pending |
 | GEN-02 | Phase 13 | Pending |

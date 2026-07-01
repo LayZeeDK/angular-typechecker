@@ -77,7 +77,7 @@ Single documentation-only task (no source code, no packages):
   "per-introduction-version file split (one `*.integration.spec.ts` per Angular major)" instead of
   the `executor.angularNN` literal. Meaning preserved; all gates now return zero.
 - **Files modified:** `.planning/research/DIAGNOSTIC-CATALOG.md`
-- **Commit:** (this plan's commit)
+- **Commit:** 3791a73
 
 ## Verification
 
@@ -101,4 +101,5 @@ handled in ROADMAP/CONTEXT, not in this doc). Satisfies requirement CAT-05.
 ## Self-Check: PASSED
 
 - File exists: `.planning/research/DIAGNOSTIC-CATALOG.md` (FOUND).
-- Commit: recorded below after the atomic commit.
+- File exists: `.planning/phases/12-extended-diagnostic-catalog-completeness-tripwire/12-04-SUMMARY.md` (FOUND).
+- Commit 3791a73 exists (FOUND in `git log`).
