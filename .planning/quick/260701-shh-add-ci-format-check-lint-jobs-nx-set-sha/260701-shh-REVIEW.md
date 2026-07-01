@@ -18,6 +18,7 @@ findings:
   info: 3
   total: 4
 status: issues_found
+resolution: WR-01 + IN-01 fixed in commit f406123; IN-02 + IN-03 accepted as-is (optional/informational)
 ---
 
 # GSD Quick Task 260701-shh: Code Review Report
@@ -46,6 +47,14 @@ The overall quality is high. The one Warning is a robustness gap in the push-to-
 
 ### WR-01: `format-lint` on push-to-`main` needs `actions: read` to scope correctly; without it the whole-repo format regression window is HEAD~1 only
 
+> **RESOLVED (commit f406123):** Applied the first fix -- added a job-level
+> `permissions: { contents: read, actions: read }` to `format-lint`. `contents: read`
+> is restated because job-level permissions REPLACE (not merge with) the top-level
+> block; `actions: read` is commented as required by `nrwl/nx-set-shas` (push-path
+> workflow-runs API lookup). Still least-privilege (read-only, no write). The
+> top-level threat-model comment was updated to record the read-only grant.
+> act-compat re-verified 14/0.
+
 **File:** `.github/workflows/ci.yml:178-211`
 **Issue:** On a `pull_request` event, `nx-set-shas` derives the base via `git merge-base origin/<base.ref> HEAD` (git-only; `fetch-depth: 0` supplies the refs) -- correct and permission-free. But on a **push to `main`** (the post-merge run that the `ci` aggregate comment explicitly relies on as the "second backstop"), `nx-set-shas` queries the GitHub **Actions API** for the last successful workflow run to compute the base. That call needs `actions: read`, which the top-level `permissions: contents: read` does NOT grant. With `error-on-no-successful-workflow` left at its default `false`, the action logs a warning and silently falls back to `HEAD~1` (confirmed against `nrwl/nx-set-shas` `v5.0.1` `action.yml` + `nx-set-shas.ts`).
 
@@ -71,6 +80,9 @@ The in-code comment already describes this fallback and calls it "acceptable -- 
 ## Info
 
 ### IN-01: `nx run-many -t lint` silently lints only 2 of 9 projects
+
+> **RESOLVED (commit f406123):** ci.yml comment reworded from "every project" to
+> "every project that defines a lint target".
 
 **File:** `.github/workflows/ci.yml:211`
 **Issue:** `nx run-many -t lint` runs the `lint` target only for projects that DEFINE it. In this workspace that is `angular-typechecker` and `ng-spike-app` (verified via `nx show projects --with-target lint`). The other 7 projects (`consumer-app`, the three `*-e2e`, `typecheck-walk-consumer`, `typecheck-consumer-dep`, `typecheck-consumer`) have no `lint` target and are silently skipped -- `run-many` reports success with no indication they were not linted. This is by design for the fixture/consumer/e2e projects and is acceptable, but the ci.yml comment ("`nx run-many -t lint` lints EVERY project") overstates the coverage.

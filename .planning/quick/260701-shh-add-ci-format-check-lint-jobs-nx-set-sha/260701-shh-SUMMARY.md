@@ -74,5 +74,24 @@ status: complete
 ## Follow-ups
 
 - Close/let Dependabot auto-close PRs #1 and #2 after this lands.
-- On the next milestone PR, run `nx format:write` on its changed files (the new gate
-  checks PR-changed files via nx-set-shas base/head).
+- A PR that changes real source/config/docs must be Prettier-clean (the format-lint
+  gate checks PR-changed files via nx-set-shas base/head). NOTE: `.planning/` is NO
+  LONGER gated -- it was excluded from Prettier after review (see Post-review updates),
+  so GSD planning churn no longer needs a format pass.
+
+## Post-review updates (2026-07-01)
+
+- **Code review** (`260701-shh-REVIEW.md`, deep: 0 blockers / 1 warning / 3 info).
+  WR-01 fixed by granting `format-lint` a read-only `actions: read` for nx-set-shas'
+  push-path base derivation (commit f406123); IN-01 ci.yml comment reworded to "every
+  project that defines a lint target" (f406123); IN-02/IN-03 accepted as-is.
+- **`.planning/` de-scoped from Prettier** (commits 9d132b2 + 53a0c4a). GSD emits
+  unformatted planning markdown every phase, so gating it created per-PR friction for
+  no benefit; `.planning/` is now in `.prettierignore` and this task's `.planning`
+  format churn (340 files) was reverted. Real source/config/docs + the 3
+  diagnostic-neutral fixture templates remain Prettier-formatted. This revises the
+  original "format the entire repo" scope.
+- **CI-verified** via draft PR #14 (opened then closed). All task-relevant jobs
+  passed: format-lint, act-compat, lint-workflows, the full 6-cell test matrix, e2e,
+  and CodeQL. Only fallow failed -- Phase 12-13 milestone WIP (new-only vs origin/main),
+  not this task.
