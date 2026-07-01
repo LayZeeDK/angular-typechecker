@@ -1,0 +1,58 @@
+{
+  "spike": "003-double-compile-cost",
+  "environment": {
+    "node": "v24.18.0",
+    "typescript": "6.0.3"
+  },
+  "iterations": 7,
+  "medianMs": {
+    "fixedFloor": 355.7,
+    "lib": 379.3,
+    "spec": 383.2,
+    "depOnly": 385.3,
+    "combined_single_program": 389.5,
+    "walk_lib_plus_spec": 762.4
+  },
+  "minMs": {
+    "floor": 347.3,
+    "lib": 362.3,
+    "spec": 371.4,
+    "depOnly": 362.7,
+    "combined": 371.5
+  },
+  "redundancy": {
+    "taxMs": 372.9,
+    "taxPct": 95.7,
+    "interpretation": "tax = extra wall-clock the reference-walk pays over one combined program: a second program init + re-checking the shared consumer+dep sources in the spec leaf. It scales with the NUMBER of leaves (~one fixed compile per extra leaf), not with dep size.",
+    "fixedFloorMs": 355.7,
+    "fixedFloorPctOfDepOnly": 92.3,
+    "depMarginalMs": 29.6,
+    "depDoubleCompileNote": "the dep is compiled in BOTH leaves. Its MARGINAL type-check cost is (depOnly - floor) = 29.6 ms; paid twice in the walk, so PURE dep redundancy is ~29.6 ms. The dominant cost is the fixed per-compile floor (355.7 ms, ~92.3% of a dep-only compile) -- so at THIS scale the double-compile penalty is fixed-overhead-bound, not dep-size-bound. At PROJECT.md scale (~15s ngc) the marginal term dominates and the deferred incremental-reuse synergy matters more.",
+    "notExtraVsMultiTarget": "CRITICAL FRAMING: N leaves cost ~N compiles whether the engine WALKS references behind one target OR the generator wires N separate targets. The walk adds no compile work vs the multi-target alternative; it trades finer per-leaf caching for one coarse target (see spike 005)."
+  },
+  "depSourceFilesInProgram": {
+    "lib": 4,
+    "spec": 4,
+    "combined": 4
+  },
+  "deferredSynergy": "project references + NgtscProgram incremental declaration-reuse (per-file NgtscProgram migration, already DEFERRED in PROJECT.md) could compile the dep once and reuse its emitted declarations across leaves, collapsing the tax toward zero. Out of scope for the first reference-walk cut; the walk is correct (Approach A), just not incrementally optimal.",
+  "perfSummaryFromProjectMd": "PROJECT.md baseline: standalone ngc --noEmit ~15s vs full esbuild build ~36s at scale. This fixture is tiny; treat the RATIO (tax%), not the absolute ms, as the signal.",
+  "assertions": [
+    {
+      "id": "V1-both-clean",
+      "pass": true,
+      "detail": "lib err=0 spec err=0 combined err=0"
+    },
+    {
+      "id": "V2-dep-double-compiled",
+      "pass": true,
+      "detail": "dep source files in lib program=4, in spec program=4 (present in BOTH -> compiled twice)"
+    },
+    {
+      "id": "V3-tax-is-bounded",
+      "pass": true,
+      "detail": "walk redundancy tax = 95.7% of the single-program cost (sanity bound < 150%)"
+    }
+  ],
+  "verdict": "VALIDATED"
+}
