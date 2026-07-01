@@ -7,9 +7,11 @@
 #     run step uses fixed target ids + flags only. There is no command-injection
 #     surface from untrusted PR metadata.
 #   - Least privilege: read-only repo scope at the top level; NO job re-grants any
-#     write permission (this is a test gate, never a publisher). It sets no
-#     registry credentials and no auth-token env -- OIDC publishing is release.yml's
-#     concern alone.
+#     write permission (this is a test gate, never a publisher). The format-lint job
+#     adds a job-level, READ-ONLY actions: read (nx-set-shas base derivation) on top
+#     of contents: read -- still zero write scope anywhere. It sets no registry
+#     credentials and no auth-token env -- OIDC publishing is release.yml's concern
+#     alone.
 #   - SHA-pinned actions: every action reference is a full 40-char commit SHA (a
 #     mutable major-version tag repointed to malicious code was the tj-actions
 #     vector). Dependabot (.github/dependabot.yml, github-actions ecosystem) keeps
@@ -180,19 +182,27 @@ jobs:
   # derives the base/head SHAs so `nx format:check` inspects ONLY the files this
   # PR/push range changed -- never the whole repo (the repo carries intentionally
   # un-Prettier'd fixtures + a large .planning tree). `nx run-many -t lint` lints
-  # every project and fails on ANY warning: maxWarnings:0 is baked into the
-  # @nx/eslint:lint targetDefaults (nx.json), so NO CI flag is passed. fetch-depth:
-  # 0 is LOAD-BEARING -- nx-set-shas resolves the base commit from git history. On
-  # a PR it derives the exact merge-base/head; on a push it cannot read the last
-  # successful run under the top-level `contents: read` and falls back to HEAD~1
-  # (acceptable -- the post-merge diff is small). No job re-grants any permission.
-  # Path-gated (D-08), SAME negative if: form as test/e2e/fallow -- skips a
-  # planning/docs-only PR yet stays in the `act -n` plan under the empty filter
-  # output. Fixed target ids + flags only; no PR-metadata interpolation.
+  # every project that defines a lint target and fails on ANY warning: maxWarnings:0
+  # is baked into the @nx/eslint:lint targetDefaults (nx.json), so NO CI flag is
+  # passed. fetch-depth: 0 is LOAD-BEARING -- nx-set-shas resolves the base commit
+  # from git history. On a PR it derives the exact merge-base/head; on a push it
+  # reads the last successful run to compute the base (see the actions: read note
+  # on the permissions block below). Path-gated (D-08), SAME negative if: form as
+  # test/e2e/fallow -- skips a planning/docs-only PR yet stays in the `act -n` plan
+  # under the empty filter output. Fixed target ids + flags only; no PR-metadata
+  # interpolation.
   format-lint:
     needs: changes
     if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
+    # actions: read is required by nrwl/nx-set-shas -- on a push it queries the
+    # Actions workflow-runs API for the last successful run to derive the base SHA
+    # (on a PR it uses git merge-base and needs no API). Job-level permissions
+    # REPLACE (not merge with) the top-level block, so contents: read is restated
+    # here for actions/checkout. Both scopes are READ-ONLY -- no write is granted.
+    permissions:
+      contents: read
+      actions: read
     env:
       NX_DAEMON: false
     steps:
