@@ -137,6 +137,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.1.0 | 4/4 | Complete | 2026-07-01 |
 | 13. Engine -- solution-tsconfig reference-walking | v0.1.0 | 6/6 | Complete | 2026-07-01 |
-| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 1/1 | Complete   | 2026-07-01 |
+| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 1/1 | Complete    | 2026-07-01 |
 | 14. configuration + init generators, nx add | v0.1.0 | 0/? | Not started | - |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/? | Not started | - |

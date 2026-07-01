@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
-status: verifying
-stopped_at: Phase 13.1 context gathered
-last_updated: "2026-07-01T22:09:17.233Z"
+status: ready_to_plan
+stopped_at: Phase 13.1 complete (1/1) — ready to discuss Phase 14
+last_updated: 2026-07-01T22:30:41.493Z
 last_activity: 2026-07-01
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
   percent: 40
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-walking engine)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 13.1 — rename-angular-typecheck-executor-to-typecheck
+**Current focus:** Phase 14 — configuration + init generators, nx add
 
 ## Current Position
 
-Phase: 13.1 (rename-angular-typecheck-executor-to-typecheck) — EXECUTING
-Plan: 1 of 1
-Status: Phase complete — ready for verification
+Phase: 14
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-07-01
 
 Progress: [█████████░] 91%
