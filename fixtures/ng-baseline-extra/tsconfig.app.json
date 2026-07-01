@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true
+  },
+  "files": [
+    "param-token.component.ts",
+    "undecorated-provider.component.ts",
+    "undecorated-base.component.ts",
+    "shadow-dom.component.ts",
+    "non-literal.component.ts",
+    "ngmodule-id.module.ts",
+    "schema-attr.component.ts",
+    "missing-pipe.component.ts"
+  ]
+}
