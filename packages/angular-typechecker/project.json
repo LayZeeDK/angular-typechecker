@@ -48,6 +48,8 @@
       "inputs": [
         "{projectRoot}/src/core/compiler-cli-types.drift.ts",
         "{projectRoot}/src/core/compiler-cli-types.ts",
+        "{projectRoot}/src/core/extended-catalog.drift.ts",
+        "{projectRoot}/src/core/extended-catalog.members.ts",
         "{projectRoot}/tsconfig.drift.json",
         "{workspaceRoot}/tsconfig.base.json",
         {

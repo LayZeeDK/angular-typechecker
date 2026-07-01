@@ -9,5 +9,8 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "files": ["src/core/compiler-cli-types.drift.ts"]
+  "files": [
+    "src/core/compiler-cli-types.drift.ts",
+    "src/core/extended-catalog.drift.ts"
+  ]
 }
