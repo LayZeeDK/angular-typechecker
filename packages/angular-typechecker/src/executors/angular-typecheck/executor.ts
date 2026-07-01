@@ -62,6 +62,28 @@ export default async function angularTypecheckExecutor(
       );
     }
 
+    // D-02 (Phase 13, L-4): surface the loud skipped-reference notice. Fires only
+    // when the core recorded at least one reference skipped (out-of-project /
+    // zero-root-names / self-reference) or reclassified (not-found -> 90002)
+    // during a solution-tsconfig walk. One logger.warn per reference. ADVISORY
+    // ONLY -- the verdict is unchanged: a boundary-skipped leaf's diagnostics
+    // simply never entered the union, and a not-found leaf is already a counted
+    // 90002 in the report. Core sets skippedReferences only when non-empty (never
+    // []), so the presence check plus the length guard are belt-and-suspenders.
+    if (
+      result.skippedReferences !== undefined &&
+      result.skippedReferences.length > 0
+    ) {
+      for (const skipped of result.skippedReferences) {
+        logger.warn(
+          `angular-typecheck: referenced tsconfig '${skipped.referencePath}' was ` +
+            `${skipped.reason} and was skipped or reclassified during the ` +
+            `solution-tsconfig reference walk. This notice is advisory only -- the ` +
+            `type-check verdict is unchanged.`,
+        );
+      }
+    }
+
     const report = await renderReport(result, {
       pathBase: coreOptions.pathBase,
       color,

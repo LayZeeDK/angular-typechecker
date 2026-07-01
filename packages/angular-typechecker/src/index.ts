@@ -13,3 +13,4 @@ export {
   TypecheckInfrastructureError,
 } from './core/run-typecheck';
 export type { CoreOptions, CoreResult } from './core/run-typecheck';
+export type { SkippedReference } from './core/walk-references';
