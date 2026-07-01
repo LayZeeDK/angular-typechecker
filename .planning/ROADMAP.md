@@ -107,7 +107,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   4. `nx add angular-typechecker` auto-runs the `init` generator on install (Nx invokes the package's registered `init`), seeding `targetDefaults`.
   5. Both generators ship hand-authored `schema.json` + `schema.d.ts`, registered via `generators.json` (each entry keyed `factory`) and the published `package.json` `generators` field, included in the tarball `files` set (root `generators.json` globbed like `executors.json`); unit tests on `createTreeWithEmptyWorkspace` assert the `configuration` target write (solution + flat-fallback) + idempotency + collision, the `init` seed (idempotent + don't-clobber + `default`-not-`production`), and a schema-parity spec per generator.
 **Plans**: 3 plans
-- [ ] 14-01-PLAN.md -- Standalone `init` generator: idempotently seed `nx.json` `targetDefaults["angular-typechecker:typecheck"]` with the verbatim WALK-02 block (unscoped id, whole-entry `??=` don't-clobber, `default`-not-`production`) + schema/parity + in-memory specs (GEN-07, GEN-05/06 slice)
+- [x] 14-01-PLAN.md -- Standalone `init` generator: idempotently seed `nx.json` `targetDefaults["angular-typechecker:typecheck"]` with the verbatim WALK-02 block (unscoped id, whole-entry `??=` don't-clobber, `default`-not-`production`) + schema/parity + in-memory specs (GEN-07, GEN-05/06 slice)
 - [ ] 14-02-PLAN.md -- `configuration` generator: init-first, resolve tsConfig (override -> solution `tsconfig.json` -> flat leaf fallback -> error), collision-by-executor, write ONE `typecheck` target via `updateProjectConfiguration` + schema/parity + in-memory specs (GEN-01/02/03/04/08, GEN-05/06 slice)
 - [ ] 14-03-PLAN.md -- Registration + packaging: root `generators.json` (factory-keyed), `package.json` `generators` field + `files` entry, `project.json` build asset glob, `package-manifest.spec.ts` extension; `nx lint`/`nx build` gates (GEN-05 registration, GEN-09 nx-add mechanism)
 
@@ -141,5 +141,5 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.1.0 | 4/4 | Complete | 2026-07-01 |
 | 13. Engine -- solution-tsconfig reference-walking | v0.1.0 | 6/6 | Complete | 2026-07-01 |
 | 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 1/1 | Complete    | 2026-07-01 |
-| 14. configuration + init generators, nx add | v0.1.0 | 0/? | Not started | - |
+| 14. configuration + init generators, nx add | v0.1.0 | 1/3 | In Progress|  |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/? | Not started | - |
