@@ -40,7 +40,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 - [x] **Phase 12: Extended-diagnostic catalog + completeness tripwire** - Assert all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes by exact code/category/count/promotion in one enum-keyed `it.each` table, with an enum-vs-table tripwire that fails CI loudly on Angular drift. (completed 2026-07-01)
 - [x] **Phase 13: Engine -- solution-tsconfig reference-walking** - Teach the `angular-typecheck` engine to type-check a solution / references-only `tsconfig.json` by walking its in-project referenced leaves (lib/app + spec) in ONE `runTypecheck` call (union + dedupe by value identity, module-boundary-guarded, coarse-cached), superseding the D-03a solution-style short-circuit so a single target yields the complete, duplicate-free diagnostic set for the whole project. (completed 2026-07-01)
-- [ ] **Phase 13.1: Rename angular-typecheck executor to typecheck (INSERTED)** - Rename the shipped executor `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` across `executors.json`, `nx.json` targetDefaults, all fixtures, specs, and the README -- a BREAKING change that drives the 0.0.3 -> 0.1.0 minor bump (EXEC-01).
+- [x] **Phase 13.1: Rename angular-typecheck executor to typecheck (INSERTED)** - Rename the shipped executor `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` across `executors.json`, `nx.json` targetDefaults, all fixtures, specs, and the README -- a BREAKING change that drives the 0.0.3 -> 0.1.0 minor bump (EXEC-01). (completed 2026-07-01)
 - [ ] **Phase 14: configuration + init generators, nx add** - Ship the `nx g angular-typechecker:configuration <project>` generator (renamed from `typecheck-configuration`) that wires ONE minimal `typecheck` target (executor `angular-typechecker:typecheck`) at the solution `tsconfig.json` and delegates caching to a standalone `init` generator (seeds `nx.json` targetDefaults), plus `nx add angular-typechecker` support -- `project.json`/`nx.json` config-edit only, idempotent, relying on the Phase 13 walk.
 - [ ] **Phase 15: Generator e2e + CI self-audit guard** - Prove the generators end-to-end against the installed tarball (install -> `nx g angular-typechecker:configuration` on a previously un-wired project -> assert `project.json` + the `init`-seeded `targetDefaults` -> run the `typecheck` target to a multi-leaf walk verdict; plus an `nx add angular-typechecker` scenario), and add a `-p` set-equality guard that turns a forgotten e2e project into a loud failure.
 
@@ -94,7 +94,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   4. The README consumer recipe and any docs use the new id `angular-typechecker:typecheck`; no stale `angular-typecheck` executor reference remains in shipped source, config, or docs.
   5. The change is committed as a breaking `feat!` / `BREAKING CHANGE:` touching the package so `nx release` computes the 0.1.0 minor bump.
 **Plans**: 1 plan
-- [ ] 13.1-01-PLAN.md -- git mv the executor dir + rename the full executor identity (executors.json key/paths, schema `$id`, internal symbols, message prefixes), re-key both nx.json targetDefaults (WALK-02 value preserved), re-point every fixture/consumer/spec + README, then rebuild + run the full gate and commit the breaking `feat!` (EXEC-01)
+- [x] 13.1-01-PLAN.md -- git mv the executor dir + rename the full executor identity (executors.json key/paths, schema `$id`, internal symbols, message prefixes), re-key both nx.json targetDefaults (WALK-02 value preserved), re-point every fixture/consumer/spec + README, then rebuild + run the full gate and commit the breaking `feat!` (EXEC-01)
 
 ### Phase 14: configuration + init generators, nx add
 **Goal**: A developer can run `nx g angular-typechecker:configuration <project>` (renamed from `typecheck-configuration`) to wire ONE minimal `typecheck` target (executor `angular-typechecker:typecheck`) at the project's solution `tsconfig.json` into `project.json`, with caching seeded into `nx.json` `targetDefaults` by a standalone `init` generator that `configuration` calls; `nx add angular-typechecker` runs `init` on install. Config-edit only (`project.json` + `nx.json`; no `generateFiles`), idempotent, relying on the Phase 13 walk -- no per-project-type detection, no separate spec target.
@@ -137,6 +137,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.1.0 | 4/4 | Complete | 2026-07-01 |
 | 13. Engine -- solution-tsconfig reference-walking | v0.1.0 | 6/6 | Complete | 2026-07-01 |
-| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 0/1 | Planned | - |
+| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 1/1 | Complete   | 2026-07-01 |
 | 14. configuration + init generators, nx add | v0.1.0 | 0/? | Not started | - |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/? | Not started | - |

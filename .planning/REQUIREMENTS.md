@@ -19,7 +19,7 @@
 
 *Added 2026-07-01 (v0.1.0 re-scope). The breaking change that carries the 0.x minor bump.*
 
-- [ ] **EXEC-01**: The published Nx executor is renamed from `angular-typecheck` (id `angular-typechecker:angular-typecheck`) to **`typecheck`** (id **`angular-typechecker:typecheck`**): the `executors.json` key, the executor implementation directory + `implementation`/`schema` paths, and the schema `$id` are renamed, and EVERY internal reference is updated consistently — `nx.json` `targetDefaults` keys (both the local `angular-typechecker:typecheck` and the scoped `@angular-typechecker/angular-typechecker:typecheck`), all fixture `project.json` executor refs (and their target names), `nx-target-defaults.spec.ts` keys, the integration/unit specs that name the executor id, and the README consumer recipe. Executor BEHAVIOR is unchanged — only the id/name moves. This is a BREAKING change for consumers, so it drives the milestone's 0.x minor bump to **0.1.0** (a `feat!` / `BREAKING CHANGE:` commit touching the package).
+- [x] **EXEC-01**: The published Nx executor is renamed from `angular-typecheck` (id `angular-typechecker:angular-typecheck`) to **`typecheck`** (id **`angular-typechecker:typecheck`**): the `executors.json` key, the executor implementation directory + `implementation`/`schema` paths, and the schema `$id` are renamed, and EVERY internal reference is updated consistently — `nx.json` `targetDefaults` keys (both the local `angular-typechecker:typecheck` and the scoped `@angular-typechecker/angular-typechecker:typecheck`), all fixture `project.json` executor refs (and their target names), `nx-target-defaults.spec.ts` keys, the integration/unit specs that name the executor id, and the README consumer recipe. Executor BEHAVIOR is unchanged — only the id/name moves. This is a BREAKING change for consumers, so it drives the milestone's 0.x minor bump to **0.1.0** (a `feat!` / `BREAKING CHANGE:` commit touching the package).
 
 ### GEN — `configuration` + `init` generators, nx add
 
@@ -98,7 +98,7 @@ Each requirement maps to exactly one phase (v0.1.0 phases continue from v0.0.3's
 | DRIFT-01 | Phase 12 | Complete |
 | WALK-01 | Phase 13 | Complete |
 | WALK-02 | Phase 13 | Complete |
-| EXEC-01 | Phase 13.1 | Pending |
+| EXEC-01 | Phase 13.1 | Complete |
 | GEN-01 | Phase 14 | Pending |
 | GEN-02 | Phase 14 | Pending |
 | GEN-03 | Phase 14 | Pending |
