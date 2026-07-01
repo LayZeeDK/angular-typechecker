@@ -101,6 +101,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
-| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete   | 2026-07-01 |
+| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete    | 2026-07-01 |
 | 13. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
 | 14. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |
