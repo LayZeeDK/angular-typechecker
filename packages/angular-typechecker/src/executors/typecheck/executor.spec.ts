@@ -100,7 +100,7 @@ function skippedRefsCoreResult(
 const context = { root: '/ws' } as ExecutorContext;
 const options = { tsConfig: 'libs/x/tsconfig.lib.json' };
 
-describe('angularTypecheckExecutor (D-01/D-04)', () => {
+describe('typecheckExecutor (D-01/D-04)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.renderReport.mockResolvedValue('RENDERED REPORT');

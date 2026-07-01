@@ -4,7 +4,7 @@ import type { ExecutorContext } from '@nx/devkit';
 import { joinPathFragments } from '@nx/devkit';
 
 import type { CoreOptions } from '../../core/run-typecheck';
-import type { AngularTypecheckExecutorOptions } from './schema';
+import type { TypecheckExecutorOptions } from './schema';
 
 /**
  * The pure mapping from the Nx executor's native options + `ExecutorContext` to
@@ -25,7 +25,7 @@ export interface NormalizedOptions {
 }
 
 /**
- * Maps `AngularTypecheckExecutorOptions` + `ExecutorContext` to
+ * Maps `TypecheckExecutorOptions` + `ExecutorContext` to
  * {@link NormalizedOptions} (D-01/D-03). Pure: no I/O, no compiler load.
  *
  * D-03 tsConfig resolution: an absolute `tsConfig` passes through; a relative one
@@ -39,7 +39,7 @@ export interface NormalizedOptions {
  * `process`-free (D-04 / Phase-3 D-11).
  */
 export function normalizeOptions(
-  options: AngularTypecheckExecutorOptions,
+  options: TypecheckExecutorOptions,
   context: ExecutorContext,
 ): NormalizedOptions {
   const tsConfigPath = isAbsolute(options.tsConfig)

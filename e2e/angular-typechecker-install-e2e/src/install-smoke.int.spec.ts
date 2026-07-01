@@ -30,7 +30,7 @@ const INJECTED_TS_CODE = 'TS2322';
 
 // The published, unscoped executor id the fixture wires (D-18). The dev
 // workspace-scoped key would NOT bind in a consumer install.
-const TARGET = 'consumer-app:angular-typecheck';
+const TARGET = 'consumer-app:typecheck';
 
 // Resolve the workspace root from this spec's location
 // (e2e/angular-typechecker-install-e2e/src/<file>) -- 3 dirs up -- so every path
@@ -205,7 +205,7 @@ describe('TEST-05: a clean install of the packed tarball resolves + runs the exe
       const executorsManifest = JSON.parse(
         readFileSync(installedExecutorsManifest, 'utf8'),
       ) as { executors: Record<string, { implementation: string }> };
-      expect(executorsManifest.executors['angular-typecheck']).toBeDefined();
+      expect(executorsManifest.executors['typecheck']).toBeDefined();
 
       // GREEN: the committed fixture type-checks clean from the installed package.
       const green = run(tmp);

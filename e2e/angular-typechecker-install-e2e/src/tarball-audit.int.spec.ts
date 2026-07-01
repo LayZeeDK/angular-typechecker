@@ -40,8 +40,8 @@ const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');
 // `files[].path` is package-relative WITHOUT the `package/` prefix.
 const REQUIRED_FILES = [
   'executors.json',
-  'src/executors/angular-typecheck/schema.json',
-  'src/executors/angular-typecheck/executor.js',
+  'src/executors/typecheck/schema.json',
+  'src/executors/typecheck/executor.js',
   'src/index.js',
   'src/index.d.ts',
   'README.md',

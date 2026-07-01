@@ -24,7 +24,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 // compiler-cli). The literal "nx run" wording of EXE-01 requires >=1 real nx run.
 
 const CONSUMER_PROJECT = 'typecheck-consumer';
-const TARGET = 'angular-typecheck';
+const TARGET = 'typecheck';
 
 // The rendered TS diagnostic code the injection deliberately triggers. Asserting
 // the full 'TS2322' token (not a bare 4-digit '2322' substring) keeps the real
@@ -45,7 +45,7 @@ const DEP_FILE_REL = 'libs/typecheck-consumer-dep/src/lib/dep.component.ts';
 const DEP_FILE = join(workspaceRoot, DEP_FILE_REL);
 const PRISTINE = `${DEP_FILE}.pristine`;
 
-// The consumer's leaf tsconfig the angular-typecheck target points at. Absolute
+// The consumer's leaf tsconfig the typecheck target points at. Absolute
 // (the core requires an absolute path and is process-free; the executor's
 // normalizeOptions does the rel->abs resolution). joinPathFragments normalizes to
 // POSIX separators for cross-OS stability -- the same path primitive the
@@ -107,7 +107,7 @@ function healFromPristine(): void {
 }
 
 // The real project graph (loaded once in beforeAll) so runExecutor can resolve
-// the consumer project + its angular-typecheck target from the real config --
+// the consumer project + its typecheck target from the real config --
 // runExecutor reads context.projectsConfigurations.projects[project], so an empty
 // projects map yields "Could not find project".
 let projectGraph: ProjectGraph;
@@ -211,7 +211,7 @@ describe('EXE-01/D-16: executor verdict + diagnostic codes match the core (struc
 });
 
 describe('EXE-01/EXE-07/D-05: a real `nx run` returns NG/TS diagnostics through the compiled CJS executor at runtime', () => {
-  it('injected error: `nx run typecheck-consumer:angular-typecheck` surfaces TS2322 + non-zero exit (no ERR_REQUIRE_ESM)', () => {
+  it('injected error: `nx run typecheck-consumer:typecheck` surfaces TS2322 + non-zero exit (no ERR_REQUIRE_ESM)', () => {
     try {
       injectDepError();
 

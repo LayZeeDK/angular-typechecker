@@ -123,7 +123,7 @@ interface RunResult {
 function run(cwd: string, target: string): RunResult {
   try {
     // --skip-nx-cache: each green/injected invocation MUST really execute the
-    // executor. The cacheable angular-typecheck target's `production` input
+    // executor. The cacheable typecheck target's `production` input
     // EXCLUDES *.spec.ts (nx.json namedInput), so mutating the spec-row source
     // does NOT bust the cache -- without --skip-nx-cache the injected spec run
     // would be served the cached GREEN (exit 0) and the injected assertion would
@@ -215,7 +215,7 @@ beforeAll(() => {
   const executorsManifest = JSON.parse(
     readFileSync(installedExecutorsManifest, 'utf8'),
   ) as { executors: Record<string, { implementation: string }> };
-  expect(executorsManifest.executors['angular-typecheck']).toBeDefined();
+  expect(executorsManifest.executors['typecheck']).toBeDefined();
 }, 300000);
 
 afterAll(() => {
@@ -260,14 +260,14 @@ const BROKEN_STATEMENT = `const broken: number = ${JSON.stringify('str')};`;
 const MATRIX_ROWS: readonly MatrixRow[] = [
   {
     label: 'application',
-    target: 'app:angular-typecheck',
+    target: 'app:typecheck',
     injectionFile: join('apps', 'app', 'src', 'app.component.ts'),
     originalLabel: "readonly label: string = 'angular-typechecker matrix app';",
     injectedLine: BROKEN_FIELD,
   },
   {
     label: 'local non-buildable library',
-    target: 'local-lib:angular-typecheck',
+    target: 'local-lib:typecheck',
     injectionFile: join('libs', 'local-lib', 'src', 'local-lib.component.ts'),
     originalLabel:
       "readonly label: string = 'angular-typechecker matrix local lib';",
@@ -275,7 +275,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
   },
   {
     label: 'buildable library',
-    target: 'buildable-lib:angular-typecheck',
+    target: 'buildable-lib:typecheck',
     injectionFile: join(
       'libs',
       'buildable-lib',
@@ -288,7 +288,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
   },
   {
     label: 'publishable library',
-    target: 'publishable-lib:angular-typecheck',
+    target: 'publishable-lib:typecheck',
     injectionFile: join(
       'libs',
       'publishable-lib',
@@ -301,7 +301,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
   },
   {
     label: 'spec tsconfig',
-    target: 'local-lib:angular-typecheck-spec',
+    target: 'local-lib:typecheck-spec',
     // The spec-type error lands in the *.spec.ts file set (the file the spec
     // tsconfig INCLUDES and the component targets EXCLUDE), proving the spec
     // tsconfig is checked. The injection point is the `const label = ...` line

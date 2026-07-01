@@ -1,8 +1,8 @@
 {
   "executors": {
-    "angular-typecheck": {
-      "implementation": "./src/executors/angular-typecheck/executor",
-      "schema": "./src/executors/angular-typecheck/schema.json",
+    "typecheck": {
+      "implementation": "./src/executors/typecheck/executor",
+      "schema": "./src/executors/typecheck/schema.json",
       "outputCapture": "direct-nodejs",
       "description": "Type-checks an Angular project (TypeScript + template + extended NG8xxx) with no emit."
     }

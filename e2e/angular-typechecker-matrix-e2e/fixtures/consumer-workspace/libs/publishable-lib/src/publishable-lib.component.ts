@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
 // publishable shape is distinguished STRUCTURALLY by a `build` target referencing
 // @nx/angular:package + an importPath-style per-lib package.json
 // (@fixtures/publishable-lib) -- the build is NEVER run and its executor is never
-// resolved when running angular-typecheck (OQ-1), so NO @nx/angular dependency is
+// resolved when running typecheck (OQ-1), so NO @nx/angular dependency is
 // needed. Type-checked at tsconfig.lib.json via the PUBLISHED executor id;
 // committed clean; the matrix spec injects a deliberate TS2322 into a per-run TMP
 // copy to prove the packaged check runs for this type.

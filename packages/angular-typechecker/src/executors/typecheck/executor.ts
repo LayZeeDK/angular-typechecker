@@ -8,7 +8,7 @@ import {
   TypecheckInfrastructureError,
 } from '../../core/run-typecheck';
 import { normalizeOptions } from './normalize-options';
-import type { AngularTypecheckExecutorOptions } from './schema';
+import type { TypecheckExecutorOptions } from './schema';
 
 /**
  * The complete Nx executor adapter (D-01) -- the only tier (with
@@ -34,8 +34,8 @@ import type { AngularTypecheckExecutorOptions } from './schema';
  * untouched: the Fatal is still a counted type error, and the infra-vs-type path
  * (D-05) is unchanged -- this is additive signalling, not a reclassification.
  */
-export default async function angularTypecheckExecutor(
-  options: AngularTypecheckExecutorOptions,
+export default async function typecheckExecutor(
+  options: TypecheckExecutorOptions,
   context: ExecutorContext,
 ): Promise<{ success: boolean }> {
   const { coreOptions, maxWarnings, failFast, color } = normalizeOptions(
@@ -54,11 +54,11 @@ export default async function angularTypecheckExecutor(
         result.templateCheckAborted.fileName ?? 'an unknown file';
 
       logger.warn(
-        `angular-typecheck: a fatal template-compilation error (e.g. in ${offendingFile}) ` +
+        `angular-typechecker: a fatal template-compilation error (e.g. in ${offendingFile}) ` +
           `(NG3004 IMPORT_GENERATION_FAILURE) aborted Angular template type-check-block ` +
           `generation. Surviving files' Angular template/extended (NG8xxx) diagnostics ` +
           `may be SUPPRESSED until it is fixed -- this run's template check is ` +
-          `INCOMPLETE. Fix all reported NG3004 diagnostics and re-run angular-typecheck.`,
+          `INCOMPLETE. Fix all reported NG3004 diagnostics and re-run typecheck.`,
       );
     }
 
@@ -76,7 +76,7 @@ export default async function angularTypecheckExecutor(
     ) {
       for (const skipped of result.skippedReferences) {
         logger.warn(
-          `angular-typecheck: referenced tsconfig '${skipped.referencePath}' was ` +
+          `angular-typechecker: referenced tsconfig '${skipped.referencePath}' was ` +
             `${skipped.reason} and was skipped or reclassified during the ` +
             `solution-tsconfig reference walk. This notice is advisory only -- the ` +
             `type-check verdict is unchanged.`,
@@ -98,7 +98,7 @@ export default async function angularTypecheckExecutor(
   } catch (error) {
     if (error instanceof TypecheckInfrastructureError) {
       logger.error(
-        `angular-typecheck: the Angular compiler failed to run (infrastructure error, not a type error): ${error.message}`,
+        `angular-typechecker: the Angular compiler failed to run (infrastructure error, not a type error): ${error.message}`,
       );
 
       return { success: false };

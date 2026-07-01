@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/schema",
-  "$id": "AngularTypecheckExecutorOptions",
+  "$id": "TypecheckExecutorOptions",
   "title": "Angular type-check executor",
   "description": "Type-checks an Angular project (TypeScript + template + extended NG8xxx) with no emit.",
   "cli": "nx",

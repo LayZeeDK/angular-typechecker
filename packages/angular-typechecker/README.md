@@ -61,14 +61,14 @@ manual. There are two equivalent ways to wire it.
 
 ### Option A: a per-project target in `project.json`
 
-Add an `angular-typecheck` target to the project you want to check, referencing
-the **published** executor id `angular-typechecker:angular-typecheck`:
+Add a `typecheck` target to the project you want to check, referencing
+the **published** executor id `angular-typechecker:typecheck`:
 
 ```jsonc
 {
   "targets": {
-    "angular-typecheck": {
-      "executor": "angular-typechecker:angular-typecheck",
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
       "options": {
         "tsConfig": "apps/my-app/tsconfig.app.json",
         "includeDeps": true,
@@ -81,7 +81,7 @@ the **published** executor id `angular-typechecker:angular-typecheck`:
 Run it:
 
 ```sh
-nx run my-app:angular-typecheck
+nx run my-app:typecheck
 ```
 
 To type-check the unit-test (spec) tsconfig of a project, point a second target
@@ -98,7 +98,7 @@ dependency outputs via `dependentTasksOutputFiles`):
 ```jsonc
 {
   "targetDefaults": {
-    "angular-typechecker:angular-typecheck": {
+    "angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
       "inputs": [
@@ -120,11 +120,11 @@ dependency outputs via `dependentTasksOutputFiles`):
 }
 ```
 
-Each project then declares only its own `angular-typecheck` target with its
+Each project then declares only its own `typecheck` target with its
 `tsConfig` (and `includeDeps`) options, as in Option A.
 
-> Use the **published unscoped** executor id `angular-typechecker:angular-typecheck`.
-> A workspace-scoped key (for example `@your-scope/...:angular-typecheck`) will
+> Use the **published unscoped** executor id `angular-typechecker:typecheck`.
+> A workspace-scoped key (for example `@your-scope/...:typecheck`) will
 > not bind to the installed package in a consumer workspace.
 
 ### `includeDeps` and non-buildable dependencies

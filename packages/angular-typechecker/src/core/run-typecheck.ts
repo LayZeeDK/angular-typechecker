@@ -347,7 +347,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // shim `program` stays non-optional, so TS treats the access as always-defined.
   if (result.program === undefined) {
     throw new TypecheckInfrastructureError(
-      'angular-typecheck: the Angular compiler returned no Program ' +
+      'angular-typechecker: the Angular compiler returned no Program ' +
         '(performCompilation produced neither a Program nor an ' +
         'UNKNOWN_ERROR_CODE diagnostic). This is an infrastructure failure, ' +
         'not a type error.',

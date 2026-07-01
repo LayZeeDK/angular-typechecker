@@ -4,15 +4,15 @@
   "sourceRoot": "libs/local-lib/src",
   "projectType": "library",
   "targets": {
-    "angular-typecheck": {
-      "executor": "angular-typechecker:angular-typecheck",
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
       "options": {
         "tsConfig": "libs/local-lib/tsconfig.lib.json",
         "includeDeps": true
       }
     },
-    "angular-typecheck-spec": {
-      "executor": "angular-typechecker:angular-typecheck",
+    "typecheck-spec": {
+      "executor": "angular-typechecker:typecheck",
       "options": {
         "tsConfig": "libs/local-lib/tsconfig.spec.json",
         "includeDeps": true

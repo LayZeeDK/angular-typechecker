@@ -8,12 +8,12 @@ Your new, shiny [Nx workspace](https://nx.dev) is ready.
 
 ## Type-check an Angular project (single-target walk recipe)
 
-`angular-typechecker` ships one Nx executor, `angular-typecheck`, that runs the
+`angular-typechecker` ships one Nx executor, `typecheck`, that runs the
 Angular compiler's full diagnostic set (TypeScript checks plus Angular template
 type-checking and extended `NG8xxx` diagnostics) for a project WITHOUT building it
 or running its tests.
 
-Wire ONE `angular-typecheck` target per project and point its `tsConfig` at the
+Wire ONE `typecheck` target per project and point its `tsConfig` at the
 project's SOLUTION `tsconfig.json` -- the references-only config whose
 `references[]` list the project's leaf tsconfigs (for example `tsconfig.lib.json`
 or `tsconfig.app.json`, plus `tsconfig.spec.json`). The executor walks those
@@ -28,8 +28,8 @@ libraries, and their spec tsconfigs.
 ```json
 {
   "targets": {
-    "angular-typecheck": {
-      "executor": "@angular-typechecker/angular-typechecker:angular-typecheck",
+    "typecheck": {
+      "executor": "@angular-typechecker/angular-typechecker:typecheck",
       "options": {
         "tsConfig": "libs/my-lib/tsconfig.json"
       }
@@ -41,7 +41,7 @@ libraries, and their spec tsconfigs.
 Run it:
 
 ```sh
-npx nx angular-typecheck my-lib
+npx nx typecheck my-lib
 ```
 
 ### Caching guidance (recommended `targetDefaults`)
@@ -58,7 +58,7 @@ Add this to `nx.json` (or per-project `project.json` target config):
 ```json
 {
   "targetDefaults": {
-    "@angular-typechecker/angular-typechecker:angular-typecheck": {
+    "@angular-typechecker/angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
       "inputs": ["default", "{projectRoot}/tsconfig*.json", "^default"]

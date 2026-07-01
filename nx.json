@@ -41,7 +41,7 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
-    "angular-typechecker:angular-typecheck": {
+    "angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
       "inputs": [
@@ -57,7 +57,7 @@
         { "externalDependencies": ["typescript", "@angular/compiler-cli"] }
       ]
     },
-    "@angular-typechecker/angular-typechecker:angular-typecheck": {
+    "@angular-typechecker/angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
       "inputs": [

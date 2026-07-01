@@ -2,7 +2,7 @@ import type { ExecutorContext } from '@nx/devkit';
 
 import { describe, expect, it } from 'vitest';
 
-import type { AngularTypecheckExecutorOptions } from './schema';
+import type { TypecheckExecutorOptions } from './schema';
 import { normalizeOptions } from './normalize-options';
 
 // Minimal ExecutorContext literal: normalizeOptions reads ONLY `root`. The rest
@@ -14,7 +14,7 @@ function contextWithRoot(root: string): ExecutorContext {
 
 describe('normalizeOptions (D-01/D-03)', () => {
   it('resolves a relative tsConfig workspace-root-relative via joinPathFragments (D-03)', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
     };
 
@@ -29,7 +29,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
 
   it('passes an absolute tsConfig through unchanged (D-03)', () => {
     const absolute = '/abs/path/tsconfig.lib.json';
-    const options: AngularTypecheckExecutorOptions = { tsConfig: absolute };
+    const options: TypecheckExecutorOptions = { tsConfig: absolute };
 
     const normalized = normalizeOptions(options, contextWithRoot('/ws'));
 
@@ -37,7 +37,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
   });
 
   it('leaves maxWarnings undefined when absent -- NOT defaulted to 0 (EXE-05)', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
     };
 
@@ -47,7 +47,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
   });
 
   it('forwards a provided maxWarnings as-is', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
       maxWarnings: 0,
     };
@@ -58,7 +58,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
   });
 
   it('defaults failFast and includeDeps to false when absent (D-06)', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
     };
 
@@ -69,7 +69,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
   });
 
   it('forwards provided failFast and includeDeps', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
       failFast: true,
       includeDeps: true,
@@ -82,7 +82,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
   });
 
   it('sets pathBase to the workspace root (D-08)', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
     };
 
@@ -92,7 +92,7 @@ describe('normalizeOptions (D-01/D-03)', () => {
   });
 
   it('derives color from process.stdout.isTTY (D-04)', () => {
-    const options: AngularTypecheckExecutorOptions = {
+    const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',
     };
 

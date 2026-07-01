@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 // WALK-02 / L-5 / Spike 005 (manifest contract): pin the shape of the
-// `angular-typecheck` walk-target defaults in the workspace `nx.json`. The
+// `typecheck` walk-target defaults in the workspace `nx.json`. The
 // coarse single walk target caches on ONE key, so the NAMED input decides what
 // busts it. `production` EXCLUDES `*.spec.ts` (see the `production` namedInput's
 // `!...spec|test...` + `!tsconfig.spec.json` negations), so with the walk now
@@ -19,8 +19,8 @@ import { describe, expect, it } from 'vitest';
 // prerequisite, mirroring `package-manifest.spec.ts`.
 //
 // The executor is registered under TWO target-default keys -- the dev-workspace
-// executor id (`angular-typechecker:angular-typecheck`) and the published-package
-// executor id (`@angular-typechecker/angular-typechecker:angular-typecheck`) --
+// executor id (`angular-typechecker:typecheck`) and the published-package
+// executor id (`@angular-typechecker/angular-typechecker:typecheck`) --
 // which are the same executor's defaults for the local repo vs an installed
 // consumer. Both MUST carry the WALK-02 shape so the caching contract holds in
 // both contexts, so the assertions run against each.
@@ -48,8 +48,8 @@ interface NxJson {
 const nxJson = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as NxJson;
 
 const WALK_TARGET_DEFAULT_KEYS = [
-  'angular-typechecker:angular-typecheck',
-  '@angular-typechecker/angular-typechecker:angular-typecheck',
+  'angular-typechecker:typecheck',
+  '@angular-typechecker/angular-typechecker:typecheck',
 ] as const;
 
 const TSCONFIG_GLOB = '{projectRoot}/tsconfig*.json';
@@ -70,7 +70,7 @@ function inputsOf(key: string): unknown[] {
   return inputs;
 }
 
-describe('nx.json angular-typecheck walk-target defaults (WALK-02 / L-5)', () => {
+describe('nx.json typecheck walk-target defaults (WALK-02 / L-5)', () => {
   it.each(WALK_TARGET_DEFAULT_KEYS)(
     'uses the "default" named input and NOT "production" (%s)',
     (key) => {

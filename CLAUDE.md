@@ -6,7 +6,7 @@
 
 **angular-typechecker**
 
-angular-typechecker is an Nx plugin that type-checks Angular projects -- applications, libraries (local/non-buildable, buildable, and publishable), and unit-test (spec) tsconfigs -- the way `ngc --noEmit -p <tsconfig>` would, but _completely_ and _decoupled from building or running tests_. It runs the Angular compiler's full diagnostic set: TypeScript checks plus Angular template type-checking and extended diagnostics (NG8xxx). The first milestone (`v0.0.1`) ships a single Nx executor (`angular-typecheck`) targeting Nx 23 + Angular 22 (TypeScript 6). It exists to give a fast static-check feedback loop for AI coding agents and CI pipelines.
+angular-typechecker is an Nx plugin that type-checks Angular projects -- applications, libraries (local/non-buildable, buildable, and publishable), and unit-test (spec) tsconfigs -- the way `ngc --noEmit -p <tsconfig>` would, but _completely_ and _decoupled from building or running tests_. It runs the Angular compiler's full diagnostic set: TypeScript checks plus Angular template type-checking and extended diagnostics (NG8xxx). The first milestone (`v0.0.1`) ships a single Nx executor (`typecheck`) targeting Nx 23 + Angular 22 (TypeScript 6). It exists to give a fast static-check feedback loop for AI coding agents and CI pipelines.
 
 **Core Value:** Deliver the _complete_ Angular type-check (TypeScript + template type-check + extended diagnostics) for any project type _without_ building the application or executing the tests -- faster, in isolation, and more completely than either the build's coupled check or a bare `ngc --noEmit`.
 

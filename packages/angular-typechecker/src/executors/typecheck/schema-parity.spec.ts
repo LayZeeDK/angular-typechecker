@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 // D-06 key-parity contract: schema.json `properties` keys MUST equal the
-// `AngularTypecheckExecutorOptions` (schema.d.ts) key set. TS interfaces have no
+// `TypecheckExecutorOptions` (schema.d.ts) key set. TS interfaces have no
 // runtime keys, so the expected set is encoded as a literal array here -- the
 // parity test's job is to fail LOUDLY if schema.json and schema.d.ts drift (a
 // silent drift means the executor's runtime contract diverges from its type
@@ -24,11 +24,11 @@ interface ExecutorSchema {
 
 const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as ExecutorSchema;
 
-// The exact AngularTypecheckExecutorOptions key set (schema.d.ts), sorted.
+// The exact TypecheckExecutorOptions key set (schema.d.ts), sorted.
 const EXPECTED_KEYS = ['failFast', 'includeDeps', 'maxWarnings', 'tsConfig'];
 
 describe('schema.json <-> schema.d.ts parity (D-06)', () => {
-  it('declares exactly the AngularTypecheckExecutorOptions properties', () => {
+  it('declares exactly the TypecheckExecutorOptions properties', () => {
     expect(Object.keys(schema.properties).sort()).toEqual(EXPECTED_KEYS);
   });
 

@@ -59,7 +59,7 @@ const executorJsPath = join(
   distRoot,
   'src',
   'executors',
-  'angular-typecheck',
+  'typecheck',
   'executor.js',
 );
 

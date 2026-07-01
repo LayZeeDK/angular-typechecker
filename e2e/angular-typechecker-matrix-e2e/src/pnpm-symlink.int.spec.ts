@@ -43,11 +43,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const INJECTED_TS_CODE = 'TS2322';
 
-// A single representative target. `app:angular-typecheck` already wires
+// A single representative target. `app:typecheck` already wires
 // includeDeps:true (project.json) so pnpm's `.pnpm/`-symlinked store is genuinely
 // traversed by the executor. The full 5-type breakdown is PM-independent and lives
 // in the npm matrix spec (D-09 rejects a second full install for no new signal).
-const TARGET = 'app:angular-typecheck';
+const TARGET = 'app:typecheck';
 
 const workspaceRoot = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -199,7 +199,7 @@ beforeAll(() => {
   const executorsManifest = JSON.parse(
     readFileSync(installedExecutorsManifest, 'utf8'),
   ) as { executors: Record<string, { implementation: string }> };
-  expect(executorsManifest.executors['angular-typecheck']).toBeDefined();
+  expect(executorsManifest.executors['typecheck']).toBeDefined();
 }, 300000);
 
 afterAll(() => {
