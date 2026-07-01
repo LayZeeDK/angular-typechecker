@@ -39,8 +39,8 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ### v0.0.4 -- solution-tsconfig reference-walking engine, typecheck-configuration generator, and extended testing strategy (Phases 12-15)
 
 - [x] **Phase 12: Extended-diagnostic catalog + completeness tripwire** - Assert all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes by exact code/category/count/promotion in one enum-keyed `it.each` table, with an enum-vs-table tripwire that fails CI loudly on Angular drift. (completed 2026-07-01)
-- [ ] **Phase 13: Engine -- solution-tsconfig reference-walking** - Teach the `angular-typecheck` engine to type-check a solution / references-only `tsconfig.json` by walking its in-project referenced leaves (lib/app + spec) in ONE `runTypecheck` call (union + dedupe by value identity, module-boundary-guarded, coarse-cached), superseding the D-03a solution-style short-circuit so a single target yields the complete, duplicate-free diagnostic set for the whole project.
-- [ ] **Phase 14: typecheck-configuration generator** - Ship the `nx g angular-typechecker:typecheck-configuration <project>` generator that wires ONE `typecheck` target pointed at the project's solution `tsconfig.json` into `project.json` (config-edit only, idempotent), with a hand-authored/registered schema and in-memory generator tests -- relying on the Phase 13 walk, so no per-project-type detection and no separate spec target.
+- [x] **Phase 13: Engine -- solution-tsconfig reference-walking** - Teach the `angular-typecheck` engine to type-check a solution / references-only `tsconfig.json` by walking its in-project referenced leaves (lib/app + spec) in ONE `runTypecheck` call (union + dedupe by value identity, module-boundary-guarded, coarse-cached), superseding the D-03a solution-style short-circuit so a single target yields the complete, duplicate-free diagnostic set for the whole project. (completed 2026-07-01)
+- [x] **Phase 14: typecheck-configuration generator** - Ship the `nx g angular-typechecker:typecheck-configuration <project>` generator that wires ONE `typecheck` target pointed at the project's solution `tsconfig.json` into `project.json` (config-edit only, idempotent), with a hand-authored/registered schema and in-memory generator tests -- relying on the Phase 13 walk, so no per-project-type detection and no separate spec target. (completed 2026-07-01)
 - [ ] **Phase 15: Generator e2e + CI self-audit guard** - Prove the generator end-to-end against the installed tarball (install -> `nx g` on a previously un-wired project -> assert `project.json` -> run the single `typecheck` target to a multi-leaf walk verdict) and add a `-p` set-equality guard that turns a forgotten e2e project into a loud failure.
 
 ## Phase Details
@@ -79,8 +79,8 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] 13-02-PLAN.md -- Upgrade fixtures/solution-style + 5 sibling fixtures (overlap/oop/empty/broken-ref/selfref) (WALK-01)
 - [x] 13-03-PLAN.md -- NEW pure core walk-references.ts (walk + boundary guard + 90002 fold-and-count) + unit spec (WALK-01)
 - [x] 13-04-PLAN.md -- run-typecheck.ts D-03a three-way split + CoreResult.skippedReferences + index.ts export + executor logger.warn (WALK-01)
-- [ ] 13-05-PLAN.md -- Integration walk proofs + config-resolution rewrite + cross-leaf TCB unit + executor unit (WALK-01)
-- [ ] 13-06-PLAN.md -- nx.json production->default input + cache-e2e stale-PASS proof + README walk recipe (WALK-02)
+- [x] 13-05-PLAN.md -- Integration walk proofs + config-resolution rewrite + cross-leaf TCB unit + executor unit (WALK-01)
+- [x] 13-06-PLAN.md -- nx.json production->default input + cache-e2e stale-PASS proof + README walk recipe (WALK-02)
 
 ### Phase 14: typecheck-configuration generator
 **Goal**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire ONE `typecheck` target (executor `angular-typechecker:angular-typecheck`) pointed at the project's solution `tsconfig.json` into `project.json` (config-edit only, idempotent), with a hand-authored + registered schema and in-memory generator tests -- relying on the Phase 13 walk, so no per-project-type detection and no separate spec target are needed.
@@ -121,6 +121,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete | 2026-07-01 |
-| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 4/6 | In Progress|  |
+| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 6/6 | Complete   | 2026-07-01 |
 | 14. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
 | 15. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |
