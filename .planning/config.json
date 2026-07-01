@@ -93,7 +93,7 @@
   },
   "code_quality": {
     "fallow": {
-      "enabled": true
+      "enabled": false
     }
   }
 }
