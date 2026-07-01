@@ -31,6 +31,32 @@ Design decisions that emerged / are locked as spikes progress. Non-negotiable fo
 - Spikes build HERMETIC fixtures under `.planning/spikes/NNN-*/fixture/` -- they do NOT
   mutate `libs/typecheck-consumer*` (committed fixtures the plugin specs consume) to avoid
   perturbing `run-typecheck.integration.spec.ts` / the executor specs / the Nx graph.
+- The reference-walk aggregates via UNION-then-single-`finalize` (union raw per-leaf diagnostics,
+  then one boundary-filter + `sortAndDeduplicate` + count over the union), basePath = the project
+  dir (dirname of the solution tsconfig). (Spike 001.)
+- The walk boundary guard SKIPS out-of-project references (path-containment under the project dir)
+  and records the skipped set (skip-with-notice, not silent); it is a reference-resolution-layer
+  guard, orthogonal to and composable with the diagnostic-layer `filter-diagnostics` + `includeDeps`.
+  (Spike 002.)
+- The D-03a guard splits three-way at `rootNames === 0`: references present + >=1 in-project leaf
+  -> WALK; references present + 0 in-project -> synthesize error (new message); no references ->
+  synthesize error (unchanged). rootNames>0 direct path untouched; no branch gates on TS18003.
+  (Spike 004.)
+- A walk target's Nx `targetDefaults` inputs MUST use the `default` named input (the lib+spec union),
+  NOT `production` (which excludes `*.spec.ts`); `outputs: []`, the `{projectRoot}/tsconfig*.json`
+  glob, and `^default` are already correct. (Spike 005.)
+- Benchmarks use Vitest `bench` for standardized statistics (a standalone node harness may accompany
+  it for production-representative absolutes + correctness assertions). (Maintainer directive, Spike 003.)
+- For the Phase-13 spec rewrite: the `fixtures/solution-style` leaf (currently clean) needs a KNOWN
+  diagnostic and a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking occurred
+  (the substrate gap). (Spikes 001/004.)
+
+## DEFERRED synergy
+
+- Project references + `NgtscProgram` per-file incremental declaration-reuse could compile a shared
+  dep once and reuse its declarations across leaves, collapsing the walk's double-compile tax toward
+  zero. Already DEFERRED in PROJECT.md (Approach A / `performCompilation` for v0.0.x). The walk is
+  correct today; the optimization is additive later. (Spike 003.)
 
 ## Environment (verified live 2026-07-01)
 
@@ -49,7 +75,7 @@ Design decisions that emerged / are locked as spikes progress. Non-negotiable fo
 | 002 | module-boundary-guard | 2 | standard | out-of-project `references[]` are rejected/skipped at the walk boundary; local path-mapped dep sources stay governed by the existing `filter-diagnostics` + `includeDeps` | **VALIDATED** | boundary, security, engine |
 | 003 | double-compile-cost | 4 [Q1] | benchmark | measure the wall-clock cost of compiling a local non-buildable lib dep across the lib + spec leaves; record project-references / `NgtscProgram` incremental declaration-reuse as DEFERRED synergy | **VALIDATED** | performance, cost, engine |
 | 004 | d03a-surgical-split | 3 | standard | zero-rootNames guard splits surgically: references present -> walk; none -> still synthesize the deterministic error (rewrite `config-resolution.integration.spec.ts:124-130`) | **VALIDATED** | guard, regression, engine |
-| 005 | coarse-single-target-caching | 5 | standard | one Nx target (`outputs: []`, union of leaf inputs) yields a sound coarse cache key: any leaf/dep change busts, nothing under-hashes | PENDING | caching, nx, devex |
+| 005 | coarse-single-target-caching | 5 | standard | one Nx target (`outputs: []`, union of leaf inputs) yields a sound coarse cache key: any leaf/dep change busts, nothing under-hashes | **VALIDATED** (1 required input change: `production` -> `default`) | caching, nx, devex |
 
 _Build order: risk order (aggregation -> boundary -> cost -> D-03a split -> caching). Aggregation
 runs first as the make-or-break gate; a NO-GO there kills the idea before the rest. Spike # follows

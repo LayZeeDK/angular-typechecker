@@ -1,0 +1,89 @@
+{
+  "spike": "005-coarse-single-target-caching",
+  "projectRoot": "libs/typecheck-consumer",
+  "modeledFiles": [
+    "libs/typecheck-consumer/package.json",
+    "libs/typecheck-consumer/project.json",
+    "libs/typecheck-consumer/src/index.ts",
+    "libs/typecheck-consumer/src/lib/consumer.component.ts",
+    "libs/typecheck-consumer/tsconfig.json",
+    "libs/typecheck-consumer/tsconfig.lib.json",
+    "libs/typecheck-consumer/src/lib/consumer.component.spec.ts",
+    "libs/typecheck-consumer/tsconfig.spec.json"
+  ],
+  "resolved": {
+    "default": [
+      "libs/typecheck-consumer/package.json",
+      "libs/typecheck-consumer/project.json",
+      "libs/typecheck-consumer/src/index.ts",
+      "libs/typecheck-consumer/src/lib/consumer.component.ts",
+      "libs/typecheck-consumer/tsconfig.json",
+      "libs/typecheck-consumer/tsconfig.lib.json",
+      "libs/typecheck-consumer/src/lib/consumer.component.spec.ts",
+      "libs/typecheck-consumer/tsconfig.spec.json"
+    ],
+    "production": [
+      "libs/typecheck-consumer/package.json",
+      "libs/typecheck-consumer/project.json",
+      "libs/typecheck-consumer/src/index.ts",
+      "libs/typecheck-consumer/src/lib/consumer.component.ts",
+      "libs/typecheck-consumer/tsconfig.json",
+      "libs/typecheck-consumer/tsconfig.lib.json"
+    ],
+    "currentTarget_inputs_fileset": [
+      "libs/typecheck-consumer/package.json",
+      "libs/typecheck-consumer/project.json",
+      "libs/typecheck-consumer/src/index.ts",
+      "libs/typecheck-consumer/src/lib/consumer.component.ts",
+      "libs/typecheck-consumer/tsconfig.json",
+      "libs/typecheck-consumer/tsconfig.lib.json",
+      "libs/typecheck-consumer/tsconfig.spec.json"
+    ],
+    "walkTarget_inputs_fileset": [
+      "libs/typecheck-consumer/package.json",
+      "libs/typecheck-consumer/project.json",
+      "libs/typecheck-consumer/src/index.ts",
+      "libs/typecheck-consumer/src/lib/consumer.component.ts",
+      "libs/typecheck-consumer/tsconfig.json",
+      "libs/typecheck-consumer/tsconfig.lib.json",
+      "libs/typecheck-consumer/src/lib/consumer.component.spec.ts",
+      "libs/typecheck-consumer/tsconfig.spec.json"
+    ]
+  },
+  "objectInputsNote": "The target also carries ^default (hashes dependency projects' default inputs -> covers the non-buildable dep source, confirmed separately via `nx show projects --affected`), dependentTasksOutputFiles (transitive .d.ts/.tsbuildinfo), and externalDependencies [typescript, @angular/compiler-cli] (busts on compiler version change). These are UNCHANGED by the production->default swap.",
+  "finding": "outputs: [] is already correct. The coarse single-target cache is SOUND for the lib-only leaf today, but a WALK target that also checks the spec leaf MUST switch its file-set input from `production` to `default` (the union) so *.spec.ts sources are hashed. tsconfig.spec.json is already covered by the tsconfig*.json glob. The module-boundary guard (spike 002) is what keeps the walk from reading files OUTSIDE this hashed set (out-of-project references are skipped), so nothing the walk reads is left un-hashed -> no stale PASS.",
+  "coarsenessTradeoff": "One target = one cache entry: ANY project source change (lib OR spec) or dep change busts the whole type-check (re-runs all leaves). Coarser than N per-leaf targets (spike 003), but correct and simple -- appropriate for a check-everything tool.",
+  "assertions": [
+    {
+      "id": "C1-outputs-empty",
+      "pass": true,
+      "detail": "targetDefaults angular-typecheck already sets outputs: [] (no emit) -- correct for a no-emit type-check"
+    },
+    {
+      "id": "C2-default-includes-spec-source",
+      "pass": true,
+      "detail": "default input includes BOTH lib source and spec source (the union basis): spec=true lib=true"
+    },
+    {
+      "id": "C3-production-excludes-spec-source",
+      "pass": true,
+      "detail": "production input EXCLUDES the spec source (extglob match=true) but keeps the lib source"
+    },
+    {
+      "id": "C4-current-target-under-hashes-spec",
+      "pass": true,
+      "detail": "THE FINDING: the shipped `production`-based target inputs do NOT hash the spec source -> a spec-only edit cannot bust a WALK target that checks specs -> STALE PASS"
+    },
+    {
+      "id": "C5-walk-target-hashes-spec",
+      "pass": true,
+      "detail": "FIX: swapping `production` -> `default` makes the union (lib + spec) hashed -> a spec edit busts the coarse target"
+    },
+    {
+      "id": "C6-tsconfig-glob-covers-spec-tsconfig",
+      "pass": true,
+      "detail": "`{projectRoot}/tsconfig*.json` already matches tsconfig.spec.json (config side of the union is covered in BOTH configs)"
+    }
+  ],
+  "verdict": "VALIDATED"
+}
