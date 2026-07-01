@@ -20,6 +20,9 @@
     },
     "@nx/eslint:lint": {
       "cache": true,
+      "options": {
+        "maxWarnings": 0
+      },
       "inputs": [
         "default",
         "^default",

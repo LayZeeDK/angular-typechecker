@@ -48,6 +48,10 @@ import { EXTENDED_DIAGNOSTIC_MEMBERS } from './extended-catalog.members';
 // vendored identically from `compiler-cli-types.drift.ts`. `To extends From` is
 // the constraint -- the type only resolves to `true` when `From` is assignable
 // to `To`; a non-assignable pair errors where the alias is instantiated below.
+// `To` is an INTENTIONAL phantom type parameter: its `extends From` constraint
+// IS the assertion; it is never referenced in the body by design, which
+// no-unused-vars flags -- suppress that single, deliberate case.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type AssertAssignable<From, To extends From> = true;
 
 // The two value unions to compare (A3 / RESEARCH: value-union form, because the
