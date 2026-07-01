@@ -111,3 +111,8 @@ None. The walk-consumer lib and spec sources are real, clean, type-checked fixtu
 - a062a16: feat(core): hash spec sources into the walk-target cache key
 - c34398f: test(core): prove a spec-only edit busts the walk-target cache
 - 7f431b4: docs(core): document the single-target walk recipe
+- 652fc54: docs(13-06): complete WALK-02 caching + walk-recipe plan
+
+## Self-Check: PASSED
+
+All 12 created files exist on disk; all 4 commits (a062a16, c34398f, 7f431b4, 652fc54) are present in the git log; working tree clean.
