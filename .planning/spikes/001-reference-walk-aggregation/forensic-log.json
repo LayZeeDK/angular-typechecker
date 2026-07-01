@@ -21,8 +21,8 @@
         "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/001-reference-walk-aggregation/fixture/src/widget.component.ts|706|6|-998109|NG8109: status is a function and should be invoked: status()}. Find more at https://v22.angular.dev/extended-diagnostics/NG8109",
         "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/001-reference-walk-aggregation/fixture/src/widget.component.ts|779|5|2322|Type 'string' is not assignable to type 'number'."
       ],
-      "parseMs": 3.2,
-      "compileMs": 663.5
+      "parseMs": 4.8,
+      "compileMs": 652.2
     },
     {
       "leaf": "D:\\projects\\github\\LayZeeDK\\angular-typechecker\\.planning\\spikes\\001-reference-walk-aggregation\\fixture\\tsconfig.spec.json",
@@ -35,8 +35,8 @@
         "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/001-reference-walk-aggregation/fixture/src/widget.component.ts|706|6|-998109|NG8109: status is a function and should be invoked: status()}. Find more at https://v22.angular.dev/extended-diagnostics/NG8109",
         "D:/projects/github/LayZeeDK/angular-typechecker/.planning/spikes/001-reference-walk-aggregation/fixture/src/widget.component.ts|779|5|2322|Type 'string' is not assignable to type 'number'."
       ],
-      "parseMs": 1.9,
-      "compileMs": 406.8
+      "parseMs": 2,
+      "compileMs": 396.4
     }
   ],
   "union": {
@@ -82,7 +82,7 @@
     }
   ],
   "timing": {
-    "walkMs": 1082.7
+    "walkMs": 1063.3
   },
   "assertions": [
     {
