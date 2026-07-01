@@ -21,13 +21,13 @@ Plan 09-02 (RES-02) MUST implement the **HYBRID** gather shape in
 // isolated template/extended families. finalize()'s ts.sortAndDeduplicateDiagnostics
 // (run-typecheck.ts:347) removes the per-file template duplicates that the
 // whole-program call also produces.
-all.push(...program.getNgSemanticDiagnostics()); // whole-program: file-less-safe non-template set
+all.push(...program.getNgSemanticDiagnostics());          // whole-program: file-less-safe non-template set
 for (const sf of program.getTsProgram().getSourceFiles()) {
   if (sf.isDeclarationFile) {
     continue;
   }
 
-  all.push(...program.getNgSemanticDiagnostics(sf.fileName)); // per-file: isolated template/extended
+  all.push(...program.getNgSemanticDiagnostics(sf.fileName));  // per-file: isolated template/extended
 }
 ```
 
@@ -51,7 +51,7 @@ under-gather. Absence of evidence is not proof of absence (Pitfall 1).
 ```ts
 // Source: angular/packages/compiler-cli/src/ngtsc/core/src/compiler.ts:616-618 @ v22.0.4
 const diagnostics: ts.Diagnostic[] = [
-  ...this.getNonTemplateDiagnostics().filter((diag) => diag.file === file), // <-- THE FILTER (:618)
+  ...this.getNonTemplateDiagnostics().filter((diag) => diag.file === file),   // <-- THE FILTER (:618)
 ];
 ```
 
@@ -104,16 +104,15 @@ no `@ts-nocheck`; the errors ARE the input):
 
 The probe reaches the LIVE `api.Program` via the same
 `loadCompilerCli()` + `readConfiguration(tsConfigPath, { suppressOutputPathCheck: true })`
++ `performCompilation` path the engine uses (`run-typecheck.ts:102-193`), with the
+same emit-neutralizing override (`noEmit: true`, `emitFlags: 0`, ...), capturing the
+`program` in a custom `gatherDiagnostics` callback. Then, for each fixture:
 
-- `performCompilation` path the engine uses (`run-typecheck.ts:102-193`), with the
-  same emit-neutralizing override (`noEmit: true`, `emitFlags: 0`, ...), capturing the
-  `program` in a custom `gatherDiagnostics` callback. Then, for each fixture:
-
-* **(W)** gather the WHOLE-PROGRAM Angular set: `program.getNgSemanticDiagnostics()`
+- **(W)** gather the WHOLE-PROGRAM Angular set: `program.getNgSemanticDiagnostics()`
   (no `fileName`) -> `compiler.getDiagnostics()` (`program.ts:224-243`).
-* **(U)** build the per-file UNION (the SIMPLE shape): `program.getNgSemanticDiagnostics(sf.fileName)`
+- **(U)** build the per-file UNION (the SIMPLE shape): `program.getNgSemanticDiagnostics(sf.fileName)`
   over `getTsProgram().getSourceFiles()` skipping `isDeclarationFile` (D-06).
-* **(C)** inspect `.file` on EVERY whole-program diagnostic: classify each as
+- **(C)** inspect `.file` on EVERY whole-program diagnostic: classify each as
   file-less (`d.file === undefined`), or attached to a `ts.SourceFile` strictly
   `===` an iterated (non-declaration) source file ("matched"), or attached to some
   other file object ("unmatched"). Also compute which whole-program diagnostics are
@@ -171,7 +170,7 @@ not the analysis/non-template set.
    generation; the poison's Fatal during that shared step poisons shim generation,
    so even the per-file loop returns only the poison Fatal for BOTH the poison file
    AND the survivor file (see the breakdown: `survivor.component.ts ->
-[-993004 ...]`). This is a RES-02 design input -- the SIMPLE per-file loop does
+   [-993004 ...]`). This is a RES-02 design input -- the SIMPLE per-file loop does
    NOT, on its own, isolate this whole-program-priming Fatal -- and it independently
    argues against SIMPLE for the isolation guarantee RES-02 must deliver. (Plan
    09-02 owns proving the post-change behavior with its failing-then-passing spec;
@@ -235,7 +234,7 @@ per-file resilience RES-02 requires.
   `diag.file === file` (`:618`); the per-file template try/catch that catches
   `isFatalDiagnosticError` (`:626-636`).
 - `compiler.ts:1243-1258` -- `getNonTemplateDiagnostics` = `traitCompiler.diagnostics`
-  - `checkForPrivateExports` (memoized).
+  + `checkForPrivateExports` (memoized).
 - `program.ts:224-243` -- `getNgSemanticDiagnostics(fileName)` -> `getSourceFile`
   (out-of-program `return []` no-op) -> `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`.
 - `reference_emit_environment.ts:46-63` -- `referenceTcbValue` throws

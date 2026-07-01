@@ -17,7 +17,6 @@ only. Commits land on the current branch (into PR #11). No `.planning/` behavior
 ## Implementation Decisions
 
 ### #1 -- realpath fallback false-NEGATIVE (the one behavioral fix; HIGH impact, HIGH confidence)
-
 - **CONFIRMED:** `filter-diagnostics.ts:129-138` falls back to classifying the UNRESOLVED raw path
   when `realpath` throws. For a symlink whose raw path is out-of-`basePath` but whose realpath
   resolves IN-project, a `realpath` throw -> raw out-of-project kept -> SUPPRESSED -> if it was the
@@ -37,13 +36,11 @@ only. Commits land on the current branch (into PR #11). No `.planning/` behavior
   (`:88-106`) stay green unchanged.
 
 ### #2 -- stale "reported set" comments (CONFIRMED)
-
 - Fix `diagnostic-codes.ts:71` and `:86`: detection scans the PRE-filter gathered set in `finalize`
   (the raw `diagnostics` it receives), NOT the post-boundary-filter `reported` set. (My prior
   cleanup fixed `run-typecheck.ts` but missed this sibling file.)
 
 ### #3 -- program-undefined guard (CONFIRMED optionality; reachability defense-in-depth)
-
 - Add `if (result.program === undefined) throw new TypecheckInfrastructureError(...)` immediately
   BEFORE the `result.program.getTsProgram()` access (run-typecheck.ts ~268-270). The real
   `PerformCompilationResult.program?` is optional (`perform_compile.d.ts:29`); the shim narrows it.
@@ -53,7 +50,6 @@ only. Commits land on the current branch (into PR #11). No `.planning/` behavior
   `TypeError` into the same infra-class failure as the rest of the path.
 
 ### Polish (CONFIRMED / cheap)
-
 - **S1:** de-pin `compiler-cli-types.ts:98` -- it cites `run-typecheck.ts:229` but the
   `emitFlags: 0 as EmitFlags` statement is at `:232` (229 is a comment). Replace the line pin with a
   symbol reference.
@@ -73,7 +69,6 @@ only. Commits land on the current branch (into PR #11). No `.planning/` behavior
   `/\.ngtypecheck\.ts$/` does not match `.tsx`, so it passes through unchanged -- pins the anchor).
 
 ### Dropped / no-change (per --analyze)
-
 - **S4 -- NO CHANGE (REFUTED):** the drift prose ("real `api.Program` stays assignable TO the
   shim", real->shim) is ALREADY CORRECT. `AssertAssignable<From, To extends From>` used as
   `<Real, Shim>` asserts From(Real) assignable to To(Shim). The finding misread the helper. Leave
@@ -85,11 +80,10 @@ only. Commits land on the current branch (into PR #11). No `.planning/` behavior
   class over-engineering. Consistent to decline.
 
 ### Claude's Discretion
-
 - Exact test names/placement; the precise canonicalizer signaling for keep-on-throw (sentinel vs.
   early-keep branch) -- whatever is cleanest while preserving the memoization + casefold on the
   success path and the `src/core/**` purity (no console/process).
-  </decisions>
+</decisions>
 
 <specifics>
 ## Specific Ideas
@@ -106,11 +100,10 @@ Affected files (expected): `filter-diagnostics.ts` + `filter-diagnostics.spec.ts
 </specifics>
 
 <canonical_refs>
-
 ## Canonical References
 
 - `.planning/phases/09-.../09-RES-02-DECISION.md` (advisory-not-verdict policy -- gates S3).
 - `.planning/quick/260630-dyd-address-all-review-findings/260630-dyd-CONTEXT.md` (prior round; the
   T1 test that #1 now inverts; the includeDeps refutation that S5b duplicates).
 - AGENTS.md "Single-plan wave: skip worktrees" (executor runs on the main tree).
-  </canonical_refs>
+</canonical_refs>

@@ -15,17 +15,17 @@ affects:
 tech-stack:
   added: []
   patterns:
-    - 'Integration-spec fixture-path resolution (fileURLToPath/packageRoot/workspaceRoot)'
-    - 'Real-cli.formatDiagnostics rendering seam via renderReport({ color: false })'
-    - 'Symbolic NG(code) assertions (never the bare 4-digit)'
+    - "Integration-spec fixture-path resolution (fileURLToPath/packageRoot/workspaceRoot)"
+    - "Real-cli.formatDiagnostics rendering seam via renderReport({ color: false })"
+    - "Symbolic NG(code) assertions (never the bare 4-digit)"
 key-files:
   created:
     - packages/angular-typechecker/src/core/ts99-leak.integration.spec.ts
   modified: []
 decisions:
   - "Routed the spec through renderReport (the real cli.formatDiagnostics seam) rather than a TypeScript-formatter fake, so the spec exercises Angular's runtime TS-to-NG rewrite and cannot pass vacuously while production leaks TS-998101 (D-11, threat T-10-04-01)."
-  - 'Reused the committed extended-promoted fixture (NG8101 as Error) as the real NG8xxx producer (10-RESEARCH A3) rather than a hand-built diagnostic with a fabricated negative code.'
-  - 'Rephrased the explanatory comment block to avoid the literal tokens ts.formatDiagnostics / vi.fn / replaceTsWithNgInErrors so the acceptance grep (git grep -c ... returns 0) is honored exactly while keeping the rationale documented.'
+  - "Reused the committed extended-promoted fixture (NG8101 as Error) as the real NG8xxx producer (10-RESEARCH A3) rather than a hand-built diagnostic with a fabricated negative code."
+  - "Rephrased the explanatory comment block to avoid the literal tokens ts.formatDiagnostics / vi.fn / replaceTsWithNgInErrors so the acceptance grep (git grep -c ... returns 0) is honored exactly while keeping the rationale documented."
 metrics:
   duration: ~6 min
   completed: 2026-06-30
@@ -74,7 +74,7 @@ real `cli.formatDiagnostics`) is what makes the regression load-bearing.
   `renders an NG#### label and NO TS-99 substring on the color:false path`; full
   suite `Tests 144 passed (144)`.
 - Acceptance grep `git grep -c "ts.formatDiagnostics\|vi.fn\|replaceTsWithNgInErrors"
--- packages/angular-typechecker/src/core/ts99-leak.integration.spec.ts` returns
+  -- packages/angular-typechecker/src/core/ts99-leak.integration.spec.ts` returns
   no matches (0) -- no fake formatter, no direct rewrite call.
 - Spec routes through `renderReport(...)`; asserts BOTH `toMatch(/NG\d{4}/)` and
   `not.toContain('TS-99')`; sanity-checks the symbolic `NG(8101)`; uses a real
@@ -86,7 +86,6 @@ real `cli.formatDiagnostics`) is what makes the regression load-bearing.
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Rephrased comment block to satisfy the acceptance grep exactly**
-
 - **Found during:** Task 1 (acceptance-criteria verification)
 - **Issue:** The initial explanatory comment block named the forbidden approaches
   using their literal tokens (`ts.formatDiagnostics`, `vi.fn`,

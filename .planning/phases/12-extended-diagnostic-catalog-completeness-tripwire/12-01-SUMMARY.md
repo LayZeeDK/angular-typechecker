@@ -9,8 +9,8 @@ requires:
   - phase: v0.0.3 Phase 10 (Drift-hardening)
     provides: the tsconfig.drift.json + typecheck-drift Nx target + the compiler-cli-types.drift.ts AssertAssignable pattern this tripwire mirrors and rides
 provides:
-  - 'EXTENDED_DIAGNOSTIC_MEMBERS: the single as-const 18-member source of truth (D-02), dependency-free'
-  - 'extended-catalog.drift.ts: a type-level mutual set-equality tripwire vs the real ExtendedTemplateDiagnosticName enum (DRIFT-01), run by typecheck-drift, never ships'
+  - "EXTENDED_DIAGNOSTIC_MEMBERS: the single as-const 18-member source of truth (D-02), dependency-free"
+  - "extended-catalog.drift.ts: a type-level mutual set-equality tripwire vs the real ExtendedTemplateDiagnosticName enum (DRIFT-01), run by typecheck-drift, never ships"
   - "Compile-verified deep-import specifier '@angular/compiler-cli/src/ngtsc/diagnostics' under classic resolution (Assumption A2 resolved)"
 affects: [Phase 12 Plan 02 catalog integration spec (consumes EXTENDED_DIAGNOSTIC_MEMBERS as it.each row keys), milestone audit (CAT-01/CAT-04 catalog rows must derive from this list)]
 
@@ -18,7 +18,7 @@ affects: [Phase 12 Plan 02 catalog integration spec (consumes EXTENDED_DIAGNOSTI
 tech-stack:
   added: []
   patterns:
-    - 'Deep sub-barrel type import of a non-public compiler-cli enum under classic moduleResolution:node (differs from the barrel import compiler-cli-types.drift.ts uses)'
+    - "Deep sub-barrel type import of a non-public compiler-cli enum under classic moduleResolution:node (differs from the barrel import compiler-cli-types.drift.ts uses)"
     - "Value-union mutual set-equality tripwire: `${Enum}` string-value union vs an as-const list's [number] union, both directions asserted via the vendored AssertAssignable"
 
 key-files:
@@ -32,11 +32,11 @@ key-files:
 key-decisions:
   - "Deep-import the enum from the sub-barrel '@angular/compiler-cli/src/ngtsc/diagnostics' (verified re-export); no fallback to the leaf path was needed -- it compiled green on the first try under tsconfig.drift.json"
   - "Compared the enum's string-VALUE union against the catalog list (A3), not member-NAME keys, so the runtime it.each table (Plan 02) can key rows on the same values"
-  - 'Vendored AssertAssignable<From, To extends From> rather than adding tsd/expect-type (zero new dependency, consistent with the existing drift file)'
+  - "Vendored AssertAssignable<From, To extends From> rather than adding tsd/expect-type (zero new dependency, consistent with the existing drift file)"
 
 patterns-established:
-  - 'Single as-const source-of-truth module (dependency-free, mirrors diagnostic-codes.ts) consumed by BOTH a runtime spec and a type-level tripwire so the two cannot drift'
-  - 'A type-level completeness tripwire that fails loudly at a named probe slot when the hand-mirrored list diverges from the upstream enum'
+  - "Single as-const source-of-truth module (dependency-free, mirrors diagnostic-codes.ts) consumed by BOTH a runtime spec and a type-level tripwire so the two cannot drift"
+  - "A type-level completeness tripwire that fails loudly at a named probe slot when the hand-mirrored list diverges from the upstream enum"
 
 requirements-completed: [DRIFT-01]
 
@@ -130,6 +130,5 @@ None - no external service configuration required.
 - Task commits verified in git log: `83a30ac`, `5d9b790`, `0d814a3` (all FOUND).
 
 ---
-
-_Phase: 12-extended-diagnostic-catalog-completeness-tripwire_
-_Completed: 2026-07-01_
+*Phase: 12-extended-diagnostic-catalog-completeness-tripwire*
+*Completed: 2026-07-01*

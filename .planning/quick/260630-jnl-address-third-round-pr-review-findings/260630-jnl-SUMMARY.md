@@ -6,11 +6,11 @@ tags: [pr-review, test-quality, comment-precision, no-behavior-change]
 status: complete
 requires: []
 provides:
-  - 'S5c anti-tautology guard (3-element Error+Warning+Suggestion set)'
-  - 'isUnderDir undefined-base over-keep branch coverage'
-  - 'program-undefined-no-500 guard coverage'
-  - 'de-pinned useCaseSensitiveFileNames symbol reference'
-  - 'sharpened #3 defense-in-depth comments'
+  - "S5c anti-tautology guard (3-element Error+Warning+Suggestion set)"
+  - "isUnderDir undefined-base over-keep branch coverage"
+  - "program-undefined-no-500 guard coverage"
+  - "de-pinned useCaseSensitiveFileNames symbol reference"
+  - "sharpened #3 defense-in-depth comments"
 affects:
   - packages/angular-typechecker/src/core/infra-failure.spec.ts
   - packages/angular-typechecker/src/core/filter-diagnostics.spec.ts
@@ -19,9 +19,9 @@ affects:
 tech-stack:
   added: []
   patterns:
-    - 'file-less ts.Diagnostic builders by category (1/0/2) for category-split unit coverage'
-    - 'injected realpath that throws selectively (base-only) to reach a specific defensive branch'
-    - 'symbol-reference comments over line-pin references (drift-resistant)'
+    - "file-less ts.Diagnostic builders by category (1/0/2) for category-split unit coverage"
+    - "injected realpath that throws selectively (base-only) to reach a specific defensive branch"
+    - "symbol-reference comments over line-pin references (drift-resistant)"
 key-files:
   created: []
   modified:
@@ -31,9 +31,9 @@ key-files:
     - packages/angular-typechecker/src/core/run-typecheck.ts
 decisions:
   - "Suggestion code 6138 (benign 'declared but never read'); only .category===2 matters"
-  - 'Broad /returned no Program/ regex (OS-independent) for the program-undefined guard assertion'
-  - 'infra-failure.spec.ts:204 left untouched (REFUTED finding -- prose, no pin)'
-  - 'compiler-cli-types.ts perform_compile.d.ts pins left untouched (out of scope)'
+  - "Broad /returned no Program/ regex (OS-independent) for the program-undefined guard assertion"
+  - "infra-failure.spec.ts:204 left untouched (REFUTED finding -- prose, no pin)"
+  - "compiler-cli-types.ts perform_compile.d.ts pins left untouched (out of scope)"
 metrics:
   duration: ~7m
   completed: 2026-06-30

@@ -82,7 +82,7 @@ hardening only.
     invoking each getter at the EXACT arity the gatherer uses (`real.getNgSemanticDiagnostics()`
     no-arg AND `real.getNgSemanticDiagnostics('x.ts')`, `real.getNgStructuralDiagnostics()`).
   - **`getGlobalDiagnostics` lives on `ts.Program`** (the `TsProgram = ts.Program & {
-useCaseSensitiveFileNames() }` intersection), NOT `api.Program`. A Program-level probe
+    useCaseSensitiveFileNames() }` intersection), NOT `api.Program`. A Program-level probe
     misses it; cover it with a call-site probe `real.getTsProgram().getGlobalDiagnostics()`.
   - Returns stay `readonly ts.Diagnostic[]` (real returns readonly; readonly->mutable
     ERRORS, mutable->readonly is safe). The shim already declares readonly -- keep it.
@@ -106,17 +106,16 @@ useCaseSensitiveFileNames() }` intersection), NOT `api.Program`. A Program-level
   "real->shim direction only (deliberate subset)" -- internally contradictory (real->shim
   cannot break on a NEW getter). Minimal correction the planner should apply when (re)writing
   the requirement / Success Criterion 1 so the deliverable is not measured against an
-  impossible criterion: _"a REMOVED, renamed, or signature-changed diagnostic getter (among
+  impossible criterion: *"a REMOVED, renamed, or signature-changed diagnostic getter (among
   the getters we call) breaks the build via the real->shim assignability assertion;
   newly-ADDED upstream getters are intentionally NOT a build failure (deliberate subset) and
-  are surfaced instead by the runtime getter-set spec."_ (Per AGENTS.md, a REQUIREMENTS/SC
+  are surfaced instead by the runtime getter-set spec."* (Per AGENTS.md, a REQUIREMENTS/SC
   wording change is code-reviewed -- the `code_review_gate` satisfies this.)
 
 ### HARD-02 -- EmitFlags.None correction
-
 - **D-08:** The real `@angular/compiler-cli@22.0.4` `EmitFlags`
   (`src/transformers/api.d.ts:74`) has **NO `None` member**; members are `DTS=1, JS=2,
-Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the installed
+  Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the installed
   package). Correct the shim's fabricated `None = 0` by MIRRORING the real members verbatim
   (most faithful; stays correct if the drift assertion covers `EmitFlags`) and DROP the fake
   `None`. KEEP the `emitFlags: 0` call site as a DOCUMENTED literal -- numeric-enum looseness
@@ -125,7 +124,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   assertion for the `EmitFlags` members the engine relies on.
 
 ### HARD-03 -- greppable vendor markers
-
 - **D-09:** Add the greppable `// angular-typechecker: vendored -- <reason>` marker (the
   Prettier `angular-estree-parser` idiom; already used at `diagnostic-codes.ts:56`) to EACH
   distinct narrowed/fabricated construct in `compiler-cli-types.ts`: the `Program` subset
@@ -136,7 +134,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   consistent greppable marker line.)
 
 ### HARD-04 -- retain getNgStructuralDiagnostics
-
 - **D-10:** KEEP the `getNgStructuralDiagnostics()` call in the gatherer
   (`gather-diagnostics.ts:66`), documented as a deliberately forward-compatible,
   no-op-tolerant call. It is one of the called getters covered by the HARD-01 per-member
@@ -145,7 +142,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   beyond the documenting comment + ensuring it is in the asserted set.
 
 ### HARD-05 -- TS-99 leak regression spec
-
 - **D-11:** An INTEGRATION-tier spec (MUST use the REAL compiler-cli `formatDiagnostics` --
   the `TS-99 -> NG` rewrite is Angular's `replaceTsWithNgInErrors`, NOT ours; a unit fake
   would not exercise it). Feed a real NG8xxx-producing fixture's diagnostics through
@@ -155,7 +151,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   `format-report` coverage; follow the existing co-location convention.
 
 ### Claude's Discretion
-
 - Exact tuple/helper structure in the drift file; whether the call-site probes sit in the
   same drift file or a sibling; the precise representation of the frozen getter set in the
   runtime spec (array of names vs typed tuple).
@@ -169,13 +164,11 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
 </decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Requirements / roadmap
-
 - `.planning/REQUIREMENTS.md` -- HARD-01..HARD-05 (note D-07: HARD-01 wording needs the
   contradiction fix when (re)writing the requirement/SC text).
 - `.planning/ROADMAP.md` -- Phase 10 goal + Success Criteria 1-5 (SC1 = drift tripwire;
@@ -183,7 +176,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   SC5 = TS-99 regression spec).
 
 ### Engine source (the exact edit points)
-
 - `packages/angular-typechecker/src/core/compiler-cli-types.ts` -- the vendored shim
   HARD-01/02/03/04 act on: the `Program` interface (`:57-80`, the 7 called getters incl.
   `getNgStructuralDiagnostics` `:73-75`), the `TsProgram` intersection (`:45-47`), the
@@ -208,7 +200,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   OS-independent).
 
 ### Live upstream surface (the drift assertion's source of truth -- installed package)
-
 - `node_modules/@angular/compiler-cli/index.d.ts` -- barrel re-exports the drift file
   imports: `export * from './src/transformers/api'` (`Program`, `EmitFlags`,
   `UNKNOWN_ERROR_CODE`), `export * from './src/perform_compile'`
@@ -219,7 +210,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   `UNKNOWN_ERROR_CODE = 500` (`:11`). Resolves under classic-node only.
 
 ### Prior phase context (must not be contradicted)
-
 - `.planning/phases/09-resilience-per-file-fault-isolation-boundary-robustness/09-CONTEXT.md`
   -- the `<deferred>` cross-phase note: HARD-01's getter-set assertion MUST cover the getter
   set RES-02 left in `gather-diagnostics.ts` (incl. the per-file `getNgSemanticDiagnostics(fileName)`
@@ -228,7 +218,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   policy + `UNKNOWN_ERROR_CODE` 500 context (D-06..D-10) HARD-01's encoding assertions touch.
 
 ### Decision provenance (the HARD-01 deliberation -- reference only)
-
 - Web prior-art (type-drift assertion libraries) + GitHub prior-art (vendored-subset guards,
   empirically verified @ tsc 6.0.3) + npm dev-dep survey + a 5-member Opus advisory board
   (requirement-fidelity / type-system-mechanics / maintainability / adversarial-risk /
@@ -239,11 +228,9 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
 </canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - The vendored shim already declares EVERY surface HARD-01 asserts (the 7 getters, the
   `EmitFlags` enum, `UNKNOWN_ERROR_CODE`, `ParsedConfiguration`) -- no widening needed; the
   drift file imports the REAL counterparts and asserts assignability against these.
@@ -256,7 +243,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   `tsconfig.json` is what makes it resolve EMPTY, the reason the shim exists).
 
 ### Established Patterns
-
 - CORE is framework-agnostic and PURE (eslint bans `@nx/*` / `@angular-devkit/*` + `process.exit`
   in `**/src/core/**`). The drift file is a TYPE-only assertion (erased at emit, never shipped);
   the runtime spec is a test (can `await import` the real compiler-cli, like the integration tier).
@@ -268,7 +254,6 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   decision (D-03) keeps the published manifest free of an unnecessary devDep.
 
 ### Integration Points
-
 - The drift tsconfig + `typecheck-drift` target are NEW workspace artifacts (no prior
   `nx:run-commands` target or drift tsconfig exists). They sit alongside `build`/`test`/`lint`
   in `project.json` and a CI step in `ci.yml`.
@@ -291,7 +276,7 @@ Metadata=4, I18nBundle=8, Codegen=16, Default=19, All=31` (verified against the 
   (forced by the `nodenext` empty-resolution problem), which is precisely WHY it needs an
   explicit guard the real consumers don't.
 - The idiomatic prior-art shape for a vendored subset is `type AssertAssignable<From, To
-extends From> = true;` over a tuple of pairs (multiple real repos). Exhaustiveness against a
+  extends From> = true;` over a tuple of pairs (multiple real repos). Exhaustiveness against a
   foreign subset is absent from public code.
 
 </specifics>
@@ -314,12 +299,11 @@ extends From> = true;` over a tuple of pairs (multiple real repos). Exhaustivene
   Out of Scope); the drift guard asserts the `api.Program` surface the engine stays on.
 
 ### Reviewed Todos (not folded)
-
 None -- `todo.match-phase 10` returned 0 matches.
 
 </deferred>
 
 ---
 
-_Phase: 10-drift-hardening-maintainability_
-_Context gathered: 2026-06-29_
+*Phase: 10-drift-hardening-maintainability*
+*Context gathered: 2026-06-29*

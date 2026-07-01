@@ -123,12 +123,10 @@ This is not editor LSP noise -- it reproduces under `nx lint angular-typechecker
 It is not caught by CI either: `ci.yml` runs `nx run-many -t typecheck-drift test`
 but has no `lint` target, so this dead code will persist unflagged.
 **Fix:** Remove the unused helper (and the now-orphaned comment that promises it):
-
 ```ts
 // delete line 46:
 const NG = (code: number): number => -990000 - code;
 ```
-
 If a future NG-code assertion is planned for this file, add it now so the helper is
 live; otherwise drop it.
 
@@ -140,7 +138,6 @@ is declared but never called; the only `NG(` occurrence is the comment on line 3
 ESLint reports `34:7 warning 'NG' is assigned a value but never used`. Confirmed by
 grep (1 match, in a comment). Same CI-blind-spot as WR-01.
 **Fix:** Remove the unused helper:
-
 ```ts
 // delete line 34:
 const NG = (code: number): number => -990000 - code;
@@ -164,7 +161,6 @@ executor then renders `... was self-reference and was skipped ...` for a plain
 duplicate, which is mildly misleading in the operator notice.
 **Fix (optional):** If the advisory precision matters, add a `'duplicate'` reason to
 the `SkippedReference.reason` union and branch the two conditions:
-
 ```ts
 if (canonicalLeaf === canonicalSolutionPath) {
   skippedReferences.push({ referencePath: leafPath, reason: 'self-reference' });
@@ -178,7 +174,6 @@ if (seenCanonicalLeaves.has(canonicalLeaf)) {
   continue;
 }
 ```
-
 Otherwise document the fold explicitly in the `reason` doc-comment. Low priority.
 
 ### IN-02: `out-of-project` and dedupe ordering can relabel a repeated out-of-project leaf

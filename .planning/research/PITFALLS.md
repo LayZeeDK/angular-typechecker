@@ -28,7 +28,6 @@ dynamic-import design was meant to avoid. Source looks correct; compiled output 
 TypeScript behavior, not a bug.
 
 **How to avoid:**
-
 - Set `"module": "node16"` (or `nodenext`) + `"moduleResolution": "node16"`/`bundler` in the
   executor's build tsconfig. Keep package emit CJS by NOT setting `"type": "module"` in the
   package's `package.json` (file format is decided by nearest `package.json` `type`).
@@ -67,7 +66,6 @@ and even differs with/without the Nx daemon). Developers assume diagnostics are 
 project-relative.
 
 **How to avoid:**
-
 - Do boundary filtering on **absolute, realpath-normalized** `ts.SourceFile.fileName` values from
   the program (use `absoluteFromSourceFile` + the host's `getCanonicalFileName`/`realpath`), NOT on
   the formatted string. Compute "in project" against `context.root` + project root, not CWD.
@@ -103,7 +101,6 @@ without these three is the classic mistake. pnpm's layout is the stress test; np
 problem in dev so it only surfaces for pnpm consumers post-publish.
 
 **How to avoid:**
-
 - Derive in/out-of-project membership using the program host's `getCanonicalFileName` and
   `realpath` (resolve symlinks to physical paths before comparing), exactly as TS module resolution
   does. Do not hand-roll prefix checks on raw `fileName`.
@@ -139,7 +136,6 @@ source/inlined libraries have known gaps. Also the lockfile/`externalDependencie
 both over- and under-invalidate.
 
 **How to avoid:**
-
 - Inputs MUST include: the tsconfig include/exclude globs, the full `extends` chain, sibling
   `package.json`, AND `^production` (or equivalent) from all transitive deps so a dep source change
   busts the cache. Use `dependentTasksOutputFiles`/project-dependency inputs, not just self globs.
@@ -169,14 +165,12 @@ executor" / "schema not found"). The source tree tests fine; the **tarball** is 
 what's broken.
 
 **Why it happens:**
-
 - `files` defaults or a `dist`-only allowlist that forgets non-`.js` assets (the JSON manifests).
 - A `.gitignore` that ignores `dist/` with no `.npmignore` -> build output silently excluded.
 - Auditing the source tree instead of `npm pack` output.
 - `bin` (if ever added) pointing at a file excluded by `files`.
 
 **How to avoid:**
-
 - Run `npm pack` (or `nx release publish --dry-run`) and inspect the actual tarball contents:
   confirm `executors.json`, every executor `schema.json`, the compiled executor `.js`, `README`,
   and `LICENSE` are present.
@@ -210,7 +204,6 @@ Pre-release semver semantics are non-obvious. The dependency-checks fixer optimi
 installed here," not "what consumers can have." npm 7+ enforces peers strictly (`ERESOLVE`).
 
 **How to avoid:**
-
 - Author peer ranges by hand for the publishable package; treat dependency-checks autofix output as a
   suggestion and review it (this caveat is explicitly documented).
 - If supporting pre-release Angular/Nx, use pre-release-inclusive ranges (`>=22.0.0-0 <23.0.0`) or
@@ -248,7 +241,6 @@ tooling only honors true `tsconfig.json`. `paths` vs compiled-artifact resolutio
 documented ngtsc issue.
 
 **How to avoid:**
-
 - Detect and reject (or warn loudly on) a target pointed at a `references`-only solution-style config
   with no resolvable input files -- "0 files checked" should never be a silent success.
 - Resolve and hash the entire `extends` chain for inputs; load options the way ngtsc does
@@ -284,7 +276,6 @@ overlook. The product promise is "the complete Angular type-check," which tempts
 but the project's own design says "project-configured diagnostic categories respected."
 
 **How to avoid:**
-
 - Read the consumer's resolved `angularCompilerOptions` (via compiler-cli's `readConfiguration`) and
   honor `strictTemplates`, `extendedDiagnostics.defaultCategory`, per-check `checks`, and the
   `strictNullChecks` prerequisite -- do not override.
@@ -306,47 +297,47 @@ warnings.
 
 ## Technical Debt Patterns
 
-| Shortcut                                                                       | Immediate Benefit                 | Long-term Cost                                                              | When Acceptable                                      |
-| ------------------------------------------------------------------------------ | --------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------- |
-| String-prefix path filtering instead of host `getCanonicalFileName`+`realpath` | Quick to write; passes npm/Linux  | Breaks on pnpm + case-insensitive FS post-publish; correctness bug          | Never (correctness-critical tool)                    |
-| Self-only `inputs` globs on the cacheable target                               | Simpler config; faster cold cache | Stale-cache false PASS on dep changes -- erodes all trust                   | Never -- the cache must never hide an error          |
-| Hand-parsing tsconfig instead of compiler-cli `readConfiguration`              | Avoids an import                  | Misses `extends` chain, solution-style references, ng options               | Only in throwaway spikes                             |
-| Forcing `strictTemplates: true` to "be complete"                               | More diagnostics, looks thorough  | False positives vs consumer's real build; violates "respect project config" | Only behind an explicit opt-in flag, clearly labeled |
-| Auditing source tree, not `npm pack` tarball                                   | Faster CI                         | Missing `schema.json`/`executors.json`/compiled `.js` ships broken          | Never before a publish gate                          |
-| Snapshotting raw `formatDiagnostics` output                                    | Easy golden files                 | CWD-relative + `\`/`/` differences -> cross-OS flake                        | Only after path/separator normalization              |
-| `module: commonjs` for the executor build                                      | Matches old Nx default            | TS rewrites `import()`->`require()`; ESM load fails at runtime              | Never (use node16/nodenext)                          |
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| String-prefix path filtering instead of host `getCanonicalFileName`+`realpath` | Quick to write; passes npm/Linux | Breaks on pnpm + case-insensitive FS post-publish; correctness bug | Never (correctness-critical tool) |
+| Self-only `inputs` globs on the cacheable target | Simpler config; faster cold cache | Stale-cache false PASS on dep changes -- erodes all trust | Never -- the cache must never hide an error |
+| Hand-parsing tsconfig instead of compiler-cli `readConfiguration` | Avoids an import | Misses `extends` chain, solution-style references, ng options | Only in throwaway spikes |
+| Forcing `strictTemplates: true` to "be complete" | More diagnostics, looks thorough | False positives vs consumer's real build; violates "respect project config" | Only behind an explicit opt-in flag, clearly labeled |
+| Auditing source tree, not `npm pack` tarball | Faster CI | Missing `schema.json`/`executors.json`/compiled `.js` ships broken | Never before a publish gate |
+| Snapshotting raw `formatDiagnostics` output | Easy golden files | CWD-relative + `\`/`/` differences -> cross-OS flake | Only after path/separator normalization |
+| `module: commonjs` for the executor build | Matches old Nx default | TS rewrites `import()`->`require()`; ESM load fails at runtime | Never (use node16/nodenext) |
 
 ## Integration Gotchas
 
-| Integration                          | Common Mistake                                        | Correct Approach                                                                                 |
-| ------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Nx executor loader                   | Assuming executor runs from project root              | Use `context.root` + project config; never trust `process.cwd()` (differs with/without daemon)   |
-| `@angular/compiler-cli` ESM from CJS | Compile with `module: commonjs` (rewrites `import()`) | `module: node16`/`nodenext`; keep CJS via no `type:module`; test compiled `.js`                  |
-| pnpm consumer                        | Test only against npm                                 | pnpm symlink fixture; resolve realpaths before path membership                                   |
-| `@nx/dependency-checks`              | Trust `--fix` to set the public peer range            | Hand-author publishable peer ranges; review autofix                                              |
-| nx release first publish             | Run without `--first-release`                         | First publish needs `--first-release` (no tags/changelog yet); always `--dry-run` first          |
-| npm provenance                       | Expect a CLI flag                                     | Set `NPM_CONFIG_PROVENANCE=true` env + `id-token: write` permission in the publish job           |
-| Scoped/access                        | Forget `--access public` / publishConfig              | Set `publishConfig.access: public` (n/a if unscoped `angular-typechecker`, but verify)           |
-| Executor schema positional args      | Map two options to `$default` argv index 0 and 1      | Only index 0 is reliable; pass the rest as named flags (`tsConfig` is required -- prefer a flag) |
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Nx executor loader | Assuming executor runs from project root | Use `context.root` + project config; never trust `process.cwd()` (differs with/without daemon) |
+| `@angular/compiler-cli` ESM from CJS | Compile with `module: commonjs` (rewrites `import()`) | `module: node16`/`nodenext`; keep CJS via no `type:module`; test compiled `.js` |
+| pnpm consumer | Test only against npm | pnpm symlink fixture; resolve realpaths before path membership |
+| `@nx/dependency-checks` | Trust `--fix` to set the public peer range | Hand-author publishable peer ranges; review autofix |
+| nx release first publish | Run without `--first-release` | First publish needs `--first-release` (no tags/changelog yet); always `--dry-run` first |
+| npm provenance | Expect a CLI flag | Set `NPM_CONFIG_PROVENANCE=true` env + `id-token: write` permission in the publish job |
+| Scoped/access | Forget `--access public` / publishConfig | Set `publishConfig.access: public` (n/a if unscoped `angular-typechecker`, but verify) |
+| Executor schema positional args | Map two options to `$default` argv index 0 and 1 | Only index 0 is reliable; pass the rest as named flags (`tsConfig` is required -- prefer a flag) |
 
 ## Performance Traps
 
-| Trap                                                        | Symptoms                                     | Prevention                                                                               | When It Breaks                           |
-| ----------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Whole-program rebuild every run, no incremental             | Slow on large apps; agent loop sluggish      | v0.0.1 accepts this (incremental deferred); rely on Nx cache for unchanged targets       | Large monolith apps / monorepo-wide runs |
-| Over-broad cache inputs (hash all external deps + lockfile) | Cache busts on any unrelated dep bump        | Scope `externalDependencies` to TS + compiler-cli where safe, but keep correctness first | Frequent dep churn workspaces            |
-| Cold-start ESM dynamic import per invocation                | Per-run import overhead                      | Acceptable for v0.0.1; note for future watch-mode                                        | Many tiny per-project runs               |
-| Running compiler-cli on solution-style root                 | Either 0 files (wrong) or whole-graph (slow) | Require a leaf tsconfig per target                                                       | Misconfigured target                     |
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Whole-program rebuild every run, no incremental | Slow on large apps; agent loop sluggish | v0.0.1 accepts this (incremental deferred); rely on Nx cache for unchanged targets | Large monolith apps / monorepo-wide runs |
+| Over-broad cache inputs (hash all external deps + lockfile) | Cache busts on any unrelated dep bump | Scope `externalDependencies` to TS + compiler-cli where safe, but keep correctness first | Frequent dep churn workspaces |
+| Cold-start ESM dynamic import per invocation | Per-run import overhead | Acceptable for v0.0.1; note for future watch-mode | Many tiny per-project runs |
+| Running compiler-cli on solution-style root | Either 0 files (wrong) or whole-graph (slow) | Require a leaf tsconfig per target | Misconfigured target |
 
 ## Security Mistakes
 
-| Mistake                                                | Risk                                                                     | Prevention                                                                              |
-| ------------------------------------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Publishing without npm provenance                      | Consumers can't verify build origin; supply-chain trust gap              | `NPM_CONFIG_PROVENANCE=true` + `id-token: write` in CI publish step                     |
-| Over-broad npm token in CI                             | Token leak compromises the package                                       | Granular token scoped to this package only; OIDC/provenance flow over long-lived tokens |
-| Shipping source/internal files in tarball              | Leaks internals; larger attack surface                                   | Explicit `files` allowlist; inspect `npm pack`                                          |
-| Executing arbitrary consumer config without bounds     | Reads consumer tsconfig/paths -- low risk but errors leak absolute paths | Normalize/relativize paths in output; don't log full env                                |
-| `bin` (future CLI) trusting `process.cwd()` for config | Path confusion / reading unexpected files                                | Resolve config relative to explicit args, not CWD                                       |
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Publishing without npm provenance | Consumers can't verify build origin; supply-chain trust gap | `NPM_CONFIG_PROVENANCE=true` + `id-token: write` in CI publish step |
+| Over-broad npm token in CI | Token leak compromises the package | Granular token scoped to this package only; OIDC/provenance flow over long-lived tokens |
+| Shipping source/internal files in tarball | Leaks internals; larger attack surface | Explicit `files` allowlist; inspect `npm pack` |
+| Executing arbitrary consumer config without bounds | Reads consumer tsconfig/paths -- low risk but errors leak absolute paths | Normalize/relativize paths in output; don't log full env |
+| `bin` (future CLI) trusting `process.cwd()` for config | Path confusion / reading unexpected files | Resolve config relative to explicit args, not CWD |
 
 ## "Looks Done But Isn't" Checklist
 
@@ -365,28 +356,28 @@ warnings.
 
 ## Recovery Strategies
 
-| Pitfall                              | Recovery Cost | Recovery Steps                                                                                     |
-| ------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------- |
-| `import()` rewritten to `require()`  | LOW (config)  | Switch build tsconfig to `node16`/`nodenext`; re-emit; re-test compiled output; republish patch    |
-| Missing files in tarball             | LOW (config)  | Fix `files`/`exports`; `npm pack` verify; publish patch (cannot unpublish cleanly after 72h)       |
-| Stale-cache false PASS shipped       | MEDIUM        | Fix inputs; bump version; advise consumers to clear cache; add correctness test to prevent regress |
-| pnpm/symlink filter bug              | MEDIUM        | Rework filter to realpath+canonical; add pnpm fixture; patch release                               |
-| Bad peer range published             | LOW-MEDIUM    | Publish patch widening range; consumers on broken range need reinstall                             |
-| Provenance/token misconfig           | LOW           | Fix CI env/permissions; next release carries provenance                                            |
-| Solution-style "0 errors" false pass | MEDIUM        | Add file-set guard; re-validate all five project types; patch                                      |
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| `import()` rewritten to `require()` | LOW (config) | Switch build tsconfig to `node16`/`nodenext`; re-emit; re-test compiled output; republish patch |
+| Missing files in tarball | LOW (config) | Fix `files`/`exports`; `npm pack` verify; publish patch (cannot unpublish cleanly after 72h) |
+| Stale-cache false PASS shipped | MEDIUM | Fix inputs; bump version; advise consumers to clear cache; add correctness test to prevent regress |
+| pnpm/symlink filter bug | MEDIUM | Rework filter to realpath+canonical; add pnpm fixture; patch release |
+| Bad peer range published | LOW-MEDIUM | Publish patch widening range; consumers on broken range need reinstall |
+| Provenance/token misconfig | LOW | Fix CI env/permissions; next release carries provenance |
+| Solution-style "0 errors" false pass | MEDIUM | Add file-set guard; re-validate all five project types; patch |
 
 ## Pitfall-to-Phase Mapping
 
-| Pitfall                                  | Prevention Phase                               | Verification                                                                  |
-| ---------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------- |
-| 1. `import()`->`require()` rewrite       | Spike + Build/Packaging                        | Integration test loads compiled `.js`; CI asserts emitted `import(` present   |
-| 2. CWD-relative paths + filter/snapshot  | Engine/Filtering + Output + Cross-OS CI        | Filter uses absolute paths; snapshots normalized; matrix green                |
-| 3. pnpm/symlink/case filtering           | Engine/Filtering + Validation/e2e              | pnpm + mixed-case fixtures assert correct membership                          |
-| 4. Stale-cache false PASS                | Caching/Inputs (dedicated correctness gate)    | Dep-error-busts-cache test; `nx show project` input audit                     |
-| 5. Tarball missing manifests             | Packaging/Publish                              | `npm pack` content assertion + `publint` + `attw --pack` in CI                |
-| 6. Peer-range / pre-release              | Packaging + Install-matrix e2e                 | `npm i` matrix asserts no ERESOLVE/EBADENGINE                                 |
-| 7. tsconfig extends/paths/solution-style | Engine/tsconfig-resolution + 5-type validation | All five tsconfig flavors as fixtures; "0 files" guard                        |
-| 8. strictTemplates/severity detection    | Engine/config-detection + Validation           | Fixtures: strict on/off, defaultCategory error, suppress -- tool mirrors each |
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| 1. `import()`->`require()` rewrite | Spike + Build/Packaging | Integration test loads compiled `.js`; CI asserts emitted `import(` present |
+| 2. CWD-relative paths + filter/snapshot | Engine/Filtering + Output + Cross-OS CI | Filter uses absolute paths; snapshots normalized; matrix green |
+| 3. pnpm/symlink/case filtering | Engine/Filtering + Validation/e2e | pnpm + mixed-case fixtures assert correct membership |
+| 4. Stale-cache false PASS | Caching/Inputs (dedicated correctness gate) | Dep-error-busts-cache test; `nx show project` input audit |
+| 5. Tarball missing manifests | Packaging/Publish | `npm pack` content assertion + `publint` + `attw --pack` in CI |
+| 6. Peer-range / pre-release | Packaging + Install-matrix e2e | `npm i` matrix asserts no ERESOLVE/EBADENGINE |
+| 7. tsconfig extends/paths/solution-style | Engine/tsconfig-resolution + 5-type validation | All five tsconfig flavors as fixtures; "0 files" guard |
+| 8. strictTemplates/severity detection | Engine/config-detection + Validation | Fixtures: strict on/off, defaultCategory error, suppress -- tool mirrors each |
 
 ## Sources
 
@@ -435,6 +426,5 @@ warnings.
 - [npm engines / engine-strict / EBADENGINE (RepoFlow)](https://www.repoflow.io/errors/npm/npm-err-code-ebadengine) -- MEDIUM
 
 ---
-
-_Pitfalls research for: Nx plugin executor wrapping @angular/compiler-cli, published to npm_
-_Researched: 2026-06-27_
+*Pitfalls research for: Nx plugin executor wrapping @angular/compiler-cli, published to npm*
+*Researched: 2026-06-27*

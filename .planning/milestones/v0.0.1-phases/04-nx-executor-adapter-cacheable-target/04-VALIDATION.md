@@ -16,14 +16,14 @@ validated: 2026-06-28
 
 ## Test Infrastructure
 
-| Property                  | Value                                                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Framework**             | Vitest 4.1.9 via `@nx/vitest:test`                                                                                                    |
-| **Unit config file**      | `packages/angular-typechecker/vitest.config.mts` (exists)                                                                             |
+| Property | Value |
+|----------|-------|
+| **Framework** | Vitest 4.1.9 via `@nx/vitest:test` |
+| **Unit config file** | `packages/angular-typechecker/vitest.config.mts` (exists) |
 | **Cache-e2e config file** | NEW dedicated serialized project (Wave 0): `singleFork`, `fileParallelism:false`, `testTimeout >= 180000`, `environment: node` (D-14) |
-| **Quick run command**     | `npx nx test angular-typechecker` (unit tier)                                                                                         |
-| **Full suite command**    | `npx nx build angular-typechecker && npx nx test angular-typechecker && npx nx test angular-typechecker-cache-e2e`                    |
-| **Estimated runtime**     | unit ~30s; cache-e2e ~minutes (real `performCompilation` + project graph + `nx run`)                                                  |
+| **Quick run command** | `npx nx test angular-typechecker` (unit tier) |
+| **Full suite command** | `npx nx build angular-typechecker && npx nx test angular-typechecker && npx nx test angular-typechecker-cache-e2e` |
+| **Estimated runtime** | unit ~30s; cache-e2e ~minutes (real `performCompilation` + project graph + `nx run`) |
 
 ---
 
@@ -38,36 +38,36 @@ validated: 2026-06-28
 
 ## Per-Requirement Verification Map
 
-| Requirement | Behavior                                                                                                            | Test Type                                                  | Automated Command                                                                  | File Exists                                                                                                                                                                            |
-| ----------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| EXE-01      | `normalizeOptions` resolves relative + absolute tsConfig; splits reporter knobs                                     | unit                                                       | `npx nx test angular-typechecker` (normalize-options.spec.ts)                      | ✅ green (8 tests)                                                                                                                                                                     |
-| EXE-01      | executor maps `{success}`; catches infra error -> `{false}`; re-throws unknown                                      | unit (mock core)                                           | `npx nx test angular-typechecker` (executor.spec.ts)                               | ✅ green (6 tests)                                                                                                                                                                     |
-| EXE-01      | `renderReport` delegates to formatReport with injected ng/ts                                                        | unit                                                       | `npx nx test angular-typechecker` (render-report.spec.ts)                          | ✅ green (6 tests)                                                                                                                                                                     |
-| EXE-01      | schema.json keys === schema.d.ts keys (parity)                                                                      | unit                                                       | `npx nx test angular-typechecker` (schema-parity.spec.ts)                          | ✅ green (5 tests)                                                                                                                                                                     |
-| EXE-01      | executor `{success}` + diagnostic-code set === core (green AND injected-error)                                      | integration (`runExecutor`)                                | `npx nx test angular-typechecker-cache-e2e` (executor-parity.int.spec.ts)          | ✅ green (both edges)                                                                                                                                                                  |
-| EXE-01      | literal `nx run <consumer>:angular-typecheck` runs and is discoverable                                              | integration (`execSync`)                                   | `npx nx test angular-typechecker-cache-e2e`                                        | ✅ green                                                                                                                                                                               |
-| EXE-06      | the dep SOURCE file IS an input for the consumer target (R1 edge guard)                                             | integration (`execSync` `--check`, exit 0 + `is an input`) | `npx nx test angular-typechecker-cache-e2e` (BLOCKING pre-flight)                  | ✅ green                                                                                                                                                                               |
-| EXE-06      | `tsconfig.base.json` (extends root) IS an input                                                                     | integration (`--check`, optional)                          | same                                                                               | (optional) not separately exercised; subsumed by the bound `{workspaceRoot}/tsconfig.base.json` input + the live cache MISS                                                            |
-| EXE-07      | a real `nx run` returns NG/template diagnostics through the compiled CJS executor (no `ERR_REQUIRE_ESM` at RUNTIME) | integration                                                | `npx nx test angular-typechecker-cache-e2e`                                        | ✅ green                                                                                                                                                                               |
-| EXE-07      | built `core/compiler-loader.js` retains literal `import(` (build-time half)                                         | static                                                     | `gate-a-static.spec.ts`                                                            | ✅ green (3 tests)                                                                                                                                                                     |
-| EXE-07      | `require()` the built `executor.js` runs without `ERR_REQUIRE_ESM` (belt-and-braces)                                | integration                                                | same (dist-guarded)                                                                | (optional) intentionally NOT added (04-03 decision): the real `nx run` exercises the compiled CJS executor end-to-end at runtime -- a stronger EXE-07 signal than a bytes-only require |
-| TEST-04     | green run -> 2nd run CACHE HIT (marker present, exit 0)                                                             | integration                                                | `npx nx test angular-typechecker-cache-e2e` (cache-busts-on-dep-error.int.spec.ts) | ✅ green                                                                                                                                                                               |
-| TEST-04     | inject dep error -> run CACHE MISS (no marker) + new diagnostic + non-zero exit                                     | integration                                                | same                                                                               | ✅ green                                                                                                                                                                               |
+| Requirement | Behavior | Test Type | Automated Command | File Exists |
+|-------------|----------|-----------|-------------------|-------------|
+| EXE-01 | `normalizeOptions` resolves relative + absolute tsConfig; splits reporter knobs | unit | `npx nx test angular-typechecker` (normalize-options.spec.ts) | ✅ green (8 tests) |
+| EXE-01 | executor maps `{success}`; catches infra error -> `{false}`; re-throws unknown | unit (mock core) | `npx nx test angular-typechecker` (executor.spec.ts) | ✅ green (6 tests) |
+| EXE-01 | `renderReport` delegates to formatReport with injected ng/ts | unit | `npx nx test angular-typechecker` (render-report.spec.ts) | ✅ green (6 tests) |
+| EXE-01 | schema.json keys === schema.d.ts keys (parity) | unit | `npx nx test angular-typechecker` (schema-parity.spec.ts) | ✅ green (5 tests) |
+| EXE-01 | executor `{success}` + diagnostic-code set === core (green AND injected-error) | integration (`runExecutor`) | `npx nx test angular-typechecker-cache-e2e` (executor-parity.int.spec.ts) | ✅ green (both edges) |
+| EXE-01 | literal `nx run <consumer>:angular-typecheck` runs and is discoverable | integration (`execSync`) | `npx nx test angular-typechecker-cache-e2e` | ✅ green |
+| EXE-06 | the dep SOURCE file IS an input for the consumer target (R1 edge guard) | integration (`execSync` `--check`, exit 0 + `is an input`) | `npx nx test angular-typechecker-cache-e2e` (BLOCKING pre-flight) | ✅ green |
+| EXE-06 | `tsconfig.base.json` (extends root) IS an input | integration (`--check`, optional) | same | (optional) not separately exercised; subsumed by the bound `{workspaceRoot}/tsconfig.base.json` input + the live cache MISS |
+| EXE-07 | a real `nx run` returns NG/template diagnostics through the compiled CJS executor (no `ERR_REQUIRE_ESM` at RUNTIME) | integration | `npx nx test angular-typechecker-cache-e2e` | ✅ green |
+| EXE-07 | built `core/compiler-loader.js` retains literal `import(` (build-time half) | static | `gate-a-static.spec.ts` | ✅ green (3 tests) |
+| EXE-07 | `require()` the built `executor.js` runs without `ERR_REQUIRE_ESM` (belt-and-braces) | integration | same (dist-guarded) | (optional) intentionally NOT added (04-03 decision): the real `nx run` exercises the compiled CJS executor end-to-end at runtime -- a stronger EXE-07 signal than a bytes-only require |
+| TEST-04 | green run -> 2nd run CACHE HIT (marker present, exit 0) | integration | `npx nx test angular-typechecker-cache-e2e` (cache-busts-on-dep-error.int.spec.ts) | ✅ green |
+| TEST-04 | inject dep error -> run CACHE MISS (no marker) + new diagnostic + non-zero exit | integration | same | ✅ green |
 
-_Status: ✅ green = test file exists and PASSED when re-run live during this validation audit (2026-06-28). Both optional rows are deliberate non-coverage with a documented stronger substitute, not gaps._
+*Status: ✅ green = test file exists and PASSED when re-run live during this validation audit (2026-06-28). Both optional rows are deliberate non-coverage with a documented stronger substitute, not gaps.*
 
 ---
 
 ## Required Distinct Cases (Nyquist — both edges of every binary signal)
 
-| Signal                      | Required case A                                                               | Required case B                                                                           |
-| --------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Cache hit/miss (TEST-04)    | **CACHE HIT** on the 2nd green run (marker present)                           | **CACHE MISS** after dep-error injection (marker absent + new diagnostic + non-zero exit) |
-| R1 edge existence (D-10)    | **`✓` is an input** on the dep source file (exit 0) — the BLOCKING pre-flight | non-input file yields `✗`/exit 1 (negative documented; guard relies on the positive)      |
-| tsConfig resolution (D-03)  | **relative** path -> joined to `context.root`                                 | **absolute** path -> passed through unchanged                                             |
-| Verdict mapping (D-01)      | **green** (errorCount 0) -> `{ success: true }`                               | **injected error** (errorCount>0) -> `{ success: false }`                                 |
-| Infra error handling (D-01) | `TypecheckInfrastructureError` -> `logger.error` + `{ success: false }`       | unknown error -> **re-thrown** (not swallowed)                                            |
-| Parity (D-16)               | green state: executor codes === core codes                                    | injected-error state: executor codes === core codes                                       |
+| Signal | Required case A | Required case B |
+|--------|-----------------|-----------------|
+| Cache hit/miss (TEST-04) | **CACHE HIT** on the 2nd green run (marker present) | **CACHE MISS** after dep-error injection (marker absent + new diagnostic + non-zero exit) |
+| R1 edge existence (D-10) | **`✓` is an input** on the dep source file (exit 0) — the BLOCKING pre-flight | non-input file yields `✗`/exit 1 (negative documented; guard relies on the positive) |
+| tsConfig resolution (D-03) | **relative** path -> joined to `context.root` | **absolute** path -> passed through unchanged |
+| Verdict mapping (D-01) | **green** (errorCount 0) -> `{ success: true }` | **injected error** (errorCount>0) -> `{ success: false }` |
+| Infra error handling (D-01) | `TypecheckInfrastructureError` -> `logger.error` + `{ success: false }` | unknown error -> **re-thrown** (not swallowed) |
+| Parity (D-16) | green state: executor codes === core codes | injected-error state: executor codes === core codes |
 
 ---
 
@@ -83,15 +83,15 @@ _Status: ✅ green = test file exists and PASSED when re-run live during this va
 - [x] `libs/typecheck-consumer-dep/**` + `libs/typecheck-consumer/**` committed fixtures incl. the `.pristine` sidecar (D-11/D-15) [both fixtures discovered as main-graph projects; .pristine byte-identical; crash-safe revert held clean]
 - [x] (optional) `built-executor-require.int.spec.ts` — EXE-07 belt-and-braces [SKIPPED by design (04-03 decision): the real `nx run` already exercises the compiled CJS executor at runtime end-to-end -- a stronger EXE-07 signal than a bytes-only require; adds dist-coupling for marginal value]
 
-_Existing infrastructure that already covers part of the phase: `gate-a-static.spec.ts` (EXE-07 build-time half), the Phase-3 unit suite (core composition), `vitest.config.mts` (unit plumbing)._
+*Existing infrastructure that already covers part of the phase: `gate-a-static.spec.ts` (EXE-07 build-time half), the Phase-3 unit suite (core composition), `vitest.config.mts` (unit plumbing).*
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions                                |
-| -------- | ----------- | ---------- | ------------------------------------------------ |
-| (none)   | —           | —          | All phase behaviors have automated verification. |
+| Behavior | Requirement | Why Manual | Test Instructions |
+|----------|-------------|------------|-------------------|
+| (none) | — | — | All phase behaviors have automated verification. |
 
 ---
 
@@ -118,15 +118,15 @@ Retroactive adversarial audit of the both-edges matrix against the implemented t
 
 Both-edges matrix -- all signals confirmed by a real passing test:
 
-| Signal                     | Edge A                              | Edge B                                        | Result                   |
-| -------------------------- | ----------------------------------- | --------------------------------------------- | ------------------------ |
-| Cache HIT/MISS (TEST-04)   | HIT marker + exit 0                 | marker absent + TS2322 + non-zero exit        | PASS (live e2e)          |
-| R1 edge (D-10)             | `--check` exit 0 + `is an input`    | negative documented; guard relies on positive | PASS (live e2e)          |
-| tsConfig resolution (D-03) | relative -> joined                  | absolute -> unchanged                         | PASS (unit)              |
-| Verdict mapping (D-01)     | errorCount 0 -> success true        | errorCount>0 -> success false                 | PASS (unit)              |
-| Infra error (D-01)         | infra error -> logger.error + false | unknown error re-thrown                       | PASS (unit)              |
-| Parity (D-16)              | green: success true, codes match    | injected: success false, codes incl. TS2322   | PASS (live e2e)          |
-| EXE-07 runtime/build       | real `nx run` no ERR_REQUIRE_ESM    | built `compiler-loader.js` retains `import(`  | PASS (live e2e + static) |
+| Signal | Edge A | Edge B | Result |
+|--------|--------|--------|--------|
+| Cache HIT/MISS (TEST-04) | HIT marker + exit 0 | marker absent + TS2322 + non-zero exit | PASS (live e2e) |
+| R1 edge (D-10) | `--check` exit 0 + `is an input` | negative documented; guard relies on positive | PASS (live e2e) |
+| tsConfig resolution (D-03) | relative -> joined | absolute -> unchanged | PASS (unit) |
+| Verdict mapping (D-01) | errorCount 0 -> success true | errorCount>0 -> success false | PASS (unit) |
+| Infra error (D-01) | infra error -> logger.error + false | unknown error re-thrown | PASS (unit) |
+| Parity (D-16) | green: success true, codes match | injected: success false, codes incl. TS2322 | PASS (live e2e) |
+| EXE-07 runtime/build | real `nx run` no ERR_REQUIRE_ESM | built `compiler-loader.js` retains `import(` | PASS (live e2e + static) |
 
 **Tests generated this audit:** none -- coverage was already genuinely complete; every required-distinct-case was already exercised by a real, failable test that passed when re-run. The two optional rows (tsconfig.base.json as a separate `--check`; the belt-and-braces built-executor `require()`) are deliberate non-coverage with a documented stronger substitute, not gaps.
 

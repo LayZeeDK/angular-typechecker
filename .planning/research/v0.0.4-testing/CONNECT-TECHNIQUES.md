@@ -14,12 +14,12 @@ Each branch made different testing choices; the differences themselves are the m
 
 ## 1. Test tiers present (per branch)
 
-| Tier                                                             | Impl-A | Impl-C                               | Impl-B                                                                              |
-| ---------------------------------------------------------------- | ------ | ------------------------------------ | ----------------------------------------------------------------------------------- |
-| Unit (pure, mocked compiler)                                     | --     | --                                   | YES (jest.mock of `@angular/compiler-cli`)                                          |
-| Integration (real compiler, temp dir, no full workspace)         | --     | --                                   | PLANNED (documented test plan: real `NgtscProgram` over `fs.mkdtemp` temp projects) |
-| Generator unit (in-memory tree)                                  | --     | YES (`createTreeWithEmptyWorkspace`) | --                                                                                  |
-| Executor e2e (real installed plugin in a generated Nx workspace) | YES    | YES (+ `quiet`-mode CLI subtier)     | --                                                                                  |
+| Tier | Impl-A | Impl-C | Impl-B |
+|------|--------|--------|--------|
+| Unit (pure, mocked compiler) | -- | -- | YES (jest.mock of `@angular/compiler-cli`) |
+| Integration (real compiler, temp dir, no full workspace) | -- | -- | PLANNED (documented test plan: real `NgtscProgram` over `fs.mkdtemp` temp projects) |
+| Generator unit (in-memory tree) | -- | YES (`createTreeWithEmptyWorkspace`) | -- |
+| Executor e2e (real installed plugin in a generated Nx workspace) | YES | YES (+ `quiet`-mode CLI subtier) | -- |
 
 Key observation: **no single branch had all tiers.** The transferable target state is the UNION: generator unit tests (in-memory tree) + executor unit/integration tests (mocked or temp-dir real compiler) + a thin executor e2e (real tarball install). Pick the cheapest tier that can actually catch each class of regression.
 
@@ -59,7 +59,10 @@ A tiny generator: given a project name, read its configuration; if it already ha
 
 ```ts
 // pseudo, neutral names
-const target = isApplication ? { executor: '@my-org/nx:angular-typecheck', options: { tsConfig: '{projectRoot}/tsconfig.editor.json' } } : { executor: '@my-org/nx:angular-typecheck' }; // library: rely on a target default
+const target = isApplication
+  ? { executor: '@my-org/nx:angular-typecheck',
+      options: { tsConfig: '{projectRoot}/tsconfig.editor.json' } }
+  : { executor: '@my-org/nx:angular-typecheck' }; // library: rely on a target default
 updateProjectConfiguration(tree, projectName, { ...project, targets: { ...project.targets, typecheck: target } });
 ```
 
@@ -79,8 +82,9 @@ Two complementary spec styles appeared:
 // pseudo
 describe.each(allProjectTypes)('a "%s" library', (type) => {
   it('gets a typecheck target', async () => {
-    const { projectName, tree } = await setup({ type /* ...placement axes... */ });
-    expect(readProjectConfiguration(tree, projectName).targets?.typecheck).toEqual({ executor: '@my-org/nx:angular-typecheck' });
+    const { projectName, tree } = await setup({ type, /* ...placement axes... */ });
+    expect(readProjectConfiguration(tree, projectName).targets?.typecheck)
+      .toEqual({ executor: '@my-org/nx:angular-typecheck' });
   });
 });
 ```
@@ -114,7 +118,6 @@ Coverage came from the `describe.each` matrix over project types (section 2b). T
 - **Buildable / publishable libraries as DISTINCT shapes:** not separately validated in any branch's executor tests. The only library variant exercised at the executor tier was a standalone-component library and a library-with-a-library-dependency (for the `includeDeps` test). v0.0.4 should treat buildable/publishable/spec-tsconfig coverage as a GAP to design, not inherit.
 
 **Transferable shape facts (re-validate on Nx 23):**
-
 - app target tsConfig was an editor/broad-include tsconfig; lib target tsConfig was `tsconfig.lib.json`;
 - the executor itself forced `noEmit: true` + `skipLibCheck: true` on top of the resolved config (Impl-B additionally set `rootDir: workspaceRoot` to avoid TS6059 when importing across project boundaries, and forced `strictTemplates: true`).
 
@@ -160,7 +163,6 @@ Two distinct "scope" concerns appeared; keep them separate in v0.0.4.
 "Should errors in a DEPENDED-ON library count against the project under check?" Default: NO (filter diagnostics to files under the project root, excluding `node_modules` and sibling projects). With `includeDeps: true`: YES.
 
 Test technique (e2e):
-
 1. Generate two libraries; make `dependent-lib` import a symbol from `dependency-lib` (a real cross-project import inserted via AST transform, see section 6). Wire the `typecheck` target on `dependent-lib`. Commit this as the workspace baseline.
 2. Inject a type error into `dependency-lib` (the dependency).
 3. Run `typecheck` on `dependent-lib` with default options -> expect `success: true` (the dependency's error is FILTERED OUT).
@@ -188,16 +190,16 @@ Three distinct fixture strategies appeared -- a useful spectrum:
 
 No static fixture files. Instead, a family of small `introduce*` helpers mutate the REAL generated app/lib in the e2e workspace, each targeting a SPECIFIC diagnostic getter so the test proves that getter runs:
 
-| Helper (generic)            | Triggers                                     | How it injects the error                                                                                                  |
-| --------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| TS option error             | `getTsOptionDiagnostics`                     | `updateJson` adds an invalid `compilerOptions` key to the tsconfig                                                        |
-| Ng option error             | `getNgOptionDiagnostics`                     | `updateJson` sets a contradictory `angularCompilerOptions` combo (extended diagnostics on while `strictTemplates: false`) |
-| TS syntactic                | `getTsSyntacticDiagnostics`                  | append malformed source (`const invalid = {;`)                                                                            |
-| TS semantic                 | `getTsSemanticDiagnostics`                   | AST-insert a class property typed `string` with a numeric initializer                                                     |
-| Ng structural               | `getNgStructuralDiagnostics`                 | replace a literal `templateUrl` string with a non-literal expression                                                      |
-| Ng semantic (template)      | `getNgSemanticDiagnostics`                   | append a binding to a non-existent property in the template HTML                                                          |
-| Ng warning (extended diag)  | `getNgSemanticDiagnostics`, category Warning | add a non-nullable prop + `?.` on it in the template                                                                      |
-| Library cross-project error | dependency filtering                         | find the dependency lib's component via AST, insert a type-error property                                                 |
+| Helper (generic) | Triggers | How it injects the error |
+|------------------|----------|--------------------------|
+| TS option error | `getTsOptionDiagnostics` | `updateJson` adds an invalid `compilerOptions` key to the tsconfig |
+| Ng option error | `getNgOptionDiagnostics` | `updateJson` sets a contradictory `angularCompilerOptions` combo (extended diagnostics on while `strictTemplates: false`) |
+| TS syntactic | `getTsSyntacticDiagnostics` | append malformed source (`const invalid = {;`) |
+| TS semantic | `getTsSemanticDiagnostics` | AST-insert a class property typed `string` with a numeric initializer |
+| Ng structural | `getNgStructuralDiagnostics` | replace a literal `templateUrl` string with a non-literal expression |
+| Ng semantic (template) | `getNgSemanticDiagnostics` | append a binding to a non-existent property in the template HTML |
+| Ng warning (extended diag) | `getNgSemanticDiagnostics`, category Warning | add a non-nullable prop + `?.` on it in the template |
+| Library cross-project error | dependency filtering | find the dependency lib's component via AST, insert a type-error property |
 
 AST edits used `jscodeshift.withParser('ts')`; simple appends used string concat; JSON edits used devkit `updateJson`. One getter was explicitly `it.skip`-ped with a comment ("the Angular compiler is lax about this option") -- a healthy habit: record WHY a phase isn't exercised rather than silently omitting it.
 
@@ -219,14 +221,14 @@ The documented target approach: per test, `fs.mkdtemp` a unique dir under a giti
 
 ## 7. Differences across the 3 impls that affect TESTING strategy
 
-| Concern           | Impl-A                                            | Impl-C                                                    | Impl-B                                                            | Testing consequence                                                                                                                                                                                                                                                     |
-| ----------------- | ------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Compiler entry    | `performCompilation` + custom `gatherDiagnostics` | same                                                      | `new NgtscProgram` + manual getter loop                           | Impl-B's program is trivially mockable (inject getters); `performCompilation` takes a `gatherDiagnostics` CALLBACK, so unit-testing it means testing the callback in isolation OR going real-compiler. Prefer making the gatherer a pure, separately-exported function. |
-| Gather strategy   | unconditional all-getters                         | unconditional all-getters                                 | phased + short-circuit on internal error                          | Short-circuit REQUIRES a test that asserts a later getter was NOT called; all-getters requires a test that EVERY getter contributes. Different assertion shapes.                                                                                                        |
-| Scope/filtering   | `includeDeps` (project-root prefix filter)        | `includeDeps` + `quiet`                                   | internal/external by `sourceRoot` prefix, external always ignored | Each needs its own filtering test; `quiet` additionally needs OUTPUT (stderr) assertions, which forced a CLI-spawning runner.                                                                                                                                           |
-| Output channel    | devkit `logger`                                   | devkit `logger`                                           | `console`/`process.stderr.write` + ANSI                           | `logger` output is hard to capture in-process -> CLI runner needed; raw `console`/`stderr` is trivially spied (`spyOn`). If v0.0.4 wants cheap output assertions, emit via a seam you can spy, or return diagnostics for the caller to assert.                          |
-| Primary test tier | full-workspace e2e only                           | full-workspace e2e (+ quiet CLI subtier) + generator unit | mocked unit (+ planned temp-dir integration)                      | The three branches collectively cover the pyramid; NO branch had a complete pyramid. v0.0.4 should assemble all tiers intentionally.                                                                                                                                    |
-| Test runner       | Jest                                              | Jest                                                      | Jest                                                              | All Jest. v0.0.4 is Vitest -> port the mock-hoisting (`vi.hoisted`), the ESM dynamic-`import` mock seam, and `spyOn` patterns; the e2e CLI-spawn and AST-injection helpers are runner-agnostic and transfer as-is.                                                      |
+| Concern | Impl-A | Impl-C | Impl-B | Testing consequence |
+|---------|--------|--------|--------|---------------------|
+| Compiler entry | `performCompilation` + custom `gatherDiagnostics` | same | `new NgtscProgram` + manual getter loop | Impl-B's program is trivially mockable (inject getters); `performCompilation` takes a `gatherDiagnostics` CALLBACK, so unit-testing it means testing the callback in isolation OR going real-compiler. Prefer making the gatherer a pure, separately-exported function. |
+| Gather strategy | unconditional all-getters | unconditional all-getters | phased + short-circuit on internal error | Short-circuit REQUIRES a test that asserts a later getter was NOT called; all-getters requires a test that EVERY getter contributes. Different assertion shapes. |
+| Scope/filtering | `includeDeps` (project-root prefix filter) | `includeDeps` + `quiet` | internal/external by `sourceRoot` prefix, external always ignored | Each needs its own filtering test; `quiet` additionally needs OUTPUT (stderr) assertions, which forced a CLI-spawning runner. |
+| Output channel | devkit `logger` | devkit `logger` | `console`/`process.stderr.write` + ANSI | `logger` output is hard to capture in-process -> CLI runner needed; raw `console`/`stderr` is trivially spied (`spyOn`). If v0.0.4 wants cheap output assertions, emit via a seam you can spy, or return diagnostics for the caller to assert. |
+| Primary test tier | full-workspace e2e only | full-workspace e2e (+ quiet CLI subtier) + generator unit | mocked unit (+ planned temp-dir integration) | The three branches collectively cover the pyramid; NO branch had a complete pyramid. v0.0.4 should assemble all tiers intentionally. |
+| Test runner | Jest | Jest | Jest | All Jest. v0.0.4 is Vitest -> port the mock-hoisting (`vi.hoisted`), the ESM dynamic-`import` mock seam, and `spyOn` patterns; the e2e CLI-spawn and AST-injection helpers are runner-agnostic and transfer as-is. |
 
 ### Cross-cutting e2e harness facts (transferable, re-validate on Nx 23)
 

@@ -29,7 +29,6 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
 ## Implementation Decisions
 
 ### RES-01 -- GATE spike: settle the per-file isolation shape (FIRST plan; gates RES-02)
-
 - **D-01:** RES-01 is the FIRST plan and a HARD GATE on RES-02 -- RES-02 does not
   start until the spike returns a recorded GO. The spike must EMPIRICALLY determine
   the one load-bearing open question (PRIOR-ART #3 / ENGINE-REF Open Q3): whether any
@@ -53,7 +52,6 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
   as a durable artifact the phase verifier checks.
 
 ### RES-02 -- Per-file fault isolation (post-gate, on the existing api.Program surface)
-
 - **D-04:** Implement via `program.getNgSemanticDiagnostics(sf.fileName)` per file.
   The `fileName?` overload is ALREADY declared on the vendored shim
   (`compiler-cli-types.ts:76-79`) and delegates to
@@ -93,7 +91,6 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
   RES-01 GO decision.
 
 ### RES-03 -- Throwing realpath() robustness in the boundary filter
-
 - **D-08:** Wrap the `options.realpath(filePath)` call INSIDE `createCanonicalizer`
   (`filter-diagnostics.ts:127`, the boundary filter the research names -- SHIM #2 /
   PRIOR-ART #4) in try/catch. On throw, fall back to the UNRESOLVED raw `filePath`,
@@ -107,7 +104,6 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
     (production `ts.sys.realpath` or a test stub).
 
 ### RES-04 -- suppressOutputPathCheck in the no-emit flow
-
 - **D-09:** Pass `suppressOutputPathCheck: true` as the `existingOptions` SECOND ARG
   to `ng.readConfiguration(options.tsConfigPath, { suppressOutputPathCheck: true })`
   (`run-typecheck.ts:105`) -- matching `@angular/build` EXACTLY
@@ -128,28 +124,25 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
     (no diagnostic-completeness downside).
 
 ### Claude's Discretion
-
 - Exact loop structure / helper extraction in `gather-diagnostics.ts`; for HYBRID,
   whether to keep a single residual whole-program `getNgSemanticDiagnostics()` for the
   non-template portion or to filter it.
 - Fixture mechanics for the test-gated (failing-then-passing) changes: RES-02 needs a
   multi-file fixture with one TCB-poisoning component (throws `FatalDiagnosticError`)
-  - a SECOND component with a normal template error -- today the second error vanishes,
-    after the change it survives; RES-03 needs a throwing-`realpath` stub; RES-04 needs
-    a config that triggers an output-path nuisance error.
+  + a SECOND component with a normal template error -- today the second error vanishes,
+  after the change it survives; RES-03 needs a throwing-`realpath` stub; RES-04 needs
+  a config that triggers an output-path nuisance error.
 - Spike (RES-01) mechanics: the fixture(s) and the method used to detect file-less
   non-template diagnostics, and the exact form of the recorded GO artifact.
 
 </decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Grounding research (the source of every RES requirement)
-
 - `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` -- improvements #3/#4/#6 map to
   RES-01+02 / RES-03 / RES-04; the "load-bearing open question (gates #3)" section is
   the RES-01 spike charter; the "what is already correct -- do NOT change" list.
@@ -165,20 +158,17 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
   `isFatalDiagnosticError` / `UNKNOWN_ERROR_CODE` (500) context for RES-02.
 
 ### Requirements / roadmap
-
 - `.planning/REQUIREMENTS.md` -- RES-01..RES-04 (RES-01 is the GATE/spike).
 - `.planning/ROADMAP.md` -- Phase 9 goal + Success Criteria (SC1 = the GATE; SC2 =
   per-file isolation; SC3 = realpath; SC4 = `suppressOutputPathCheck`).
 
 ### Prior phase context (must not be contradicted)
-
 - `.planning/phases/08-correctness-completeness-fixes/08-CONTEXT.md` -- D-06..D-10:
   the infra-vs-type classification + `TypecheckInfrastructureError` policy that RES-02
   (D-05) must NOT blur; the `gatherAllDiagnostics` edit context (COR-02's
   `getGlobalDiagnostics` call added at `gather-diagnostics.ts:35`).
 
 ### Engine source (the exact edit points)
-
 - `packages/angular-typechecker/src/core/gather-diagnostics.ts` -- the single
   `program.getNgSemanticDiagnostics()` call (line 34) the per-file loop replaces
   (RES-02). NOTE COR-02's `getTsProgram().getGlobalDiagnostics()` (line 35) stays.
@@ -188,14 +178,13 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
 - `packages/angular-typechecker/src/core/run-typecheck.ts` -- the `readConfiguration`
   call (`:105`, RES-04 second-arg site); the realpath injection (`:229-230`); the
   emit-neutralizing override (`:166-193`); the infra re-throw (`:195-206`); `finalize`
-  - `sortAndDeduplicateDiagnostics` (`:319-365`).
+  + `sortAndDeduplicateDiagnostics` (`:319-365`).
 - `packages/angular-typechecker/src/core/compiler-cli-types.ts` -- confirms
   `getNgSemanticDiagnostics(fileName?)` (`:76-79`) and
   `readConfiguration(project, existingOptions?)` (`:155-158`) are ALREADY declared:
   RES-02 and RES-04 need NO shim widening.
 
 ### External prior art (reference only -- NOT in this repo; Angular clones @ tag v22.0.4)
-
 - `@angular/compiler-cli` (`D:/projects/github/angular/angular`):
   `src/ngtsc/core/src/compiler.ts:591-609` (`NgCompiler.getDiagnostics`, the SINGLE
   whole-program try/catch that abandons remaining files), `:616-639`
@@ -214,11 +203,9 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
 </canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - `program.getNgSemanticDiagnostics(fileName?)` -- the per-file overload RES-02 needs
   is ALREADY on the shim (`compiler-cli-types.ts:76-79`) and on the runtime
   `NgtscProgram`. No new type surface, no migration.
@@ -233,7 +220,6 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
   Phase 8 infra signal RES-02 must preserve (D-05): non-fatal escapes stay infra.
 
 ### Established Patterns
-
 - CORE is framework-agnostic and PURE: eslint bans `@nx/*` / `@angular-devkit/*`
   imports AND `process.exit` in `**/src/core/**`. RES-03's realpath fallback must be
   SILENT (no logging / no `process`).
@@ -246,7 +232,6 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
   migration stays deferred (PROJECT.md constraint).
 
 ### Integration Points
-
 - RES-02 edits `gather-diagnostics.ts` (the gatherer passed as
   `performCompilation`'s `gatherDiagnostics` callback, `run-typecheck.ts:192`); the
   per-file calls run INSIDE `performCompilation`'s outer try/catch, which is why a
@@ -296,5 +281,5 @@ capabilities. The engine is already complete and faithful to `@angular/build` at
 
 ---
 
-_Phase: 9-resilience-per-file-fault-isolation-boundary-robustness_
-_Context gathered: 2026-06-29_
+*Phase: 9-resilience-per-file-fault-isolation-boundary-robustness*
+*Context gathered: 2026-06-29*

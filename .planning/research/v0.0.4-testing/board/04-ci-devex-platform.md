@@ -35,7 +35,7 @@ on disk" proof. **Mitigated** because that proof already exists at the tarball e
 proven harness.
 
 **DISSENT (flagged):** PROJECT.md `## Current Milestone` LOCKS the bespoke FsTree utilities as a named
-deliverable ("default leans real-disk wrapper to stay faithful to the prior art") and as the _vehicle_
+deliverable ("default leans real-disk wrapper to stay faithful to the prior art") and as the *vehicle*
 for the FsTree generator-testing technique. From a CI/perf+platform lens I dissent: the real-disk
 wrapper is a cross-platform-fragility and maintenance tax (deep import + eslint quarantine + a new
 drift tripwire per matrix cell) that buys nothing the in-memory tree + existing e2e don't already give.
@@ -147,14 +147,14 @@ without changing its shape.
 
 ### What runs WHERE (proposed v0.0.4 wiring)
 
-| New test artifact                       | Job    | Matrix                                              | ci.yml change?              |
-| --------------------------------------- | ------ | --------------------------------------------------- | --------------------------- |
-| Generator unit specs (in-memory tree)   | `test` | full 6-cell (Linux 22/24/26 + Win 24/26 + macOS 24) | **NO** -- glob auto-pickup  |
-| Generator schema-parity gate            | `test` | full 6-cell                                         | NO -- glob auto-pickup      |
-| In-memory executor mid-tier (D3)        | `test` | full 6-cell                                         | NO -- glob auto-pickup      |
-| NG8xxx catalog integration specs (D2)   | `test` | full 6-cell                                         | NO -- glob auto-pickup      |
-| Drift-gate negative test                | `test` | full 6-cell                                         | NO -- glob auto-pickup      |
-| Generator e2e (if a NEW Nx e2e project) | `e2e`  | **Linux-only, Node 24**                             | **YES -- add to `-p` list** |
+| New test artifact | Job | Matrix | ci.yml change? |
+|---|---|---|---|
+| Generator unit specs (in-memory tree) | `test` | full 6-cell (Linux 22/24/26 + Win 24/26 + macOS 24) | **NO** -- glob auto-pickup |
+| Generator schema-parity gate | `test` | full 6-cell | NO -- glob auto-pickup |
+| In-memory executor mid-tier (D3) | `test` | full 6-cell | NO -- glob auto-pickup |
+| NG8xxx catalog integration specs (D2) | `test` | full 6-cell | NO -- glob auto-pickup |
+| Drift-gate negative test | `test` | full 6-cell | NO -- glob auto-pickup |
+| Generator e2e (if a NEW Nx e2e project) | `e2e` | **Linux-only, Node 24** | **YES -- add to `-p` list** |
 
 **Rule of thumb for the OS/Node split:** anything that is pure-JS ngtsc logic + an in-memory tree is
 correctness-identical across OS/arch, so it belongs in the full `test` matrix where cross-platform/Node
@@ -192,7 +192,6 @@ generator e2e simply never ran in CI. Two-part mitigation:
 ruleset). It `needs: [changes, test, e2e, fallow, act-compat, lint-workflows]`, runs `if: always()`,
 and fails on `contains(needs.*.result,'failure'||'cancelled')` while TOLERATING `skipped` (so a
 planning-only PR that path-skips the heavy jobs still reports green). v0.0.4 must NOT:
-
 - add a NEW top-level job without adding it to `ci`'s `needs` (an un-needed job's failure wouldn't gate);
 - rename/restructure `ci` (the ruleset name is a cross-phase contract);
 - add a separately-required check (that would break the single-required-check invariant).
@@ -205,7 +204,6 @@ needed and `ci`'s `needs` list is unchanged.** That is the cleanest possible foo
 
 For anything that touches real disk / shells out (the generator e2e specifically), inherit the EXISTING
 patterns verbatim -- they are already proven in `install-smoke.int.spec.ts`:
-
 - Workspace in **OS temp, not the Dev Drive**: `mkdtempSync(join(tmpdir(), ...))` (the install harness
   already does this; the cross-drive `create-nx-workspace` ENOENT bug the research cites is why).
 - **Inherit env** into spawned children: spread `process.env`, but **strip the nested-nx runner vars**
@@ -244,7 +242,6 @@ patterns verbatim -- they are already proven in `install-smoke.int.spec.ts`:
 ## D6 -- SCOPE/RISK: minimal CI footprint that gives trustworthy cross-platform signal without ballooning CI time
 
 **Recommendation (minimal footprint):**
-
 1. ALL new fast specs (generator unit, schema-parity, in-memory executor mid-tier, NG8xxx catalog,
    drift-negative) ride the EXISTING `test` 6-cell matrix via glob -- **zero ci.yml edits, full
    cross-platform/Node signal for free**.

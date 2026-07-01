@@ -85,7 +85,6 @@ path; the scaffolded Verdaccio `start-local-registry` is Windows-broken). CONVER
 ## D5 -- no ci.yml change for in-plugin specs; e2e rides install-e2e; add -p-list guard; single ci gate; no test-target split: CONVERGE
 
 Every clause matches my lens:
-
 - In-plugin specs (generator unit, catalog integration, tripwire) auto-route into the 6-cell
   matrix via the include glob with no `ci.yml` edit -- correct, and A1 confirms the matrix
   absorbs the catalog comfortably.

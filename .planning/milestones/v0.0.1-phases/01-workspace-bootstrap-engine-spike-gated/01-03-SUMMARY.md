@@ -7,13 +7,13 @@ tags: [angular-compiler-cli, esm-cjs-bridge, performCompilation, all-getter, nx-
 # Dependency graph
 requires:
   - phase: 01-02
-    provides: 'angular-typechecker plugin (@nx/js:tsc build, outputPath dist/packages/angular-typechecker, @nx/vitest:test); plugin tsconfig patched to module/moduleResolution:nodenext; Phase-1 D-14 package.json; apps/ng-spike-app green'
+    provides: "angular-typechecker plugin (@nx/js:tsc build, outputPath dist/packages/angular-typechecker, @nx/vitest:test); plugin tsconfig patched to module/moduleResolution:nodenext; Phase-1 D-14 package.json; apps/ng-spike-app green"
 provides:
-  - 'Promoted tracer-bullet core engine: compiler-loader (memoized await import of @angular/compiler-cli; only runtime value-import), gather-diagnostics (unconditional 6-getter incl. getNgSemanticDiagnostics), run-typecheck (performCompilation -> structured CoreResult: codes[], errorCount, warningCount, durationMs)'
-  - 'Thin CJS Nx executor stub (the only @nx/devkit importer, type-only) delegating to runTypecheck -- the GATE A artifact'
-  - 'executors.json (one angular-typecheck entry) + schema.json/schema.d.ts (strict, one required tsConfig)'
-  - 'Out-of-graph deliberate-error fixture fixtures/gate-b-error/ (TS2322 + NG8109) with app + lib tsconfig variants (strictTemplates:true, noEmit:true set directly)'
-  - 'src/core/compiler-cli-types.ts: isolated type-only shim re-building the compiler-cli surface from deep declaration files (works around the nodenext barrel-typings collapse)'
+  - "Promoted tracer-bullet core engine: compiler-loader (memoized await import of @angular/compiler-cli; only runtime value-import), gather-diagnostics (unconditional 6-getter incl. getNgSemanticDiagnostics), run-typecheck (performCompilation -> structured CoreResult: codes[], errorCount, warningCount, durationMs)"
+  - "Thin CJS Nx executor stub (the only @nx/devkit importer, type-only) delegating to runTypecheck -- the GATE A artifact"
+  - "executors.json (one angular-typecheck entry) + schema.json/schema.d.ts (strict, one required tsConfig)"
+  - "Out-of-graph deliberate-error fixture fixtures/gate-b-error/ (TS2322 + NG8109) with app + lib tsconfig variants (strictTemplates:true, noEmit:true set directly)"
+  - "src/core/compiler-cli-types.ts: isolated type-only shim re-building the compiler-cli surface from deep declaration files (works around the nodenext barrel-typings collapse)"
   - "Built executor.js + compiler-loader.js at dist/packages/angular-typechecker/src/...; compiler-loader.js retains literal import('@angular/compiler-cli') with no require() downlevel"
 affects: [01-04-gate-specs, phase-2-core-engine, phase-4-executor]
 
@@ -22,33 +22,33 @@ tech-stack:
   added: []
   patterns:
     - "Memoized await import('@angular/compiler-cli') ESM bridge as the single runtime value-import; every other module uses import type (core/adapter split, zero @nx/devkit in core)"
-    - 'Unconditional all-getter (no &&-chain short-circuit) -> surfaces NG8xxx extended diagnostics even after a co-located TS error (the D-16 differentiator)'
-    - 'Build parsed config ONCE, spread into a FRESH options object per performCompilation call (no shared mutable noEmit state; resolved research Open Q1)'
-    - 'Out-of-graph fixture: own app + lib tsconfigs, strictTemplates set DIRECTLY (most-derived wins the angularCompilerOptions reverse-merge), nothing imports it (TS #36017)'
-    - 'Type-only shim isolating an upstream nodenext-typings incompatibility to ONE file (erased at emit; runtime value is the real module)'
+    - "Unconditional all-getter (no &&-chain short-circuit) -> surfaces NG8xxx extended diagnostics even after a co-located TS error (the D-16 differentiator)"
+    - "Build parsed config ONCE, spread into a FRESH options object per performCompilation call (no shared mutable noEmit state; resolved research Open Q1)"
+    - "Out-of-graph fixture: own app + lib tsconfigs, strictTemplates set DIRECTLY (most-derived wins the angularCompilerOptions reverse-merge), nothing imports it (TS #36017)"
+    - "Type-only shim isolating an upstream nodenext-typings incompatibility to ONE file (erased at emit; runtime value is the real module)"
 
 key-files:
   created:
-    - 'packages/angular-typechecker/src/core/compiler-loader.ts (memoized await import; ENG-03 / GATE A runtime path)'
-    - 'packages/angular-typechecker/src/core/gather-diagnostics.ts (unconditional 6-getter incl. getNgSemanticDiagnostics)'
-    - 'packages/angular-typechecker/src/core/run-typecheck.ts (performCompilation orchestration -> CoreResult)'
-    - 'packages/angular-typechecker/src/core/compiler-cli-types.ts (type-only nodenext shim)'
-    - 'packages/angular-typechecker/src/core/compiler-loader.spec.ts, gather-diagnostics.spec.ts (unit gates)'
-    - 'packages/angular-typechecker/src/executors/angular-typecheck/executor.ts (thin CJS adapter; GATE A artifact)'
-    - 'packages/angular-typechecker/src/executors/angular-typecheck/schema.json, schema.d.ts'
-    - 'packages/angular-typechecker/executors.json (one entry)'
-    - 'fixtures/gate-b-error/error.component.ts, error.component.html, tsconfig.app.json, tsconfig.lib.json'
+    - "packages/angular-typechecker/src/core/compiler-loader.ts (memoized await import; ENG-03 / GATE A runtime path)"
+    - "packages/angular-typechecker/src/core/gather-diagnostics.ts (unconditional 6-getter incl. getNgSemanticDiagnostics)"
+    - "packages/angular-typechecker/src/core/run-typecheck.ts (performCompilation orchestration -> CoreResult)"
+    - "packages/angular-typechecker/src/core/compiler-cli-types.ts (type-only nodenext shim)"
+    - "packages/angular-typechecker/src/core/compiler-loader.spec.ts, gather-diagnostics.spec.ts (unit gates)"
+    - "packages/angular-typechecker/src/executors/angular-typecheck/executor.ts (thin CJS adapter; GATE A artifact)"
+    - "packages/angular-typechecker/src/executors/angular-typecheck/schema.json, schema.d.ts"
+    - "packages/angular-typechecker/executors.json (one entry)"
+    - "fixtures/gate-b-error/error.component.ts, error.component.html, tsconfig.app.json, tsconfig.lib.json"
   modified:
-    - 'packages/angular-typechecker/src/index.ts (re-export core surface)'
+    - "packages/angular-typechecker/src/index.ts (re-export core surface)"
 
 key-decisions:
   - "Added an isolated type-only shim (compiler-cli-types.ts) re-exporting the compiler-cli surface from the package's DEEP declaration files, because the barrel index.d.ts does not type-resolve under module:nodenext (extensionless export * fails strict ESM resolution). This preserves the locked module:nodenext (GATE A emit) instead of falling back to module:commonjs + a Function-wrapped import."
   - "GATE A static target for Plan 04 is the BUILT compiler-loader.js (it holds the literal import('@angular/compiler-cli')), NOT executor.js -- the await import lives in core per the mandated core/adapter split; the executor is a thin delegate. executor.js carries the negative assertion (no require('@angular/compiler-cli'))."
-  - 'Angular extended diagnostic codes are encoded NEGATIVE on ts.Diagnostic.code: ngErrorCode(8109) === -998109. Plan 04 GATE B must assert on -998109 (or recover via Math.abs(code)-990000===8109 / ng.ngErrorCode(8109)), NOT the bare 8109.'
+  - "Angular extended diagnostic codes are encoded NEGATIVE on ts.Diagnostic.code: ngErrorCode(8109) === -998109. Plan 04 GATE B must assert on -998109 (or recover via Math.abs(code)-990000===8109 / ng.ngErrorCode(8109)), NOT the bare 8109."
 
 patterns-established:
-  - 'Built executor path: dist/packages/angular-typechecker/src/executors/angular-typecheck/executor.js (derived from build.options.outputPath dist/packages/angular-typechecker, not hard-coded)'
-  - 'Each task committed atomically, files staged BY NAME; single-writer STATE.md/ROADMAP.md in sequential main-tree mode; no --no-verify'
+  - "Built executor path: dist/packages/angular-typechecker/src/executors/angular-typecheck/executor.js (derived from build.options.outputPath dist/packages/angular-typechecker, not hard-coded)"
+  - "Each task committed atomically, files staged BY NAME; single-writer STATE.md/ROADMAP.md in sequential main-tree mode; no --no-verify"
 
 requirements-completed: [ENG-03, WS-02]
 
@@ -102,10 +102,10 @@ completed: 2026-06-27
 
 Ran the real `@angular/compiler-cli@22.0.4` all-getter and `defaultGatherDiagnostics` against BOTH fixture tsconfig variants (throwaway probe; not committed):
 
-| tsconfig          | all-getter codes           | default (ngc) codes |
-| ----------------- | -------------------------- | ------------------- |
-| tsconfig.app.json | `[2322, -998109, -998117]` | `[2322]`            |
-| tsconfig.lib.json | `[2322, -998109, -998117]` | `[2322]`            |
+| tsconfig | all-getter codes | default (ngc) codes |
+|----------|------------------|---------------------|
+| tsconfig.app.json | `[2322, -998109, -998117]` | `[2322]` |
+| tsconfig.lib.json | `[2322, -998109, -998117]` | `[2322]` |
 
 - **GATE B positive:** the all-getter surfaces TS2322 AND the NG8109 extended diagnostic (encoded `-998109`) AND NG8117 (`-998117`); no code 500 (`UNKNOWN_ERROR_CODE`).
 - **GATE B differential:** `defaultGatherDiagnostics` (ngc) surfaces only `[2322]` -- the NG8109 extended diagnostic is short-circuited away, exactly the behavior the all-getter overcomes (D-16).
@@ -135,7 +135,6 @@ Ran the real `@angular/compiler-cli@22.0.4` all-getter and `defaultGatherDiagnos
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] @angular/compiler-cli@22.0.4 barrel typings do not resolve under module:nodenext**
-
 - **Found during:** Task 3 (`nx build angular-typechecker`).
 - **Issue:** Under `module:nodenext` TypeScript treats `@angular/compiler-cli`'s published `index.d.ts` as ESM; that barrel re-exports its members with EXTENSIONLESS relative paths (`export * from './src/transformers/api'`), which strict nodenext ESM resolution refuses to resolve (`tsc --traceResolution`: "Module './src/transformers/api' was not resolved" -- it only looks for a directory, never the sibling `api.d.ts`). The `@angular/compiler-cli` namespace therefore resolved EMPTY -> build errors TS2305 (`no exported member 'Program'`), TS2339 (`readConfiguration`/`performCompilation` do not exist), TS2503 (`namespace 'ng'`). The Vitest run had not caught it because Vite/esbuild does not full-type-check. (LSP diagnostics were not the signal -- the `@nx/js:tsc` build is the authoritative gate per CLAUDE.md.)
 - **Fix:** Added `src/core/compiler-cli-types.ts`, a single type-only module that re-builds the consumed surface (`Program`, `EmitFlags`, `ParsedConfiguration`, and the `typeof` of `performCompilation`/`readConfiguration`/`defaultGatherDiagnostics`) from the package's DEEP declaration files (`src/transformers/api`, `src/perform_compile`), which DO resolve under nodenext. The loader returns the structural `CompilerCli` namespace; the runtime value is the real, fully-featured module. Rewired the three core files to import types from the shim. This PRESERVES the locked `module:nodenext` (GATE A emit) rather than retreating to `module:commonjs` + a `Function`-wrapped import (the rejected @angular/build workaround).
@@ -144,7 +143,6 @@ Ran the real `@angular/compiler-cli@22.0.4` all-getter and `defaultGatherDiagnos
 - **Caveat (flagged):** the shim re-exports via a deep relative path into `node_modules/@angular/compiler-cli/...` -- fragile if hoisting changes the layout, and coupled to the package's internal `.d.ts` structure. It is type-only (erased at emit). Revisit when `@angular/compiler-cli` ships nodenext-clean typings (Angular's own `@angular/build` consumes these types under `module:commonjs`/`moduleResolution:node`, so the upstream barrel is simply not nodenext-tested).
 
 **2. [Plan/architecture tension -- recorded, not a code change] GATE A static target is compiler-loader.js, not executor.js**
-
 - The PLAN Task 3 verify/acceptance asserts the literal `import(` lives in the built `executor.js`. By the mandated core/adapter split (D-08; the executor must be a THIN delegate, the `await import()` belongs in core), the literal `import(` actually lives in the built `compiler-loader.js`; `executor.js` is a thin `require()`-based delegate. The threat-model intent (T-01-06: the built OUTPUT retains literal `import(` and never `require('@angular/compiler-cli')`) is fully satisfied. Plan 04's GATE A static spec must point at `compiler-loader.js` for the positive `import(` assertion and keep the negative `not require('@angular/compiler-cli')` assertion on both. No code changed for this; it is a derivation note for Plan 04.
 
 **Total deviations:** 1 auto-fixed blocking issue (nodenext typings) + 1 recorded plan/architecture derivation note. No scope creep; no new capabilities; locked decisions (D-08/D-13/D-16/D-18, module:nodenext) all intact.
@@ -160,6 +158,5 @@ None. The core is the promoted tracer bullet (D-08), fully wired to the real com
 - Functional gates: 4/4 Vitest tests pass; `nx build angular-typechecker` succeeds; built `compiler-loader.js` retains literal `import('@angular/compiler-cli')` with no `require()` downlevel; built CJS executor runs against the fixture with no `ERR_REQUIRE_ESM`; fixture out of graph; `ng-spike-app` green.
 
 ---
-
-_Phase: 01-workspace-bootstrap-engine-spike-gated_
-_Completed: 2026-06-27_
+*Phase: 01-workspace-bootstrap-engine-spike-gated*
+*Completed: 2026-06-27*

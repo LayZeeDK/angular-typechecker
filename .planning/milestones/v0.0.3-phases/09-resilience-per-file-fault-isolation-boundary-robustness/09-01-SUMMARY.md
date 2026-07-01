@@ -9,38 +9,38 @@ requires:
   - phase: 08-correctness-completeness-fixes
     provides: the gatherAllDiagnostics seventh-getter context (getGlobalDiagnostics) and the infra-vs-type TypecheckInfrastructureError policy RES-02 must preserve
 provides:
-  - 'GO=HYBRID decision recorded in 09-RES-01-SPIKE.md (the RES-01 GATE deliverable that gates plan 09-02 / RES-02)'
+  - "GO=HYBRID decision recorded in 09-RES-01-SPIKE.md (the RES-01 GATE deliverable that gates plan 09-02 / RES-02)"
   - "fixtures/fault-isolation/ multi-file fixture (tcb-poison component A + survivor component B) for plan 09-02's failing-then-passing isolation spec"
-  - 'empirical proof that the IMPORT_GENERATION_FAILURE Fatal attaches to a generated .ngtypecheck.ts shim (d.file is unreliable) and that the whole-program getNgSemanticDiagnostics() under-reports on a poison'
+  - "empirical proof that the IMPORT_GENERATION_FAILURE Fatal attaches to a generated .ngtypecheck.ts shim (d.file is unreliable) and that the whole-program getNgSemanticDiagnostics() under-reports on a poison"
 affects: [09-02 RES-02 per-file fault isolation, 10 HARD-01 getter-set drift assertion]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - 'RES-01 throwaway spike probe: reach the live api.Program via loadCompilerCli + readConfiguration + performCompilation with a capturing gatherDiagnostics callback, then inspect d.file on the whole-program set vs the per-file union'
-    - 'GO artifact (09-RES-01-SPIKE.md): GO DECISION + fixtures + method + empirical result + v22.0.4 citations, the durable record the phase verifier checks'
+    - "RES-01 throwaway spike probe: reach the live api.Program via loadCompilerCli + readConfiguration + performCompilation with a capturing gatherDiagnostics callback, then inspect d.file on the whole-program set vs the per-file union"
+    - "GO artifact (09-RES-01-SPIKE.md): GO DECISION + fixtures + method + empirical result + v22.0.4 citations, the durable record the phase verifier checks"
 
 key-files:
   created:
-    - '.planning/phases/09-resilience-per-file-fault-isolation-boundary-robustness/09-RES-01-SPIKE.md'
-    - 'fixtures/fault-isolation/tcb-poison.component.ts'
-    - 'fixtures/fault-isolation/tcb-poison.component.html'
-    - 'fixtures/fault-isolation/survivor.component.ts'
-    - 'fixtures/fault-isolation/survivor.component.html'
-    - 'fixtures/fault-isolation/tsconfig.app.json'
-    - 'fixtures/fault-isolation/non-template-error.component.ts'
-    - 'fixtures/fault-isolation/tsconfig.non-template.json'
-    - 'packages/angular-typechecker/src/core/res-01-spike.probe.spec.ts'
+    - ".planning/phases/09-resilience-per-file-fault-isolation-boundary-robustness/09-RES-01-SPIKE.md"
+    - "fixtures/fault-isolation/tcb-poison.component.ts"
+    - "fixtures/fault-isolation/tcb-poison.component.html"
+    - "fixtures/fault-isolation/survivor.component.ts"
+    - "fixtures/fault-isolation/survivor.component.html"
+    - "fixtures/fault-isolation/tsconfig.app.json"
+    - "fixtures/fault-isolation/non-template-error.component.ts"
+    - "fixtures/fault-isolation/tsconfig.non-template.json"
+    - "packages/angular-typechecker/src/core/res-01-spike.probe.spec.ts"
   modified: []
 
 key-decisions:
-  - 'GO=HYBRID: SIMPLE rejected because the spike could not positively enumerate the non-template diagnostic universe as file-bearing-and-matched (Pitfall 1; checkForPrivateExports/A2 not exercised) AND produced counter-evidence that d.file is fragile (a Fatal attached to a .ngtypecheck.ts shim, not the iterated .component.ts). Per D-03 inconclusive defaults to HYBRID, the strict superset.'
+  - "GO=HYBRID: SIMPLE rejected because the spike could not positively enumerate the non-template diagnostic universe as file-bearing-and-matched (Pitfall 1; checkForPrivateExports/A2 not exercised) AND produced counter-evidence that d.file is fragile (a Fatal attached to a .ngtypecheck.ts shim, not the iterated .component.ts). Per D-03 inconclusive defaults to HYBRID, the strict superset."
   - "IMPORT_GENERATION_FAILURE poison construct = Angular's own v22.0.4 test trigger (template_typecheck_spec.ts:86-115): an unexported referenced standalone component with a bound required input forces the TCB to reference its class -> reference emit fails -> Fatal during TCB generation (NOT analysis)."
 
 patterns-established:
   - "Spike probe reaches the live program through the engine's own load path so it observes exactly the no-emit program the engine builds (run-typecheck.ts:102-193 mirrored)."
-  - 'A non-template-only fixture (a plain class in standalone imports -> NG2012) isolates a real getNonTemplateDiagnostics() entry so its .file can be inspected without a template Fatal aborting the run.'
+  - "A non-template-only fixture (a plain class in standalone imports -> NG2012) isolates a real getNonTemplateDiagnostics() entry so its .file can be inspected without a template Fatal aborting the run."
 
 requirements-completed: [RES-01]
 
@@ -96,7 +96,6 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] The initial tcb-poison fixture did not trigger IMPORT_GENERATION_FAILURE**
-
 - **Found during:** Task 2 (running the probe against the live compiler)
 - **Issue:** Task 1's first poison construct used a non-exported `@Directive` applied via an attribute selector with no input binding. The directive class was same-file/local, so Angular's `CopySourceToTcb` path (`tcb_adapter.ts:334`) treated it as local and output the name directly -- the reference emitter never needed to generate an import, so no Fatal fired. The probe showed `IMPORT_GENERATION_FAILURE present in per-file union: false` and the poison's diagnostic was absent from both sets.
 - **Fix:** Rebuilt the poison on Angular's own v22.0.4 test construct (`template_typecheck_spec.ts:86-115`): an unexported referenced `@Component` (`SubComponent`) with a required input bound in the template (`<sub-cmp [someInput]="''" />`). Under strictTemplates the TCB must reference the unexported class -> `ReferenceEmitKind.Failed` -> `FatalDiagnosticError(IMPORT_GENERATION_FAILURE = 3004)` during TCB generation.
@@ -105,7 +104,6 @@ Each task was committed atomically:
 - **Committed in:** `393f1c9` (Task 2 commit)
 
 **2. [Rule 2 - Missing critical] Added a dedicated non-template fixture to test the actual load-bearing question**
-
 - **Found during:** Task 2 (designing the d.file inspection)
 - **Issue:** The poison fixture produces only a TEMPLATE Fatal. The RES-01 question is specifically about NON-TEMPLATE diagnostics being file-less -- a probe that never produces a real `getNonTemplateDiagnostics()` entry cannot inspect its `.file`, leaving the decision unsupported by direct evidence.
 - **Fix:** Added `non-template-error.component.ts` + `tsconfig.non-template.json` (a plain non-Angular class in standalone `imports:` -> NG2012 analysis-phase non-template diagnostic) and a second probe leg that inspects its `.file` directly. This converts the HYBRID decision from "I saw no file-less ones" into "I positively inspected one non-template class (file-bearing) but could not enumerate the universe -> HYBRID per D-03" (the Pitfall 1 standard).
@@ -140,6 +138,5 @@ None - no external service configuration required.
 - All new files ASCII-only; probe lint-clean (0 errors); full suite 23 files / 125 tests green.
 
 ---
-
-_Phase: 09-resilience-per-file-fault-isolation-boundary-robustness_
-_Completed: 2026-06-29_
+*Phase: 09-resilience-per-file-fault-isolation-boundary-robustness*
+*Completed: 2026-06-29*

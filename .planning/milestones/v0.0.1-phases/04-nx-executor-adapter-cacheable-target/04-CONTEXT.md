@@ -80,40 +80,34 @@ This phase clarifies HOW to wire what is already scoped. LOCKED and NOT re-decid
 - **D-17: Run Phase 4 SEQUENTIALLY ON THE MAIN TREE** (real `node_modules` + real project graph + the daemon). Phase 4 is entirely dependency/daemon/graph-heavy, and the `compiler-cli-types.ts` deep-import shim breaks `@nx/js:tsc` builds without `node_modules` at the package dir (STATE [01-03 CAVEAT]). The SC3 cache test is non-parallelizable and worktree-hostile (the cache/daemon key on the real graph + workspace root; a junctioned worktree realpath-resolves OUTSIDE the worktree -> graph drift, Phase-3 LEARNINGS). Creating `libs/*` invalidates the graph for any in-flight plan -> another reason to serialize. If worktrees are used for the adapter/schema plans, the SC3 cache test MUST run on the main tree.
 
 ### Claude's Discretion
-
 - Exact fixture project names / `scope:fixture` label / alias string; the exact injected error code; whether the consumer is an app or a lib (research slight-leaned a lib for cleanliness — either works, as long as it is a real graph project carrying the target); the precise `renderReport` signature and whether `color` is a param vs derived; the exact `normalize-options` return shape; whether to ALSO add a `require()`-the-built-executor int test alongside the `nx run` runtime proof.
 - Verify the non-buildable lib generator flags against `nx g @nx/angular:library --help` on 23.0.1 (do NOT copy the Nx 19.8 prior-art flags such as `--projectNameAndRootFormat`, removed) — or hand-author the fixture `project.json`/tsconfig/source (a committed fixture needs no generator).
 - LIVE-verify (once the libs exist) that the paths-alias-to-source forms the consumer->dep graph edge in THIS `--preset=apps` workspace BEFORE relying on TEST-04 (the D-10 guard does exactly this).
 - 5-min spike: confirm a nested `nx` call inside Vitest honors `NX_CACHE_DIRECTORY` before committing the D-14 harness plan.
-  </decisions>
+</decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Phase 4 spec + scope (this repo)
-
 - `.planning/ROADMAP.md` Phase 4 section — goal + 3 success criteria.
 - `.planning/REQUIREMENTS.md` — EXE-01, EXE-06, EXE-07, TEST-04 (the Phase-4 set) + traceability.
 - `.planning/PROJECT.md` — locked stack, dependency model (`@nx/devkit` pinned dep; compiler-cli + typescript peers), module format, engine, Key Decisions, deferred surfaces.
 
 ### Phase 1/2/3 carry-forwards (this repo) — MUST read
-
-- `.planning/phases/03-filtering-modes-output-quality-gates/03-CONTEXT.md` — D-01 hybrid composition (the adapter composes `runTypecheck` + `evaluateResult` + `formatReport`), D-03 pure verdict, D-04 fail-fast = reporting-only, D-05/D-06 boundary filter, D-08 `pathBase`<-`context.root` realized in the adapter, D-11 core/\*\* import ban (adapter MAY use devkit/console).
+- `.planning/phases/03-filtering-modes-output-quality-gates/03-CONTEXT.md` — D-01 hybrid composition (the adapter composes `runTypecheck` + `evaluateResult` + `formatReport`), D-03 pure verdict, D-04 fail-fast = reporting-only, D-05/D-06 boundary filter, D-08 `pathBase`<-`context.root` realized in the adapter, D-11 core/** import ban (adapter MAY use devkit/console).
 - `.planning/phases/03-filtering-modes-output-quality-gates/03-LEARNINGS.md` — worktrees lack node_modules; run the dependency-heavy wave on the main tree; the deep-import shim trips enforce-module-boundaries; junction-safe teardown.
 - `.planning/phases/02-core-type-check-engine-gatherer/02-CONTEXT.md` — `CoreResult` category counting, no-emit override, infra-failure re-throw.
 - `.planning/phases/01-workspace-bootstrap-engine-spike-gated/01-CONTEXT.md` + `.planning/STATE.md` Accumulated Context — GATE A `import(` survival, negative-encoded NG codes (`-998109`), [01-03 CAVEAT] deep-import shim fragility.
 
 ### Project research (this repo)
-
 - `.planning/research/ARCHITECTURE.md` — thin-adapter pattern (Pattern 1), lazy memoized ESM bridge (Pattern 2), schema.json-as-source-of-truth (Pattern 4), proposed `src/executors/`/`internal/` tree, Build/Publish boundary. CAVEATS (panel-confirmed STALE): `internal/exit-code.ts` is superseded by Phase-3 `evaluateResult` (do NOT add it); the data-flow `CoreResult { formatted }` is contradicted by Phase-3 D-01 (do NOT add `formatted`); lines ~314/~376 on dependency classification are stale (PROJECT.md authoritative — devkit is a DEPENDENCY, not peer).
 - `.planning/research/PITFALLS.md` — Pitfall 1 (`import()`->`require()` downlevel), **Pitfall 4 (stale cache hides errors — the TEST-04 raison d'etre)**, Pitfall 5 (tarball missing manifests, Phase 5), Pitfall 6 (peer ranges, Phase 5), the "Looks Done But Isn't" checklist.
 - `.planning/research/FEATURES.md`, `.planning/research/STACK.md` (executors.json/schema.json conventions, `@nx/js:tsc` build, `files` allowlist), `.planning/research/FOLLOWUP-FINDINGS.md`, `.planning/research/DIAGNOSTIC-CATALOG.md`.
 
 ### Current source this phase grows in place (this repo)
-
 - `packages/angular-typechecker/src/executors/angular-typecheck/executor.ts` — the incomplete stub (only `errorCount===0`, no evaluate/format/pathBase/infra-catch/abs-path) to complete (D-01).
 - `packages/angular-typechecker/src/executors/angular-typecheck/schema.json` + `schema.d.ts` — extend per D-06; keep in lockstep.
 - `packages/angular-typechecker/executors.json` — already correct (`angular-typecheck` -> `./src/executors/angular-typecheck/executor`); add `outputCapture` (D-04).
@@ -124,7 +118,6 @@ This phase clarifies HOW to wire what is already scoped. LOCKED and NOT re-decid
 - `tsconfig.base.json` (add the namespaced fixture paths alias), `.gitignore` (do NOT place fixtures under gitignored paths).
 
 ### External reference sources (absolute paths, read-only; re-validate against installed Nx 23.0.1 / `@angular/compiler-cli@22.0.4` / TS 6.0.3)
-
 - `D:/projects/github/nrwl/nx` (the Nx clone) — `packages/js/src/plugins/typescript/plugin.ts:713-953` (`getInputs`: extends-chain, dynamic include/exclude->globs, `dependentTasksOutputFiles`, `externalDependencies` COMMENTED OUT — the model we diverge from); `packages/nx/src/hasher/task-hasher.ts:279-298,354-427` (DEFAULT_INPUTS incl. `{dependencies:true,input:'default'}`; `^`-prefix split); `packages/nx/src/native/tasks/hash_planner.rs:207-258,355-403` + `inputs.rs:45-93` (the Rust hasher: `^default`/`^production` expand each dep's fileset transitively; `externalDependencies` must resolve to external nodes); `packages/nx/src/project-graph/utils/project-configuration/target-defaults.ts:190-205` (executor-id key precedence); `packages/nx/src/command-line/show/show-target/inputs.ts` + `command-object.ts:307-360` (`nx show target inputs --check <file>` semantics, exit 0/1, custom-hasher void); `packages/nx/src/tasks-runner/life-cycles/static-run-one-terminal-output-life-cycle.ts` (the cache-hit marker, `output.dim()`-wrapped); `e2e/nx/src/cache.test.ts` (Nx's own cache-hit assertion pattern — the model for D-12).
 - `D:/projects/github/push-based/nx-verdaccio` — `nx.json:135-150` (targetDefaults keyed by executor id), `nx.json:14-33,49-54` (`production` + `typecheck-typescript-inputs` named-input shapes), `nx.json:220-224` (`analyzeSourceFiles:true`), `projects/nx-verdaccio/project.json` + `package.json` (published-plugin `files`/`release.projects` scope; LEGACY `.eslintrc.json` — do NOT copy config shape). Nx 22.3.1-era; use for patterns only, not the test runner (`@nx/vite:test` -> we use `@nx/vitest:test`).
 - `D:/projects/github/angular/angular-cli/packages/angular/build` — `AngularCompilation` thin-`execute` builders + memoized `loadCompilerCli`/`loadTypescript` (the renderReport/loader shape to mirror).
@@ -132,41 +125,35 @@ This phase clarifies HOW to wire what is already scoped. LOCKED and NOT re-decid
 - `D:/projects/sandbox/nx19-8-angular18-2-esbuild-playwright-storybook` (Angular 18.2 prior prototype, PUBLIC; version-bound, INSPIRATION ONLY — re-validate every pattern against Nx 23, import no code): `libs/nx-plugin/src/executors/angular-typecheck/` (monolithic executor + `runExecutor`+`ExecutorContext` int-test shape + `injectTypeScriptError`), `INTEGRATION-TESTING-LEARNINGS.md` (the Nx fixture-discovery trap, Vitest-over-Jest ESM rationale, `NX_DAEMON=false`).
 
 ### External docs / issues (URLs; re-validate against Nx 23.0.1)
-
 - Nx Inputs / Named Inputs — https://nx.dev/docs/reference/inputs ; Configure Inputs for Task Caching — https://nx.dev/recipes/running-tasks/configure-inputs ; How Caching Works — https://nx.dev/concepts/how-caching-works ; Cache Task Results — https://nx.dev/docs/features/cache-task-results.
 - Nx executors — https://nx.dev/docs/concepts/executors-and-configurations ; Local Executors — https://nx.dev/docs/extending-nx/local-executors ; ExecutorContext — https://nx.dev/docs/reference/devkit/ExecutorContext.
 - Tracked Nx cache gaps (panel-classified): #32182 (source/inlined namedInputs over-invalidation = safe), #22277 (externalDependencies — fixed), #22265 (buildable under-invalidation — fixed, not our path), #15964 (external pkg change — fixed), #9147 (`process.cwd()` differs with/without daemon -> `NX_DAEMON=false`).
 - TS `module: node16`/`nodenext` keeps dynamic `import()` untransformed — https://www.typescriptlang.org/docs/handbook/modules/reference.html (EXE-07).
 - Brandon Roberts, "Angular Compilation, Type-Checking, and Build Bottlenecks" (2026-06-26) — https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f (the type-check is the dominant separable cost this cacheable target accelerates).
-  </canonical_refs>
+</canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - The Phase-3 `core/` is composed-not-grown by Phase 4: `runTypecheck` (engine seam), `evaluateResult({maxWarnings})` (the verdict — used directly, D-01), `formatReport` (needs a `renderReport` wrapper, D-02), `filterDiagnostics`, the memoized `loadCompilerCli` (+ private `loadTypescript`). The barrel `src/index.ts` already exports the first four; add `renderReport`.
 - The existing executor stub + `executors.json` + `schema.json`/`schema.d.ts` are real starting points (complete the stub; extend the schema).
 - `nx.json` `namedInputs` (`production`/`default`) already exist — reuse, don't redefine.
 - GATE-A evidence (Phase 1) covers the build-time half of EXE-07; Phase 4 adds only the runtime half.
 
 ### Established Patterns
-
 - Framework-agnostic core with ZERO `@nx/devkit`/CLI imports, lint-enforced (Phase-3 D-11); the executor + `normalize-options` are the ONLY tiers that touch `@nx/devkit` (type-only `ExecutorContext`). `module: nodenext` CJS build with the `import(`-survival invariant (GATE A).
 - Thin-adapter-over-single-core-entry (ARCHITECTURE Pattern 1) — the design lever that makes the deferred CLI/createNodesV2/builder ~50 lines each.
 - Injected-compiler-surface pure functions (Phase-3 pattern) — `formatReport`/`evaluateResult` take a `Pick<>` of ng/ts; `renderReport` is the seam that supplies them.
 
 ### Integration Points
-
 - adapter -> core: `normalizeOptions` -> `runTypecheck` -> `renderReport` -> `evaluateResult` -> `{ success }` (single seam; D-01/D-02).
 - target -> Nx cache: `targetDefaults["angular-typechecker:angular-typecheck"]` with the D-08 inputs; `outputCapture: "direct-nodejs"`; verified via `nx show target inputs --check`.
 - fixture graph edge: `libs/typecheck-consumer` import of `@fixtures/typecheck-consumer-dep` (paths alias to source) -> Nx project-graph edge -> `^default` reach (D-10/D-11).
 
 ### Prior-art learnings (sanitized; inspiration only)
-
 - The Nx 19.8 prototype confirms: `runExecutor`+`ExecutorContext` int-test shape, `injectTypeScriptError`, the fixture-discovery trap (Nx skips gitignored/excluded dirs), `NX_DAEMON=false`, Vitest-over-Jest for ESM compiler-cli. Re-validate all on Nx 23; its generator flags (`--projectNameAndRootFormat`) are removed in newer Nx — do NOT copy verbatim.
-  </code_context>
+</code_context>
 
 <specifics>
 ## Specific Ideas
@@ -176,13 +163,12 @@ This phase clarifies HOW to wire what is already scoped. LOCKED and NOT re-decid
 - **Cache-hit marker:** `Nx read the output from the cache instead of running the command` on a single-target `--output-style=static --no-color` run (D-12).
 - **Fixture alias:** `tsconfig.base.json` `paths`: `"@fixtures/typecheck-consumer-dep": ["libs/typecheck-consumer-dep/src/index.ts"]` (alias -> SOURCE).
 - **Schema:** `tsConfig` (req flag) + `includeDeps` (default false) + `maxWarnings` (number, no default) + `failFast` (default false) + `version: 2` + `additionalProperties: false` (D-06).
-  </specifics>
+</specifics>
 
 <deferred>
 ## Deferred Ideas
 
 All roadmap-scoped or out-of-milestone (NOT new in-phase capabilities):
-
 - **Phase-5 packaging hand-off (record now so it isn't lost):** scope `nx.json` `release.projects: ["angular-typechecker"]`; add the plugin `files` allowlist (`["src","executors.json","README.md","LICENSE"]`); add a `tar -tf` tarball assertion that no `libs/`/`fixtures/`/`*.spec.ts`/`tsconfig.spec.json` leak; `attw --pack` must confirm no unresolved fixture-alias specifier in shipped `.d.ts`; README ships the FULL consumer `targetDefaults` recipe (inputs included). Verify `outputCapture: "direct-nodejs"` is in the tarball.
 - **Buildable/publishable lib fixture + the `dependentTasksOutputFiles` PROOF + the full 5-project-type matrix + pnpm + mixed-case path assertions** -> Phase 6 e2e (TEST-03, CI-01). The `dependentTasksOutputFiles` line stays in the Phase-4 recipe (free config) but is not exercised by a buildable-dep test until Phase 6.
 - **One e2e smoke against the packed tarball** -> Phase 5 (TEST-05).
@@ -195,5 +181,5 @@ None of the discussion drifted outside the Phase 4 boundary.
 
 ---
 
-_Phase: 4-Nx Executor Adapter + Cacheable Target_
-_Context gathered: 2026-06-28_
+*Phase: 4-Nx Executor Adapter + Cacheable Target*
+*Context gathered: 2026-06-28*

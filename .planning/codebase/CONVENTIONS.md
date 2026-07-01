@@ -10,7 +10,6 @@ exactly when adding or editing code.
 ## Naming Patterns
 
 **Files:**
-
 - `kebab-case.ts` for all source modules: `run-typecheck.ts`, `compiler-loader.ts`,
   `gather-diagnostics.ts`, `evaluate-result.ts`, `exit-codes.ts`, `normalize-options.ts`.
 - Co-located unit tests: `<module>.spec.ts` (e.g. `exit-codes.spec.ts`).
@@ -24,21 +23,18 @@ exactly when adding or editing code.
   interface), kept in parity by `schema-parity.spec.ts`.
 
 **Functions:**
-
 - `camelCase`. Exported engine/adapter entry points are verbs: `runTypecheck`,
   `loadCompilerCli`, `gatherAllDiagnostics`, `evaluateResult`, `renderReport`,
   `normalizeOptions`, `toExitCode`. Private helpers also `camelCase`
   (`synthesizeZeroRootNamesDiagnostic`, `resolveFilterBasePath`, `finalize`).
 
 **Variables:**
-
 - `camelCase` for locals/params (`tsConfigPath`, `suppressedCount`, `configDiagnostics`).
 - `SCREAMING_SNAKE_CASE` for module-level constants and synthesized codes:
   `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE`, `TCB_GENERATION_FATAL_DIAGNOSTIC_CODE`,
   `UNKNOWN_ERROR_CODE`, test literals like `TS2322`, `INJECTED_TS_CODE`, `REQUIRED_FILES`.
 
 **Types:**
-
 - `PascalCase` interfaces and classes: `CoreOptions`, `CoreResult`, `NormalizedOptions`,
   `TemplateCheckAborted`, `TypecheckInfrastructureError`, `AngularTypecheckExecutorOptions`.
 - Custom error subclasses extend `Error` and set `this.name` in the constructor (see
@@ -47,7 +43,6 @@ exactly when adding or editing code.
 ## Code Style
 
 **Formatting (Prettier):**
-
 - Config: `.prettierrc` -- the only override is `{ "singleQuote": true }`. Everything else
   is Prettier defaults (2-space indent, semicolons, trailing commas in multiline).
 - `.editorconfig`: UTF-8, 2-space indent, final newline, trim trailing whitespace
@@ -56,7 +51,6 @@ exactly when adding or editing code.
 - Prettier version: `~3.6.2` (root `devDependencies`).
 
 **Linting (ESLint flat config):**
-
 - Root config: `eslint.config.mjs` -- composes `@nx/eslint-plugin` flat presets
   (`flat/base`, `flat/typescript`, `flat/javascript`) plus `@nx/enforce-module-boundaries`.
 - Plugin config: `packages/angular-typechecker/eslint.config.mjs` extends the root and adds
@@ -86,7 +80,6 @@ Imports are grouped, blank-line-separated, alphabetized within each group. Obser
 5. Value imports of local modules (`import { gatherAllDiagnostics } from './gather-diagnostics';`).
 
 **Conventions:**
-
 - Prefer `import type { ... }` for anything used only in type position. The compiler-cli
   surface is reached at VALUE level exactly once (`compiler-loader.ts`'s
   `await import('@angular/compiler-cli')`); every other reference is `import type`.
@@ -121,7 +114,6 @@ Imports are grouped, blank-line-separated, alphabetized within each group. Obser
 forbids `console` via ESLint (`no-console: error`).
 
 **Patterns:**
-
 - `logger.error(...)` for an infrastructure failure (distinct operator message containing
   "infrastructure error").
 - `logger.warn(...)` for the loud TCB-generation-abort suppression notice (names the
@@ -133,7 +125,6 @@ forbids `console` via ESLint (`no-console: error`).
 ## Comments
 
 **When to Comment:**
-
 - Heavy, intentional commenting. Modules and non-obvious branches carry block comments
   explaining the WHY, the failure mode being guarded, and the decision reference
   (`D-01`, `COR-04`, `RES-02`, `Pitfall 5`, etc.) that justifies the choice. These decision
@@ -143,7 +134,6 @@ forbids `console` via ESLint (`no-console: error`).
   `length - errorCount` miscount, etc.).
 
 **JSDoc/TSDoc:**
-
 - Exported functions and many interfaces/fields carry `/** ... */` doc comments describing
   contract, invariants, and purity. Field-level comments document the invariant
   (`errorCount + warningCount <= diagnostics.length`).
@@ -179,7 +169,6 @@ barrel, to avoid cycles. `exit-codes.ts` must NOT be imported by `run-typecheck.
 Conventional Commits are MANDATORY -- `nx release` (`nx.json` -> `release.version.
 conventionalCommits: true`) computes both the next version and the changelog from the
 commit log. See `AGENTS.md` for the authoritative rules. Key points:
-
 - Format: `type(scope): imperative summary`. Breaking change = `!` before colon OR a
   `BREAKING CHANGE:` footer.
 - This repo is pre-1.0, so `adjustSemverBumpsForZeroMajorVersion` shifts bumps DOWN one
@@ -193,4 +182,4 @@ commit log. See `AGENTS.md` for the authoritative rules. Key points:
 
 ---
 
-_Convention analysis: 2026-06-30_
+*Convention analysis: 2026-06-30*

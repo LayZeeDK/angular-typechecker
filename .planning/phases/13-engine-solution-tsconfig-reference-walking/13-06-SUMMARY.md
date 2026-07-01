@@ -4,44 +4,44 @@ plan: 06
 subsystem: core
 tags: [nx-caching, walk, cache-e2e, docs, WALK-02]
 requires:
-  - '13-04 (runTypecheck reference-walk wired: solution tsconfig -> per-leaf walk)'
+  - "13-04 (runTypecheck reference-walk wired: solution tsconfig -> per-leaf walk)"
 provides:
-  - 'WALK-02 default-input hashing: the angular-typecheck walk-target caches on the lib+spec source union, so a spec-only edit busts the coarse single-target cache instead of replaying a stale PASS'
-  - 'cache-e2e proof (spec-only edit -> cache MISS) for the WALK-02 hashing contract'
-  - 'README single-target walk recipe + caching guidance for consumers'
+  - "WALK-02 default-input hashing: the angular-typecheck walk-target caches on the lib+spec source union, so a spec-only edit busts the coarse single-target cache instead of replaying a stale PASS"
+  - "cache-e2e proof (spec-only edit -> cache MISS) for the WALK-02 hashing contract"
+  - "README single-target walk recipe + caching guidance for consumers"
 affects:
-  - 'nx.json targetDefaults (both angular-typecheck executor-id keys)'
-  - 'e2e/angular-typechecker-cache-e2e (new scenario spec)'
-  - 'libs/typecheck-walk-consumer (new fixture library)'
-  - 'README.md'
+  - "nx.json targetDefaults (both angular-typecheck executor-id keys)"
+  - "e2e/angular-typechecker-cache-e2e (new scenario spec)"
+  - "libs/typecheck-walk-consumer (new fixture library)"
+  - "README.md"
 tech-stack:
   added: []
   patterns:
-    - 'cache-busts-on-* e2e harness: per-run isolated NX_CACHE_DIRECTORY, NX_DAEMON off, R1 pre-flight `nx show target inputs --check`, byte-restore from a committed .pristine sidecar'
-    - 'solution-tsconfig walk fixture: references-only tsconfig.json -> tsconfig.lib.json (excludes specs) + tsconfig.spec.json (includes specs), inline-declared test globals (no test-runner types)'
+    - "cache-busts-on-* e2e harness: per-run isolated NX_CACHE_DIRECTORY, NX_DAEMON off, R1 pre-flight `nx show target inputs --check`, byte-restore from a committed .pristine sidecar"
+    - "solution-tsconfig walk fixture: references-only tsconfig.json -> tsconfig.lib.json (excludes specs) + tsconfig.spec.json (includes specs), inline-declared test globals (no test-runner types)"
 key-files:
   created:
-    - 'packages/angular-typechecker/src/core/nx-target-defaults.spec.ts'
-    - 'libs/typecheck-walk-consumer/tsconfig.json'
-    - 'libs/typecheck-walk-consumer/tsconfig.lib.json'
-    - 'libs/typecheck-walk-consumer/tsconfig.spec.json'
-    - 'libs/typecheck-walk-consumer/src/index.ts'
-    - 'libs/typecheck-walk-consumer/src/lib/walk-consumer.component.ts'
-    - 'libs/typecheck-walk-consumer/src/lib/walk-consumer.component.spec.ts'
-    - 'libs/typecheck-walk-consumer/src/lib/walk-consumer.component.spec.ts.pristine'
-    - 'libs/typecheck-walk-consumer/package.json'
-    - 'libs/typecheck-walk-consumer/project.json'
-    - 'e2e/angular-typechecker-cache-e2e/src/cache-busts-on-spec-edit.int.spec.ts'
+    - "packages/angular-typechecker/src/core/nx-target-defaults.spec.ts"
+    - "libs/typecheck-walk-consumer/tsconfig.json"
+    - "libs/typecheck-walk-consumer/tsconfig.lib.json"
+    - "libs/typecheck-walk-consumer/tsconfig.spec.json"
+    - "libs/typecheck-walk-consumer/src/index.ts"
+    - "libs/typecheck-walk-consumer/src/lib/walk-consumer.component.ts"
+    - "libs/typecheck-walk-consumer/src/lib/walk-consumer.component.spec.ts"
+    - "libs/typecheck-walk-consumer/src/lib/walk-consumer.component.spec.ts.pristine"
+    - "libs/typecheck-walk-consumer/package.json"
+    - "libs/typecheck-walk-consumer/project.json"
+    - "e2e/angular-typechecker-cache-e2e/src/cache-busts-on-spec-edit.int.spec.ts"
   modified:
-    - 'nx.json'
-    - 'README.md'
+    - "nx.json"
+    - "README.md"
 decisions:
   - "Swapped BOTH walk-target-default keys (dev-workspace `angular-typechecker:angular-typecheck` AND published-package `@angular-typechecker/angular-typechecker:angular-typecheck`), not one, because there is no bare `angular-typecheck` targetDefaults key -- the two executor-id forms are the same executor's defaults for the local repo vs an installed consumer and both must carry the WALK-02 shape."
-  - 'Added a NEW `typecheck-walk-consumer` fixture library (solution tsconfig + spec leaf) rather than repurposing `typecheck-consumer` (whose leaf tsconfig + includeDeps the existing executor-parity / dep-error specs depend on), keeping those specs byte-unchanged.'
-  - 'Reused the in-workspace cache-e2e harness (real nx CLI + project graph) exactly, NOT Verdaccio and NOT a new e2e project, per the plan.'
+  - "Added a NEW `typecheck-walk-consumer` fixture library (solution tsconfig + spec leaf) rather than repurposing `typecheck-consumer` (whose leaf tsconfig + includeDeps the existing executor-parity / dep-error specs depend on), keeping those specs byte-unchanged."
+  - "Reused the in-workspace cache-e2e harness (real nx CLI + project graph) exactly, NOT Verdaccio and NOT a new e2e project, per the plan."
 metrics:
-  duration: '~35 min'
-  completed: '2026-07-01'
+  duration: "~35 min"
+  completed: "2026-07-01"
   tasks: 3
   files: 13
 ---
@@ -73,7 +73,6 @@ Added a "Type-check an Angular project (single-target walk recipe)" section to `
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Plan's `targetDefaults["angular-typecheck"]` key does not exist**
-
 - **Found during:** Task 1
 - **Issue:** The plan objective and its `<automated>` verify gate both reference `n.targetDefaults['angular-typecheck']`, but `nx.json` has no bare `angular-typecheck` key. The actual walk-target-default keys are `angular-typechecker:angular-typecheck` (dev workspace) and `@angular-typechecker/angular-typechecker:angular-typecheck` (published package). The plan's node gate would throw a TypeError (reading `.inputs` of `undefined`).
 - **Fix:** Applied the `production` -> `default` swap to BOTH executor-id keys (same executor's defaults for local vs installed contexts) and wrote the manifest spec + the run node gate against the real keys. The intent (L-5 / WALK-02: spec sources must hash) is satisfied for both.
@@ -81,7 +80,6 @@ Added a "Type-check an Angular project (single-target walk recipe)" section to `
 - **Commit:** a062a16
 
 **2. [Rule 1 - Bug] Pre-existing non-ASCII emoji in the stock README broke the Task 3 ASCII gate**
-
 - **Found during:** Task 3
 - **Issue:** The README carried stock Nx-generated boilerplate with a sparkle emoji on line 5 (6 non-ASCII bytes). Task 3's acceptance criterion requires the README be ASCII-only and its `<automated>` gate to pass; the emoji failed it.
 - **Fix:** Replaced the emoji line with an ASCII-only equivalent (also mandated by the CLAUDE.md/AGENTS.md ASCII-only rule). Minimal, in-scope, on the file this task owns.

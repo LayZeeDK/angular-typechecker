@@ -18,8 +18,8 @@ affects: [release (no published-package surface change; CI/tooling only), future
 tech-stack:
   added: []
   patterns:
-    - 'New CI job copies the in-file e2e job verbatim + two fallow deltas (fetch-depth: 0 for new-only attribution, the npx fallow audit run step)'
-    - 'Aggregate-gate membership: a new job joins via the `needs:` list only; the contains(needs.*.result, ...) gate globs needs.* and auto-includes it (no gate-expression edit)'
+    - "New CI job copies the in-file e2e job verbatim + two fallow deltas (fetch-depth: 0 for new-only attribution, the npx fallow audit run step)"
+    - "Aggregate-gate membership: a new job joins via the `needs:` list only; the contains(needs.*.result, ...) gate globs needs.* and auto-includes it (no gate-expression edit)"
     - "Path-gate via the NEGATIVE `!= 'false'` form (load-bearing for act -n plan stability under empty filter output)"
 
 key-files:
@@ -27,12 +27,12 @@ key-files:
   modified: [.github/workflows/ci.yml, tools/act/act-compat.sh]
 
 key-decisions:
-  - 'Slotted the `fallow` job between e2e and act-compat, and `fallow` after e2e in ci.needs (D-10 / workflow-file ordering); the gate expression and the `ci` job id/name are byte-unchanged so the single required status check stays `ci` (no Default-branch ruleset change)'
+  - "Slotted the `fallow` job between e2e and act-compat, and `fallow` after e2e in ci.needs (D-10 / workflow-file ordering); the gate expression and the `ci` job id/name are byte-unchanged so the single required status check stays `ci` (no Default-branch ruleset change)"
   - "fetch-depth: 0 is the ONLY checkout in ci.yml carrying it (D-13, load-bearing for new-only base-snapshot attribution against origin/main's merge-base); FALLOW_AUDIT_BASE=origin/main pins the base defensively"
-  - 'No SARIF/--ci and no job permissions block (D-12); --format json is for the CI log, the EXIT CODE gates; the top-level contents: read posture is preserved (no security-events: write)'
+  - "No SARIF/--ci and no job permissions block (D-12); --format json is for the CI log, the EXIT CODE gates; the top-level contents: read posture is preserved (no security-events: write)"
 
 patterns-established:
-  - 'Pattern: a code-quality analyzer wired as a dedicated path-gated job in the ci aggregate (single required check stays `ci`), exact-pinned + run via `npx <tool>` so a tool release cannot silently flip the gate'
+  - "Pattern: a code-quality analyzer wired as a dedicated path-gated job in the ci aggregate (single required check stays `ci`), exact-pinned + run via `npx <tool>` so a tool release cannot silently flip the gate"
 
 requirements-completed: [QUAL-01, QUAL-03]
 
@@ -75,14 +75,14 @@ _Commit type rationale (AGENTS.md scope hygiene): this plan touches ONLY CI/tool
 
 ## Verification
 
-| Check                      | Command                                                      | Result                                                                                                                                                                                                                                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gate command exit code     | `npx fallow audit --format json --base origin/main`          | **exit 0** (`verdict: "pass"`)                                                                                                                                                                                                                                                                                                         |
-| Fallow attribution         | (from JSON)                                                  | `gate: new-only`; `dead_code_issues: 0`, `dead_code_introduced: 0`, `dead_code_inherited: 0`, `dead_code_has_errors: false`; `complexity_findings: 0` introduced/inherited 0; `duplication_clone_groups: 0` introduced/inherited 0; `base_ref: origin/main`; `changed_files_count: 120`; merge-base `1e37d55` (matches 11-RESEARCH.md) |
-| act parseability (Guard 1) | `act --validate` (inside `act-compat.sh`)                    | **PASS** -- both workflows (ci.yml + release.yml) parse with the new job + extended `needs` graph                                                                                                                                                                                                                                      |
-| act-compat structural      | `git grep -n 'ci/fallow' tools/act/act-compat.sh`            | exactly ONE line at 113, in the `pull_request` block, matching the `ci/<jobid>` family                                                                                                                                                                                                                                                 |
-| ci.yml structural          | node job-graph parse                                         | jobs include `fallow`; `ci.needs = [changes, test, e2e, fallow, act-compat, lint-workflows]`; exactly one `fetch-depth: 0` directive                                                                                                                                                                                                   |
-| security posture           | greps for `sarif`/`--ci`, job `permissions:`, `github.event` | no SARIF/`--ci` directive (only the explanatory comment), no job `permissions:` block (only top-level `contents: read`), no `github.event` interpolation anywhere                                                                                                                                                                      |
+| Check | Command | Result |
+|-------|---------|--------|
+| Gate command exit code | `npx fallow audit --format json --base origin/main` | **exit 0** (`verdict: "pass"`) |
+| Fallow attribution | (from JSON) | `gate: new-only`; `dead_code_issues: 0`, `dead_code_introduced: 0`, `dead_code_inherited: 0`, `dead_code_has_errors: false`; `complexity_findings: 0` introduced/inherited 0; `duplication_clone_groups: 0` introduced/inherited 0; `base_ref: origin/main`; `changed_files_count: 120`; merge-base `1e37d55` (matches 11-RESEARCH.md) |
+| act parseability (Guard 1) | `act --validate` (inside `act-compat.sh`) | **PASS** -- both workflows (ci.yml + release.yml) parse with the new job + extended `needs` graph |
+| act-compat structural | `git grep -n 'ci/fallow' tools/act/act-compat.sh` | exactly ONE line at 113, in the `pull_request` block, matching the `ci/<jobid>` family |
+| ci.yml structural | node job-graph parse | jobs include `fallow`; `ci.needs = [changes, test, e2e, fallow, act-compat, lint-workflows]`; exactly one `fetch-depth: 0` directive |
+| security posture | greps for `sarif`/`--ci`, job `permissions:`, `github.event` | no SARIF/`--ci` directive (only the explanatory comment), no job `permissions:` block (only top-level `contents: read`), no `github.event` interpolation anywhere |
 
 ### Deferred local-tooling checks (deferred to the existing CI jobs, with reason)
 
@@ -123,6 +123,5 @@ None - no external service configuration required. The authoritative integration
 - FOUND commit `1fed6e4` (Task 3)
 
 ---
-
-_Phase: 11-fallow-code-quality-ci-gate_
-_Completed: 2026-06-30_
+*Phase: 11-fallow-code-quality-ci-gate*
+*Completed: 2026-06-30*

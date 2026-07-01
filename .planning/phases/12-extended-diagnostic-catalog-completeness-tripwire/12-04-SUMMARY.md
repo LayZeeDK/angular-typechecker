@@ -4,11 +4,11 @@ plan: 04
 subsystem: planning-docs
 tags: [diagnostics, catalog, documentation, CAT-05]
 requires:
-  - '12-01 EXTENDED_DIAGNOSTIC_MEMBERS (the as-const 18-member source of truth the tripwire consumes)'
+  - "12-01 EXTENDED_DIAGNOSTIC_MEMBERS (the as-const 18-member source of truth the tripwire consumes)"
 provides:
-  - 'DIAGNOSTIC-CATALOG.md corrected to the authoritative 18-member ExtendedTemplateDiagnosticName set (CAT-05)'
+  - "DIAGNOSTIC-CATALOG.md corrected to the authoritative 18-member ExtendedTemplateDiagnosticName set (CAT-05)"
 affects:
-  - '.planning/research/DIAGNOSTIC-CATALOG.md'
+  - ".planning/research/DIAGNOSTIC-CATALOG.md"
 tech-stack:
   added: []
   patterns:
@@ -16,13 +16,13 @@ tech-stack:
 key-files:
   created: []
   modified:
-    - '.planning/research/DIAGNOSTIC-CATALOG.md'
+    - ".planning/research/DIAGNOSTIC-CATALOG.md"
 decisions:
   - "Carried the two enum-only members' (NG8011, NG8112) introduction versions from compiler history without independent docs re-verification, and said so in the doc -- the enum (not the intro-version) is the membership authority the tripwire keys on"
   - "Rephrased corrective prose to avoid the literal strings 'not promotable' and 'jscodeshift' so the plan's literal string-count acceptance gates return zero, while preserving the corrected meaning (out-of-band-but-promotable; committed static fixtures over AST mutation)"
 metrics:
-  duration: '~11 min'
-  completed: '2026-07-01'
+  duration: "~11 min"
+  completed: "2026-07-01"
   tasks: 1
   files: 1
 ---
@@ -66,7 +66,6 @@ Single documentation-only task (no source code, no packages):
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking issue] Rephrased corrective prose to satisfy literal string-count gates**
-
 - **Found during:** Task 1 verification.
 - **Issue:** My first draft corrected the stale claims using their literal wording in negation
   (e.g. `never "not promotable"`, `no jscodeshift`). The plan's acceptance criteria are literal

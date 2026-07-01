@@ -7,24 +7,24 @@ tags: [typescript, angular-compiler-cli, diagnostics, project-boundary-filter, r
 # Dependency graph
 requires:
   - phase: 02-core-type-check-engine-gatherer
-    provides: 'runTypecheck engine + CoreOptions/CoreResult contract, finalize category counting, gatherAllDiagnostics all-getter, TypecheckInfrastructureError, REAL-compiler integration tier'
+    provides: "runTypecheck engine + CoreOptions/CoreResult contract, finalize category counting, gatherAllDiagnostics all-getter, TypecheckInfrastructureError, REAL-compiler integration tier"
 provides:
-  - 'Pure filterDiagnostics(diagnostics, options) -> { kept, suppressedCount } (EXE-04/OUT-02): realpath-first + case-fold + path-SEGMENT containment'
-  - 'CoreOptions extended with includeDeps (D-07) + pathBase (D-08, ignored by runTypecheck; the formatter consumes it in plan 03-03)'
-  - 'CoreResult extended with suppressedCount (D-02); diagnostics now FILTERED + SORTED via ts.sortAndDeduplicateDiagnostics (D-09); counts POST-filter'
-  - 'fixtures/sibling-import (main-lib imports dependency-lib via a paths alias) proving default-suppress + includeDeps-folds-back + no-TS6059'
-  - 'Pure-function unit tier idiom for core/ post-processing (hand-built ts.Diagnostic[], zero compiler mock, D-13)'
+  - "Pure filterDiagnostics(diagnostics, options) -> { kept, suppressedCount } (EXE-04/OUT-02): realpath-first + case-fold + path-SEGMENT containment"
+  - "CoreOptions extended with includeDeps (D-07) + pathBase (D-08, ignored by runTypecheck; the formatter consumes it in plan 03-03)"
+  - "CoreResult extended with suppressedCount (D-02); diagnostics now FILTERED + SORTED via ts.sortAndDeduplicateDiagnostics (D-09); counts POST-filter"
+  - "fixtures/sibling-import (main-lib imports dependency-lib via a paths alias) proving default-suppress + includeDeps-folds-back + no-TS6059"
+  - "Pure-function unit tier idiom for core/ post-processing (hand-built ts.Diagnostic[], zero compiler mock, D-13)"
 affects: [03-02-quality-gates-module-boundary, 03-03-formatter-output, 03-04-verdict-max-warnings, phase-04-executor-adapter]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - 'Project-boundary filter as a SEPARATE pure pass after performCompilation (never inside gatherAllDiagnostics, D-06)'
-    - 'realpath BEFORE case-fold; case-fold only on case-insensitive FS (Pitfall 3); per-path memoized canonicalizer cache (scale)'
+    - "Project-boundary filter as a SEPARATE pure pass after performCompilation (never inside gatherAllDiagnostics, D-06)"
+    - "realpath BEFORE case-fold; case-fold only on case-insensitive FS (Pitfall 3); per-path memoized canonicalizer cache (scale)"
     - "node_modules by path-SEGMENT test (split('/').includes), containment by segment-bounded dir + '/' prefix -- avoids the prior-art naive-filter landmines"
-    - 'finalize takes an optional filter payload so the zero-rootNames guard path (no Program) stays clean with suppressedCount 0'
-    - 'Filter on parsed.options.basePath (the leaf tsconfig dir), NEVER parsed.options.rootDir (= workspace root in this --preset=apps repo)'
+    - "finalize takes an optional filter payload so the zero-rootNames guard path (no Program) stays clean with suppressedCount 0"
+    - "Filter on parsed.options.basePath (the leaf tsconfig dir), NEVER parsed.options.rootDir (= workspace root in this --preset=apps repo)"
 
 key-files:
   created:
@@ -39,15 +39,15 @@ key-files:
     - packages/angular-typechecker/src/core/infra-failure.spec.ts
 
 key-decisions:
-  - 'filterDiagnostics is dependency-free (type-only import type ts) -- survives the plan-03-02 core/** import ban with zero churn'
-  - 'finalize signature extended with an OPTIONAL filter payload (basePath/includeDeps/useCaseSensitiveFileNames/realpath); guard path omits it -> suppressedCount 0, file-less guard never filtered'
-  - 'ts.sys.realpath injected as `(p) => ts.sys.realpath?.(p) ?? p` (realpath is optional on the ts.sys surface)'
-  - 'sibling-import fixture: NO narrow rootDir (a narrow rootDir + paths-aliased sibling crashed TS6 internally in getReferencedFileLocation while building the TS6059 explanation); the sibling is listed in `files` so it is pulled in cleanly and lands outside basePath'
-  - 'pathBase added to CoreOptions for adapter/API discoverability but runTypecheck IGNORES it (D-08); the formatter consumes it in plan 03-03'
+  - "filterDiagnostics is dependency-free (type-only import type ts) -- survives the plan-03-02 core/** import ban with zero churn"
+  - "finalize signature extended with an OPTIONAL filter payload (basePath/includeDeps/useCaseSensitiveFileNames/realpath); guard path omits it -> suppressedCount 0, file-less guard never filtered"
+  - "ts.sys.realpath injected as `(p) => ts.sys.realpath?.(p) ?? p` (realpath is optional on the ts.sys surface)"
+  - "sibling-import fixture: NO narrow rootDir (a narrow rootDir + paths-aliased sibling crashed TS6 internally in getReferencedFileLocation while building the TS6059 explanation); the sibling is listed in `files` so it is pulled in cleanly and lands outside basePath"
+  - "pathBase added to CoreOptions for adapter/API discoverability but runTypecheck IGNORES it (D-08); the formatter consumes it in plan 03-03"
 
 patterns-established:
-  - 'Pure core/ post-processing module + its hand-built-ts.Diagnostic[] spec (zero compiler mock, D-13) -- the template for evaluateResult/formatReport in 03-03/03-04'
-  - 'Boundary-filter integration proof against a real sibling-import program: default suppresses + includeDeps folds back + sorted-by-file + TS6059-absent'
+  - "Pure core/ post-processing module + its hand-built-ts.Diagnostic[] spec (zero compiler mock, D-13) -- the template for evaluateResult/formatReport in 03-03/03-04"
+  - "Boundary-filter integration proof against a real sibling-import program: default suppresses + includeDeps folds back + sorted-by-file + TS6059-absent"
 
 requirements-completed: [EXE-04, OUT-02, TEST-01]
 
@@ -109,7 +109,6 @@ _Note: Tasks 1-2 are the RED/GREEN halves of the `filterDiagnostics` TDD cycle. 
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] sibling-import fixture: removed the narrow `rootDir` that crashed TS6**
-
 - **Found during:** Task 3 (fixture probe before writing assertions)
 - **Issue:** The plan's Pitfall-5 discretion item suggested "a leaf tsconfig with a narrow `rootDir` includes a sibling import, assert TS6059 does NOT appear." With `rootDir: "."` (= main-lib) plus a `paths`-aliased sibling outside it, TypeScript 6 crashed internally in `getReferencedFileLocation` / `fileIncludeReasonToDiagnostics` while building the TS6059 "not under rootDir" explanation (surfacing as a `TypecheckInfrastructureError`), rather than emitting a clean TS6059.
 - **Fix:** Dropped the narrow `rootDir` from the fixture tsconfig and listed the sibling in `files` so it is pulled in cleanly. The sibling still lands OUTSIDE `basePath` (the main-lib dir), so the boundary filter still suppresses it; TS6059 genuinely does not appear (asserted in both default and includeDeps modes). The Pitfall-5 insurance (TS6059 absent under the no-emit override) is preserved without triggering the TS internal crash.
@@ -118,7 +117,6 @@ _Note: Tasks 1-2 are the RED/GREEN halves of the `filterDiagnostics` TDD cycle. 
 - **Committed in:** `e96aba6` (Task 3 commit)
 
 **2. [Rule 3 - Blocking] infra-failure.spec stub needed a fake `program` for the normal path**
-
 - **Found during:** Task 3 (full-suite run after wiring the filter)
 - **Issue:** The Phase-2 D-06 stub returned `program: undefined` on the non-500 path. The new filter wiring reads `result.program.getTsProgram().useCaseSensitiveFileNames()`, which threw on the stub. A real `performCompilation` always returns a `program` on the non-infra path, so the strict filter contract is correct -- the STUB was unrealistic.
 - **Fix:** Added a minimal `fakeProgram()` (with `getTsProgram().useCaseSensitiveFileNames()`) to the non-500 case rather than weakening the filter to tolerate a missing program. The infra-failure (500) case is unaffected (it re-throws before reaching the filter).
@@ -127,7 +125,6 @@ _Note: Tasks 1-2 are the RED/GREEN halves of the `filterDiagnostics` TDD cycle. 
 - **Committed in:** `e96aba6` (Task 3 commit)
 
 **3. [Rule 1 - Bug] removed a forbidden non-null assertion the lint gate flagged in my new code**
-
 - **Found during:** Task 3 (lint after wiring)
 - **Issue:** The D-09 sort assertion used `diagnostic.file!.fileName`, which `@typescript-eslint/no-non-null-assertion` flagged (a NEW warning directly caused by my edit).
 - **Fix:** Rewrote the map to `diagnostic.file?.fileName` + a typed `.filter((f): f is string => ...)`, removing the assertion.
@@ -171,6 +168,5 @@ None - no external service configuration required.
 All 8 created/modified source + fixture files plus the SUMMARY and deferred-items artifacts exist on disk. All three task commits (`43c25d1`, `241ca65`, `e96aba6`) are present in git history. Full verification re-run green: `npx nx test angular-typechecker` 50/50 across 13 files; `npx nx build angular-typechecker` succeeds; the built `compiler-loader.js` retains the literal `import(` (GATE A).
 
 ---
-
-_Phase: 03-filtering-modes-output-quality-gates_
-_Completed: 2026-06-28_
+*Phase: 03-filtering-modes-output-quality-gates*
+*Completed: 2026-06-28*

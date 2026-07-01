@@ -10,19 +10,16 @@ via the test runner (`nx test`), never the editor LSP.
 ## Test Framework
 
 **Runner:**
-
 - Vitest, run through the Nx executor `@nx/vitest:test` (Nx 23's dedicated Vitest package,
   NOT `@nx/vite:test`). Configured per project via a `vitest.config.mts` file.
 - Plugin config: `packages/angular-typechecker/vitest.config.mts`.
 - Vitest version: `~4.1.0`; coverage via `@vitest/coverage-v8` `~4.1.0` (root devDeps).
 
 **Assertion Library:**
-
 - Vitest built-in `expect` (Jest-compatible matchers + `expect.stringContaining`,
   `toHaveBeenCalledWith`, `rejects.toThrow`, etc.).
 
 **Run Commands:**
-
 ```bash
 npx nx test angular-typechecker                          # plugin unit + integration specs
 npx nx run-many -t typecheck-drift test -p angular-typechecker   # CI plugin gate (drift + test)
@@ -30,7 +27,6 @@ npx nx run-many -t test -p angular-typechecker-install-e2e \
   angular-typechecker-cache-e2e angular-typechecker-matrix-e2e   # the three e2e projects
 npx nx test angular-typechecker --skip-nx-cache          # bypass Nx cache for a clean run
 ```
-
 Note: the plugin `test` target `dependsOn: ["build"]` (`packages/angular-typechecker/
 project.json`), so a build runs first. The e2e projects `implicitDependencies:
 ["angular-typechecker"]` and pack/install the freshly built tarball.
@@ -38,12 +34,10 @@ project.json`), so a build runs first. The e2e projects `implicitDependencies:
 ## Test File Organization
 
 **Location:**
-
 - Co-located with source under `packages/angular-typechecker/src/` (unit + integration).
 - E2E specs live in separate Nx projects under `e2e/` with their own fixtures.
 
 **Naming:**
-
 - Unit (pure / mocked): `<module>.spec.ts` -- e.g. `exit-codes.spec.ts`,
   `gather-diagnostics.spec.ts`, `executor.spec.ts`, `package-manifest.spec.ts`,
   `schema-parity.spec.ts` (26 plugin `.spec.ts` files).
@@ -54,7 +48,6 @@ project.json`), so a build runs first. The e2e projects `implicitDependencies:
   `matrix-5types.int.spec.ts` (7 e2e `.int.spec.ts` files).
 
 **Structure (Vitest include globs):**
-
 ```
 packages/angular-typechecker/
   src/core/*.spec.ts                  # pure unit + real-compiler integration (same dir)
@@ -76,7 +69,6 @@ so tests never ship.
 ## Test Structure
 
 **Suite Organization** (from `src/core/exit-codes.spec.ts`):
-
 ```typescript
 import { describe, expect, it } from 'vitest';
 
@@ -99,7 +91,6 @@ describe('toExitCode (COR-04 / D-07)', () => {
 ```
 
 **Patterns:**
-
 - `globals: true` is set in every Vitest config, so `describe`/`it`/`expect`/`vi` are
   globally available -- but specs STILL explicitly `import` them from `'vitest'` (the
   type imports keep the spec self-documenting and lint-clean).
@@ -119,16 +110,13 @@ describe('toExitCode (COR-04 / D-07)', () => {
 adapter's COMPOSITION/error-handling logic from the real compiler.
 
 **Pattern** (from `src/executors/angular-typecheck/executor.spec.ts`):
-
 ```typescript
 // Hoisted mock handles so each test drives the composed core deterministically.
 const mocks = vi.hoisted(() => ({
   runTypecheck: vi.fn(),
   renderReport: vi.fn(async () => 'RENDERED REPORT'),
   evaluateResult: vi.fn(),
-  normalizeOptions: vi.fn(() => ({
-    /* ... */
-  })),
+  normalizeOptions: vi.fn(() => ({ /* ... */ })),
   loggerError: vi.fn(),
   loggerWarn: vi.fn(),
 }));
@@ -145,15 +133,13 @@ vi.mock('@nx/devkit', () => ({
   joinPathFragments: (...parts: string[]) => parts.join('/'),
 }));
 ```
-
 - Re-import the unit under test INSIDE each `it` (`const { default: executor } = await
-import('./executor');`) so the hoisted mocks apply after `vi.mock` registration.
+  import('./executor');`) so the hoisted mocks apply after `vi.mock` registration.
 - `vi.spyOn(process.stdout, 'write').mockImplementation(() => true)` to assert raw stdout
   writes without polluting test output.
 - `vi.clearAllMocks()` in `beforeEach`, `vi.restoreAllMocks()` in `afterEach`.
 
 **What to Mock:**
-
 - The four core seams of the executor adapter (`runTypecheck`, `renderReport`,
   `evaluateResult`, `normalizeOptions`) and `@nx/devkit`'s `logger` -- to test composition,
   verdict mapping, and error classification without a real compiler load.
@@ -161,7 +147,6 @@ import('./executor');`) so the hoisted mocks apply after `vi.mock` registration.
   `importOriginal` and spread `...actual`).
 
 **What NOT to Mock:**
-
 - The Angular compiler in integration specs. `*.integration.spec.ts` and the e2e specs run
   the REAL `@angular/compiler-cli performCompilation` against real fixture projects --
   that end-to-end proof is the whole point of a type-checking tool.
@@ -171,7 +156,6 @@ import('./executor');`) so the hoisted mocks apply after `vi.mock` registration.
 ## Fixtures and Factories
 
 **Test Data:**
-
 - Real Angular fixture projects live under `fixtures/<scenario>/` (each has component
   `.ts`/`.html` + a leaf `tsconfig.*.json`). Scenarios encode specific diagnostic
   conditions: `gate-b-error` (TS2322 + NG8109 in one program), `sibling-import`
@@ -195,12 +179,10 @@ cwd-independent.
 ## Coverage
 
 **Requirements:** no enforced threshold. Coverage is collected (v8 provider) but not gated.
-
 - Plugin: `reportsDirectory: '../../coverage/packages/angular-typechecker'`, `provider:
-'v8'` (`vitest.config.mts`); the `test` target `outputs` the reports dir.
+  'v8'` (`vitest.config.mts`); the `test` target `outputs` the reports dir.
 
 **View Coverage:**
-
 ```bash
 npx nx test angular-typechecker --coverage   # report under coverage/packages/angular-typechecker
 ```
@@ -208,7 +190,6 @@ npx nx test angular-typechecker --coverage   # report under coverage/packages/an
 ## Test Types
 
 **Unit Tests** (`*.spec.ts`, jsdom env, fast):
-
 - Pure-function policy/shaping: `exit-codes.spec.ts`, `evaluate-result.spec.ts`,
   `filter-diagnostics.spec.ts`, `format-report.spec.ts`, `gather-diagnostics.spec.ts`,
   `normalize-options.spec.ts`.
@@ -218,7 +199,6 @@ npx nx test angular-typechecker --coverage   # report under coverage/packages/an
 - Composition/error-handling with mocks: `executor.spec.ts`, `infra-failure.spec.ts`.
 
 **Integration Tests** (`*.integration.spec.ts`, jsdom env, real compiler):
-
 - Call `runTypecheck` directly against a `fixtures/` tsconfig and assert off `CoreResult`
   (codes via `diagnostics.map(d => d.code)`, `errorCount`, `suppressedCount`,
   `templateCheckAborted`). Each spec proves one decision end-to-end (boundary filter,
@@ -229,7 +209,6 @@ npx nx test angular-typechecker --coverage   # report under coverage/packages/an
   hardware like Windows arm64).
 
 **E2E / Tarball Tests** (`*.int.spec.ts`, node env, fully serialized):
-
 - `angular-typechecker-install-e2e`: `install-smoke` (pack + install the tarball into a
   tmp consumer, run the executor green + injected-error), `tarball-audit` (build fresh
   dist, `npm pack`, run `publint --strict` + `attw --pack --profile node16` + file-set /
@@ -254,7 +233,6 @@ removed/renamed/signature-changed getter fails the build. Run in CI alongside `t
 ## Common Patterns
 
 **Async Testing:**
-
 ```typescript
 it('maps errorCount === 0 to { success: true }', async () => {
   mocks.runTypecheck.mockResolvedValue(coreResult(0));
@@ -266,12 +244,10 @@ it('maps errorCount === 0 to { success: true }', async () => {
   expect(result).toEqual({ success: true });
 });
 ```
-
 - `mockResolvedValue` / `mockRejectedValue` for promise-returning seams; `await import(...)`
   for the unit under test after mocks are registered.
 
 **Error Testing:**
-
 ```typescript
 it('RE-THROWS a non-infrastructure error (never swallows an unknown failure)', async () => {
   mocks.runTypecheck.mockRejectedValue(new Error('unexpected boom'));
@@ -281,18 +257,16 @@ it('RE-THROWS a non-infrastructure error (never swallows an unknown failure)', a
   expect(mocks.loggerError).not.toHaveBeenCalled();
 });
 ```
-
 - Assert the negative path too (`.not.toHaveBeenCalled()`, `rejects.not.toBeInstanceOf(...)`)
   so an infra failure can never be mis-reported as clean and a plain error is never
   mis-classified as infrastructure.
 
 **Diagnostic-code assertions:**
-
 - TypeScript codes are raw positive ints (`const TS2322 = 2322`). Angular extended codes
   are negative-encoded -- assert via the `NG()` helper (`const NG = (code) => -990000 -
-code;`), NEVER the bare positive code. Detect special codes (500 infra, NG3004 TCB
+  code;`), NEVER the bare positive code. Detect special codes (500 infra, NG3004 TCB
   fatal) BY CODE ONLY, never by `source`/message text.
 
 ---
 
-_Testing analysis: 2026-06-30_
+*Testing analysis: 2026-06-30*

@@ -19,28 +19,28 @@ affects: [06-05 ci.yml (the e2e job runs angular-typechecker-matrix-e2e Linux-on
 tech-stack:
   added: []
   patterns:
-    - 'Install-once multi-project consumer fixture, it.each over the project-type targets (D-07): one Angular+Nx install reused across 5 type rows'
-    - 'Per-row context-correct injection: a class FIELD for component sources, a const STATEMENT for the spec-function-body row (same TS2322 outcome, different syntactic context)'
-    - '.nxignore excludes an installed-consumer fixture subdir from the host project graph while keeping the owning e2e project in the graph for its test target'
-    - 'pnpm-symlink realpath PROBE gates the boundary-crossing regression-guard; documented Windows fallback (Git Bash ln -s copies) defers the true teeth to the Linux CI leg'
+    - "Install-once multi-project consumer fixture, it.each over the project-type targets (D-07): one Angular+Nx install reused across 5 type rows"
+    - "Per-row context-correct injection: a class FIELD for component sources, a const STATEMENT for the spec-function-body row (same TS2322 outcome, different syntactic context)"
+    - ".nxignore excludes an installed-consumer fixture subdir from the host project graph while keeping the owning e2e project in the graph for its test target"
+    - "pnpm-symlink realpath PROBE gates the boundary-crossing regression-guard; documented Windows fallback (Git Bash ln -s copies) defers the true teeth to the Linux CI leg"
 
 key-files:
   created:
-    - 'e2e/angular-typechecker-matrix-e2e/src/matrix-5types.int.spec.ts'
-    - 'e2e/angular-typechecker-matrix-e2e/src/pnpm-symlink.int.spec.ts'
-    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/pnpm-lock.yaml'
-    - '.nxignore'
+    - "e2e/angular-typechecker-matrix-e2e/src/matrix-5types.int.spec.ts"
+    - "e2e/angular-typechecker-matrix-e2e/src/pnpm-symlink.int.spec.ts"
+    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/pnpm-lock.yaml"
+    - ".nxignore"
   modified:
-    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/local-lib/tsconfig.spec.json (types:[node] -> types:[] -- the consumer installs no @types/node)'
-    - '.planning/phases/06-full-e2e-matrix-ci/deferred-items.md (DI-06-01 marked RESOLVED)'
+    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/local-lib/tsconfig.spec.json (types:[node] -> types:[] -- the consumer installs no @types/node)"
+    - ".planning/phases/06-full-e2e-matrix-ci/deferred-items.md (DI-06-01 marked RESOLVED)"
 
 key-decisions:
   - "DI-06-01 fixed via .nxignore on the fixtures subdir (remediation #2), not by re-scoping the release preVersionCommand (#1): the fixture projects are an installed-consumer workspace and should never have been members of THIS repo's project graph."
   - "The matrix spec runs each nx run with --skip-nx-cache: the cacheable target's `production` input EXCLUDES *.spec.ts, so mutating the spec-row source would NOT bust the cache and the injected spec run would be served the cached GREEN (a false PASS). Cache-correctness is the separate cache-e2e project's concern."
-  - 'pnpm add uses --config.frozen-lockfile=false (pnpm add rejects the install-only --no-frozen-lockfile flag); the local pnpm install is a COPY/junction layout (Windows arm64) so the realpath regression-guard takes its documented fallback locally and is authoritatively validated on the Linux CI draft-PR leg (RD-10).'
+  - "pnpm add uses --config.frozen-lockfile=false (pnpm add rejects the install-only --no-frozen-lockfile flag); the local pnpm install is a COPY/junction layout (Windows arm64) so the realpath regression-guard takes its documented fallback locally and is authoritatively validated on the Linux CI draft-PR leg (RD-10)."
 
 patterns-established:
-  - '5-type e2e matrix: install the freshly-packed tarball ONCE into one consumer-workspace, it.each over the project-type targets, green + injected-TS2322 4-way per type.'
+  - "5-type e2e matrix: install the freshly-packed tarball ONCE into one consumer-workspace, it.each over the project-type targets, green + injected-TS2322 4-way per type."
 
 requirements-completed: [TEST-03]
 
@@ -95,7 +95,6 @@ completed: 2026-06-29
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] npm matrix consumer left the committed pnpm-lock.yaml in place**
-
 - **Found during:** Task 1 (first verification run)
 - **Issue:** the npm-install tmp consumer carried the committed `pnpm-lock.yaml`; Nx's `js/dependencies-and-lockfile` plugin tried to parse it and hard-failed the project graph (`Could not find .modules.yaml` -- no `.pnpm/` store under an npm install), so every `nx run` exited 1 before the executor started (all 5 rows failed the green assertion).
 - **Fix:** `rmSync` the `pnpm-lock.yaml` from the npm-install tmp copy after `cpSync`, keeping it a pure npm hoisted layout.
@@ -103,7 +102,6 @@ completed: 2026-06-29
 - **Committed in:** `5dde2c0`
 
 **2. [Rule 1 - Blocking] `pnpm add --no-frozen-lockfile` is an invalid flag**
-
 - **Found during:** Task 2 (first verification run)
 - **Issue:** `pnpm add <tgz> --no-frozen-lockfile` errored `Unknown option: 'frozen-lockfile'` (that is an `install`-only flag), so the pnpm `beforeAll` install threw and skipped both pnpm tests.
 - **Fix:** use `pnpm add <tgz> --config.frozen-lockfile=false --ignore-scripts` (the `--config.<key>=<value>` escape that `pnpm add` accepts and that overrides CI auto-frozen mode).
@@ -111,7 +109,6 @@ completed: 2026-06-29
 - **Committed in:** `5dde2c0`
 
 **3. [Rule 1 - Bug] spec-tsconfig GREEN baseline failed (TS2688 'Cannot find type definition file for node')**
-
 - **Found during:** Task 1 (second verification run)
 - **Issue:** the committed `local-lib/tsconfig.spec.json` (from 06-01) declared `types:["node"]`, but the consumer-workspace installs no `@types/node`, so `ngc` reported `TS2688` even on the committed-CLEAN spec file -- the spec-tsconfig green run exited 1.
 - **Fix:** change `types:["node"]` -> `types:[]`. The spec file declares its own ambient `describe`/`it`/`expect` and uses no Node APIs, so it type-checks clean while preserving the distinct `*.spec.ts` file set as the check baseline.
@@ -119,7 +116,6 @@ completed: 2026-06-29
 - **Committed in:** `0b629b3`
 
 **4. [Rule 1 - Bug] spec-row TS2322 injection used a class-field declaration in a function body**
-
 - **Found during:** Task 1 (second verification run)
 - **Issue:** the matrix spec injected `readonly broken: number = 'str';` (a class field) into ALL rows, but the spec row's injection point is inside the `it()` callback where a `readonly` field is a SYNTAX error -- masking the intended TS2322 (the injected run returned exit 0).
 - **Fix:** carry a per-row `injectedLine`: a class FIELD for the 4 component rows, a `const` STATEMENT (`const broken: number = 'str';`) for the spec-function-body row.
@@ -127,7 +123,6 @@ completed: 2026-06-29
 - **Committed in:** `0b629b3`
 
 **5. [Rule 1 - Bug] the cacheable target served the cached GREEN for the injected spec run**
-
 - **Found during:** Task 1 (third verification run)
 - **Issue:** the spec-tsconfig green now passed but the INJECTED assertion failed (`expected +0 not to be +0`): the cacheable `angular-typecheck` target's `production` input EXCLUDES `*.spec.ts`, so mutating `local-lib.component.spec.ts` did not change the cache key and Nx served the cached green (exit 0) for the injected run.
 - **Fix:** add `--skip-nx-cache` to the `run()` helper in both specs so each green/injected invocation really executes the executor (cache-correctness is the separate cache-e2e project's concern).
@@ -162,6 +157,5 @@ completed: 2026-06-29
 - Remaining Phase 6 plan: 06-05 (`ci.yml` lean 6-cell matrix + Linux-only e2e + act-compat + lint-workflows + aggregate `ci` gate).
 
 ---
-
-_Phase: 06-full-e2e-matrix-ci_
-_Completed: 2026-06-29_
+*Phase: 06-full-e2e-matrix-ci*
+*Completed: 2026-06-29*

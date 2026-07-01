@@ -4,25 +4,25 @@ plan: 02
 subsystem: packaging-audit-gate
 tags: [pkg-02, attw, publint, tarball, d-09, d-10, b-02, e2e]
 requires:
-  - '05-01: self-contained shipped .d.ts surface + full PKG-01 manifest + per-package LICENSE asset'
-  - 'Phase 4: e2e/angular-typechecker-cache-e2e serialized determinism harness (clone source)'
+  - "05-01: self-contained shipped .d.ts surface + full PKG-01 manifest + per-package LICENSE asset"
+  - "Phase 4: e2e/angular-typechecker-cache-e2e serialized determinism harness (clone source)"
 provides:
-  - 'Serialized angular-typechecker-install-e2e project (forks/singleFork/no-parallel/node env, timeouts 300000)'
-  - 'tarball-audit.int.spec.ts: build->pack->publint/attw/leak/no-install-scripts gate against the .tgz'
-  - 'Root devDeps publint@0.3.21 + @arethetypeswrong/cli@0.18.4 (tooling, never in the plugin manifest)'
-  - 'Authoritative D-10/B-02 verification: attw --pack --profile node16 reports problems empty'
+  - "Serialized angular-typechecker-install-e2e project (forks/singleFork/no-parallel/node env, timeouts 300000)"
+  - "tarball-audit.int.spec.ts: build->pack->publint/attw/leak/no-install-scripts gate against the .tgz"
+  - "Root devDeps publint@0.3.21 + @arethetypeswrong/cli@0.18.4 (tooling, never in the plugin manifest)"
+  - "Authoritative D-10/B-02 verification: attw --pack --profile node16 reports problems empty"
 affects:
-  - '05-03 (e2e smoke reuses this install-e2e project + the build->pack beforeAll shape)'
-  - '05-04 (CI wires the audit gate before publish)'
+  - "05-03 (e2e smoke reuses this install-e2e project + the build->pack beforeAll shape)"
+  - "05-04 (CI wires the audit gate before publish)"
 tech-stack:
   added:
-    - 'publint@0.3.21 (root devDep) -- tarball publishing-correctness linter'
-    - '@arethetypeswrong/cli@0.18.4 (root devDep) -- .d.ts cross-mode resolution checker'
+    - "publint@0.3.21 (root devDep) -- tarball publishing-correctness linter"
+    - "@arethetypeswrong/cli@0.18.4 (root devDep) -- .d.ts cross-mode resolution checker"
   patterns:
-    - 'Build-fresh-then-pack-from-dist beforeAll; audit the .tgz, never the source tree (Pitfall 5)'
-    - 'npm pack --json files[].path for cross-OS-deterministic positive/negative file-set assertions'
-    - 'Cross-OS tarball extraction: relative tgz filename + relative -C under a shared cwd (no Windows drive letter, no GNU-vs-BSD --force-local divergence)'
-    - 'Nested-nx env hygiene (buildCleanEnv strips NX_* runner vars; NX_DAEMON=false, FORCE_COLOR=0)'
+    - "Build-fresh-then-pack-from-dist beforeAll; audit the .tgz, never the source tree (Pitfall 5)"
+    - "npm pack --json files[].path for cross-OS-deterministic positive/negative file-set assertions"
+    - "Cross-OS tarball extraction: relative tgz filename + relative -C under a shared cwd (no Windows drive letter, no GNU-vs-BSD --force-local divergence)"
+    - "Nested-nx env hygiene (buildCleanEnv strips NX_* runner vars; NX_DAEMON=false, FORCE_COLOR=0)"
 key-files:
   created:
     - e2e/angular-typechecker-install-e2e/project.json
@@ -34,9 +34,9 @@ key-files:
     - package.json
     - package-lock.json
 decisions:
-  - 'attw assertion targets analysis.problems (the canonical array form) -- the JSON also carries a top-level `problems` object keyed by entrypoint; the array under `analysis` is the flat problem list and is empty when resolution is clean'
-  - 'Read the PACKED manifest + .d.ts by extracting the tarball (tar -xzf) into a tmp dir UNDER distDir with relative paths, not via the source tree -- the gate must audit the real artifact'
-  - 'publint/attw pinned EXACT (0.3.21 / 0.18.4), matching the workspace exact-pin convention; npm defaulted to caret ranges so the two specifiers were tightened to exact post-install'
+  - "attw assertion targets analysis.problems (the canonical array form) -- the JSON also carries a top-level `problems` object keyed by entrypoint; the array under `analysis` is the flat problem list and is empty when resolution is clean"
+  - "Read the PACKED manifest + .d.ts by extracting the tarball (tar -xzf) into a tmp dir UNDER distDir with relative paths, not via the source tree -- the gate must audit the real artifact"
+  - "publint/attw pinned EXACT (0.3.21 / 0.18.4), matching the workspace exact-pin convention; npm defaulted to caret ranges so the two specifiers were tightened to exact post-install"
   - "Cloned the cache-e2e vitest.config.mts verbatim (incl. poolOptions.forks shape) per the plan's clone mandate; Vitest 4 emits a non-fatal poolOptions deprecation warning -- parity with the proven analog kept over silencing it"
 metrics:
   duration: ~6 min
@@ -77,7 +77,7 @@ Added `@arethetypeswrong/cli@0.18.4` + `publint@0.3.21` to the ROOT `package.jso
 
 ### Task 3 -- tarball-audit gate against the packed .tgz -- commit `018e5cf`
 
-`e2e/angular-typechecker-install-e2e/src/tarball-audit.int.spec.ts` (252 lines). Clones the cache-e2e harness shape (3-dirs-up `workspaceRoot`, `buildCleanEnv` NX\_\* hygiene, `execSync`). `beforeAll`: `nx build angular-typechecker --skip-nx-cache` (fresh dist, Pitfall 6) -> `npm pack --json` in the dist dir (capture `filename` + `files[].path`) -> extract the `.tgz` into a tmp dir under distDir to read the REAL packed `package/package.json` + `.d.ts`. Six `it(...)` gates (all required by D-09):
+`e2e/angular-typechecker-install-e2e/src/tarball-audit.int.spec.ts` (252 lines). Clones the cache-e2e harness shape (3-dirs-up `workspaceRoot`, `buildCleanEnv` NX_* hygiene, `execSync`). `beforeAll`: `nx build angular-typechecker --skip-nx-cache` (fresh dist, Pitfall 6) -> `npm pack --json` in the dist dir (capture `filename` + `files[].path`) -> extract the `.tgz` into a tmp dir under distDir to read the REAL packed `package/package.json` + `.d.ts`. Six `it(...)` gates (all required by D-09):
 
 1. `publint <tgz> --strict` -- no error-level messages (execSync throws -> test fails on non-clean).
 2. `attw <tgz> --profile node16 --format json` -- `analysis.problems` deep-equals `[]`. NO rule-suppression flag. THE D-10/B-02 verification.
@@ -106,7 +106,6 @@ Added `@arethetypeswrong/cli@0.18.4` + `publint@0.3.21` to the ROOT `package.jso
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] `tar -xzf` rejected the Windows drive-letter tarball path**
-
 - **Found during:** Task 3 (first spec run).
 - **Issue:** GNU tar (Git Bash, Windows arm64) read the absolute path `D:\...angular-typechecker-0.0.1.tgz` as a remote `host:path` rsh spec -> `tar (child): Cannot connect to D: resolve failed`, status 128, all 6 tests skipped. GNU's `--force-local` flag fixes it but BSD tar (macOS CI) lacks that flag.
 - **Fix:** Extract with `cwd: distDir` and RELATIVE paths only -- the bare tgz filename + a relative `-C` subdir created under distDir. This form is handled identically by both GNU and BSD tar and never exposes a drive letter. Verified working.
@@ -114,7 +113,6 @@ Added `@arethetypeswrong/cli@0.18.4` + `publint@0.3.21` to the ROOT `package.jso
 - **Commit:** 018e5cf
 
 **2. [Rule 3 - Blocking] npm defaulted the two new devDeps to caret ranges**
-
 - **Found during:** Task 2 (post-install verification).
 - **Issue:** `npm install -D publint@0.3.21 @arethetypeswrong/cli@0.18.4` wrote `^0.3.21` / `^0.18.4`, failing the acceptance criterion (`git grep -c '"publint": "0.3.21"'` must return 1) and diverging from the workspace exact-pin convention.
 - **Fix:** Edited both specifiers to exact (`0.3.21` / `0.18.4`), re-ran `npm install` to sync the lockfile.
@@ -122,7 +120,6 @@ Added `@arethetypeswrong/cli@0.18.4` + `publint@0.3.21` to the ROOT `package.jso
 - **Commit:** 5e7e1a7
 
 **3. [Rule 3 - Blocking] Literal-grep false positive on the `--ignore-rules` acceptance criterion**
-
 - **Found during:** Task 3 (acceptance check).
 - **Issue:** The attw-gate explanatory comment contained the literal `--ignore-rules` substring (saying "NO --ignore-rules"), tripping the `git grep -c "ignore-rules" ... returns 0` criterion -- the same class of false positive 05-01 hit on its file-header comment.
 - **Fix:** Reworded the comment to "passes NO rule-suppression flag whatsoever" without the literal substring; no code change. Criterion now returns 0; the attw command still passes no suppression flag.

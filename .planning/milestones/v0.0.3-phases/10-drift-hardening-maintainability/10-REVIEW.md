@@ -40,14 +40,13 @@ against silent drift with a two-pronged guard: a build-time type tripwire
 
 I verified the mechanism is **functionally correct** by empirical probing, not just
 reading:
-
 - The drift type assertions catch the three failure modes they claim: a return-type
   change fires `TS2344`, a removed getter fires `TS2339`, and an `EmitFlags` renumber
   or changed `UNKNOWN_ERROR_CODE` fires `TS2322` (confirmed with isolated `tsc 6.0.3`
   probes under classic `moduleResolution: node`).
 - The drift check compiles cleanly today against the real `@angular/compiler-cli@22.0.4`
   (`tsc --noEmit -p tsconfig.drift.json` exits 0) and runs through Nx (`nx run
-angular-typechecker:typecheck-drift` succeeds; bare `tsc` resolves via run-commands).
+  angular-typechecker:typecheck-drift` succeeds; bare `tsc` resolves via run-commands).
 - The real `api.d.ts` matches every shim/drift claim verbatim (`EmitFlags DTS=1..All=31`,
   no `None`; `UNKNOWN_ERROR_CODE = 500`; the 6 diagnostic getters + `getTsProgram(): ts.Program`).
 - The drift file is correctly EXCLUDED from `tsconfig.lib.json` and `tsconfig.spec.json`
@@ -58,7 +57,7 @@ angular-typechecker:typecheck-drift` succeeds; bare `tsc` resolves via run-comma
   routes through the real `cli.formatDiagnostics` rewrite path via the `renderReport` seam.
 - The CI `test` job runs `npx nx run-many -t typecheck-drift test`, so a drift failure
   (non-zero `tsc`) fails the job and the `ci` aggregate's `contains(needs.*.result,
-'failure')` gate catches it.
+  'failure')` gate catches it.
 
 The structural pre-pass "unused" leads were all confirmed FALSE POSITIVES of the
 intentional shim/tripwire pattern (see Info section). No Critical defects. The two
@@ -130,10 +129,10 @@ immune to which internal `.d.ts` file changed.
 **Issue:**
 `gather-diagnostics.ts:80` calls `program.getTsProgram().getSourceFiles()` and then reads
 `sourceFile.isDeclarationFile` / `sourceFile.fileName` (`:81-85`). Neither the drift
-file's call-site probes (`_a`..\_h`) nor the runtime spec's `GATHERED_GETTERS`set covers
-this call surface. The drift file's`\_callSiteProbes`probes`getTsProgram()
-.getGlobalDiagnostics()` (`\_h`) but not `.getSourceFiles()`; the runtime spec asserts the
-6 diagnostic getters + `getTsProgram`+`getGlobalDiagnostics`, but not `getSourceFiles`.
+file's call-site probes (`_a`.._h`) nor the runtime spec's `GATHERED_GETTERS` set covers
+this call surface. The drift file's `_callSiteProbes` probes `getTsProgram()
+.getGlobalDiagnostics()` (`_h`) but not `.getSourceFiles()`; the runtime spec asserts the
+6 diagnostic getters + `getTsProgram` + `getGlobalDiagnostics`, but not `getSourceFiles`.
 
 This is a narrower exposure than WR-01 because `getSourceFiles` / `isDeclarationFile`
 live on the public `ts.Program` / `ts.SourceFile` types (not the Angular shim), so they

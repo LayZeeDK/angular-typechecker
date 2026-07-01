@@ -77,7 +77,7 @@ plan-phase (`--research`).
 - **D-05 `[research]`: Tag-name + tag-target invariants (pitfalls to enforce).** The tag MUST be
   exactly `angular-typechecker@x.y.z` (no `v` prefix) or it won't match `release.yml`'s
   `on: push: tags: ['angular-typechecker@*']` nor the publish-job `if: startsWith(github.ref,
-'refs/tags/angular-typechecker@')`. The tagged commit's tree MUST contain the bumped
+  'refs/tags/angular-typechecker@')`. The tagged commit's tree MUST contain the bumped
   `package.json`/`CHANGELOG.md` (the merge commit does) -- verify with
   `git show <tag>:packages/angular-typechecker/package.json` before pushing. Do NOT set
   `changelog.workspaceChangelog.createRelease: "github"` (nx 23 `GIT_PUSH_FALSE_WITH_CREATE_RELEASE`
@@ -178,39 +178,35 @@ plan-phase (`--research`).
   "nx release configuration norms" note if they conflict.
 
 ### Claude's Discretion
-
 - Exact `release/*` branch naming (`release/x.y.z` vs `release/next`).
 - The exact `ci.yml` skip-aware-gate mechanism (D-08): `dorny/paths-filter` job vs. job-level `if:`
-  - an always-run aggregate; the precise `paths-ignore`/filter globs.
+  + an always-run aggregate; the precise `paths-ignore`/filter globs.
 - Whether to add a `.github/release.yml` / an `internal` label (only relevant if `--generate-notes`
   were used, which it is not -- likely skip).
 - The per-release curated CHANGELOG wording and the GitHub Release title.
 - Whether to batch `.planning/` checkpoints into fewer PRs to reduce PR ceremony.
-  </decisions>
+</decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Phase 7 spec + scope (this repo)
-
 - `.planning/ROADMAP.md` Phase 7 section -- goal + the 3 success criteria; candidate requirement
   IDs REL-01 (Release-PR flow), REL-02 (branch-protection switch), REL-03 (clean changelog). The
   planner should DEFINE these in REQUIREMENTS.md (currently "TBD").
 - `.planning/REQUIREMENTS.md` -- the PKG family (release model already shipped) + **CI-01** (the
-  `ci` gate Phase 7's ruleset requires). No REL-\* IDs exist yet -- add them.
+  `ci` gate Phase 7's ruleset requires). No REL-* IDs exist yet -- add them.
 - `.planning/PROJECT.md` -- locked stack, release norms, 0.x semver.
 
 ### Release machinery (the surfaces this phase touches)
-
 - `nx.json` `release` block -- the `git.tag: true -> false` target (D-01); `releaseTag.pattern:
-"angular-typechecker@{version}"`; `conventionalCommits:true`; `preVersionCommand`;
+  "angular-typechecker@{version}"`; `conventionalCommits:true`; `preVersionCommand`;
   `createRelease:false` (do NOT set `"github"` -- the GIT_PUSH_FALSE_WITH_CREATE_RELEASE landmine).
 - `.github/workflows/release.yml` -- **FROZEN**, tag-triggered OIDC publish; the
   `if: startsWith(github.ref,'refs/tags/angular-typechecker@')` publish-job gate; the
-  registry-url/empty-\_authToken inline notes. **DO NOT modify** (the `release-hygiene` regression
+  registry-url/empty-_authToken inline notes. **DO NOT modify** (the `release-hygiene` regression
   spec asserts it stays OIDC-only).
 - `.github/workflows/ci.yml` -- the `ci` aggregate gate (job id AND name exactly `ci`;
   `needs:[test,e2e,act-compat,lint-workflows]`; `if:always()`; fail-closed on
@@ -224,7 +220,6 @@ plan-phase (`--research`).
   `LayZeeDK` casing), `publishConfig` (provenance/access). The bump target.
 
 ### GitHub config (LIVE state -- via `gh api`; do not re-discover the IDs)
-
 - Default-branch ruleset **id 18229122** (target branch, `~DEFAULT_BRANCH`) -- PUT to set
   `strict:false` + `enforcement:active` (full-replacement body; `ci` + 2 CodeQL checks already
   present; `bypass_actors:[]`; `allowed_merge_methods:["merge"]`).
@@ -236,7 +231,6 @@ plan-phase (`--research`).
   are github-actions-app checks (integration_id 15368), green on `main`.
 
 ### Prior context (this repo) -- MUST read
-
 - `.planning/phases/06-full-e2e-matrix-ci/06-CONTEXT.md` -- **D-02/RD-09**: the `ci` aggregate gate
   is the EXACT required-check name Phase 7 consumes (do not rename); the draft-PR cross-OS
   validation pattern; CodeQL was deferred there but has since been enabled (default setup).
@@ -251,7 +245,6 @@ plan-phase (`--research`).
   UPDATE post-phase for the Release-PR flow (D-17).
 
 ### External docs (re-validate at plan time -- `--research`)
-
 - nx.dev "@nx/release" + nx 23 release source (`node_modules/nx/dist/.../release/`): `git.tag`
   gates tagging; `createRelease` gates push in the unified command; `release.changelog.*.renderer`
   is a string path resolving a custom `DefaultChangelogRenderer` subclass; scope is emitted only in
@@ -263,14 +256,12 @@ plan-phase (`--research`).
   cannot strip title text (why NOT `--generate-notes`, D-14).
 - `gh release create` -- `--notes-file`, `--verify-tag` (and `--notes-start-tag` caveat for prefixed
   tags, not used).
-  </canonical_refs>
+</canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - The current local-cut release command (`nx release --skip-publish`) -- reuse the cut, relocate it
   to a `release/*` branch (only behavior change: `git.tag:false` so no tag is created at cut time).
 - `CHANGELOG.md` 0.0.1/0.0.2 curated entries -- the template for every future curated entry (D-13).
@@ -280,7 +271,6 @@ plan-phase (`--research`).
 - `gh api` against the three live rulesets -- the switch is gh-api-driven (D-09).
 
 ### Established Patterns
-
 - Supply-chain-hardened release: tokenless OIDC, SHA-pinned actions, top-level `contents:read`,
   publish job `id-token:write` only, manual-approval `npm-publish` environment. Phase 7 must NOT
   regress this (release.yml frozen; the GitHub Release stays a LOCAL `gh release create`, never a
@@ -289,7 +279,6 @@ plan-phase (`--research`).
 - `gh api` full-replacement PUT for GitHub repository config (rulesets).
 
 ### Integration Points
-
 - `release/*` branch -> `nx release --skip-publish` (commit version+CHANGELOG, no tag, no push) ->
   PR (carries code + `.planning/`) -> `ci` green -> self-merge (merge commit) -> maintainer tags the
   merge commit `angular-typechecker@x.y.z` + pushes -> `release.yml` (OIDC publish behind
@@ -298,7 +287,7 @@ plan-phase (`--research`).
   `main`; the separate Release-tag ruleset gates `angular-typechecker@*` tags.
 - `ci.yml`: planning-only PRs path-skip the heavy `test`/`e2e` jobs while the `ci` aggregate still
   reports success (no merge-button deadlock).
-  </code_context>
+</code_context>
 
 <specifics>
 ## Specific Ideas
@@ -313,7 +302,7 @@ plan-phase (`--research`).
   `gh api --method DELETE repos/LayZeeDK/angular-typechecker/rulesets/18229088`.
 - GitHub Release: `gh release create angular-typechecker@x.y.z --notes-file <curated-section> --verify-tag`.
 - `ci.yml` path-aware skip globs (planner to confirm): `.planning/**`, `**/*.md`, `docs/**`.
-  </specifics>
+</specifics>
 
 <deferred>
 ## Deferred Ideas
@@ -344,5 +333,5 @@ curated wording) and are correctly the planner's/Claude's discretion.
 
 ---
 
-_Phase: 7-Release-PR workflow and clean changelog_
-_Context gathered: 2026-06-29_
+*Phase: 7-Release-PR workflow and clean changelog*
+*Context gathered: 2026-06-29*

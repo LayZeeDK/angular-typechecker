@@ -7,25 +7,25 @@ tags: [nx-targetdefaults, nx-cache, nx-inputs, project-graph, angular-lib-fixtur
 # Dependency graph
 requires:
   - phase: 04-nx-executor-adapter-cacheable-target
-    provides: 'the completed angular-typecheck executor (04-01) whose id keys the cacheable targetDefault; renderReport/normalize-options adapter slice'
+    provides: "the completed angular-typecheck executor (04-01) whose id keys the cacheable targetDefault; renderReport/normalize-options adapter slice"
   - phase: 03-filtering-modes-output-quality-gates
-    provides: 'the project-boundary filter so a dep error inlined into the consumer program is reported under the default filter'
+    provides: "the project-boundary filter so a dep error inlined into the consumer program is reported under the default filter"
 provides:
-  - 'nx.json executor-id-keyed cacheable targetDefault angular-typechecker:angular-typecheck (cache true, outputs [], ^default inlined-source inputs recipe) (D-07/D-08/D-09)'
-  - 'tsconfig.base.json namespaced @fixtures/typecheck-consumer-dep alias to SOURCE (forms the consumer->dep Nx graph edge) (D-11)'
-  - 'libs/typecheck-consumer-dep: NON-buildable committed Angular-lib fixture (no build target) + .pristine sidecar for crash-safe revert (D-11/D-15)'
-  - 'libs/typecheck-consumer: committed Angular-lib fixture carrying the angular-typecheck target, statically importing the dep via the @fixtures alias (D-11)'
-  - 'R1 edge guard evidence (D-10): the dep source IS an input for the consumer target (nx show target inputs --check exit 0), so ^default reaches the dep source'
+  - "nx.json executor-id-keyed cacheable targetDefault angular-typechecker:angular-typecheck (cache true, outputs [], ^default inlined-source inputs recipe) (D-07/D-08/D-09)"
+  - "tsconfig.base.json namespaced @fixtures/typecheck-consumer-dep alias to SOURCE (forms the consumer->dep Nx graph edge) (D-11)"
+  - "libs/typecheck-consumer-dep: NON-buildable committed Angular-lib fixture (no build target) + .pristine sidecar for crash-safe revert (D-11/D-15)"
+  - "libs/typecheck-consumer: committed Angular-lib fixture carrying the angular-typecheck target, statically importing the dep via the @fixtures alias (D-11)"
+  - "R1 edge guard evidence (D-10): the dep source IS an input for the consumer target (nx show target inputs --check exit 0), so ^default reaches the dep source"
 affects: [04-03-cache-correctness, 05-packaging-publish, 06-e2e-matrix]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - 'Executor-id-keyed cacheable targetDefault (beats target-name key): the cache config lives once in nx.json; fixture project.json just wires the target, never repeats cache/outputs/inputs'
+    - "Executor-id-keyed cacheable targetDefault (beats target-name key): the cache config lives once in nx.json; fixture project.json just wires the target, never repeats cache/outputs/inputs"
     - "^default (inlined-source) cache model, NOT @nx/js's ^production/project-references model: Angular has no TS project references, so the non-buildable dep SOURCE must be hashed (D-09)"
-    - 'tsconfig.base.json paths-alias-to-SOURCE (relative ./libs/... value) forms the Nx project-graph edge automatically (analyzeSourceFiles true), so ^default reaches the dep without implicitDependencies'
-    - '.pristine sidecar of the TEST-04 mutation target for crash-safe heal (D-15)'
+    - "tsconfig.base.json paths-alias-to-SOURCE (relative ./libs/... value) forms the Nx project-graph edge automatically (analyzeSourceFiles true), so ^default reaches the dep without implicitDependencies"
+    - ".pristine sidecar of the TEST-04 mutation target for crash-safe heal (D-15)"
 
 key-files:
   created:
@@ -47,10 +47,10 @@ key-files:
     - tsconfig.base.json
 
 key-decisions:
-  - 'D-07/D-08/D-09: cacheable targetDefault keyed by the EXECUTOR id with cache true, outputs [], and the ^default inlined-source inputs recipe (production, tsconfig*.json, package.json, workspaceRoot tsconfig.base.json, ^default, dependentTasksOutputFiles, externalDependencies typescript+@angular/compiler-cli)'
-  - 'D-11: two committed Angular-lib fixtures under libs/ (real discoverable main-graph projects); dep is NON-buildable (no build target); both tagged scope:fixture + private'
-  - 'D-10: the consumer->dep graph edge formed automatically via the @fixtures paths-alias-to-source + a static import (analyzeSourceFiles true); NO implicitDependencies needed; R1 --check guard exit 0 confirms it'
-  - 'D-15: .pristine byte-identical sidecar of dep.component.ts committed for crash-safe revert in 04-03'
+  - "D-07/D-08/D-09: cacheable targetDefault keyed by the EXECUTOR id with cache true, outputs [], and the ^default inlined-source inputs recipe (production, tsconfig*.json, package.json, workspaceRoot tsconfig.base.json, ^default, dependentTasksOutputFiles, externalDependencies typescript+@angular/compiler-cli)"
+  - "D-11: two committed Angular-lib fixtures under libs/ (real discoverable main-graph projects); dep is NON-buildable (no build target); both tagged scope:fixture + private"
+  - "D-10: the consumer->dep graph edge formed automatically via the @fixtures paths-alias-to-source + a static import (analyzeSourceFiles true); NO implicitDependencies needed; R1 --check guard exit 0 confirms it"
+  - "D-15: .pristine byte-identical sidecar of dep.component.ts committed for crash-safe revert in 04-03"
 
 requirements-completed: [EXE-06]
 
@@ -102,7 +102,6 @@ This proves the consumer->dep project-graph edge exists (formed automatically vi
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Non-relative fixture-alias path triggered a TS5090 options diagnostic that broke gate-b.spec.ts**
-
 - **Found during:** Task 2 green-baseline verification (then confirmed against the full suite)
 - **Issue:** The plan/RESEARCH snippet for the alias used a non-relative value `"libs/typecheck-consumer-dep/src/index.ts"`. Under TypeScript 6, a non-relative `paths` value with no `baseUrl` raises **TS5090** (`Non-relative paths are not allowed when 'baseUrl' is not set`). Because the alias lives in `tsconfig.base.json`, EVERY fixture extending base (including `fixtures/gate-b-error/*`) inherited this options diagnostic. `ng.defaultGatherDiagnostics` (the differential half of `gate-b.spec.ts`) surfaces program-OPTIONS diagnostics and short-circuited on `5090`, returning `[5090]` instead of `[2322]` -- failing the GATE B differential assertion (`expected [5090] to include 2322`). The custom all-getter (`gatherAllDiagnostics`) does not surface options diagnostics, so the positive cases stayed green, which localized the cause.
 - **Fix:** Made the alias value relative (`"./libs/typecheck-consumer-dep/src/index.ts"`), matching the existing `@angular-typechecker/angular-typechecker` -> `"./packages/..."` entry's style. This needs no `baseUrl` anywhere. An earlier interim fix (adding `baseUrl` + `ignoreDeprecations` to the fixture leaf tsconfigs) was reverted in favor of the cleaner relative-path approach -- it would have spread `baseUrl`/`ignoreDeprecations` into every fixture and still left the base-inherited diagnostic for other extenders.

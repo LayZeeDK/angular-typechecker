@@ -15,16 +15,16 @@
 
 Ranked by impact. Each item is tagged `[CORRECTION]` (contradicts a locked decision -- PROJECT.md MUST change) or `[ADDITION]` (new requirement/note). "Apply where" routes the change to a PROJECT.md decision, a v0.0.1 requirement, or a specific phase.
 
-| #   | Tag                                 | Finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Apply where                                                             |
-| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 1   | **[CORRECTION]**                    | **Nx dependency classification is inverted.** PROJECT.md lists `nx`/`@nx/devkit` as `peerDependencies`. The official Nx publish-plugin recipe and both reference plugins say the opposite: ship **`@nx/devkit` as a pinned `dependency`** (`"23.0.1"`) and **do NOT declare `nx` at all** (devkit's own peer `nx: ">= 22 <= 24                                                                                                                                                                                                                                                                                                        |                                                                         | ^23.0.0-0"`carries it transitively). Only`@angular/compiler-cli`+`typescript` stay peers. This is also a **hard requirement for Nx community-registry listing**. | PROJECT.md Constraints ("Dependencies" line) + Key Decisions ("Peer deps" row); enforced in Packaging phase. |
-| 2   | **[CORRECTION]**                    | **Test executor package changed.** Use `@nx/vitest:test` (Nx 22.2+ split Vitest into a dedicated `@nx/vitest` package; `@nx/vitest@23.0.1` verified, and nx-verdaccio carries the literal `migrate-vitest-to-vitest-package` migration). **Not** `@nx/vite:test`, which is legacy/migrated-away on Nx 23.                                                                                                                                                                                                                                                                                                                             | Dev tooling / test-infra phase; PROJECT.md test-runner note.            |
-| 3   | **[CORRECTION / REFINEMENT]**       | **Build the executor with `module: node16` (or `nodenext`), NOT `commonjs`.** Under `module: commonjs` TypeScript downlevels `await import()` to `Promise.resolve().then(() => require(...))`, which hits `ERR_REQUIRE_ESM` against ESM-only compiler-cli at runtime -- defeating the entire dynamic-import design. Keep CJS _emit_ (no `type: "module"` in package.json; file format follows nearest package.json). **Assert the compiled `.js` literally still contains `import(`** in CI. PROJECT.md says "CommonJS executor" without specifying the TS `module` setting -- this refines, not contradicts, but it is load-bearing. | Spike phase + Build/Packaging phase; add to the Module-format decision. |
-| 4   | **[ADDITION]**                      | **Verify and normalize the diagnostic path base.** compiler-cli's `formatDiagnostics` emits paths relative to `process.cwd()`, but Nx runs executors from the **workspace root** (never project root; `process.cwd()` is unreliable, differs with/without the daemon). Use **absolute, realpath-normalized `fileName`** for filtering; emit **workspace-root-relative** paths (normalized to `/`) for GitHub Actions problem-matcher annotations. This is the single most common real-world failure of tsc-style tools in CI (GAP-1 in FEATURES).                                                                                     | New v0.0.1 requirement; Engine/filtering + Output phases + cross-OS CI. |
-| 5   | **[ADDITION]**                      | **Project-boundary filtering must use the host's `getCanonicalFileName` + `realpath`,** not naive string-prefix comparison -- otherwise it breaks under pnpm symlinks (`.pnpm` realpaths) and case-insensitive filesystems (Windows/macOS). Add a **pnpm fixture** + a mixed-case path assertion to the matrix; npm/yarn hide this bug until a pnpm consumer hits it post-publish.                                                                                                                                                                                                                                                    | Engine/filtering phase; pnpm fixture in Validation/e2e phase.           |
-| 6   | **[ADDITION]**                      | **Dedicated "dependency-error-busts-cache" correctness test.** A cacheable whole-program check can restore a false-PASS from cache if inputs miss a transitive **non-buildable** dep's source. Cache inputs MUST include tsconfig include/exclude globs, the full `extends` chain, sibling `package.json`, `externalDependencies: ['typescript','@angular/compiler-cli']`, AND `^production`-style project-graph dep inputs. Verify directly: green run -> inject error in a source dep -> assert re-run does NOT cache-hit and reports the error. A type-checker that lies is worse than none.                                       | Caching/inputs phase (dedicated correctness gate).                      |
-| 7   | **[ADDITION]**                      | **Publish-fidelity hardening:** run **`publint`** + **`attw --pack`** against the _tarball_ (not source); enable **`@nx/dependency-checks`** ESLint rule (scoped to the plugin's `package.json`); ensure **`executors.json` (+ each `schema.json` + compiled executor `.js`) is copied into dist** via the build target's `assets`; use **`nx release --first-release`** (with `--dry-run`) for the first publish and **`NPM_CONFIG_PROVENANCE=true` + `id-token: write`** for provenance.                                                                                                                                            | Packaging/Publish phase + Install-matrix e2e.                           |
-| 8   | **[ADDITION / ARCHITECTURE NUDGE]** | **Keep structured `ts.Diagnostic[]` at the gatherer boundary.** v0.0.1 ships only `formatDiagnostics` human text, but the deferred JSON/SARIF reporters are cheap ONLY if the gatherer returns a structured `CoreResult` (counts + raw diagnostics) and formatting happens at the edge -- not a re-parse of formatted strings. Costs nothing now; de-risks the deferred reporters.                                                                                                                                                                                                                                                    | Engine/reporting design (no v0.0.1 feature change).                     |
+| # | Tag | Finding | Apply where |
+|---|-----|---------|-------------|
+| 1 | **[CORRECTION]** | **Nx dependency classification is inverted.** PROJECT.md lists `nx`/`@nx/devkit` as `peerDependencies`. The official Nx publish-plugin recipe and both reference plugins say the opposite: ship **`@nx/devkit` as a pinned `dependency`** (`"23.0.1"`) and **do NOT declare `nx` at all** (devkit's own peer `nx: ">= 22 <= 24 || ^23.0.0-0"` carries it transitively). Only `@angular/compiler-cli` + `typescript` stay peers. This is also a **hard requirement for Nx community-registry listing**. | PROJECT.md Constraints ("Dependencies" line) + Key Decisions ("Peer deps" row); enforced in Packaging phase. |
+| 2 | **[CORRECTION]** | **Test executor package changed.** Use `@nx/vitest:test` (Nx 22.2+ split Vitest into a dedicated `@nx/vitest` package; `@nx/vitest@23.0.1` verified, and nx-verdaccio carries the literal `migrate-vitest-to-vitest-package` migration). **Not** `@nx/vite:test`, which is legacy/migrated-away on Nx 23. | Dev tooling / test-infra phase; PROJECT.md test-runner note. |
+| 3 | **[CORRECTION / REFINEMENT]** | **Build the executor with `module: node16` (or `nodenext`), NOT `commonjs`.** Under `module: commonjs` TypeScript downlevels `await import()` to `Promise.resolve().then(() => require(...))`, which hits `ERR_REQUIRE_ESM` against ESM-only compiler-cli at runtime -- defeating the entire dynamic-import design. Keep CJS *emit* (no `type: "module"` in package.json; file format follows nearest package.json). **Assert the compiled `.js` literally still contains `import(`** in CI. PROJECT.md says "CommonJS executor" without specifying the TS `module` setting -- this refines, not contradicts, but it is load-bearing. | Spike phase + Build/Packaging phase; add to the Module-format decision. |
+| 4 | **[ADDITION]** | **Verify and normalize the diagnostic path base.** compiler-cli's `formatDiagnostics` emits paths relative to `process.cwd()`, but Nx runs executors from the **workspace root** (never project root; `process.cwd()` is unreliable, differs with/without the daemon). Use **absolute, realpath-normalized `fileName`** for filtering; emit **workspace-root-relative** paths (normalized to `/`) for GitHub Actions problem-matcher annotations. This is the single most common real-world failure of tsc-style tools in CI (GAP-1 in FEATURES). | New v0.0.1 requirement; Engine/filtering + Output phases + cross-OS CI. |
+| 5 | **[ADDITION]** | **Project-boundary filtering must use the host's `getCanonicalFileName` + `realpath`,** not naive string-prefix comparison -- otherwise it breaks under pnpm symlinks (`.pnpm` realpaths) and case-insensitive filesystems (Windows/macOS). Add a **pnpm fixture** + a mixed-case path assertion to the matrix; npm/yarn hide this bug until a pnpm consumer hits it post-publish. | Engine/filtering phase; pnpm fixture in Validation/e2e phase. |
+| 6 | **[ADDITION]** | **Dedicated "dependency-error-busts-cache" correctness test.** A cacheable whole-program check can restore a false-PASS from cache if inputs miss a transitive **non-buildable** dep's source. Cache inputs MUST include tsconfig include/exclude globs, the full `extends` chain, sibling `package.json`, `externalDependencies: ['typescript','@angular/compiler-cli']`, AND `^production`-style project-graph dep inputs. Verify directly: green run -> inject error in a source dep -> assert re-run does NOT cache-hit and reports the error. A type-checker that lies is worse than none. | Caching/inputs phase (dedicated correctness gate). |
+| 7 | **[ADDITION]** | **Publish-fidelity hardening:** run **`publint`** + **`attw --pack`** against the *tarball* (not source); enable **`@nx/dependency-checks`** ESLint rule (scoped to the plugin's `package.json`); ensure **`executors.json` (+ each `schema.json` + compiled executor `.js`) is copied into dist** via the build target's `assets`; use **`nx release --first-release`** (with `--dry-run`) for the first publish and **`NPM_CONFIG_PROVENANCE=true` + `id-token: write`** for provenance. | Packaging/Publish phase + Install-matrix e2e. |
+| 8 | **[ADDITION / ARCHITECTURE NUDGE]** | **Keep structured `ts.Diagnostic[]` at the gatherer boundary.** v0.0.1 ships only `formatDiagnostics` human text, but the deferred JSON/SARIF reporters are cheap ONLY if the gatherer returns a structured `CoreResult` (counts + raw diagnostics) and formatting happens at the edge -- not a re-parse of formatted strings. Costs nothing now; de-risks the deferred reporters. | Engine/reporting design (no v0.0.1 feature change). |
 
 **Net effect on PROJECT.md:** items 1 and 3 require edits to locked decisions; item 2 corrects a tooling assumption; items 4-8 add requirements/tests/notes. Everything else in PROJECT.md is **confirmed** by the research (engine approach, feature set, module format intent, release mechanism, project-type coverage). **Status: all 8 items APPLIED to PROJECT.md + REQUIREMENTS.md (commit `3498ddd`).**
 
@@ -32,7 +32,7 @@ Ranked by impact. Each item is tagged `[CORRECTION]` (contradicts a locked decis
 
 ## Executive Summary
 
-This is a **single-executor Nx plugin** that runs the _complete_ Angular compiler diagnostic set (TypeScript + template type-check + extended NG8xxx) with no emit, decoupled from build and test. Experts build this exact shape three ways that all converge: a **framework-agnostic core** exposing one `runTypecheck(CoreOptions): Promise<CoreResult>` entry, with **thin adapters** (the Nx executor now; createNodesV2 / CLI / Angular builder later) that only translate inputs and outputs. The engine is modeled on `@angular/build`'s `AngularCompilation` (unconditional per-file all-getter via `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`), NOT `ngc`'s phase-fail-fast `defaultGatherDiagnostics` -- this is the core differentiator and is correctly captured in PROJECT.md.
+This is a **single-executor Nx plugin** that runs the *complete* Angular compiler diagnostic set (TypeScript + template type-check + extended NG8xxx) with no emit, decoupled from build and test. Experts build this exact shape three ways that all converge: a **framework-agnostic core** exposing one `runTypecheck(CoreOptions): Promise<CoreResult>` entry, with **thin adapters** (the Nx executor now; createNodesV2 / CLI / Angular builder later) that only translate inputs and outputs. The engine is modeled on `@angular/build`'s `AngularCompilation` (unconditional per-file all-getter via `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`), NOT `ngc`'s phase-fail-fast `defaultGatherDiagnostics` -- this is the core differentiator and is correctly captured in PROJECT.md.
 
 The recommended approach is to **build and fully test the core engine before any Nx code exists** (the gating spike), then wrap it in a sub-50-line executor, then wire build/publish, then run the e2e tarball matrix. The supporting toolchain is `@nx/js:tsc` (native tsc, CJS `.js` + `.d.ts` -- never esbuild/swc, which bundle or skip type-checking), `@nx/vitest:test` (the dedicated Nx 23 package), `@nx/eslint` with `@nx/dependency-checks`, and `nx release` with conventional commits + provenance. **Feature research confirms v0.0.1 covers every table-stake with no gaps** -- the only feature item warranting a requirement is CI annotation path-format verification (CORRECTION/ADDITION #4).
 
@@ -45,7 +45,6 @@ The key risks are all **correctness traps that pass unit tests and fail in the r
 The locked stack (Nx 23 / Angular 22 / TS 6 / Vitest / CJS executor) is confirmed against the npm registry (2026-06-27) and two real published plugins (`@push-based/nx-verdaccio`, `@analogjs/platform`). The one material correction is the **Nx dependency classification** (item #1): `@nx/devkit` is a pinned `dependency`, `nx` is declared by no one. See STACK.md for the full published-`package.json` / `executors.json` / `schema.json` / `tsconfig.lib.json` conventions and the `nx release` CI norms.
 
 **Core technologies:**
-
 - `@nx/devkit@23.0.1` (pinned **dependency**, not peer) -- plugin authoring API; its peer carries the consumer's `nx`.
 - `@nx/js:tsc@23.0.1` -- the build executor; native tsc emits CJS `.js` + `.d.ts` per-file (esbuild/swc are wrong: bundle / skip type-checking).
 - `@nx/vitest:test@23.0.1` + `vitest@4.x` -- the dedicated Nx 23 Vitest executor (NOT `@nx/vite:test`).
@@ -58,7 +57,6 @@ The locked stack (Nx 23 / Angular 22 / TS 6 / Vitest / CJS executor) is confirme
 FEATURES.md verdict: **v0.0.1 maps 1:1 onto every table-stake for a type-checking executor; nothing is missing.** The genuine differentiators are also in scope.
 
 **Must have (table stakes -- all in v0.0.1):**
-
 - Required `tsConfig` option + full `extends`/`include`/`exclude` resolution.
 - Report-all default + opt-in fail-fast; exit-code via Nx `{ success }`.
 - Complete unconditional diagnostics (TS + template + extended NG8xxx).
@@ -68,7 +66,6 @@ FEATURES.md verdict: **v0.0.1 maps 1:1 onto every table-stake for a type-checkin
 - Validated across all five project types; `run-many`/`affected` free (inherited).
 
 **Should have (differentiators -- in v0.0.1):**
-
 - Complete diagnostics in ONE pass (no `ngc` phase short-circuit) -- the headline.
 - Decoupled from build AND test; Nx-native, project-graph-integrated, cacheable.
 - Spec-tsconfig type-check decoupled from running tests (nothing else does this for Angular).
@@ -80,7 +77,6 @@ FEATURES.md verdict: **v0.0.1 maps 1:1 onto every table-stake for a type-checkin
 A single published package with a **framework-agnostic `src/core/`** (zero `@nx/devkit`/yargs/architect imports) behind one `runTypecheck` entry, plus **thin adapters** in `src/executors/` (now) and reserved-empty `src/plugin/`, `src/cli/`, `src/builders/` (deferred). `src/internal/` holds adapter-only glue (ExecutorContext path extraction, exit-code mapping). Tests colocate as `*.unit.test.ts` (mock compiler-cli) / `*.int.test.ts` (real compiler vs fixtures); a sibling `testing/test-nx-utils` quarantines the nx-internal `FsTree`/`flushChanges` import in one eslint-disabled file; `fixtures/` holds the committed v13->v22 diagnostic catalog; `e2e/` holds one representative workspace covering all five project types.
 
 **Major components:**
-
 1. **Core `runTypecheck`** -- orchestrates resolve -> gather -> filter -> report; the one function every adapter calls.
 2. **Gatherer** -- unconditional per-file all-getter with a `DiagnosticModes` bitflag (models `@angular/build`); returns structured `ts.Diagnostic[]`.
 3. **Compiler loader** -- memoized `await import('@angular/compiler-cli')` / `typescript` (the CJS->ESM bridge; the only dynamic-import site).
@@ -99,40 +95,34 @@ A single published package with a **framework-agnostic `src/core/`** (zero `@nx/
 The research yields a near-deterministic phase order: **surface the riskiest unknown (the compiler engine) first, keep the package installable end-to-end as early as possible (Vertical MVP)**, and defer the slow/gating tarball matrix to the end. This mirrors ARCHITECTURE.md's "suggested build order" and PITFALLS.md's phase mapping.
 
 ### Phase 1: Engine spike + core skeleton
-
-**Rationale:** Core has zero dependents and is the gated spike; everything else is cheap once it's right. Also where the highest-risk pitfall (`import()` rewrite) must be proven against the _real_ compiler.
+**Rationale:** Core has zero dependents and is the gated spike; everything else is cheap once it's right. Also where the highest-risk pitfall (`import()` rewrite) must be proven against the *real* compiler.
 **Delivers:** `compiler-loader.ts`, `diagnostic-modes.ts`, `gather-diagnostics.ts`, `resolve-tsconfig.ts`, `runTypecheck` green against a couple of int fixtures; proof the compiled `.js` retains `import(`.
 **Addresses:** complete-unconditional-diagnostics differentiator; tsConfig resolution table-stake.
 **Avoids:** Pitfall 1 (`module: node16` + compiled-artifact test), Pitfall 7 (use `readConfiguration`, force `noEmit`).
 
 ### Phase 2: Filtering + reporting (completes CoreResult)
-
 **Rationale:** Filtering and the human reporter complete the core contract before any adapter exists.
 **Delivers:** deps-boundary filter (absolute realpath-normalized), `--max-warnings` counting (warning bucket), category gating, `formatDiagnostics` default output; **structured `CoreResult` preserved at the boundary** (addition #8).
 **Avoids:** Pitfall 2/3 (absolute realpath filtering, host `getCanonicalFileName`), Pitfall 8 (mirror configured severities; signal strictTemplates-off).
 
 ### Phase 3: Test infrastructure + diagnostic catalog
-
 **Rationale:** Phases 4+ assert against it; the v13->v22 catalog is itself a deliverable.
 **Delivers:** `testing/test-nx-utils` (FsTree quarantine), `testing/test-fixtures` (load + error-injection), committed `fixtures/` catalog, `vitest.unit.config.ts` / `vitest.int.config.ts`. **Use `@nx/vitest:test`** (correction #2).
 **Uses:** `@nx/vitest`, Vitest 4.x.
 
 ### Phase 4: Nx executor adapter
-
 **Rationale:** First user-runnable surface; depends on core (1-2) + test utils (3).
 **Delivers:** `schema.json` + `schema.d.ts`, `normalize-options.ts`, sub-50-line `executor.ts`, `executors.json`.
 **Implements:** the thin-adapter pattern; cacheable target wiring begins here.
 **Avoids:** Pitfall 4 (cache inputs include transitive dep source + dependency-error-busts-cache test -- addition #6).
 
 ### Phase 5: Build/publish wiring + one e2e smoke
-
 **Rationale:** Proves the package installs and runs end-to-end (Vertical MVP).
 **Delivers:** `project.json` build target (asset-copy of `executors.json`/`schema.json`), `package.json` `files`/deps/peers (**`@nx/devkit` as dependency, no `nx`** -- correction #1), `@nx/dependency-checks`, `nx release` config (`--first-release` + provenance), the representative five-project-type workspace, ONE smoke e2e, `publint` + `attw --pack` gates (addition #7).
 **Uses:** `@nx/js:tsc`, `nx release`.
 **Avoids:** Pitfall 5/6 (tarball-content + peer-range install gates).
 
 ### Phase 6: Full e2e matrix + CI
-
 **Rationale:** Slow, gating, last. The tarball-install matrix is the backstop for packaging/peer-range/cross-OS bugs.
 **Delivers:** tarball install matrix across all five project types **including a pnpm fixture** (addition #5); GitHub Actions Node 22/24/26 x Linux/Windows/macOS.
 **Avoids:** Pitfall 2/3/6 (cross-OS path normalization, pnpm, ERESOLVE/EBADENGINE matrix).
@@ -147,13 +137,11 @@ The research yields a near-deterministic phase order: **surface the riskiest unk
 ### Research Flags
 
 Phases likely needing deeper research during planning (`/gsd:plan-phase --research-phase`):
-
 - **Phase 1:** the `module: node16` + compiled-artifact assertion and the exact `@angular/build` gatherer modes are subtle; the spike is explicitly gated.
 - **Phase 4/5 (caching):** the dependency-error-busts-cache contract has tracked Nx gaps (`namedInputs` not respected for source/inlined libs; `externalDependencies` over/under-invalidation) -- PITFALLS.md flags this for deeper research.
 - **Phase 6:** pnpm-symlink + case-insensitive filtering and the peer-range pre-release matrix have MEDIUM-confidence sources.
 
 Phases with standard, well-documented patterns (skip research-phase):
-
 - **Phase 2 (reporting):** `formatDiagnostics` + `--max-warnings` are well-trodden.
 - **Phase 3 (test infra):** nx-verdaccio is a verbatim live reference for the FsTree quarantine and vitest config split.
 - **Phase 4 (executor scaffold):** `executors.json`/`schema.json`/thin-adapter conventions are documented + dual-referenced.
@@ -162,13 +150,13 @@ Phases with standard, well-documented patterns (skip research-phase):
 
 Done after this summary was first written; full detail in `FOLLOWUP-FINDINGS.md`. No reversals -- confirmations + refinements:
 
-- **Differentiator (now in PROJECT.md Core Value):** Nx's built-in `@nx/js` `typecheck` is plain `tsc`/`tsgo`, and Angular cannot use it -- _"Angular currently lacks TypeScript project references support"_ (nx.dev) -- nor would it surface template/extended diagnostics. angular-typechecker is the Angular-aware whole-program no-emit check that fills that gap.
+- **Differentiator (now in PROJECT.md Core Value):** Nx's built-in `@nx/js` `typecheck` is plain `tsc`/`tsgo`, and Angular cannot use it -- *"Angular currently lacks TypeScript project references support"* (nx.dev) -- nor would it surface template/extended diagnostics. angular-typechecker is the Angular-aware whole-program no-emit check that fills that gap.
 - **Engine confirmed against local Angular v22 source:** `ngc`/`defaultGatherDiagnostics` short-circuits by phase; `@angular/build` gathers unconditionally (per-file `getDiagnosticsForFile(WholeProgram)`). We model `@angular/build`.
 - **FsTree verified on Nx 23.0.1:** `nx/src/generators/tree` still exported (`./src/*` wildcard); the `createFsTree`/`flushFsTreeChanges` capture stands (the stricter `exports`/`./internal` change applies to `@nx/<pkg>`, not core `nx`).
 - **Vitest is Angular 21+'s default runner** (replaced Karma) -- validates the runner + `tsconfig.spec.json` handling.
-- **Extended diagnostics:** authoritative Angular 22 set captured in `DIAGNOSTIC-CATALOG.md` (NG8101-8109, 8111, 8113-8117, 8021; NG8110/8112 unassigned). Angular _runtime_ errors (NG0xxx) are out of scope.
+- **Extended diagnostics:** authoritative Angular 22 set captured in `DIAGNOSTIC-CATALOG.md` (NG8101-8109, 8111, 8113-8117, 8021; NG8110/8112 unassigned). Angular *runtime* errors (NG0xxx) are out of scope.
 - **Deprecations swept (17 pages):** nothing planned uses a deprecated API (createNodes not v1; `cache:true` not cacheableOperations; `inputs.runtime` not runtimeCacheInputs; published-plugin local executor/generator; `as-provided`; DB cache).
-- **Angular-CLI surface (deferred):** via `convertNxExecutor`/`convertNxGenerator` (current `@nx/devkit` APIs) -- thin re-exports, not a hand-written architect builder. Nx 17 only dropped Nx wrapping _its own_ code for the Angular CLI.
+- **Angular-CLI surface (deferred):** via `convertNxExecutor`/`convertNxGenerator` (current `@nx/devkit` APIs) -- thin re-exports, not a hand-written architect builder. Nx 17 only dropped Nx wrapping *its own* code for the Angular CLI.
 - **AI-agent layer = a skill, not MCP** (Nx's direction); **agent-ready output** (deterministic / idempotent / clear non-zero exit) is a v0.0.1 output-contract requirement (OUT-03).
 - **Publish hardening:** npm Trusted Publishers (OIDC) + provenance + hardened release CI + `SECURITY.md` (s1ngularity lesson).
 - **nrwl/nx patterns to adopt:** `@nx/js` `run-type-check.ts` result shape; createNodes `optionsHash` targets-cache; e2e via published `@nx/plugin/testing` + the e2e-project `createTestProject` (NOT internal `@nx/e2e-utils`); Verdaccio/`nx release` wired through Vitest `globalSetup`.
@@ -176,12 +164,12 @@ Done after this summary was first written; full detail in `FOLLOWUP-FINDINGS.md`
 
 ## Confidence Assessment
 
-| Area         | Confidence  | Notes                                                                                                                                                                                                                                                       |
-| ------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stack        | HIGH        | Versions verified against npm registry 2026-06-27; conventions cross-checked against official Nx docs + two real published plugins. The one correction (devkit-as-dependency) is HIGH (official recipe + registry criteria + both reference plugins agree). |
-| Features     | HIGH        | Mapped against tsc/ngc/`@nx/js`/type-coverage/ESLint/svelte-check/vue-tsc; verdict (no missing table-stake) is well-supported.                                                                                                                              |
-| Architecture | HIGH        | Grounded in three live reference codebases on disk (nx-verdaccio, `@angular/build`, analog) + Nx 23 extending-nx docs.                                                                                                                                      |
-| Pitfalls     | MEDIUM-HIGH | Most verified against official docs + tracked GitHub issues; the cache-correctness and pnpm/case-sensitivity items lean on MEDIUM-confidence issue threads (flagged inline).                                                                                |
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Stack | HIGH | Versions verified against npm registry 2026-06-27; conventions cross-checked against official Nx docs + two real published plugins. The one correction (devkit-as-dependency) is HIGH (official recipe + registry criteria + both reference plugins agree). |
+| Features | HIGH | Mapped against tsc/ngc/`@nx/js`/type-coverage/ESLint/svelte-check/vue-tsc; verdict (no missing table-stake) is well-supported. |
+| Architecture | HIGH | Grounded in three live reference codebases on disk (nx-verdaccio, `@angular/build`, analog) + Nx 23 extending-nx docs. |
+| Pitfalls | MEDIUM-HIGH | Most verified against official docs + tracked GitHub issues; the cache-correctness and pnpm/case-sensitivity items lean on MEDIUM-confidence issue threads (flagged inline). |
 
 **Overall confidence:** HIGH
 
@@ -195,7 +183,6 @@ Done after this summary was first written; full detail in `FOLLOWUP-FINDINGS.md`
 ## Sources
 
 ### Primary (HIGH confidence)
-
 - npm registry (`registry.npmjs.org`) dist-tags + version manifests, 2026-06-27 -- `nx`/`@nx/devkit`/`@nx/js`/`@nx/plugin`/`@nx/vitest`/`@nx/eslint` `latest = 23.0.1`; `typescript 6.0.3`; `@angular/compiler-cli 22.0.4`; `vitest 4.1.9`; verified devkit's `nx` peer and `@nx/plugin` pinned deps.
 - Nx official docs -- `extending-nx/publish-plugin` (devkit-as-dependency, no `nx`, repo url + e2e + registry criteria), `local-executors`, `@nx/js:tsc`, `nx-release` (conventionalCommits, `--first-release`, provenance, `id-token`), `@nx/dependency-checks`, Inputs/Outputs caching.
 - Live reference codebases on disk -- `push-based/nx-verdaccio` (Nx 22.3 published plugin: package.json, executors.json/schema.json, tsconfig layout, build asset-copy, FsTree quarantine, vitest split), `angular/angular-cli` `@angular/build` (`AngularCompilation` `DiagnosticModes`/`diagnoseFiles`/`collectDiagnostics`, memoized `loadCompilerCli`/`loadTypescript`, unconditional `getDiagnosticsForFile`), `analogjs/analog` (`@analogjs/platform` manifest: exports map, provenance, keywords; Angular 22 tsconfig base).
@@ -203,17 +190,14 @@ Done after this summary was first written; full detail in `FOLLOWUP-FINDINGS.md`
 - ESLint / type-coverage / svelte-check / GitHub Actions docs -- `--max-warnings`/exit codes, `--at-least`, `--output machine`/`--threshold`, problem matchers + SARIF support.
 
 ### Secondary (MEDIUM confidence)
-
 - Tracked Nx GitHub issues -- `process.cwd()` differs with/without daemon (#9147), `externalDependencies` (#22277), cache-not-busted on lib change (#22265), `namedInputs` not respected for source libs (#32182), `--first-release` (#27887), dependency-checks pre-release mismatch (#30589).
 - TypeScript/ts-node issues -- `import()` from CommonJS (#52775, ts-node#1290); pnpm symlinked node_modules structure.
 - ESLint formatter-consolidation issues (#17524, #11255); vue-tsc thin-wrapper model; npm `files`/`.npmignore` behavior (#4928); ngtsc paths-vs-compiled-artifacts (angular-cli#28388).
 
 ### Tertiary (LOW confidence)
-
 - None load-bearing. A handful of pitfall items (notably the source-lib cache-input edge cases) rest on community issue threads and warrant empirical verification during the caching phase rather than being taken as settled.
 
 ---
-
-_Research completed: 2026-06-27 (round 1 + round 2)_
-_Corrections applied to PROJECT.md + REQUIREMENTS.md (commit 3498ddd). Round-2 detail in FOLLOWUP-FINDINGS.md; TEST-02 codes in DIAGNOSTIC-CATALOG.md._
-_Ready for roadmap: yes -- ROADMAP.md created (6 phases)._
+*Research completed: 2026-06-27 (round 1 + round 2)*
+*Corrections applied to PROJECT.md + REQUIREMENTS.md (commit 3498ddd). Round-2 detail in FOLLOWUP-FINDINGS.md; TEST-02 codes in DIAGNOSTIC-CATALOG.md.*
+*Ready for roadmap: yes -- ROADMAP.md created (6 phases).*

@@ -5,7 +5,6 @@ real consumers gather Angular/TS diagnostics, and what (if anything) is adoptabl
 CURRENT whole-program engine. Deferred features are out of scope.
 
 Our engine (ground truth):
-
 - Gatherer: `packages/angular-typechecker/src/core/gather-diagnostics.ts:15-28` --
   `gatherAllDiagnostics(program)` pushes, in order, ALL six getters on the public Angular
   `api.Program`: `getTsOptionDiagnostics`, `getNgOptionDiagnostics`,
@@ -27,7 +26,6 @@ Our engine (ground truth):
 File: `D:/projects/github/analogjs/analog/packages/vite-plugin-angular/src/lib/angular-vite-plugin.ts`
 
 Core gatherer `getDiagnosticsForSourceFile` (lines 1749-1772):
-
 ```
 1755  const syntacticDiagnostics = program.getSyntacticDiagnostics(sourceFile);
 1757  if (disableTypeChecking) { return syntacticDiagnostics; }   // syntax-only fast path
@@ -68,7 +66,6 @@ Core gatherer `getDiagnosticsForSourceFile` (lines 1749-1772):
 File: `D:/projects/github/nrwl/nx/packages/js/src/utils/typescript/run-type-check.ts`
 
 `runTypeCheck` (lines 84-120):
-
 ```
 103  program = ts.createProgram(config.fileNames, compilerOptions);   // (or createIncrementalProgram, :94)
 106  const result = program.emit();
@@ -99,7 +96,7 @@ File: `D:/projects/github/nrwl/nx/packages/js/src/utils/typescript/run-type-chec
   Suggestion/Message as "suggestion"/"info" but the result object never carries them.
 - File counts: `inputFilesCount = config.fileNames.length` (the tsconfig's resolved root
   file list -- our `rootNamesCount` analog) and `totalFilesCount =
-program.getSourceFiles().length` (EVERY source file the program pulled in: roots + all
+  program.getSourceFiles().length` (EVERY source file the program pulled in: roots + all
   transitively imported `.ts`/`.d.ts` incl. lib + node_modules). The pair gives a
   root-vs-total spread.
 - Config-error handling: `setupTypeScript` (:122-154) reads the tsconfig and, if
@@ -111,14 +108,14 @@ program.getSourceFiles().length` (EVERY source file the program pulled in: roots
 
 ## Comparison table
 
-| Dimension                 | Ours (angular-typechecker)                                                             | AnalogJS vite-plugin-angular                                                               | @nx/js run-type-check                                                                            |
-| ------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| Families gathered         | TS option+syntactic+semantic AND Ng option+structural+semantic (all 6 getters)         | TS syntactic+semantic + Ng `getDiagnosticsForFile` (template+NG8xxx). NO option/structural | Plain TS via `getPreEmitDiagnostics` + `emit()` diags. NO Angular diagnostics                    |
-| Per-file vs whole-program | Whole-program (one pass, no sourceFile arg)                                            | Per-file (`OptimizeFor.SingleFile`=1), aggregated at `buildEnd`                            | Whole-program (`getPreEmitDiagnostics`, no sourceFile arg)                                       |
-| Result shape              | Raw `ts.Diagnostic[]` + counts + `rootNamesCount` + `suppressedCount` + `durationMs`   | `{ errors, warnings }` as formatted strings (+ hmr fields), per file                       | `{ errors, warnings }` formatted strings + `inputFilesCount` + `totalFilesCount` + `incremental` |
-| Config-error handling     | Folds `parsed.errors` into diagnostics; never drops (`:110`); zero-rootNames guard     | Not in the gatherer (handled in plugin setup elsewhere)                                    | THROWS on `config.errors.length` (`:127-130`) -- aborts, not folded                              |
-| Warning counting          | Explicit `category === Warning` post-filter+sort (`:325`)                              | Explicit `category === Warning` at call site (`:1726`)                                     | Explicit `category === Warning` (`:169`)                                                         |
-| Fatal-error handling      | Detect UNKNOWN_ERROR_CODE(500) -> re-throw `TypecheckInfrastructureError` (`:171-179`) | None (build proceeds; per-file failures isolated by aggregation)                           | None (createProgram/emit throw propagates)                                                       |
+| Dimension | Ours (angular-typechecker) | AnalogJS vite-plugin-angular | @nx/js run-type-check |
+|---|---|---|---|
+| Families gathered | TS option+syntactic+semantic AND Ng option+structural+semantic (all 6 getters) | TS syntactic+semantic + Ng `getDiagnosticsForFile` (template+NG8xxx). NO option/structural | Plain TS via `getPreEmitDiagnostics` + `emit()` diags. NO Angular diagnostics |
+| Per-file vs whole-program | Whole-program (one pass, no sourceFile arg) | Per-file (`OptimizeFor.SingleFile`=1), aggregated at `buildEnd` | Whole-program (`getPreEmitDiagnostics`, no sourceFile arg) |
+| Result shape | Raw `ts.Diagnostic[]` + counts + `rootNamesCount` + `suppressedCount` + `durationMs` | `{ errors, warnings }` as formatted strings (+ hmr fields), per file | `{ errors, warnings }` formatted strings + `inputFilesCount` + `totalFilesCount` + `incremental` |
+| Config-error handling | Folds `parsed.errors` into diagnostics; never drops (`:110`); zero-rootNames guard | Not in the gatherer (handled in plugin setup elsewhere) | THROWS on `config.errors.length` (`:127-130`) -- aborts, not folded |
+| Warning counting | Explicit `category === Warning` post-filter+sort (`:325`) | Explicit `category === Warning` at call site (`:1726`) | Explicit `category === Warning` (`:169`) |
+| Fatal-error handling | Detect UNKNOWN_ERROR_CODE(500) -> re-throw `TypecheckInfrastructureError` (`:171-179`) | None (build proceeds; per-file failures isolated by aggregation) | None (createProgram/emit throw propagates) |
 
 ## Adoptable learnings
 

@@ -10,8 +10,12 @@
     "<fx>/project/tsconfig.lib.json",
     "<fx>/outsider/tsconfig.lib.json"
   ],
-  "walked": ["<fx>/project/tsconfig.lib.json"],
-  "skipped": ["<fx>/outsider/tsconfig.lib.json"],
+  "walked": [
+    "<fx>/project/tsconfig.lib.json"
+  ],
+  "skipped": [
+    "<fx>/outsider/tsconfig.lib.json"
+  ],
   "guardedDefault": {
     "errorCount": 1,
     "suppressedCount": 1,

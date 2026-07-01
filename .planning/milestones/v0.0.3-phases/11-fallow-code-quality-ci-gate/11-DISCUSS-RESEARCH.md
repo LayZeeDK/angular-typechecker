@@ -20,14 +20,14 @@ Captured from `--help`, `audit --help`, `init --help`. All confirmations are quo
 
 ### `fallow audit` (the gate)
 
-| Question                            | Answer          | Exact flag text from `--help`                                                                                                                                                                                           |
-| ----------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--format json`?                    | YES             | `-f, --format <FORMAT>` ... `[aliases: --output]` ... `[possible values: human, json, sarif, compact, markdown, codeclimate, pr-comment-github, pr-comment-gitlab, review-github, review-gitlab, badge]`                |
-| `--base <ref>` / `--changed-since`? | YES (same flag) | `--changed-since <CHANGED_SINCE>` ... `[aliases: --base]`                                                                                                                                                               |
-| `--gate new-only\|all`?             | YES             | `--gate <GATE>` -- `new-only (default): fail only on findings introduced by the current changeset. all: fail on every finding in changed files and skip base-snapshot attribution.` Possible values: `new-only`, `all`. |
-| `--ci`?                             | YES             | `--ci` -- `CI mode: equivalent to --format sarif --fail-on-issues --quiet`                                                                                                                                              |
-| `--brief`?                          | YES             | `--brief` -- `Render the deterministic review brief instead of the gating audit report ... ALWAYS exits 0 (the verdict is carried informationally). ... Orthogonal to --format`                                         |
-| `-o <file>`?                        | YES             | `-o, --output-file <PATH>` -- `Write the report to a file instead of stdout, for any --format (no ANSI codes)`                                                                                                          |
+| Question | Answer | Exact flag text from `--help` |
+|----------|--------|-------------------------------|
+| `--format json`? | YES | `-f, --format <FORMAT>` ... `[aliases: --output]` ... `[possible values: human, json, sarif, compact, markdown, codeclimate, pr-comment-github, pr-comment-gitlab, review-github, review-gitlab, badge]` |
+| `--base <ref>` / `--changed-since`? | YES (same flag) | `--changed-since <CHANGED_SINCE>` ... `[aliases: --base]` |
+| `--gate new-only\|all`? | YES | `--gate <GATE>` -- `new-only (default): fail only on findings introduced by the current changeset. all: fail on every finding in changed files and skip base-snapshot attribution.` Possible values: `new-only`, `all`. |
+| `--ci`? | YES | `--ci` -- `CI mode: equivalent to --format sarif --fail-on-issues --quiet` |
+| `--brief`? | YES | `--brief` -- `Render the deterministic review brief instead of the gating audit report ... ALWAYS exits 0 (the verdict is carried informationally). ... Orthogonal to --format` |
+| `-o <file>`? | YES | `-o, --output-file <PATH>` -- `Write the report to a file instead of stdout, for any --format (no ANSI codes)` |
 
 Other audit-relevant flags observed: `--diff-file <PATH>` / `--diff-stdin` (line-level scoping; "Project-level findings still bypass this filter. When both this and `--changed-since` are set, the diff filter wins for finding scope while `--changed-since` still drives file discovery"), `--fail-on-issues`, `--sarif-file <PATH>`, `--max-crap <N>` (default 30.0), `--dead-code-baseline` / `--health-baseline` / `--dupes-baseline` (the global `--baseline`/`--save-baseline` are **rejected** on `audit`), `--production-dead-code|health|dupes`, `--summary`. `review` is an alias of `audit` that implies `--brief`.
 
@@ -40,8 +40,8 @@ Other audit-relevant flags observed: `--diff-file <PATH>` / `--diff-stdin` (line
 ## Gate semantics
 
 - **Default gate = `new-only`** (verified in `audit --help` and in the live run: `attribution.gate = "new-only"`).
-- **`new-only`**: only findings _introduced by the current changeset_ affect the verdict (cause exit 1). Inherited/pre-existing findings are still **reported** but do not gate. Each JSON finding carries `"introduced": true|false`. Confirmed live: 28 dead-code issues total, of which `dead_code_introduced: 12` / `dead_code_inherited: 16` -- the verdict was `fail` because 12 were introduced.
-- **`all`**: fails on _every_ finding in changed files and **skips the base-snapshot attribution pass** (cheaper; no new-vs-inherited computation).
+- **`new-only`**: only findings *introduced by the current changeset* affect the verdict (cause exit 1). Inherited/pre-existing findings are still **reported** but do not gate. Each JSON finding carries `"introduced": true|false`. Confirmed live: 28 dead-code issues total, of which `dead_code_introduced: 12` / `dead_code_inherited: 16` -- the verdict was `fail` because 12 were introduced.
+- **`all`**: fails on *every* finding in changed files and **skips the base-snapshot attribution pass** (cheaper; no new-vs-inherited computation).
 - **Base ref resolution when `--base`/`--changed-since` is unset** (quoted): "the base is the git merge-base against the branch's upstream or the remote default (`origin/HEAD`, `origin/main`, `origin/master`); set `FALLOW_AUDIT_BASE` to pin it."
 - **Attribution mechanism**: `new-only` runs an extra **base-snapshot** pass -- it analyzes the tree at `--base` and diffs findings, so a finding present at the base = inherited, a finding absent at base but present now = introduced. This requires git to resolve and check out / read the base ref's tree.
 - **Git history depth**: `--changed-since`/`--base` and the attribution pass **require git** (help: "`audit`, `impact`, and `--changed-since` still require git"). The base ref (`origin/main`) must be present locally and resolvable to a tree. In CI with a shallow `actions/checkout` (default `fetch-depth: 1`), `origin/main`'s merge-base may be unreachable -> **use `fetch-depth: 0`** (or at least fetch enough history to reach the merge-base) for reliable new-vs-inherited attribution. With `--gate all` the base snapshot is skipped, so deep history matters less, but file discovery via `--changed-since` still needs the base ref reachable.
@@ -55,10 +55,10 @@ Other audit-relevant flags observed: `--diff-file <PATH>` / `--diff-stdin` (line
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "entry": ["src/index.{js,jsx,mjs}", "src/main.{js,jsx,mjs}"],
   "duplicates": {
-    "minOccurrences": 3,
+    "minOccurrences": 3
     // "ignore": ["**/lib/**", "**/legacy/**", "**/__generated__/**", "**/generated/**"]
   },
-  "rules": {},
+  "rules": {}
 }
 ```
 
@@ -114,12 +114,12 @@ Command: `npx --yes fallow@latest audit --format json --base origin/main` run fr
 
 ### Known-expected false positives -- reproduction status
 
-| ID    | Expectation                                                                 | Reproduced?                 | Evidence                                                                                                                                                                                                                                                                                                             |
-| ----- | --------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| IN-02 | `compiler-cli-types.drift.ts` flagged `unused_file` (tsconfig-`files`-only) | **YES**                     | `unused_files: [{ path: "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts", introduced: true }]`. Fix: add to `entry` (or `// fallow-ignore-file unused-file`).                                                                                                                                     |
-| IN-03 | `EmitFlags` enum members flagged unused (mirror shim)                       | **YES**                     | `unused_enum_members` = all 7 members `DTS, JS, Metadata, I18nBundle, Codegen, Default, All` of `EmitFlags` in `compiler-cli-types.ts` (L110-116), all `introduced: true`. Fix: `unused-enum-members: "off"` (scoped via `overrides` on that file) or inline `// fallow-ignore-next-line unused-enum-members`.       |
-| IN-04 | `UNKNOWN_ERROR_CODE` const flagged `unused_types`                           | **YES (as `unused_types`)** | `unused_types: [{ path: "...compiler-cli-types.ts", export_name: "UNKNOWN_ERROR_CODE", is_type_only: true, line: 130, introduced: false }]`. Note `introduced: false` -> inherited, so it does NOT gate today; still reported. Fix: `ignoreExports` `{file, exports:["UNKNOWN_ERROR_CODE"]}` or `unused-types: off`. |
-| IN-05 | `publishConfig.provenance` mislabeled `unused_dependency`                   | **NO -- did not reproduce** | 0 mentions of `provenance`/`publishConfig` in the audit JSON. `publishConfig.provenance: true` exists at `packages/angular-typechecker/package.json:52` but fallow did NOT flag it. **The IN-05 false positive does not occur in 2.103.0 -- no suppression needed for it.**                                          |
+| ID | Expectation | Reproduced? | Evidence |
+|----|-------------|-------------|----------|
+| IN-02 | `compiler-cli-types.drift.ts` flagged `unused_file` (tsconfig-`files`-only) | **YES** | `unused_files: [{ path: "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts", introduced: true }]`. Fix: add to `entry` (or `// fallow-ignore-file unused-file`). |
+| IN-03 | `EmitFlags` enum members flagged unused (mirror shim) | **YES** | `unused_enum_members` = all 7 members `DTS, JS, Metadata, I18nBundle, Codegen, Default, All` of `EmitFlags` in `compiler-cli-types.ts` (L110-116), all `introduced: true`. Fix: `unused-enum-members: "off"` (scoped via `overrides` on that file) or inline `// fallow-ignore-next-line unused-enum-members`. |
+| IN-04 | `UNKNOWN_ERROR_CODE` const flagged `unused_types` | **YES (as `unused_types`)** | `unused_types: [{ path: "...compiler-cli-types.ts", export_name: "UNKNOWN_ERROR_CODE", is_type_only: true, line: 130, introduced: false }]`. Note `introduced: false` -> inherited, so it does NOT gate today; still reported. Fix: `ignoreExports` `{file, exports:["UNKNOWN_ERROR_CODE"]}` or `unused-types: off`. |
+| IN-05 | `publishConfig.provenance` mislabeled `unused_dependency` | **NO -- did not reproduce** | 0 mentions of `provenance`/`publishConfig` in the audit JSON. `publishConfig.provenance: true` exists at `packages/angular-typechecker/package.json:52` but fallow did NOT flag it. **The IN-05 false positive does not occur in 2.103.0 -- no suppression needed for it.** |
 
 ### OTHER genuine / additional findings (not in the expected list)
 

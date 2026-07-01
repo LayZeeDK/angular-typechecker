@@ -11,13 +11,11 @@
 **Recommendation: DO NOT BUILD IT. Use the public in-memory `createTreeWithEmptyWorkspace()` from `@nx/devkit/testing`. Hard DISSENT against the milestone's stated default ("default leans real-disk wrapper to stay faithful to the prior art").**
 
 **Rationale (the case for cutting):**
-
 - The generator under test is a pure `project.json` config edit: `readProjectConfiguration` -> mutate `targets` -> `updateProjectConfiguration` -> `formatFiles`. 100% of its observable behavior is a Tree transformation. An in-memory Tree captures all of it. There is NO behavior inside the generator boundary that reads real disk mid-run. (CURRENT-AUDIT-AND-GENERATOR.md Recommendation (2) reaches the same conclusion independently.)
 - "Stay faithful to the prior art" is not a requirement -- it is the textbook YAGNI trap. The prior arts that used real-disk `FsTree` (`flushChanges`) did so at their EXECUTOR e2e tier, where a real `ngc` must observe edits on disk (CONNECT-TECHNIQUES.md 2c, 6c). The sandbox's actual COMMITTED generator test uses in-memory `createTreeWithEmptyWorkspace` -- the real-disk `FsTree` approach there was "PROPOSED but never adopted" (SANDBOX-TECHNIQUES.md section 2 KEY CORRECTION + section 9.5). So "faithful to the prior art" actually means: use the in-memory tree, exactly as both prior arts' generator tests did.
 - Nx's own 452 generator specs use the in-memory `/virtual` tree; ZERO `@nx/*` generator specs flush to real disk (NX-FSTREE-INTERNALS.md section 6b). Building the bespoke wrapper puts this repo in a camp of one, for a config-edit generator.
 
 **Risk of building it anyway (the failure modes the other lenses will rationalize away):**
-
 - **Unstable internal deep import.** `FsTree`/`flushChanges` are reachable ONLY via `nx/src/generators/tree` -- no public re-export, no semver guarantee (NX-FSTREE-INTERNALS.md sections 0, 4, 8). An Nx upgrade can move/rename/restructure it silently. The mitigation proposed is itself a tax: a quarantine file + an `eslint-disable` + a `no-restricted-imports` rule + a drift-tripwire spec that must be maintained on every Nx bump. That is THREE new maintenance artifacts to test a generator that needs NONE of them.
 - **The drift tripwire is a permanent liability disguised as safety.** It pins constructor arity, `flushChanges` arity, and an 11-method prototype list (NX-FSTREE-INTERNALS.md section 8b). Every Nx minor/major risks a red CI on a path that protects test-only infrastructure -- a recurring false-alarm generator. The repo's `main` is PR-only with a single required `ci` check (AGENTS.md); a flaky internal-import tripwire can lock the merge button on an unrelated PR.
 - **Cross-platform real-disk I/O on Windows-arm64.** `mkdtempSync` + `rmSync` + Windows file-locking is exactly the class of flake the repo already fights (CONNECT-TECHNIQUES.md section 7 "Windows/cross-drive gotchas"). In-memory has zero teardown and zero I/O.
@@ -33,12 +31,10 @@
 **Recommendation: ONE fixture per diagnostic + per-introduction-version integration files (`extended.angularNN.integration.spec.ts`), asserting exact code + `.category` via the existing `NG()` + `CoreResult` seam. This is the ONE place to spend real effort. No new infrastructure.**
 
 **Rationale:**
-
 - The seam already exists. Integration specs call `runTypecheck` and assert off `CoreResult` (`diagnostics.map(d => d.code)`, `errorCount`, category) -- TESTING.md and the audit confirm this is the established idiom, already used for NG8101/NG8109. Closing the gap is "add fixtures + assertions," NOT "build a code/count assertion seam." The sandbox brief's hand-wringing about "the executor only returns `{ success }`" does NOT apply -- this repo's `runTypecheck` already returns the diagnostics array.
 - Version-split scaffolding already exists (`baseline.angular13` / `extended.angular13`); only v13 is populated. Per-version files keep "add a future major" a drop-in (DIAGNOSTIC-CATALOG.md section 60-62), match Angular's own two-layer organization (CURRENT-AUDIT-AND-GENERATOR.md Part C), and match the repo's already-chosen convention. No reason to relitigate organization.
 
 **What's OVER-ENGINEERING here (cut it):**
-
 - **jscodeshift / AST-injection toolkit.** The sandbox generates fixtures at test time and mutates them with a 1373-line jscodeshift toolkit (SANDBOX-TECHNIQUES.md sections 4-5). This repo uses COMMITTED `fixtures/<scenario>/` dirs and a real `performCompilation` (TESTING.md). Committed fixtures are simpler, deterministic, reviewable, and already the repo's pattern. Do NOT import jscodeshift. A broken `.html`/`.ts` checked into `fixtures/extended-vNN/` is the entire fixture.
 - **A single data-driven mega-table over all 16.** Tempting for DRY, but it couples every diagnostic into one spec: a single fixture-resolution bug or one compiler quirk fails the whole table, and the per-code `it` sentence (which the repo uses to cross-reference requirement ids) is lost. Prefer one `it` per code (with its NG code in the title) grouped into the version file. `it.each` over a per-version array is acceptable WITHIN a version file (the repo already uses `it.each`), but do not collapse all majors into one global table.
 - **`forceExtendedDiagnosticsAsErrors` as a general toggle.** The repo already proved promotion via `defaultCategory: "error"` for NG8101 (`extended.promotion`). Generalize that ONE mechanism; do not build a per-fixture tsconfig-rewriting helper. Most NG8xxx assertions only need to find the code and assert `.category === Warning` (default) -- promotion to Error is a single shared mechanism test, not per-code.
@@ -52,7 +48,6 @@
 **Recommendation: INVENTED TIER. CUT IT (or downgrade to at most one tiny test). DISSENT against treating it as a requirement.**
 
 **Rationale (push-back):**
-
 - The audit itself flags this as "optional but recommended" and describes the supposed gap as: the executor resolves `context.root` + `tsConfig` to a real path (1), `normalizeOptions` against a real `project.json` (2), and binds under its published id (3). But: (2) is ALREADY covered by `normalize-options.spec.ts` (pure), and (1)+(3) are ALREADY covered end-to-end at the e2e tier (`install-smoke`, `matrix-5types`) per CURRENT-AUDIT-AND-GENERATOR.md A.2. So every claimed gap is already covered by an EXISTING tier.
 - The argument "the jump is mocked-unit -> full-tarball-e2e with nothing in between" is an aesthetic test-pyramid argument, not a regression-catching one. A tier is justified only if it catches a class of bug that no other tier catches. Name that bug class -- nobody has. Path resolution that the e2e tier already exercises against a real installed tarball is strictly higher fidelity than running the executor against a `createTreeWithEmptyWorkspace`-seeded fake context.
 - This tier exists primarily to give the bespoke `createFsTree` a second consumer ("the executor could reuse it" -- A.2). That is the tell: a substrate looking for a justification. Cut D1, and the only remaining rationale for D3 evaporates with it.
@@ -68,7 +63,6 @@
 **Recommendation: Extend the EXISTING tarball harness with ONE generator smoke test inside the EXISTING `install-e2e` project. Do NOT create a new `generator-e2e` Nx project. Do NOT introduce Verdaccio. DISSENT against a dedicated e2e project.**
 
 **Rationale:**
-
 - The generator is a ~33-line `project.json` edit (SANDBOX-TECHNIQUES.md section 1). Its Tree behavior is fully covered by the in-memory unit test (D1). The ONLY thing a unit test cannot prove is "the generator resolves from the INSTALLED package and `nx g angular-typechecker:typecheck-configuration` works as a consumer runs it." That is ONE assertion: pack+install (already done by `install-smoke`), `execSync('npx nx g ...')`, assert the on-disk `project.json` target, optionally `nx run <proj>:angular-typecheck`. (CURRENT-AUDIT-AND-GENERATOR.md B.3 route 2.)
 - A NEW Nx e2e project is pure overhead: a new `project.json` with `implicitDependencies`, a new vitest config, a new `tsconfig.spec.json`, AND a mandatory edit to ci.yml's explicit `-p` list (or it silently never runs -- see D5). All to host a single `execSync` that the existing `install-e2e` project can host with zero new wiring.
 - Verdaccio is a hard NO. The repo deliberately uses `npm pack` + tmp install, not Verdaccio (CURRENT-AUDIT-AND-GENERATOR.md B.3). The scaffolded Verdaccio `start-local-registry.ts` `execFileSync(nx)` is a KNOWN Windows failure (B.3 Windows caveat). Introducing a second e2e mechanism for one generator test is the definition of scope creep.
@@ -82,7 +76,6 @@
 **Recommendation: ZERO ci.yml changes for the high-value work; ONE line ONLY if a new e2e project is created (which D4 says not to). Loudly flag the explicit-`-p`-list silent-skip trap as the dominant CI risk.**
 
 **Rationale + the trap:**
-
 - In-plugin specs (generator unit + the 14 NG8xxx integration specs) land AUTOMATICALLY in the 6-cell `test` matrix the moment they match the include glob -- NO ci.yml edit needed (CURRENT-AUDIT-AND-GENERATOR.md A.4). This is the good path and covers everything that matters in this milestone.
 - **THE TRAP:** the `e2e` job runs an EXPLICIT `npx nx run-many -t test -p <list>` (A.4, ci.yml ~142-143). A new e2e project is INVISIBLE to CI until added by name to that list. The `ci` aggregate gate tolerates `skipped` jobs (it must, for the planning-only path via `predicate-quantifier: every`). So a new-but-unlisted e2e project produces NO failure and NO signal -- it simply never runs, and the required check stays green. This is the single most dangerous CI failure mode in the milestone: a test you believe is gating that is silently absent.
 - This trap is the strongest concrete argument FOR D4's "fold into the existing `install-e2e` project" recommendation: an existing project in the list cannot be silently skipped.
@@ -98,7 +91,6 @@
 **The honest scope read:** v0.0.4 is really TWO things: (a) ship a trivial generator + its idiomatic in-memory unit test (small, clean, justified), and (b) close the 14-NG8xxx gap (the verified, high-value work). Everything else -- bespoke FsTree, drift tripwire, in-memory executor tier, dedicated generator-e2e project, Verdaccio, jscodeshift -- is prior-art adoption masquerading as gap-closure. The generator pulling a "full technique stack" into the milestone IS the scope creep; the generator itself is not.
 
 **Smallest strategy that closes the verified gaps:**
-
 1. Ship the generator (`generator.ts` + `schema.json` + `schema.d.ts` + `generators.json` + `package.json` `generators` field + build-asset glob). Trivial.
 2. Generator unit test via in-memory `createTreeWithEmptyWorkspace` (D1): target-added, executor-id, options shape, idempotency (run-twice-equal), error-on-missing-project. Extend the existing `schema-parity.spec.ts` idiom to the generator's schema.
 3. One generator smoke test folded into the EXISTING `install-e2e` project (D4): `nx g` against the installed tarball -> assert on-disk `project.json` -> `nx run`.
@@ -106,13 +98,11 @@
 5. Zero ci.yml changes (everything in-plugin auto-runs); verify the one e2e smoke actually executes.
 
 **Top 3 CUTS (what to NOT do):**
-
 1. **CUT the bespoke `createFsTree`/`flushFsTreeChanges` real-disk wrapper** -- and with it the `eslint-disable` quarantine, the `no-restricted-imports` rule, and the FsTree drift tripwire. Use public `createTreeWithEmptyWorkspace`. (Removes the milestone's biggest fragility + maintenance liability; the deep import has no semver guarantee.)
 2. **CUT the in-memory executor variant tier** -- every claimed gap is already covered by `normalize-options.spec.ts` + the e2e tier. At most one fixture-backed `it`, no new substrate.
 3. **CUT the dedicated `generator-e2e` Nx project AND Verdaccio AND the jscodeshift injection toolkit** -- fold the generator smoke into `install-e2e`; keep committed fixtures for diagnostics.
 
 **Top 3 MUST-DOs:**
-
 1. **Assert the 14 missing NG8xxx (+ scoped baseline NG codes) by exact code/count** on committed fixtures, organized per introduction version. This is the only verified, product-protecting gap -- do it first and well; verify each code against `@angular/compiler-cli@22.0.4` on implementation.
 2. **Ship the generator + its in-memory unit test + idempotency + schema-parity gate.** Small, clean, the legitimate core of the "generator" half.
 3. **Add exactly one generator smoke to the existing `install-e2e` project and confirm it actually runs in CI** (guard against the explicit-`-p`-list silent-skip trap; trust the job log, not the green tick).

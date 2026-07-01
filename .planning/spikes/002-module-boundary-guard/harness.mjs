@@ -59,9 +59,7 @@ function createCanonicalizer(options) {
       return undefined;
     }
     const real = resolved.replace(/\\/g, '/');
-    const canonical = options.useCaseSensitiveFileNames
-      ? real
-      : real.toLowerCase();
+    const canonical = options.useCaseSensitiveFileNames ? real : real.toLowerCase();
     cache.set(filePath, canonical);
     return canonical;
   };
@@ -76,8 +74,7 @@ function isUnderDir(file, dir) {
   return file.startsWith(d);
 }
 function filterDiagnostics(diagnostics, options) {
-  if (options.includeDeps)
-    return { kept: [...diagnostics], suppressedCount: 0 };
+  if (options.includeDeps) return { kept: [...diagnostics], suppressedCount: 0 };
   const canonicalize = createCanonicalizer(options);
   const canonicalBase = canonicalize(options.basePath);
   const kept = [];
@@ -145,9 +142,7 @@ function isInProjectReference(leafConfigPath) {
 }
 
 function runLeaf(leafTsConfig) {
-  const parsed = ng.readConfiguration(leafTsConfig, {
-    suppressOutputPathCheck: true,
-  });
+  const parsed = ng.readConfiguration(leafTsConfig, { suppressOutputPathCheck: true });
   if (parsed.rootNames.length === 0) return [...parsed.errors];
   const result = ng.performCompilation({
     rootNames: parsed.rootNames,
@@ -166,9 +161,7 @@ function finalizeUnion(rawUnion, includeDeps) {
     realpath: (p) => ts.sys.realpath?.(p) ?? p,
   });
   const reported = ts.sortAndDeduplicateDiagnostics(filtered.kept);
-  const errorCount = reported.filter(
-    (d) => d.category === ts.DiagnosticCategory.Error,
-  ).length;
+  const errorCount = reported.filter((d) => d.category === ts.DiagnosticCategory.Error).length;
   return { reported, errorCount, suppressedCount: filtered.suppressedCount };
 }
 
@@ -182,9 +175,7 @@ function hasErrorInFile(reported, fileSuffix) {
 }
 
 // ---- drive ----
-const solutionParsed = ng.readConfiguration(solutionTsConfig, {
-  suppressOutputPathCheck: true,
-});
+const solutionParsed = ng.readConfiguration(solutionTsConfig, { suppressOutputPathCheck: true });
 const allReferences = (solutionParsed.projectReferences ?? []).map((r) =>
   resolveReferenceToConfigFile(r.path),
 );
@@ -209,10 +200,7 @@ const OUT = 'outsider/src/outsider.component.ts';
 const assertions = [
   {
     id: 'M1a-guard-skips-out-of-project-reference',
-    pass:
-      skipped.length === 1 &&
-      skipped[0].replace(/\\/g, '/').endsWith('outsider/tsconfig.lib.json') &&
-      walked.length === 1,
+    pass: skipped.length === 1 && skipped[0].replace(/\\/g, '/').endsWith('outsider/tsconfig.lib.json') && walked.length === 1,
     detail: `walked=${walked.length} skipped=${JSON.stringify(skipped.map((s) => s.replace(fixtureDir, '<fx>')))}`,
   },
   {
@@ -223,33 +211,27 @@ const assertions = [
   {
     id: 'M1c-outsider-absent-even-with-includeDeps',
     pass: !hasErrorInFile(guardedIncludeDeps.reported, OUT),
-    detail:
-      'CRUX: includeDeps=true does NOT resurrect the out-of-project REFERENCE (guard skipped its leaf)',
+    detail: 'CRUX: includeDeps=true does NOT resurrect the out-of-project REFERENCE (guard skipped its leaf)',
   },
   {
     id: 'M1d-no-guard-baseline-would-leak-outsider',
     pass: hasErrorInFile(noGuardIncludeDeps.reported, OUT),
-    detail:
-      'contrast: WITHOUT the guard, walking every reference + includeDeps=true DOES leak the outsider error -- so the guard is load-bearing',
+    detail: 'contrast: WITHOUT the guard, walking every reference + includeDeps=true DOES leak the outsider error -- so the guard is load-bearing',
   },
   {
     id: 'M2a-external-dep-suppressed-default',
-    pass:
-      !hasErrorInFile(guardedDefault.reported, EXT) &&
-      guardedDefault.suppressedCount >= 1,
+    pass: !hasErrorInFile(guardedDefault.reported, EXT) && guardedDefault.suppressedCount >= 1,
     detail: `external dep source suppressed by existing filter (suppressedCount=${guardedDefault.suppressedCount})`,
   },
   {
     id: 'M2b-external-dep-kept-with-includeDeps',
     pass: hasErrorInFile(guardedIncludeDeps.reported, EXT),
-    detail:
-      'external dep source KEPT with includeDeps=true -- existing behavior UNCHANGED',
+    detail: 'external dep source KEPT with includeDeps=true -- existing behavior UNCHANGED',
   },
   {
     id: 'M2c-in-project-dep-reported-default',
     pass: hasErrorInFile(guardedDefault.reported, IN),
-    detail:
-      'local path-mapped dep source (under project) reported by default -- existing behavior UNCHANGED',
+    detail: 'local path-mapped dep source (under project) reported by default -- existing behavior UNCHANGED',
   },
 ];
 
@@ -267,53 +249,35 @@ const forensic = {
   guardedDefault: {
     errorCount: guardedDefault.errorCount,
     suppressedCount: guardedDefault.suppressedCount,
-    files: guardedDefault.reported
-      .filter((d) => d.file)
-      .map((d) => rel(d.file.fileName)),
+    files: guardedDefault.reported.filter((d) => d.file).map((d) => rel(d.file.fileName)),
   },
   guardedIncludeDeps: {
     errorCount: guardedIncludeDeps.errorCount,
-    files: guardedIncludeDeps.reported
-      .filter((d) => d.file)
-      .map((d) => rel(d.file.fileName)),
+    files: guardedIncludeDeps.reported.filter((d) => d.file).map((d) => rel(d.file.fileName)),
   },
   noGuardIncludeDeps: {
     errorCount: noGuardIncludeDeps.errorCount,
-    files: noGuardIncludeDeps.reported
-      .filter((d) => d.file)
-      .map((d) => rel(d.file.fileName)),
+    files: noGuardIncludeDeps.reported.filter((d) => d.file).map((d) => rel(d.file.fileName)),
   },
   assertions,
   verdict: allPass ? 'VALIDATED' : 'FAILED',
 };
 
-writeFileSync(
-  join(here, 'forensic-log.json'),
-  JSON.stringify(forensic, null, 2),
-);
+writeFileSync(join(here, 'forensic-log.json'), JSON.stringify(forensic, null, 2));
 
 console.log('=== Spike 002: module-boundary guard ===');
 console.log(`env: node ${process.version} | ts ${ts.version}`);
-console.log(
-  `references: ${allReferences.length} -> walked ${walked.length}, skipped ${skipped.length}`,
-);
+console.log(`references: ${allReferences.length} -> walked ${walked.length}, skipped ${skipped.length}`);
 console.log(`  walked : ${forensic.walked.join(', ')}`);
 console.log(`  skipped: ${forensic.skipped.join(', ')}`);
 console.log('--- guarded, includeDeps=false (default) ---');
-console.log(
-  `  errorCount=${guardedDefault.errorCount} suppressed=${guardedDefault.suppressedCount} files=${JSON.stringify(forensic.guardedDefault.files)}`,
-);
+console.log(`  errorCount=${guardedDefault.errorCount} suppressed=${guardedDefault.suppressedCount} files=${JSON.stringify(forensic.guardedDefault.files)}`);
 console.log('--- guarded, includeDeps=true ---');
-console.log(
-  `  errorCount=${guardedIncludeDeps.errorCount} files=${JSON.stringify(forensic.guardedIncludeDeps.files)}`,
-);
+console.log(`  errorCount=${guardedIncludeDeps.errorCount} files=${JSON.stringify(forensic.guardedIncludeDeps.files)}`);
 console.log('--- NO-GUARD baseline, includeDeps=true ---');
-console.log(
-  `  errorCount=${noGuardIncludeDeps.errorCount} files=${JSON.stringify(forensic.noGuardIncludeDeps.files)}`,
-);
+console.log(`  errorCount=${noGuardIncludeDeps.errorCount} files=${JSON.stringify(forensic.noGuardIncludeDeps.files)}`);
 console.log('--- assertions ---');
-for (const a of assertions)
-  console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
+for (const a of assertions) console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
 console.log(`\nVERDICT: ${forensic.verdict}`);
 
 process.exit(allPass ? 0 : 1);

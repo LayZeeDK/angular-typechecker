@@ -19,7 +19,6 @@ Address the actionable findings from the PR #11 (milestone v0.0.3) code review -
 ## Implementation Decisions
 
 ### I-1 -- silent RES-02 notice on out-of-basePath poison (the one behavioral fix)
-
 - **Detect the TCB-generation Fatal (NG3004) on the PRE-filter `diagnostics` set in `finalize`**,
   not on `reported` (the post-boundary-filter, deduped set). Locked: Option A. Confirmed safe --
   `diagnostics` is the raw `[...configDiagnostics, ...result.diagnostics]` arg (run-typecheck.ts
@@ -44,7 +43,6 @@ Address the actionable findings from the PR #11 (milestone v0.0.3) code review -
   the only case.
 
 ### Test-gap closures (CONFIRMED real)
-
 - **T1 (filter-diagnostics realpath fallback):** add a test combining a THROWING realpath with an
   OUT-of-project path, asserting it is still SUPPRESSED (`suppressedCount === 1`). The existing
   throwing-realpath test only covers the in-project keep path.
@@ -53,12 +51,11 @@ Address the actionable findings from the PR #11 (milestone v0.0.3) code review -
   post-compilation-stage scans. e.g. `rejects.toThrow(/<planted text>/)`, not just
   `rejects.toBeInstanceOf(...)`.
 - **S-types (drift blind spot):** add `expect(typeof
-program.getTsProgram().useCaseSensitiveFileNames).toBe('function')` to
+  program.getTsProgram().useCaseSensitiveFileNames).toBe('function')` to
   `compiler-cli-types.runtime.spec.ts` -- the one vendored runtime member enforced by neither the
   build-time drift probe nor the runtime spec.
 
 ### Cleanups (CONFIRMED, no behavioral risk)
-
 - **S-code:** remove the dead `EmitFlags: { None: 0 }` mock member in `infra-failure.spec.ts` (~45)
   -- HARD-02 removed `None` from the shim enum; production passes `0 as EmitFlags`, never `.None`.
 - **S-test:** REMOVE the unreferenced RES-01 spike-leftover fixtures
@@ -73,7 +70,6 @@ program.getTsProgram().useCaseSensitiveFileNames).toBe('function')` to
   "14 dev/tooling deps" counts (keep the surrounding rationale).
 
 ### Dropped / Out of scope
-
 - **T2 -- DROPPED (REFUTED by --analyze):** `includeDeps: true` IS plumbed end-to-end through
   `runTypecheck -> finalize` (`run-typecheck.integration.spec.ts:129-145` asserts fold-back +
   `suppressedCount === 0`). No action -- adding coverage would duplicate existing tests.
@@ -84,11 +80,10 @@ program.getTsProgram().useCaseSensitiveFileNames).toBe('function')` to
   delta was already reviewed by the phase `code_review_gate` during execution.
 
 ### Claude's Discretion
-
 - Exact test naming/phrasing and placement within the existing spec files.
 - Whether the best-effort I-1 cross-project integration fixture is included (gate is the unit test).
 - Whether the `typescript.js` anchor wording is "verifyCompilerOptions" or an equally stable phrase.
-  </decisions>
+</decisions>
 
 <specifics>
 ## Specific Ideas
@@ -105,11 +100,10 @@ test (likely in `run-typecheck.spec.ts` or a focused new spec).
 </specifics>
 
 <canonical_refs>
-
 ## Canonical References
 
 - `.planning/phases/09-resilience-per-file-fault-isolation-boundary-robustness/09-RES-01-SPIKE.md`
   (Fatal attaches to `<checked-component>.ngtypecheck.ts`; second-poison Fatal suppression).
 - `.planning/phases/09-.../09-RES-02-DECISION.md` (RES-02 reframe + REP-RES-02b deferral).
 - AGENTS.md "Single-plan wave: skip worktrees" (this quick task runs the executor on the main tree).
-  </canonical_refs>
+</canonical_refs>

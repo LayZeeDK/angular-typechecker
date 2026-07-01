@@ -12,8 +12,8 @@ requires:
   - phase: 08-correctness-completeness-fixes
     provides: the gatherAllDiagnostics seventh-getter (getGlobalDiagnostics, COR-02) and the infra-vs-type TypecheckInfrastructureError policy RES-02 preserves
 provides:
-  - 'Per-file fault-isolated Angular diagnostic gathering (HYBRID) in gather-diagnostics.ts: residual whole-program getNgSemanticDiagnostics() + per-file getNgSemanticDiagnostics(sf.fileName) loop skipping isDeclarationFile'
-  - 'fault-isolation.integration.spec.ts: the real-compiler proof that one TCB-phase FatalDiagnosticError yields exactly ONE diagnostic and does NOT collapse the run to an infra-500 (the survivor is not abandoned)'
+  - "Per-file fault-isolated Angular diagnostic gathering (HYBRID) in gather-diagnostics.ts: residual whole-program getNgSemanticDiagnostics() + per-file getNgSemanticDiagnostics(sf.fileName) loop skipping isDeclarationFile"
+  - "fault-isolation.integration.spec.ts: the real-compiler proof that one TCB-phase FatalDiagnosticError yields exactly ONE diagnostic and does NOT collapse the run to an infra-500 (the survivor is not abandoned)"
   - "Empirical finding (the WholeProgram-priming limitation): a TCB-GENERATION Fatal aborts the shared ensureAllShimsForAllFiles() priming, so a survivor's TEMPLATE diagnostics cannot be recovered per-file under OptimizeFor.WholeProgram (D-07) -- affects @angular/build identically"
 affects: [10 HARD-01 getter-set drift assertion must cover the per-file getNgSemanticDiagnostics(fileName) usage]
 
@@ -22,14 +22,14 @@ tech-stack:
   added: []
   patterns:
     - "HYBRID Angular gather (RES-01 GO): keep the file-less-safe whole-program getNgSemanticDiagnostics() AND add a per-file loop over getTsProgram().getSourceFiles() skipping isDeclarationFile; rely on finalize's ts.sortAndDeduplicateDiagnostics to dedup the per-file template duplicates (no manual dedup)"
-    - 'Fault-isolation integration spec asserts the PROVABLE resilience contract (exactly one Fatal-derived diagnostic, no infra-500, survivor not abandoned), with the WholeProgram-priming limitation documented inline'
+    - "Fault-isolation integration spec asserts the PROVABLE resilience contract (exactly one Fatal-derived diagnostic, no infra-500, survivor not abandoned), with the WholeProgram-priming limitation documented inline"
 
 key-files:
   created:
-    - 'packages/angular-typechecker/src/core/fault-isolation.integration.spec.ts'
+    - "packages/angular-typechecker/src/core/fault-isolation.integration.spec.ts"
   modified:
-    - 'packages/angular-typechecker/src/core/gather-diagnostics.ts'
-    - 'packages/angular-typechecker/src/core/gather-diagnostics.spec.ts'
+    - "packages/angular-typechecker/src/core/gather-diagnostics.ts"
+    - "packages/angular-typechecker/src/core/gather-diagnostics.spec.ts"
 
 key-decisions:
   - "Implemented HYBRID (not SIMPLE), exactly as the RES-01 GO decision recorded. The residual whole-program getNgSemanticDiagnostics() guarantees no file-less / shim-attached non-template diagnostic is dropped; the per-file loop adds the FatalDiagnosticError isolation. COR-02's getGlobalDiagnostics (line 35) retained; OptimizeFor.WholeProgram only (D-07); NO catch-all added (D-05); NO NgtscProgram migration (D-04)."
@@ -83,7 +83,6 @@ completed: 2026-06-29
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Updated the gatherer unit mocks for the new per-file loop**
-
 - **Found during:** Task 1
 - **Issue:** The existing `gather-diagnostics.spec.ts` stubbed `getTsProgram()` returning only `{ getGlobalDiagnostics }`. The HYBRID loop calls `program.getTsProgram().getSourceFiles()`, which is `undefined` on those stubs -> `getSourceFiles is not a function` at runtime.
 - **Fix:** Added `getSourceFiles` to every `getTsProgram()` stub (returning `[]` or a small `ts.SourceFile` set including a `.d.ts` to prove the skip), updated the call-order assertion to include the per-file iterations, and added a dedicated `isDeclarationFile`-skip test.
@@ -129,6 +128,5 @@ None. No stubbed data, no placeholder UI, no TODO/FIXME introduced. The integrat
 - No STATE.md / ROADMAP.md writes (worktree mode -- orchestrator owns those post-merge).
 
 ---
-
-_Phase: 09-resilience-per-file-fault-isolation-boundary-robustness_
-_Completed: 2026-06-29_
+*Phase: 09-resilience-per-file-fault-isolation-boundary-robustness*
+*Completed: 2026-06-29*

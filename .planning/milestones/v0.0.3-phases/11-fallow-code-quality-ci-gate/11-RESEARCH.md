@@ -15,7 +15,6 @@ The 11-DISCUSS-RESEARCH.md facts hold verbatim with **one path correction**: the
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-
 - **D-01:** `--gate new-only` (fallow default); PR fails only for findings it INTRODUCES.
 - **D-02:** Pin `"audit": { "gate": "new-only" }` in config AND suppress inherited findings at rule/entry/ignore level (not relying on `introduced:false`) -- end the phase genuinely clean.
 - **D-03:** Config-driven via hand-authored `.fallowrc.jsonc` (NOT inline `// fallow-ignore-*`), one JSONC comment per declaration.
@@ -33,52 +32,47 @@ The 11-DISCUSS-RESEARCH.md facts hold verbatim with **one path correction**: the
 - **D-15:** `assert_selected "$PR_PLAN" "ci/fallow"`; actionlint stays green; preserve ci.yml security posture.
 
 ### Claude's Discretion
-
 - Exact `.fallowrc.jsonc` layout / `$schema` pointer / comment wording; `audit.gate` config key vs `--gate` CLI flag (config preferred for determinism).
 - `@angular/forms` removed vs ignored -- decided by the executor's import-graph check (**this research's evidence: REMOVE**).
 - Ordering of the `fallow` job in the workflow file; whether it shares the `changes` job output directly.
 
 ### Deferred Ideas (OUT OF SCOPE)
-
 - Migrating fallow output to GitHub code-scanning via SARIF (`--ci`) -- needs `security-events: write`.
 - Fixing GSD's broken fallow structural pre-pass (fallow 2.x flag drift) -- a GSD-tooling concern.
 - Tuning duplication/complexity thresholds -- deferred until a real finding proves a default wrong.
 
 ## Phase Requirements
 
-| ID      | Description                                                                                                | Research Support                                                                                                                                         |
-| ------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| QUAL-01 | Dedicated path-gated SHA-pinned `fallow` CI job wired into `ci` aggregate, `new-only` gate                 | Verified job YAML below (copies `test`/`e2e` pattern); `fetch-depth: 0` confirmed sufficient (merge-base `1e37d55` resolved live); act label `ci/fallow` |
-| QUAL-02 | Hand-authored `.fallowrc.jsonc` RESOLVES current findings -> audit exits 0                                 | **Verified live: verdict `pass`, exit 0** with the config below; **0 findings** once `@angular/forms` removed                                            |
-| QUAL-03 | `fallow` exact-pinned root devDependency; act-compat assertion; actionlint green; ci.yml posture preserved | `fallow@2.103.0` (slopcheck OK, 404k weekly dl, source repo present); root devDep does NOT touch `@nx/dependency-checks` (scoped to the package)         |
+| ID | Description | Research Support |
+|----|-------------|------------------|
+| QUAL-01 | Dedicated path-gated SHA-pinned `fallow` CI job wired into `ci` aggregate, `new-only` gate | Verified job YAML below (copies `test`/`e2e` pattern); `fetch-depth: 0` confirmed sufficient (merge-base `1e37d55` resolved live); act label `ci/fallow` |
+| QUAL-02 | Hand-authored `.fallowrc.jsonc` RESOLVES current findings -> audit exits 0 | **Verified live: verdict `pass`, exit 0** with the config below; **0 findings** once `@angular/forms` removed |
+| QUAL-03 | `fallow` exact-pinned root devDependency; act-compat assertion; actionlint green; ci.yml posture preserved | `fallow@2.103.0` (slopcheck OK, 404k weekly dl, source repo present); root devDep does NOT touch `@nx/dependency-checks` (scoped to the package) |
 
 ## Standard Stack
 
 ### Core
-
-| Tool     | Version               | Purpose                                                    | Why Standard                                                                                                                                                                                       |
-| -------- | --------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tool | Version | Purpose | Why Standard |
+|------|---------|---------|--------------|
 | `fallow` | `2.103.0` (exact-pin) | dead-code / duplication / complexity analyzer; the CI gate | `[VERIFIED: npm registry]` only `latest` dist-tag = `2.103.0`; created 2026-03-17, 404,196 weekly downloads, source repo `github.com/fallow-rs/fallow`, `engines.node >=16`, no postinstall script |
 
 **Installation (root devDependency):**
-
 ```bash
 npm install -D fallow@2.103.0   # exact pin; CI runs `npm ci` then `npx fallow`
 ```
 
 ### Alternatives Considered
-
-| Instead of                               | Could Use                   | Tradeoff                                                                                                                                                     |
-| ---------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--gate new-only` (config-pinned)        | `--gate all`                | `all` skips the base-snapshot pass (cheaper) but gates on EVERY finding in changed files -- higher friction; D-01 locks `new-only`                           |
+| Instead of | Could Use | Tradeoff |
+|------------|-----------|----------|
+| `--gate new-only` (config-pinned) | `--gate all` | `all` skips the base-snapshot pass (cheaper) but gates on EVERY finding in changed files -- higher friction; D-01 locks `new-only` |
 | `ignoreDependencies: ["@angular/forms"]` | **Remove `@angular/forms`** | Removal is deterministic + leaves a 0-finding tree; ignore leaves a perpetual reported (non-gating) finding and `has_errors:true`. **Evidence says remove.** |
-| `npx fallow` (locked)                    | `npx fallow@latest`         | `@latest` lets a fallow release silently change a default rule and flip the gate (D-11 lesson). Pin + `npm ci`.                                              |
+| `npx fallow` (locked) | `npx fallow@latest` | `@latest` lets a fallow release silently change a default rule and flip the gate (D-11 lesson). Pin + `npm ci`. |
 
 ## Package Legitimacy Audit
 
-| Package  | Registry | Age                  | Downloads    | Source Repo                 | slopcheck | Disposition |
-| -------- | -------- | -------------------- | ------------ | --------------------------- | --------- | ----------- |
-| `fallow` | npm      | ~3.5 mo (2026-03-17) | 404,196 / wk | github.com/fallow-rs/fallow | `[OK]`    | Approved    |
+| Package | Registry | Age | Downloads | Source Repo | slopcheck | Disposition |
+|---------|----------|-----|-----------|-------------|-----------|-------------|
+| `fallow` | npm | ~3.5 mo (2026-03-17) | 404,196 / wk | github.com/fallow-rs/fallow | `[OK]` | Approved |
 
 **Packages removed due to slopcheck [SLOP] verdict:** none
 **Packages flagged as suspicious [SUS]:** none
@@ -95,7 +89,9 @@ This is the EXACT file content that was run live and produced **verdict `pass` /
   // IN-02: the build-time drift tripwire is reachable ONLY via tsconfig.drift.json
   // `files` (classic node10 resolution), never via the import graph, so fallow
   // flags it `unused_file`. Declaring it an entry point clears that false positive.
-  "entry": ["packages/angular-typechecker/src/core/compiler-cli-types.drift.ts"],
+  "entry": [
+    "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts"
+  ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
   // drift tripwire's value-level pin (not the import graph). Pin it so the
@@ -103,8 +99,8 @@ This is the EXACT file content that was run live and produced **verdict `pass` /
   "ignoreExports": [
     {
       "file": "**/compiler-cli-types.ts",
-      "exports": ["UNKNOWN_ERROR_CODE"],
-    },
+      "exports": ["UNKNOWN_ERROR_CODE"]
+    }
   ],
 
   "rules": {
@@ -112,7 +108,7 @@ This is the EXACT file content that was run live and produced **verdict `pass` /
     // attw/publint CLIs, etc.) are structurally un-traceable by import graph and
     // will always false-positive. Dev-dep hygiene is owned by @nx/dependency-checks
     // (the published package) + manual review, not fallow.
-    "unused-dev-dependencies": "off",
+    "unused-dev-dependencies": "off"
     // D-07: unused-dependencies stays at its default `error` -- catches a genuine
     // unused PROD dep. @angular/forms is RESOLVED by removal (see below), not here.
   },
@@ -124,8 +120,8 @@ This is the EXACT file content that was run live and produced **verdict `pass` /
       // graph. Scope the rule off for this file only.
       "files": ["**/compiler-cli-types.ts"],
       "rules": {
-        "unused-enum-members": "off",
-      },
+        "unused-enum-members": "off"
+      }
     },
     {
       // Intentional fault-isolation test fixtures: components rendered nowhere +
@@ -135,15 +131,15 @@ This is the EXACT file content that was run live and produced **verdict `pass` /
       "files": ["fixtures/fault-isolation/**"],
       "rules": {
         "unrendered-components": "off",
-        "unused-component-inputs": "off",
-      },
-    },
+        "unused-component-inputs": "off"
+      }
+    }
   ],
 
   "audit": {
     // D-02: pin the gate so the verdict is deterministic regardless of CLI flags.
-    "gate": "new-only",
-  },
+    "gate": "new-only"
+  }
 }
 ```
 
@@ -152,16 +148,15 @@ This is the EXACT file content that was run live and produced **verdict `pass` /
 ## Resolving the findings: live evidence
 
 Command (run from repo root, HEAD = `d5cd2cc`, base merge-base `1e37d55`, 112 changed files):
-
 ```
 npx --yes fallow@latest audit --format json --base origin/main -c <config>
 ```
 
-| Scenario                                   | verdict  | exit  | dead_code_issues | introduced | remaining                                               |
-| ------------------------------------------ | -------- | ----- | ---------------- | ---------- | ------------------------------------------------------- |
-| No config                                  | fail     | 1     | 28               | 12         | (baseline)                                              |
-| Config only (`@angular/forms` NOT removed) | **pass** | **0** | 1                | 0          | `@angular/forms` (inherited, `error`, non-gating today) |
-| Config + `@angular/forms` removed          | **pass** | **0** | **0**            | 0          | **none -- fully clean**                                 |
+| Scenario | verdict | exit | dead_code_issues | introduced | remaining |
+|----------|---------|------|------------------|-----------|-----------|
+| No config | fail | 1 | 28 | 12 | (baseline) |
+| Config only (`@angular/forms` NOT removed) | **pass** | **0** | 1 | 0 | `@angular/forms` (inherited, `error`, non-gating today) |
+| Config + `@angular/forms` removed | **pass** | **0** | **0** | 0 | **none -- fully clean** |
 
 The 12 introduced findings the config clears: 1 drift `unused_file` (`entry`), 7 `unused_enum_members` (`overrides`), 3 `unrendered_components` + 1 `unused_component_inputs` (`fixtures/fault-isolation/**` `overrides`). The 2 remaining inherited `error`-severity findings that D-02 demands be deterministic: `UNKNOWN_ERROR_CODE` `unused_types` (cleared by `ignoreExports`) and `@angular/forms` `unused_dependencies` (cleared by REMOVAL). The 14 `unused_dev_dependencies` default to `warn` (verified in schema) so they never gated, but D-06 sets them `off` for clarity.
 
@@ -180,46 +175,44 @@ The 12 introduced findings the config clears: 1 drift `unused_file` (`entry`), 7
 Copy the `test`/`e2e` pattern verbatim. SHA pins are the EXACT ones already in `ci.yml` (Dependabot keeps both jobs in lockstep). Slot it as a sibling of `e2e` (after it, before `act-compat`), then add `fallow` to the `ci` aggregate `needs:` + it is covered by the existing `contains(needs.*.result, ...)` gate (no gate-expression edit needed -- `needs.*` already globs all listed jobs).
 
 ```yaml
-# Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
-# for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
-# gate (.fallowrc.jsonc `audit.gate: new-only`); --format json is for the CI log
-# only, the exit code gates. NO --ci/SARIF (would need security-events: write,
-# contradicting the top-level contents: read). fallow is an exact-pinned root
-# devDependency installed by `npm ci`; `npx fallow` resolves the locked version
-# (never @latest) so a fallow release cannot silently flip the gate.
-#
-# fetch-depth: 0 is LOAD-BEARING -- new-only attribution runs a base-snapshot
-# pass against origin/main's merge-base; a shallow checkout breaks new-vs-
-# inherited attribution. FALLOW_AUDIT_BASE pins the base ref defensively.
-#
-# Path-gated (D-08), SAME NEGATIVE if: form as test/e2e -- skips a planning/docs-
-# only PR yet stays in the `act -n` plan under the empty filter output.
-fallow:
-  needs: changes
-  if: ${{ needs.changes.outputs.code != 'false' }}
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      with:
-        persist-credentials: false
-        fetch-depth: 0
-    - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
-      with:
-        node-version: 24
-        cache: npm
-    - run: npm ci
-    - run: npx fallow audit --format json --base origin/main
-      env:
-        FALLOW_AUDIT_BASE: origin/main
+  # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
+  # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
+  # gate (.fallowrc.jsonc `audit.gate: new-only`); --format json is for the CI log
+  # only, the exit code gates. NO --ci/SARIF (would need security-events: write,
+  # contradicting the top-level contents: read). fallow is an exact-pinned root
+  # devDependency installed by `npm ci`; `npx fallow` resolves the locked version
+  # (never @latest) so a fallow release cannot silently flip the gate.
+  #
+  # fetch-depth: 0 is LOAD-BEARING -- new-only attribution runs a base-snapshot
+  # pass against origin/main's merge-base; a shallow checkout breaks new-vs-
+  # inherited attribution. FALLOW_AUDIT_BASE pins the base ref defensively.
+  #
+  # Path-gated (D-08), SAME NEGATIVE if: form as test/e2e -- skips a planning/docs-
+  # only PR yet stays in the `act -n` plan under the empty filter output.
+  fallow:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx fallow audit --format json --base origin/main
+        env:
+          FALLOW_AUDIT_BASE: origin/main
 ```
 
 **Aggregate `ci` job change (one line):**
-
 ```yaml
-ci:
-  needs: [changes, test, e2e, fallow, act-compat, lint-workflows] # + fallow
+  ci:
+    needs: [changes, test, e2e, fallow, act-compat, lint-workflows]   # + fallow
 ```
-
 The gate expression `contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')` is UNCHANGED -- `needs.*` globs every job in the `needs:` list, so adding `fallow` to the list auto-includes it in the gate. `'skipped'` stays out of the fail set, so a planning/docs-only PR that path-skips `fallow` keeps `ci` green.
 
 **Security posture preserved (QUAL-03):** SHA-pinned actions (reused pins), top-level `contents: read` (no job re-grant), `persist-credentials: false`, no PR-metadata interpolation (fixed target ids + flags only), Dependabot-tracked (same action refs). No new permission needed -- `npx fallow audit` reads git + filesystem only.
@@ -247,7 +240,6 @@ assert_selected "$PR_PLAN" "ci/fallow" "pull_request"
 ## Determinism (open question 6, answered)
 
 `[VERIFIED: live]` The config suppresses every gating finding at the **rule / entry / ignore** level, NOT by relying on any `introduced:false` status:
-
 - drift file -> `entry` (structural, changeset-independent)
 - EmitFlags members -> `overrides` `unused-enum-members: off` (changeset-independent)
 - UNKNOWN_ERROR_CODE -> `ignoreExports` (changeset-independent)
@@ -259,66 +251,58 @@ Result: on ANY PR -- including one that touches `compiler-cli-types.ts`, the dri
 
 ## Don't Hand-Roll
 
-| Problem                                   | Don't Build                                              | Use Instead                                 | Why                                                                                           |
-| ----------------------------------------- | -------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| New-vs-inherited finding attribution      | Custom git-diff finding differ                           | fallow `--gate new-only` base-snapshot pass | fallow already analyzes the base tree and diffs findings; rolling it is error-prone           |
-| Suppressing intentional dead code         | Inline `// fallow-ignore-*` comments scattered in source | central `.fallowrc.jsonc`                   | D-03: centralized, auditable, one documented reason each; inline comments rot and hide intent |
-| Dev-dep hygiene for the published package | fallow `unused-dev-dependencies`                         | `@nx/dependency-checks` (already wired)     | fallow's import graph cannot see flat-config/CLI tooling deps -> always false-positive (D-06) |
+| Problem | Don't Build | Use Instead | Why |
+|---------|-------------|-------------|-----|
+| New-vs-inherited finding attribution | Custom git-diff finding differ | fallow `--gate new-only` base-snapshot pass | fallow already analyzes the base tree and diffs findings; rolling it is error-prone |
+| Suppressing intentional dead code | Inline `// fallow-ignore-*` comments scattered in source | central `.fallowrc.jsonc` | D-03: centralized, auditable, one documented reason each; inline comments rot and hide intent |
+| Dev-dep hygiene for the published package | fallow `unused-dev-dependencies` | `@nx/dependency-checks` (already wired) | fallow's import graph cannot see flat-config/CLI tooling deps -> always false-positive (D-06) |
 
 ## Common Pitfalls
 
 ### Pitfall 1: Wrong fixture glob (the path bug in CONTEXT.md)
-
 **What goes wrong:** Using `packages/angular-typechecker/fixtures/fault-isolation/**` (the path written in 11-CONTEXT.md D-04 and canonical-refs) matches NOTHING -- the fixtures are at the repo-root `fixtures/fault-isolation/`. The 4 introduced fixture findings stay live and the gate fails.
 **How to avoid:** Use `fixtures/fault-isolation/**` (root-relative). `[VERIFIED: git ls-files]` the files are `fixtures/fault-isolation/{non-template-error,survivor,tcb-poison}.component.ts`.
 **Warning sign:** audit verdict `fail` with `unrendered_components` / `unused_component_inputs` still listed after applying the config.
 
 ### Pitfall 2: Leaving `@angular/forms` ignored instead of removed
-
 **What goes wrong:** `ignoreDependencies: ["@angular/forms"]` makes the gate pass but leaves `dead_code_has_errors: true` and a perpetual reported finding -- it baselines the debt rather than resolving it (contra roadmap item 4).
 **How to avoid:** Remove the dependency (verified unused). Tree becomes 0 findings.
 
 ### Pitfall 3: Shallow checkout breaks attribution
-
 **What goes wrong:** Default `actions/checkout` `fetch-depth: 1` cannot reach `origin/main`'s merge-base, so `new-only` mis-attributes inherited findings as introduced (or errors).
 **How to avoid:** `fetch-depth: 0` (+ `FALLOW_AUDIT_BASE=origin/main` defensively). D-13.
 
 ### Pitfall 4: `npx fallow@latest` in CI
-
 **What goes wrong:** A fallow release changing a default rule severity silently flips the gate.
 **How to avoid:** Exact-pin `fallow@2.103.0` as a root devDependency; `npm ci` then `npx fallow` resolves the locked version (D-11).
 
 ## Validation Architecture
 
 ### Test Framework
-
-| Property           | Value                                                                                                                                                                                                                            |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Framework          | This requirement set is a CI-workflow gate, NOT engine code -- verification is workflow-static-analysis (act + actionlint) + a real fallow exit-0 check, NOT vitest                                                              |
-| Config file        | `.fallowrc.jsonc` (repo root); `tools/act/act-compat.sh`; `.github/workflows/ci.yml`                                                                                                                                             |
-| Quick run command  | `npx fallow audit --format json --base origin/main` (expect exit 0)                                                                                                                                                              |
+| Property | Value |
+|----------|-------|
+| Framework | This requirement set is a CI-workflow gate, NOT engine code -- verification is workflow-static-analysis (act + actionlint) + a real fallow exit-0 check, NOT vitest |
+| Config file | `.fallowrc.jsonc` (repo root); `tools/act/act-compat.sh`; `.github/workflows/ci.yml` |
+| Quick run command | `npx fallow audit --format json --base origin/main` (expect exit 0) |
 | Full suite command | `npx nx run-many -t typecheck-drift test -p angular-typechecker` (proves the resolved findings -- removed `@angular/forms`, untouched shim -- did not break the engine) + `bash tools/act/act-compat.sh` + `./actionlint -color` |
 
 ### Phase Requirements -> Test Map
-
-| Req ID  | Behavior                                                | Test Type        | Automated Command                                                              | Exists?                            |
-| ------- | ------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------ | ---------------------------------- |
-| QUAL-01 | `fallow` job is selected on pull_request (path-gated)   | workflow dry-run | `bash tools/act/act-compat.sh` (asserts `ci/fallow` SELECTED)                  | ❌ Wave 0 (add the assertion line) |
-| QUAL-01 | ci.yml is GitHub-spec-valid incl. the new `needs` graph | static lint      | `./actionlint -color` (the `lint-workflows` job)                               | ✅ existing job                    |
-| QUAL-01 | ci.yml parses under act                                 | static           | `act --validate` (inside act-compat.sh)                                        | ✅ existing                        |
-| QUAL-02 | Audit exits 0 on the resolved tree                      | integration      | `npx fallow audit --format json --base origin/main; echo $?` (expect 0)        | ❌ Wave 0 (the resolution itself)  |
-| QUAL-02 | Resolution did not break the engine                     | unit+integration | `npx nx run-many -t typecheck-drift test -p angular-typechecker`               | ✅ existing suite                  |
-| QUAL-03 | `fallow` pinned exact in root package.json + lockfile   | manual/grep      | `git grep '"fallow"' package.json` shows `"2.103.0"`                           | ❌ Wave 0                          |
-| QUAL-03 | Published package dependency surface unchanged          | static           | `@nx/dependency-checks` via `npx nx lint angular-typechecker` (no new finding) | ✅ existing                        |
+| Req ID | Behavior | Test Type | Automated Command | Exists? |
+|--------|----------|-----------|-------------------|---------|
+| QUAL-01 | `fallow` job is selected on pull_request (path-gated) | workflow dry-run | `bash tools/act/act-compat.sh` (asserts `ci/fallow` SELECTED) | ❌ Wave 0 (add the assertion line) |
+| QUAL-01 | ci.yml is GitHub-spec-valid incl. the new `needs` graph | static lint | `./actionlint -color` (the `lint-workflows` job) | ✅ existing job |
+| QUAL-01 | ci.yml parses under act | static | `act --validate` (inside act-compat.sh) | ✅ existing |
+| QUAL-02 | Audit exits 0 on the resolved tree | integration | `npx fallow audit --format json --base origin/main; echo $?` (expect 0) | ❌ Wave 0 (the resolution itself) |
+| QUAL-02 | Resolution did not break the engine | unit+integration | `npx nx run-many -t typecheck-drift test -p angular-typechecker` | ✅ existing suite |
+| QUAL-03 | `fallow` pinned exact in root package.json + lockfile | manual/grep | `git grep '"fallow"' package.json` shows `"2.103.0"` | ❌ Wave 0 |
+| QUAL-03 | Published package dependency surface unchanged | static | `@nx/dependency-checks` via `npx nx lint angular-typechecker` (no new finding) | ✅ existing |
 
 ### Sampling Rate
-
 - **Per task commit:** `npx fallow audit --format json --base origin/main` (exit 0) on the relevant change.
 - **Per wave merge:** `bash tools/act/act-compat.sh` + `./actionlint -color` + `npx nx run-many -t typecheck-drift test -p angular-typechecker`.
 - **Phase gate:** all of the above green; a real green PR run of the new `fallow` job is the authoritative integration check (act CANNOT verify the aggregate `ci` gate's skipped-arithmetic -- only the REAL draft-PR run does, per the ci.yml/act-compat caveat).
 
 ### Wave 0 Gaps
-
 - [ ] `.fallowrc.jsonc` (repo root) -- covers QUAL-02 (the verified content above)
 - [ ] `@angular/forms` removal from root `package.json` + lockfile regen -- covers QUAL-02 determinism
 - [ ] `fallow` job added to `.github/workflows/ci.yml` + added to `ci.needs` -- covers QUAL-01
@@ -331,51 +315,45 @@ Result: on ANY PR -- including one that touches `compiler-cli-types.ts`, the dri
 > `security_enforcement` is enabled (config has no `false`). This phase touches CI workflow + dependency manifest -- the relevant surface is supply-chain + CI least-privilege, NOT app input/auth.
 
 ### Applicable ASVS Categories
-
-| ASVS Category                                     | Applies | Standard Control                                                                                                                                                      |
-| ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| V1 Architecture / Supply Chain                    | yes     | Exact-pin `fallow@2.103.0`; slopcheck `[OK]`; SHA-pinned actions (existing pins reused); Dependabot-tracked                                                           |
-| V14 Configuration / CI                            | yes     | Top-level `contents: read` preserved; no job re-grants write; `persist-credentials: false`; no PR-metadata interpolation; NO SARIF (`security-events: write` avoided) |
-| V2/V3/V4/V5/V6 (auth/session/access/input/crypto) | no      | No runtime/app surface in this phase                                                                                                                                  |
+| ASVS Category | Applies | Standard Control |
+|---------------|---------|-----------------|
+| V1 Architecture / Supply Chain | yes | Exact-pin `fallow@2.103.0`; slopcheck `[OK]`; SHA-pinned actions (existing pins reused); Dependabot-tracked |
+| V14 Configuration / CI | yes | Top-level `contents: read` preserved; no job re-grants write; `persist-credentials: false`; no PR-metadata interpolation; NO SARIF (`security-events: write` avoided) |
+| V2/V3/V4/V5/V6 (auth/session/access/input/crypto) | no | No runtime/app surface in this phase |
 
 ### Known Threat Patterns for CI + npm supply chain
-
-| Pattern                                                     | STRIDE                 | Standard Mitigation                                                                             |
-| ----------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------- |
-| Mutable action tag repointed to malicious code (tj-actions) | Tampering              | Full 40-char SHA pins (reuse `ci.yml`'s existing pins) + Dependabot                             |
-| Slopsquatted/hijacked analyzer dependency                   | Tampering/Spoofing     | Exact-pin + slopcheck `[OK]` + verified source repo + `npm ci` (lockfile-pinned), not `@latest` |
-| Credential persisted to `.git/config` and leaked            | Info Disclosure        | `persist-credentials: false` on the checkout (matches every other job)                          |
-| PR-metadata command injection in a run step                 | Tampering              | Fixed target ids + flags only; no `${{ github.event.* }}` interpolation in run steps            |
-| Over-broad token enabling a malicious publish               | Elevation of Privilege | `contents: read` at top level; no job re-grant; OIDC publish stays release.yml's concern        |
+| Pattern | STRIDE | Standard Mitigation |
+|---------|--------|---------------------|
+| Mutable action tag repointed to malicious code (tj-actions) | Tampering | Full 40-char SHA pins (reuse `ci.yml`'s existing pins) + Dependabot |
+| Slopsquatted/hijacked analyzer dependency | Tampering/Spoofing | Exact-pin + slopcheck `[OK]` + verified source repo + `npm ci` (lockfile-pinned), not `@latest` |
+| Credential persisted to `.git/config` and leaked | Info Disclosure | `persist-credentials: false` on the checkout (matches every other job) |
+| PR-metadata command injection in a run step | Tampering | Fixed target ids + flags only; no `${{ github.event.* }}` interpolation in run steps |
+| Over-broad token enabling a malicious publish | Elevation of Privilege | `contents: read` at top level; no job re-grant; OIDC publish stays release.yml's concern |
 
 ## Open Questions
 
 None blocking. All 7 open implementation questions from the brief were answered with live evidence (entry auto-detection, `@angular/forms` removal, job YAML, act assertion, dependency-checks, determinism, fetch-depth). The single residual uncertainty:
-
 - **`[ASSUMED]` actionlint stays green** for the new job -- high confidence (no new expression shapes), but the executor should run `./actionlint -color` to confirm. Low risk.
 
 ## Environment Availability
-
-| Dependency                | Required By          | Available                           | Version                       | Fallback               |
-| ------------------------- | -------------------- | ----------------------------------- | ----------------------------- | ---------------------- |
-| `fallow`                  | the gate             | ✓ (via npx; to be pinned as devDep) | 2.103.0                       | none needed            |
-| Node                      | running fallow / CI  | ✓                                   | v24.18.0 local; Node 24 in CI | —                      |
-| git history to merge-base | new-only attribution | ✓                                   | merge-base `1e37d55` resolved | `fetch-depth: 0` in CI |
-| `act` v0.2.89             | act-compat job       | ✓ (installed in CI job)             | 0.2.89                        | —                      |
-| `actionlint` 1.7.7        | lint-workflows job   | ✓ (installed in CI job)             | 1.7.7                         | —                      |
+| Dependency | Required By | Available | Version | Fallback |
+|------------|------------|-----------|---------|----------|
+| `fallow` | the gate | ✓ (via npx; to be pinned as devDep) | 2.103.0 | none needed |
+| Node | running fallow / CI | ✓ | v24.18.0 local; Node 24 in CI | — |
+| git history to merge-base | new-only attribution | ✓ | merge-base `1e37d55` resolved | `fetch-depth: 0` in CI |
+| `act` v0.2.89 | act-compat job | ✓ (installed in CI job) | 0.2.89 | — |
+| `actionlint` 1.7.7 | lint-workflows job | ✓ (installed in CI job) | 1.7.7 | — |
 
 No missing dependencies block execution.
 
 ## Assumptions Log
-
-| #   | Claim                                                                      | Section                     | Risk if Wrong                                                                     |
-| --- | -------------------------------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------- |
-| A1  | actionlint stays green for the new `fallow` job (no new expression shapes) | act-compat / Open Questions | LOW -- executor runs `./actionlint -color`; the job uses only existing constructs |
+| # | Claim | Section | Risk if Wrong |
+|---|-------|---------|---------------|
+| A1 | actionlint stays green for the new `fallow` job (no new expression shapes) | act-compat / Open Questions | LOW -- executor runs `./actionlint -color`; the job uses only existing constructs |
 
 ## Sources
 
 ### Primary (HIGH confidence)
-
 - Live `npx --yes fallow@latest audit --format json --base origin/main` runs on this repo (no config / config-only / config+forms-removed) -- the verdict/exit/finding tables.
 - `fallow config-schema` (2294 lines, `schema_version 7`) -- `entry`/`overrides`/`ignoreExports`/`rules`/`audit` shapes + default severities (`unused-dev-dependencies` default `warn`; the rest `error`).
 - `npm view fallow` (version `2.103.0`, single `latest` dist-tag, created 2026-03-17, repo `github.com/fallow-rs/fallow`, no postinstall); `api.npmjs.org/downloads` (404,196/wk); `slopcheck install fallow` (`[OK]`).
@@ -384,13 +362,10 @@ No missing dependencies block execution.
 - `.github/workflows/ci.yml`, `tools/act/act-compat.sh`, `packages/angular-typechecker/{project.json,tsconfig.drift.json,src/core/compiler-cli-types*.ts,eslint.config.mjs}` -- the patterns to copy + posture to preserve.
 
 ### Secondary (MEDIUM confidence)
-
 - 11-CONTEXT.md D-01..D-15 (locked decisions) -- corroborated/corrected against live evidence (fixture path correction noted).
 
 ## Metadata
-
 **Confidence breakdown:**
-
 - `.fallowrc.jsonc` content: HIGH -- run live, verdict pass / exit 0 reproduced; 0-finding tree on forms removal.
 - CI job YAML: HIGH -- copies a verified-working pattern; fetch-depth + merge-base verified live.
 - act-compat assertion: HIGH -- label format `ci/<jobid>` confirmed against existing assertions.

@@ -49,21 +49,23 @@ The shim does NOT use a package-name subpath. It uses a **relative filesystem pa
 
 ```ts
 // packages/angular-typechecker/src/core/compiler-cli-types.ts:15-24
-import type { EmitFlags, Program } from '../../../../node_modules/@angular/compiler-cli/src/transformers/api';
-import type { defaultGatherDiagnostics, ParsedConfiguration, performCompilation, readConfiguration } from '../../../../node_modules/@angular/compiler-cli/src/perform_compile';
+import type { EmitFlags, Program }
+  from '../../../../node_modules/@angular/compiler-cli/src/transformers/api';
+import type { defaultGatherDiagnostics, ParsedConfiguration, performCompilation, readConfiguration }
+  from '../../../../node_modules/@angular/compiler-cli/src/perform_compile';
 ```
 
 Relative path imports are NOT gated by the target package's `exports` map (exports only gates bare/package-name specifiers). Reproduced this session - the relative deep import type-checks cleanly: `tsc -p tsconfig` over `__repro_deep.ts` -> **EXIT 0**.
 
-**Why it works despite the leaf `.d.ts` files themselves containing extensionless imports** (e.g. `perform_compile.d.ts:10` `import * as api from './transformers/api'`): the root `tsconfig.base.json` sets `"skipLibCheck": true`, so TypeScript does not re-resolve/type-check the internal extensionless re-exports inside the `.d.ts` files the shim points at. It only needs the _named symbols declared in those two leaf files_ to be reachable, which they are.
+**Why it works despite the leaf `.d.ts` files themselves containing extensionless imports** (e.g. `perform_compile.d.ts:10` `import * as api from './transformers/api'`): the root `tsconfig.base.json` sets `"skipLibCheck": true`, so TypeScript does not re-resolve/type-check the internal extensionless re-exports inside the `.d.ts` files the shim points at. It only needs the *named symbols declared in those two leaf files* to be reachable, which they are.
 
-**Fragility (the real caveat):** the shim is coupled to TWO internal facts that are NOT part of the public type contract: (1) the on-disk `.d.ts` layout (`src/transformers/api.d.ts`, `src/perform_compile.d.ts`); (2) npm hoisting placing the package exactly four levels up at `<repo>/node_modules/@angular/compiler-cli`. A patch release that relocates a declaration file, or a non-hoisted/nested install layout, breaks the path. It is type-only (erased at emit; the built `compiler-loader.js` has zero trace of it), so a break is a _build-time type error caught by CI_, never a shipped runtime bug. Risk class: low-severity, high-visibility.
+**Fragility (the real caveat):** the shim is coupled to TWO internal facts that are NOT part of the public type contract: (1) the on-disk `.d.ts` layout (`src/transformers/api.d.ts`, `src/perform_compile.d.ts`); (2) npm hoisting placing the package exactly four levels up at `<repo>/node_modules/@angular/compiler-cli`. A patch release that relocates a declaration file, or a non-hoisted/nested install layout, breaks the path. It is type-only (erased at emit; the built `compiler-loader.js` has zero trace of it), so a break is a *build-time type error caught by CI*, never a shipped runtime bug. Risk class: low-severity, high-visibility.
 
 ### (b) How does `@angular/build` import compiler-cli TYPES, and does it hit the same problem? NO - it uses node10 resolution + the Function-import trick.
 
 - **Type imports:** `@angular/build` imports types from the package ROOT barrel - `import type * as ng from '@angular/compiler-cli'` (verified across 7 files: `angular-compilation.ts:9`, `aot-compilation.ts:9`, `jit-compilation.ts:9`, `noop-compilation.ts:9`, `hmr-candidates.ts:9`, `angular-host.ts:9`; `parallel-compilation.ts:9` imports `CompilerOptions` the same way). This is the SAME barrel-root import that fails for us under nodenext.
 - **Why it works for them:** their TS build is `"module": "commonjs"` + `"moduleResolution": "node"` (node10/classic) - `D:/projects/github/angular/angular-cli/tsconfig.json:5-6`. Reproduced this session in OUR repo: `module:commonjs` + `moduleResolution:node10` resolves the barrel -> **EXIT 0**. node10/classic DOES probe sibling `.d.ts` for extensionless specifiers, so the barrel re-exports resolve. They never hit the nodenext problem because they never use nodenext.
-- **The cost they pay instead:** under `module:commonjs`, TypeScript unconditionally downlevels `await import(...)` to `await Promise.resolve().then(() => __importStar(require(...)))` (reproduced this session - see emit matrix below), which throws `ERR_REQUIRE_ESM` on the ESM-only compiler-cli. To dodge that, `@angular/build` hides the dynamic import behind a `Function` constructor (`load-esm.ts:26-33`: `new Function('modulePath', 'return import(modulePath);')`). The file's own comment confirms: _"TypeScript will currently, unconditionally downlevel dynamic import into a require call ... a Function constructor is used to prevent TypeScript from changing the dynamic import."_ This is exactly the workaround PROJECT.md/Wave 3 rejected for us.
+- **The cost they pay instead:** under `module:commonjs`, TypeScript unconditionally downlevels `await import(...)` to `await Promise.resolve().then(() => __importStar(require(...)))` (reproduced this session - see emit matrix below), which throws `ERR_REQUIRE_ESM` on the ESM-only compiler-cli. To dodge that, `@angular/build` hides the dynamic import behind a `Function` constructor (`load-esm.ts:26-33`: `new Function('modulePath', 'return import(modulePath);')`). The file's own comment confirms: *"TypeScript will currently, unconditionally downlevel dynamic import into a require call ... a Function constructor is used to prevent TypeScript from changing the dynamic import."* This is exactly the workaround PROJECT.md/Wave 3 rejected for us.
 
 In short: **@angular/build trades the barrel problem away by paying a runtime-trick + node10-resolution cost. Our `module:nodenext` trades the runtime trick away by paying a barrel-typings cost (the shim).** Both are isolated workarounds for the same upstream gap (Angular's typings are not nodenext-clean).
 
@@ -71,30 +73,29 @@ In short: **@angular/build trades the barrel problem away by paying a runtime-tr
 
 Emit of `await import('@angular/compiler-cli')` and barrel-resolution by module/resolution combo, `typescript@6.0.3`:
 
-| `module`            | `moduleResolution` | emit of `import()`                                       | top-level emit (Nx `require()`-loadable?)      | barrel resolves? | Verdict                                                                                                            |
-| ------------------- | ------------------ | -------------------------------------------------------- | ---------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `nodenext` (LOCKED) | `nodenext`         | literal `import(...)`                                    | CJS (`exports.default`, `require(...)`) - YES  | NO (TS2305)      | Current. Needs the shim. GATE A intact.                                                                            |
-| `node16`            | `node16`           | literal `import(...)`                                    | CJS - YES                                      | NO (TS2305)      | Same as nodenext; same shim needed.                                                                                |
-| `commonjs`          | `node`/`node10`    | `Promise.resolve().then(()=>__importStar(require(...)))` | CJS - YES                                      | YES (EXIT 0)     | GATE A NO-GO: downlevels to `require()` -> `ERR_REQUIRE_ESM`. Only survivable with the `Function` trick.           |
-| `esnext`            | `bundler`          | literal `import(...)`                                    | **ESM** (`import {..}`, `export default`) - NO | YES (EXIT 0)     | GATE A NO-GO: executor emits ESM; Nx `require()` of it throws `ERR_REQUIRE_ESM` on the executor itself.            |
-| `preserve`          | `bundler`          | literal `import(...)`                                    | **ESM** (`import {..}`, `export default`) - NO | YES (EXIT 0)     | Same as esnext - executor is ESM, not `require()`-loadable.                                                        |
-| `nodenext`          | `bundler`          | n/a                                                      | n/a                                            | n/a              | ILLEGAL: TS5095/TS5109 (`bundler` requires module preserve/commonjs/es2015+; nodenext forces nodenext resolution). |
+| `module` | `moduleResolution` | emit of `import()` | top-level emit (Nx `require()`-loadable?) | barrel resolves? | Verdict |
+|----------|--------------------|--------------------|--------------------------------------------|------------------|---------|
+| `nodenext` (LOCKED) | `nodenext` | literal `import(...)` | CJS (`exports.default`, `require(...)`) - YES | NO (TS2305) | Current. Needs the shim. GATE A intact. |
+| `node16` | `node16` | literal `import(...)` | CJS - YES | NO (TS2305) | Same as nodenext; same shim needed. |
+| `commonjs` | `node`/`node10` | `Promise.resolve().then(()=>__importStar(require(...)))` | CJS - YES | YES (EXIT 0) | GATE A NO-GO: downlevels to `require()` -> `ERR_REQUIRE_ESM`. Only survivable with the `Function` trick. |
+| `esnext` | `bundler` | literal `import(...)` | **ESM** (`import {..}`, `export default`) - NO | YES (EXIT 0) | GATE A NO-GO: executor emits ESM; Nx `require()` of it throws `ERR_REQUIRE_ESM` on the executor itself. |
+| `preserve` | `bundler` | literal `import(...)` | **ESM** (`import {..}`, `export default`) - NO | YES (EXIT 0) | Same as esnext - executor is ESM, not `require()`-loadable. |
+| `nodenext` | `bundler` | n/a | n/a | n/a | ILLEGAL: TS5095/TS5109 (`bundler` requires module preserve/commonjs/es2015+; nodenext forces nodenext resolution). |
 
 Option assessment:
 
-1. **`moduleResolution: "bundler"`** - resolves the barrel cleanly, BUT it is _mutually exclusive_ with `module: nodenext` (TS5095/TS5109). To get bundler resolution you must set `module` to `esnext`/`preserve`/`commonjs`. With `esnext`/`preserve` the executor's _top-level_ emit becomes ESM (`import`/`export` statements), which Nx's `require()`-based loader cannot load (`ERR_REQUIRE_ESM` on the executor) - GATE A NO-GO by construction. **Rejected.** (Note: the prior 01-RESEARCH.md emit table only checked the _dynamic-import_ line, which stays literal under esnext/preserve; this addendum adds the decisive top-level-emit check that disqualifies them.)
+1. **`moduleResolution: "bundler"`** - resolves the barrel cleanly, BUT it is *mutually exclusive* with `module: nodenext` (TS5095/TS5109). To get bundler resolution you must set `module` to `esnext`/`preserve`/`commonjs`. With `esnext`/`preserve` the executor's *top-level* emit becomes ESM (`import`/`export` statements), which Nx's `require()`-based loader cannot load (`ERR_REQUIRE_ESM` on the executor) - GATE A NO-GO by construction. **Rejected.** (Note: the prior 01-RESEARCH.md emit table only checked the *dynamic-import* line, which stays literal under esnext/preserve; this addendum adds the decisive top-level-emit check that disqualifies them.)
 2. **A supported deep type entry** - none exists. The `exports` map publishes no `./src/*` types subpath; a package-name deep import is TS2307 (reproduced). Not available without an upstream change.
-3. **The `Function`-wrapped dynamic import (`load-esm.ts`)** - only relevant under `module:commonjs` (to dodge the `require()` downlevel). Under our locked `module:nodenext` the dynamic import already survives natively, so the Function trick is pure downside (loses type-safety on the import, hides it from the compiler). It does NOT fix the _typings_ problem - you would STILL need the shim (or node10 resolution) for the barrel types. **Rejected** (the explicitly-rejected @angular/build path).
+3. **The `Function`-wrapped dynamic import (`load-esm.ts`)** - only relevant under `module:commonjs` (to dodge the `require()` downlevel). Under our locked `module:nodenext` the dynamic import already survives natively, so the Function trick is pure downside (loses type-safety on the import, hides it from the compiler). It does NOT fix the *typings* problem - you would STILL need the shim (or node10 resolution) for the barrel types. **Rejected** (the explicitly-rejected @angular/build path).
 4. **`import type` from the package root** - this IS what fails (TS2305); it is the problem, not a fix.
 
-**Net:** there is no option that keeps the literal `import(` in a `require()`-loadable CJS executor AND types the barrel cleanly, _except_ the deep-`.d.ts` shim. The shim is the minimal isolation of the upstream gap.
+**Net:** there is no option that keeps the literal `import(` in a `require()`-loadable CJS executor AND types the barrel cleanly, *except* the deep-`.d.ts` shim. The shim is the minimal isolation of the upstream gap.
 
 ### (d) VERDICT: KEEP the shim as-is for v0.0.1, with a Phase-2 caveat.
 
 **Keep `packages/angular-typechecker/src/core/compiler-cli-types.ts` unchanged.** It is the correct engineering tradeoff: it preserves the locked `module:nodenext` (the GATE A emit enabler), keeps the executor CJS/`require()`-loadable, types the consumed surface, and isolates the entire workaround to one type-only file that is erased at emit.
 
 Caveats to carry into Phase 2 (record in the kept-core notes):
-
 - The shim's two relative deep paths are coupled to compiler-cli's internal `.d.ts` layout and to a hoisted install. Add a Wave-0/CI guard in a later phase: a tiny type-check (already effectively covered by `nx build`) plus, ideally, a one-line assertion that `node_modules/@angular/compiler-cli/src/perform_compile.d.ts` exists, so a layout change fails loudly with a pointer to this file rather than a cryptic TS2307.
 - Widen the `CompilerCli` surface in the shim only as the Phase-2 engine grows (it currently declares only `readConfiguration`, `performCompilation`, `defaultGatherDiagnostics`, `EmitFlags` + the `Program`/`ParsedConfiguration`/`EmitFlags` type re-exports).
 - Revisit and delete the shim if/when `@angular/compiler-cli` ships nodenext-clean typings (extension-ful re-exports or a `./src/*` types export). Track upstream; this is an Angular-side gap, not ours.
@@ -107,11 +108,9 @@ Caveats to carry into Phase 2 (record in the kept-core notes):
 Verified against the built artifacts under `dist/packages/angular-typechecker/`:
 
 - **`dist/packages/angular-typechecker/src/core/compiler-loader.js:19`** contains the literal dynamic import:
-
   ```js
   cached !== null && cached !== void 0 ? cached : (cached = (yield import('@angular/compiler-cli')));
   ```
-
   (`yield import(...)` because `target` downlevels async/await to tslib generators - but `import(` is LITERAL, never `require()`.) This file is the ONLY place the literal `import(` appears in code. It does NOT contain `require('@angular/compiler-cli')`.
 
 - **`dist/packages/angular-typechecker/src/executors/angular-typecheck/executor.js`** contains NO `import(` in code. It `require("../../core/run-typecheck")` and `require("tslib")` only - NO `require('@angular/compiler-cli')`. The string `@angular/compiler-cli` DOES appear, but only inside the JSDoc comment block (lines 9-10: "...load of @angular/compiler-cli in compiler-loader.ts survives emit...").
@@ -164,7 +163,6 @@ UNKNOWN_ERROR_CODE = 500
 Source: `error_code.ts:674` `UNINVOKED_FUNCTION_IN_TEXT_INTERPOLATION = 8117` (and `error_code.ts:586` `INTERPOLATED_SIGNAL_NOT_INVOKED = 8109`).
 
 The fixture's `{{ status }}` (where `status = signal('ready')`) triggers BOTH extended checks because a signal is a callable function interpolated without invocation:
-
 - NG8109 (signal-specific: "Signal functions should be invoked when interpolated" - doc example `{{ mySignal() }}`).
 - NG8117 (general: "A function in a text interpolation is not invoked" - doc example `{{ firstName() }}`).
 
@@ -174,10 +172,10 @@ So `-998117` is an EXPECTED companion diagnostic for this exact fixture shape, n
 
 Ran the all-getter and `defaultGatherDiagnostics` against the REAL fixture with `@angular/compiler-cli@22.0.4`:
 
-| fixture tsconfig    | all-getter codes           | default (ngc) codes |
-| ------------------- | -------------------------- | ------------------- |
-| `tsconfig.app.json` | `[2322, -998109, -998117]` | `[2322]`            |
-| `tsconfig.lib.json` | `[2322, -998109, -998117]` | `[2322]`            |
+| fixture tsconfig | all-getter codes | default (ngc) codes |
+|------------------|------------------|---------------------|
+| `tsconfig.app.json` | `[2322, -998109, -998117]` | `[2322]` |
+| `tsconfig.lib.json` | `[2322, -998109, -998117]` | `[2322]` |
 
 Matches Wave 3's reported probe exactly. Confirms: positive (2322 + NG8109), differential (ngc emits only 2322; both NG codes short-circuited), breadth (app AND lib), runtime-no-500 (no 500 in either set). NG8109 fires on STABLE 22.0.4 (resolves Assumptions Log A2 / D-18).
 
@@ -209,14 +207,12 @@ Matches Wave 3's reported probe exactly. Confirms: positive (2322 + NG8109), dif
 ## Wave 4 Gate-Spec Contract (executor can follow verbatim)
 
 **GATE A static** (one spec; reads BUILT artifacts via `fs.readFileSync`; `dist/` is gitignored, never `git grep`):
-
 - Resolve `outputPath = dist/packages/angular-typechecker` (derive from `project.json` `build.options.outputPath`; do not hard-code).
 - Positive: read `${outputPath}/src/core/compiler-loader.js`, strip `//` comment lines, `expect(code).toMatch(/import\(/)`.
 - Negative (both files): read `${outputPath}/src/core/compiler-loader.js` AND `${outputPath}/src/executors/angular-typecheck/executor.js`, `expect(code).not.toMatch(/require\(["']@angular\/compiler-cli/)`. (Comment-strip first; the executor mentions the package in a comment.)
 - Prereq: `nx build angular-typechecker` must run before this spec (build precedes static read).
 
 **GATE B positive + differential + breadth + runtime-no-500 + timing** (one spec; `describe.each([app, lib])`):
-
 - For each of `fixtures/gate-b-error/tsconfig.app.json` and `tsconfig.lib.json`:
   - Build `parsed = ng.readConfiguration(tsConfigPath)` once; spread a FRESH `{ ...parsed.options, noEmit: true }` per `performCompilation` call (no shared mutable options - resolved Open Q1).
   - all-getter run -> `allCodes`:
@@ -248,7 +244,6 @@ All six gate checklist items (A-static, A-runtime, B-positive, B-differential, B
 ## Sources (this session, all HIGH confidence)
 
 Primary - live source + installed package + built artifacts (re-read/reproduced 2026-06-27):
-
 - `node_modules/@angular/compiler-cli/package.json:11-31` - `exports` map (no `./src/*`); `index.d.ts:1-30` - extensionless `export *` barrel.
 - `node_modules/@angular/compiler-cli/src/perform_compile.d.ts`, `src/transformers/api.d.ts` - the deep leaf files the shim targets (exist; carry the named symbols; contain internal extensionless imports skipped under `skipLibCheck`).
 - `D:/projects/github/angular/angular/packages/compiler-cli/src/ngtsc/diagnostics/src/util.ts:26-28` - `ngErrorCode = parseInt('-99'+code)`; `:11-24` - the `TS-99`->`NG` formatter rationale.
@@ -258,7 +253,6 @@ Primary - live source + installed package + built artifacts (re-read/reproduced 
 - Plugin config: `packages/angular-typechecker/tsconfig.json` (`module/moduleResolution:nodenext`), `tsconfig.lib.json`, `../../tsconfig.base.json` (`skipLibCheck:true`).
 
 Empirical reproductions (this session, `typescript@6.0.3` / `@angular/compiler-cli@22.0.4` / Node v24.18.0):
-
 - Barrel under nodenext -> TS2305 x6 (+ `--traceResolution` showing extensionless `export *` unresolved).
 - Deep relative-path shim under nodenext -> EXIT 0 (with `skipLibCheck`).
 - Package-name deep subpath under nodenext -> TS2307 (exports-map blocked).

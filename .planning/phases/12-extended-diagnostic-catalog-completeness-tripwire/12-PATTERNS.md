@@ -18,19 +18,19 @@
 
 ## File Classification
 
-| New/Modified File                                          | Role                             | Data Flow                                              | Closest Analog                                                                                                                              | Match Quality |
-| ---------------------------------------------------------- | -------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `src/core/extended-catalog.members.ts` (NEW)               | model / source-of-truth constant | transform (consumed by spec + tripwire)                | `src/core/diagnostic-codes.ts` (dependency-free exported const module)                                                                      | role-match    |
-| `src/core/extended-catalog.integration.spec.ts` (NEW)      | test (integration)               | request-response (fixture -> `runTypecheck` -> assert) | `extended.angular13.integration.spec.ts` + `run-typecheck.integration.spec.ts` (`describe.each`) + `baseline.angular13.integration.spec.ts` | exact         |
-| `src/core/extended-catalog.drift.ts` (NEW)                 | test (type-level tripwire)       | transform (type assertion, `noEmit`)                   | `src/core/compiler-cli-types.drift.ts`                                                                                                      | exact         |
-| `fixtures/<batch-*>/` + `fixtures/<own-program>/` (NEW ~8) | test fixture                     | file-I/O (committed source fed to compiler)            | `fixtures/extended-v13/`, `fixtures/extended-promoted/`                                                                                     | exact         |
-| `fixtures/ng-baseline-extra/` (NEW 1-2)                    | test fixture                     | file-I/O                                               | `fixtures/ng-baseline/`, `fixtures/ts-baseline/`                                                                                            | exact         |
-| `tsconfig.drift.json` (EDIT)                               | config                           | n/a                                                    | self (existing `files` array)                                                                                                               | exact         |
-| `project.json` `typecheck-drift` target (EDIT)             | config                           | n/a                                                    | self (existing `inputs[]`)                                                                                                                  | exact         |
-| `extended.angular13.integration.spec.ts` (DELETE-fold)     | test                             | n/a                                                    | folded into catalog (D-07)                                                                                                                  | n/a           |
-| `extended.promotion.integration.spec.ts` (DELETE-fold)     | test                             | n/a                                                    | folded into catalog (D-07/D-08)                                                                                                             | n/a           |
-| `baseline.angular13.integration.spec.ts` (DELETE-fold)     | test                             | n/a                                                    | folded into catalog baseline table (D-06)                                                                                                   | n/a           |
-| `.planning/research/DIAGNOSTIC-CATALOG.md` (EDIT)          | doc                              | n/a                                                    | NO code analog -- doc rewrite (CAT-05)                                                                                                      | n/a (doc)     |
+| New/Modified File | Role | Data Flow | Closest Analog | Match Quality |
+|-------------------|------|-----------|----------------|---------------|
+| `src/core/extended-catalog.members.ts` (NEW) | model / source-of-truth constant | transform (consumed by spec + tripwire) | `src/core/diagnostic-codes.ts` (dependency-free exported const module) | role-match |
+| `src/core/extended-catalog.integration.spec.ts` (NEW) | test (integration) | request-response (fixture -> `runTypecheck` -> assert) | `extended.angular13.integration.spec.ts` + `run-typecheck.integration.spec.ts` (`describe.each`) + `baseline.angular13.integration.spec.ts` | exact |
+| `src/core/extended-catalog.drift.ts` (NEW) | test (type-level tripwire) | transform (type assertion, `noEmit`) | `src/core/compiler-cli-types.drift.ts` | exact |
+| `fixtures/<batch-*>/` + `fixtures/<own-program>/` (NEW ~8) | test fixture | file-I/O (committed source fed to compiler) | `fixtures/extended-v13/`, `fixtures/extended-promoted/` | exact |
+| `fixtures/ng-baseline-extra/` (NEW 1-2) | test fixture | file-I/O | `fixtures/ng-baseline/`, `fixtures/ts-baseline/` | exact |
+| `tsconfig.drift.json` (EDIT) | config | n/a | self (existing `files` array) | exact |
+| `project.json` `typecheck-drift` target (EDIT) | config | n/a | self (existing `inputs[]`) | exact |
+| `extended.angular13.integration.spec.ts` (DELETE-fold) | test | n/a | folded into catalog (D-07) | n/a |
+| `extended.promotion.integration.spec.ts` (DELETE-fold) | test | n/a | folded into catalog (D-07/D-08) | n/a |
+| `baseline.angular13.integration.spec.ts` (DELETE-fold) | test | n/a | folded into catalog baseline table (D-06) | n/a |
+| `.planning/research/DIAGNOSTIC-CATALOG.md` (EDIT) | doc | n/a | NO code analog -- doc rewrite (CAT-05) | n/a (doc) |
 
 ---
 
@@ -60,7 +60,26 @@ Examples chose value-union comparison so the runtime table keys align):
 // (it.each row keys) AND extended-catalog.drift.ts (type-level set-equality vs the real enum).
 // ENUM DECLARATION ORDER, verified vs @angular/compiler-cli@22.0.4
 // src/ngtsc/diagnostics/src/extended_template_diagnostic_name.d.ts (18 members).
-export const EXTENDED_DIAGNOSTIC_MEMBERS = ['invalidBananaInBox', 'nullishCoalescingNotNullable', 'optionalChainNotNullable', 'missingControlFlowDirective', 'missingStructuralDirective', 'textAttributeNotBinding', 'uninvokedFunctionInEventBinding', 'missingNgForOfLet', 'suffixNotSupported', 'skipHydrationNotStatic', 'interpolatedSignalNotInvoked', 'controlFlowPreventingContentProjection', 'unusedLetDeclaration', 'uninvokedTrackFunction', 'unusedStandaloneImports', 'unparenthesizedNullishCoalescing', 'uninvokedFunctionInTextInterpolation', 'deferTriggerMisconfiguration'] as const;
+export const EXTENDED_DIAGNOSTIC_MEMBERS = [
+  'invalidBananaInBox',
+  'nullishCoalescingNotNullable',
+  'optionalChainNotNullable',
+  'missingControlFlowDirective',
+  'missingStructuralDirective',
+  'textAttributeNotBinding',
+  'uninvokedFunctionInEventBinding',
+  'missingNgForOfLet',
+  'suffixNotSupported',
+  'skipHydrationNotStatic',
+  'interpolatedSignalNotInvoked',
+  'controlFlowPreventingContentProjection',
+  'unusedLetDeclaration',
+  'uninvokedTrackFunction',
+  'unusedStandaloneImports',
+  'unparenthesizedNullishCoalescing',
+  'uninvokedFunctionInTextInterpolation',
+  'deferTriggerMisconfiguration',
+] as const;
 ```
 
 **Doc-header pattern to copy:** open with a `/** ... */` block explaining WHY it is dependency-free and
@@ -73,7 +92,6 @@ reviewers expect the "why vendored / why no compiler-cli import" rationale inlin
 
 **Role:** test (integration). **Data flow:** request-response (`runTypecheck({ tsConfigPath })` -> assert on `CoreResult`).
 **Analogs (compose all three):**
-
 - `src/core/extended.angular13.integration.spec.ts` -- the find-by-code + assert-category single-row idiom.
 - `src/core/run-typecheck.integration.spec.ts` -- the `describe.each([...])` parameterization idiom (lines 67-104).
 - `src/core/baseline.angular13.integration.spec.ts` -- the sibling baseline-codes table (extend/absorb, D-06).
@@ -111,10 +129,9 @@ expect(result.errorCount).toBe(0);
 ```
 
 For the catalog's EXACT-COUNT requirement (CAT-01: code + category + occurrence count), use `.filter`
-
-- `.toBe(expectedCount)` rather than `.find`, then assert `hits[0]?.category` (RESEARCH Code Examples
-  sketch, lines 307-318). Count by `ts.DiagnosticCategory`, NEVER by code sign (L-4; diagnostic-codes.ts
-  header lines 22-24).
++ `.toBe(expectedCount)` rather than `.find`, then assert `hits[0]?.category` (RESEARCH Code Examples
+sketch, lines 307-318). Count by `ts.DiagnosticCategory`, NEVER by code sign (L-4; diagnostic-codes.ts
+header lines 22-24).
 
 **`describe.each` parameterization idiom** (from `run-typecheck.integration.spec.ts:67-70`):
 
@@ -122,9 +139,7 @@ For the catalog's EXACT-COUNT requirement (CAT-01: code + category + occurrence 
 describe.each([
   ['app tsconfig', appTsConfig],
   ['local-library tsconfig', libTsConfig],
-])('runTypecheck end-to-end (%s)', (_label, tsConfigPath) => {
-  /* it(...) blocks */
-});
+])('runTypecheck end-to-end (%s)', (_label, tsConfigPath) => { /* it(...) blocks */ });
 ```
 
 For the catalog, parameterize over `CATALOG` ROW OBJECTS (not tuples). The `it.skip`-when-`skipReason`
@@ -338,51 +353,44 @@ NO change -- it compiles all `files` in the drift tsconfig. The CI gate already 
 
 **Role:** doc. **NO code analog.** This is a documentation rewrite (D-10..D-12), out of scope for
 code-pattern mapping. The planner drives it from RESEARCH.md's authoritative 18-member table (lines 89-108)
-
-- State of the Art (lines 405-414): full rewrite to the source-verified 18-member set (name + NG code +
-  category + intro-version), add NG8112, drop the stale 16-entry docs list, the per-version-file-split test
-  org, the jscodeshift guidance, the alias parentheticals, and the "NG8011 not promotable" framing; note
-  NG8110/NG8118 are `ErrorCode`s NOT in the enum.
++ State of the Art (lines 405-414): full rewrite to the source-verified 18-member set (name + NG code +
+category + intro-version), add NG8112, drop the stale 16-entry docs list, the per-version-file-split test
+org, the jscodeshift guidance, the alias parentheticals, and the "NG8011 not promotable" framing; note
+NG8110/NG8118 are `ErrorCode`s NOT in the enum.
 
 ---
 
 ## Shared Patterns
 
 ### NG-code encoding (every NG assertion routes through `NG()`)
-
 **Source:** `packages/angular-typechecker/src/core/diagnostic-codes.ts:39` (`export const NG = (code) => -990000 - code;`)
 **Apply to:** the catalog spec (every extended + NG-baseline row) and the baseline sibling table.
 Raw TS codes (TS2322, TS2339) assert as bare numbers; NG codes assert as `NG(8101)`, never bare (L-4 /
 Pitfall E). Count by `ts.DiagnosticCategory`, never by code sign (header lines 22-24).
 
 ### `runTypecheck` integration entry point
-
 **Source:** `packages/angular-typechecker/src/core/run-typecheck.ts` (returns `CoreResult { diagnostics, errorCount, warningCount, suppressedCount, ... }`)
 **Apply to:** every catalog/baseline/promotion row -- `await runTypecheck({ tsConfigPath })`, then assert
 off `CoreResult`. One `performCompilation` per fixture (~0.5s cold; the plugin `vitest.config.mts` sets a
 30000ms timeout -- keep the catalog in the plugin tier so it inherits that; RESEARCH Pitfall 5).
 
 ### Type-level assertion helper (zero new dependency)
-
 **Source:** `packages/angular-typechecker/src/core/compiler-cli-types.drift.ts:49`
 (`type AssertAssignable<From, To extends From> = true;`)
 **Apply to:** `extended-catalog.drift.ts`. Do NOT add `tsd`/`expect-type` (RESEARCH Don't Hand-Roll).
 
 ### Fixture path resolution (cwd-independent)
-
 **Source:** `extended.angular13.integration.spec.ts:22-23`
 (`const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..'); const workspaceRoot = join(packageRoot, '..', '..');`)
 **Apply to:** the catalog spec for every fixture tsconfig path.
 
 ### `*.drift.ts` naming -> auto-excluded from build/test/tarball
-
 **Source:** `tsconfig.lib.json:18` + `tsconfig.spec.json:29` (`"src/**/*.drift.ts"` exclude glob)
 **Apply to:** `extended-catalog.drift.ts` -- naming it `*.drift.ts` is what keeps it out of `nx build`/`nx test`
 and the published tarball. (Under their `nodenext` mode the deep enum import would resolve EMPTY -> TS2305 ->
 break the build; the glob prevents that.)
 
 ### Doc-header rationale block (repo convention)
-
 **Source:** `diagnostic-codes.ts:1-24`, `compiler-cli-types.drift.ts:1-33`, `extended-v13/error.component.ts:3-20`
 **Apply to:** all three NEW code files + each NEW fixture component. This repo expects a load-bearing
 "why this exists / why vendored / what it triggers / this is the ONLY diagnostic" header inline; reviewers
@@ -390,9 +398,9 @@ gate on it.
 
 ## No Analog Found
 
-| File                                       | Role | Data Flow | Reason                                                                                            |
-| ------------------------------------------ | ---- | --------- | ------------------------------------------------------------------------------------------------- |
-| `.planning/research/DIAGNOSTIC-CATALOG.md` | doc  | n/a       | Documentation rewrite (CAT-05), not code -- driven by RESEARCH.md tables, no code analog applies. |
+| File | Role | Data Flow | Reason |
+|------|------|-----------|--------|
+| `.planning/research/DIAGNOSTIC-CATALOG.md` | doc | n/a | Documentation rewrite (CAT-05), not code -- driven by RESEARCH.md tables, no code analog applies. |
 
 Every NEW/EDITED code file has an exact or role-match analog already in the repo. There is NO new
 infrastructure to build (RESEARCH "Key insight": the work is data + one type-level file).
@@ -400,7 +408,7 @@ infrastructure to build (RESEARCH "Key insight": the work is data + one type-lev
 ## Metadata
 
 **Analog search scope:** `packages/angular-typechecker/src/core/` (specs + drift + diagnostic-codes),
-`packages/angular-typechecker/` (tsconfig.\*, project.json), `fixtures/` (all 13 fixture dirs),
+`packages/angular-typechecker/` (tsconfig.*, project.json), `fixtures/` (all 13 fixture dirs),
 `node_modules/@angular/compiler-cli/src/ngtsc/diagnostics/` (enum + sub-barrel, via `rg`/`cat` since gitignored).
 **Files scanned (read):** 16 (4 specs, drift file, diagnostic-codes, 4 tsconfigs, project.json, 6 fixture
 files, 2 installed `.d.ts`).
@@ -413,13 +421,11 @@ files, 2 installed `.d.ts`).
 **Analogs found:** 8 / 8 code/config files (every new/edited code file has an exact or role-match analog)
 
 ### Coverage
-
 - Files with exact analog: 7 (catalog spec, drift file, fixtures x2 families, tsconfig.drift.json, project.json)
 - Files with role-match analog: 1 (`extended-catalog.members.ts` -> `diagnostic-codes.ts` const-module pattern)
 - Files with no analog: 1 (DIAGNOSTIC-CATALOG.md doc rewrite -- expected, not code)
 
 ### Key Patterns Identified
-
 - All NG-code assertions route through `NG()` from `diagnostic-codes.ts`; raw TS codes assert bare; count ALWAYS by `ts.DiagnosticCategory` (L-4), never code sign.
 - The catalog spec mirrors `extended.angular13.integration.spec.ts` (find-by-code + assert-category) parameterized via `run-typecheck.integration.spec.ts`'s `describe.each`; baseline sibling extends `baseline.angular13.integration.spec.ts`.
 - The tripwire mirrors `compiler-cli-types.drift.ts` (`AssertAssignable<From, To extends From>` + `void (0 as unknown as Probe)`) but imports the enum from the SUB-BARREL `'@angular/compiler-cli/src/ngtsc/diagnostics'` (VERIFIED re-export; barrel does NOT export it) under classic resolution; `*.drift.ts` naming keeps it out of build/test/tarball.
@@ -427,13 +433,10 @@ files, 2 installed `.d.ts`).
 - `EXTENDED_DIAGNOSTIC_MEMBERS` (`as const`, enum-declaration order, 18 string values) is the single source of truth (D-02) consumed by both the spec and the tripwire; dependency-free like `diagnostic-codes.ts`.
 
 ### Correctness Guard Carried
-
 - NG8011 IS promotable (D-09 CORRECTED) -- mapped as a NORMAL promotable member; NO "stays-warning-under-promotion" pattern anywhere.
 
 ### File Created
-
 `.planning/phases/12-extended-diagnostic-catalog-completeness-tripwire/12-PATTERNS.md`
 
 ### Ready for Planning
-
 Pattern mapping complete. The planner can reference each analog (with exact paths + line numbers) in PLAN.md action sections.

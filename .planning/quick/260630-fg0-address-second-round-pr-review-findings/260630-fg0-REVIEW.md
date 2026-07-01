@@ -103,7 +103,7 @@ strict change scope but worth a one-line fix to keep the test file internally co
 
 6. **Conventions -- PASS.**
    - ASCII-only: full diff scanned, zero non-ASCII bytes.
-   - core/\*\* purity: no `console`/`process`/`require` added to `filter-diagnostics.ts` or
+   - core/** purity: no `console`/`process`/`require` added to `filter-diagnostics.ts` or
      `run-typecheck.ts`; the keep-on-throw path is silent (returns `undefined`).
    - Blank lines around control flow + always braces: new blocks (filter-diagnostics.ts:100-104,
      188-190; run-typecheck.ts:265-272) all use braces and have surrounding blank lines.
@@ -134,7 +134,6 @@ these commits changed -- the task instruction is to "not re-litigate prior round
 assertion behavior is correct and the test still gates; (3) it is documentation-only.
 
 **Fix:** Update the comment to reflect the in-project keep-on-throw path, e.g.:
-
 ```ts
 // RES-03 / D-08: a throwing options.realpath() (EACCES / permission-denied
 // junction / broken symlink) must be CAUGHT inside createCanonicalizer; the

@@ -61,33 +61,16 @@ function compile(tsConfigPath: string): void {
 }
 
 const cfg = (name: string) => join(fixtureDir, name);
-const OPTS = {
-  iterations: 12,
-  warmupIterations: 3,
-  time: 0,
-  warmupTime: 0,
-} as const;
+const OPTS = { iterations: 12, warmupIterations: 3, time: 0, warmupTime: 0 } as const;
 
 describe('reference-walk double-compile [Q1]', () => {
-  bench(
-    'floor (1 trivial component)',
-    () => compile(cfg('tsconfig.floor.json')),
-    OPTS,
-  );
+  bench('floor (1 trivial component)', () => compile(cfg('tsconfig.floor.json')), OPTS);
   bench('lib leaf', () => compile(cfg('tsconfig.lib.json')), OPTS);
   bench('spec leaf', () => compile(cfg('tsconfig.spec.json')), OPTS);
   bench('dep-only', () => compile(cfg('tsconfig.dep-only.json')), OPTS);
-  bench(
-    'combined (single program)',
-    () => compile(cfg('tsconfig.combined.json')),
-    OPTS,
-  );
-  bench(
-    'WALK (lib + spec)',
-    () => {
-      compile(cfg('tsconfig.lib.json'));
-      compile(cfg('tsconfig.spec.json'));
-    },
-    OPTS,
-  );
+  bench('combined (single program)', () => compile(cfg('tsconfig.combined.json')), OPTS);
+  bench('WALK (lib + spec)', () => {
+    compile(cfg('tsconfig.lib.json'));
+    compile(cfg('tsconfig.spec.json'));
+  }, OPTS);
 });

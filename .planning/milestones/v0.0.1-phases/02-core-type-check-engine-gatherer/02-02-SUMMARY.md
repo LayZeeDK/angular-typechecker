@@ -8,20 +8,20 @@ tags: [angular-compiler-cli, typescript, vitest, fixtures, config-resolution, fa
 requires:
   - phase: 02-core-type-check-engine-gatherer
     plan: 01
-    provides: 'Locked CoreResult contract (tsConfigPath/rootNamesCount/diagnostics/errorCount/warningCount/durationMs); config-error prepend (D-03); zero-rootNames guard synthesizing one Error (code 90001, D-03/D-03a); tsconfig.lib.json fixtures/**/* exclude'
+    provides: "Locked CoreResult contract (tsConfigPath/rootNamesCount/diagnostics/errorCount/warningCount/durationMs); config-error prepend (D-03); zero-rootNames guard synthesizing one Error (code 90001, D-03/D-03a); tsconfig.lib.json fixtures/**/* exclude"
 provides:
-  - 'config-broken fixtures: a tsconfig.spec.json pointing at a planted spec-file TS2322 (EXE-02 differentiator) + a tsconfig.malformed.json (extends a nonexistent file -> config error)'
-  - 'solution-style fixture: references-only tsconfig.json (files:[], references:[...]) + leaf tsconfig.app.json + component (D-03/D-03a silent-lie input)'
-  - 'config-resolution.integration.spec.ts: REAL-compiler proof that a spec tsconfig is checked, a malformed config is never silently clean and never thrown, and a solution-style config returns rootNamesCount 0 + errorCount 1 with a leaf-tsconfig-naming message'
+  - "config-broken fixtures: a tsconfig.spec.json pointing at a planted spec-file TS2322 (EXE-02 differentiator) + a tsconfig.malformed.json (extends a nonexistent file -> config error)"
+  - "solution-style fixture: references-only tsconfig.json (files:[], references:[...]) + leaf tsconfig.app.json + component (D-03/D-03a silent-lie input)"
+  - "config-resolution.integration.spec.ts: REAL-compiler proof that a spec tsconfig is checked, a malformed config is never silently clean and never thrown, and a solution-style config returns rootNamesCount 0 + errorCount 1 with a leaf-tsconfig-naming message"
 affects: [02-03-diagnostic-catalog, phase-03-filtering-modes-output, phase-04-executor-adapter]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - 'Fixture-only Wave-2 slice: new committed fixtures under workspace-root fixtures/ (out of the project graph, covered by the existing tsconfig.lib.json fixtures/**/* exclude); no engine or shared-config re-touch'
-    - 'REAL-compiler config-resolution assertions via direct runTypecheck (D-07c); messageText string-coerced through ts.flattenDiagnosticMessageText for the leaf-tsconfig regex'
-    - 'Malformed-config fixture via extends-a-nonexistent-file (yields a returned TS5012 config error, not a JSON parse failure of the committed file)'
+    - "Fixture-only Wave-2 slice: new committed fixtures under workspace-root fixtures/ (out of the project graph, covered by the existing tsconfig.lib.json fixtures/**/* exclude); no engine or shared-config re-touch"
+    - "REAL-compiler config-resolution assertions via direct runTypecheck (D-07c); messageText string-coerced through ts.flattenDiagnosticMessageText for the leaf-tsconfig regex"
+    - "Malformed-config fixture via extends-a-nonexistent-file (yields a returned TS5012 config error, not a JSON parse failure of the committed file)"
 
 key-files:
   created:
@@ -37,14 +37,14 @@ key-files:
   modified: []
 
 key-decisions:
-  - 'Malformed-config fixture uses extends a nonexistent path (tsconfig.does-not-exist.json) rather than invalid JSON: ng.readConfiguration returns it as a TS5012 config error in parsed.errors (prepended, D-03) so the committed file itself stays valid and the assertion targets the restored config-error message'
+  - "Malformed-config fixture uses extends a nonexistent path (tsconfig.does-not-exist.json) rather than invalid JSON: ng.readConfiguration returns it as a TS5012 config error in parsed.errors (prepended, D-03) so the committed file itself stays valid and the assertion targets the restored config-error message"
   - "Spec fixture plants its OWN TS2322 in error.component.spec.ts (distinct from the component's TS2322) so the spec source being checked is provable; the spec file avoids Jasmine/Vitest globals (exports a plain function) to carry EXACTLY one planted error with no incidental TS2304 noise"
-  - 'Solution-style assertions are EXACT (rootNamesCount === 0 AND errorCount === 1) and additionally assert the guard does NOT depend on TS18003 (D-03a / L-2: references suppress TS18003)'
+  - "Solution-style assertions are EXACT (rootNamesCount === 0 AND errorCount === 1) and additionally assert the guard does NOT depend on TS18003 (D-03a / L-2: references suppress TS18003)"
   - "config-resolution.integration.spec.ts named *.integration.spec.ts so the quick-run `--exclude '**/*.integration.spec.ts'` skips it (verified: full 8 files/32 tests vs quick 6 files/19 tests)"
 
 patterns-established:
   - "messageTextOf(diagnostic) helper = ts.flattenDiagnosticMessageText(d.messageText, '\\n') for asserting on diagnostic prose (config-error file name + the synthesized leaf-tsconfig guard message)"
-  - 'Malformed-config detection in tests by message substring (the unresolvable extends target file name), not by code, since the config-error code is the TS file-read code'
+  - "Malformed-config detection in tests by message substring (the unresolvable extends target file name), not by code, since the config-error code is the TS file-read code"
 
 requirements-completed: [EXE-02, ENG-01]
 
@@ -130,6 +130,5 @@ None - no external service configuration required.
 All 9 claimed created files exist on disk; both task commits (`8f4932b`, `07af39e`) are present in git history. Full verification re-run green: `npx nx build angular-typechecker` succeeds; `npx nx test angular-typechecker` is 32/32 across 8 test files; the quick-run `--exclude '**/*.integration.spec.ts'` is 19/19 across 6 files (the integration tier is skipped as designed).
 
 ---
-
-_Phase: 02-core-type-check-engine-gatherer_
-_Completed: 2026-06-27_
+*Phase: 02-core-type-check-engine-gatherer*
+*Completed: 2026-06-27*

@@ -18,34 +18,34 @@ requirements: [I-1, T1, T3, S-types, S-code, S-test, S-comments]
 
 must_haves:
   truths:
-    - 'An out-of-basePath TCB-generation Fatal (NG3004) sets templateCheckAborted even though it is suppressed from the reported diagnostics set'
-    - 'A throwing realpath combined with an out-of-project path is still suppressed (suppressedCount 1, kept 0)'
-    - 'The thrown TypecheckInfrastructureError carries the flattened compiler message text at both the config-stage and post-compilation scans'
-    - 'The runtime drift spec enforces useCaseSensitiveFileNames as a function on the live ts.Program'
-    - 'The dead EmitFlags.None mock member, the unreferenced non-template fixtures, and the rot-prone magic-number comments are gone'
-    - 'The full engine vitest suite passes after every change'
+    - "An out-of-basePath TCB-generation Fatal (NG3004) sets templateCheckAborted even though it is suppressed from the reported diagnostics set"
+    - "A throwing realpath combined with an out-of-project path is still suppressed (suppressedCount 1, kept 0)"
+    - "The thrown TypecheckInfrastructureError carries the flattened compiler message text at both the config-stage and post-compilation scans"
+    - "The runtime drift spec enforces useCaseSensitiveFileNames as a function on the live ts.Program"
+    - "The dead EmitFlags.None mock member, the unreferenced non-template fixtures, and the rot-prone magic-number comments are gone"
+    - "The full engine vitest suite passes after every change"
   artifacts:
-    - path: 'packages/angular-typechecker/src/core/run-typecheck.ts'
-      provides: 'I-1 fix (detectTemplateCheckAborted on the pre-filter diagnostics arg) + reframed comment + de-pinned typescript.js anchor'
-      contains: 'detectTemplateCheckAborted'
-    - path: 'packages/angular-typechecker/src/core/infra-failure.spec.ts'
-      provides: 'I-1 mock-harness regression test + T3 message assertions; EmitFlags.None removed; 129892 anchor de-pinned'
-      contains: 'templateCheckAborted'
-    - path: 'packages/angular-typechecker/src/core/filter-diagnostics.spec.ts'
-      provides: 'T1: throwing-realpath + out-of-project -> suppressedCount 1'
+    - path: "packages/angular-typechecker/src/core/run-typecheck.ts"
+      provides: "I-1 fix (detectTemplateCheckAborted on the pre-filter diagnostics arg) + reframed comment + de-pinned typescript.js anchor"
+      contains: "detectTemplateCheckAborted"
+    - path: "packages/angular-typechecker/src/core/infra-failure.spec.ts"
+      provides: "I-1 mock-harness regression test + T3 message assertions; EmitFlags.None removed; 129892 anchor de-pinned"
+      contains: "templateCheckAborted"
+    - path: "packages/angular-typechecker/src/core/filter-diagnostics.spec.ts"
+      provides: "T1: throwing-realpath + out-of-project -> suppressedCount 1"
       contains: "throw new Error('EACCES')"
-    - path: 'packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts'
-      provides: 'S-types: useCaseSensitiveFileNames reach-through assertion'
-      contains: 'useCaseSensitiveFileNames'
+    - path: "packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts"
+      provides: "S-types: useCaseSensitiveFileNames reach-through assertion"
+      contains: "useCaseSensitiveFileNames"
   key_links:
-    - from: 'packages/angular-typechecker/src/core/run-typecheck.ts (finalize)'
-      to: 'detectTemplateCheckAborted'
-      via: 'called on the pre-filter diagnostics arg, not the post-filter reported set'
+    - from: "packages/angular-typechecker/src/core/run-typecheck.ts (finalize)"
+      to: "detectTemplateCheckAborted"
+      via: "called on the pre-filter diagnostics arg, not the post-filter reported set"
       pattern: "detectTemplateCheckAborted\\(diagnostics\\)"
-    - from: 'packages/angular-typechecker/src/core/infra-failure.spec.ts'
-      to: 'runTypecheck'
-      via: 'mock-harness drives performCompilation to return an out-of-basePath NG3004'
-      pattern: 'templateCheckAborted'
+    - from: "packages/angular-typechecker/src/core/infra-failure.spec.ts"
+      to: "runTypecheck"
+      via: "mock-harness drives performCompilation to return an out-of-basePath NG3004"
+      pattern: "templateCheckAborted"
 ---
 
 <objective>
@@ -98,27 +98,23 @@ Per CLAUDE.md / AGENTS.md (NON-NEGOTIABLE):
 Contracts the executor needs (already in the read context above; do not re-explore):
 
 From `run-typecheck.ts`:
-
 - `finalize(ts, tsConfigPath, rootNamesCount, diagnostics, start, filter?)` -- module-private (NOT exported). The pre-filter `diagnostics` arg is `[...configDiagnostics, ...result.diagnostics]`. The current code calls `detectTemplateCheckAborted(reported)` at ~line 406; `reported` is the post-filter + deduped set. The I-1 fix moves that call to the pre-filter `diagnostics` arg.
 - `detectTemplateCheckAborted(reported: readonly ts.Diagnostic[]): TemplateCheckAborted | undefined` -- exported, pure `.find` by `.code === TCB_GENERATION_FATAL_DIAGNOSTIC_CODE`. Order/dedup-independent. Returns `{ code, fileName }` with the shim path normalized.
 - `resolveFilterBasePath(parsedBasePath, tsConfigPath)` -- falls back to `dirname(tsConfigPath)` when basePath is undefined/empty.
 - `CoreResult.templateCheckAborted?: TemplateCheckAborted` (optional, present only when set).
 
 From `infra-failure.spec.ts` (the ONLY spec that mocks `loadCompilerCli`/`performCompilation`):
-
 - `compilerCliStub.readConfiguration` default returns `{ project: '/virtual/tsconfig.json', options: {}, rootNames: ['/virtual/error.component.ts'], errors: [], emitFlags: 0 }`. With `options: {}`, `parsed.options.basePath` is undefined -> `resolveFilterBasePath` falls back to `dirname('/virtual/tsconfig.json')` === `/virtual`.
 - `fakeProgram()` returns `{ getTsProgram: () => ({ useCaseSensitiveFileNames: () => true }) }` (case-sensitive, deterministic).
 - `errorDiagnostic(code, message)` builds a file-less `ts.Diagnostic`. The I-1 test needs a diagnostic WITH a `file.fileName`, so add a small file-carrying helper (or inline the literal).
 
 From `diagnostic-codes.ts`:
-
 - `TCB_GENERATION_FATAL_DIAGNOSTIC_CODE === NG(3004) === -993004` (already imported in `run-typecheck.spec.ts`).
 
 From `filter-diagnostics.spec.ts`:
-
 - `diag(fileName, code = 2322)` helper; shared `base = { basePath: '/ws/proj', useCaseSensitiveFileNames: true, realpath: (p) => p }`. Canonical out-of-project path: `/ws/sibling-lib/src/b.ts`. Existing throwing-realpath stub: `realpath: () => { throw new Error('EACCES'); }`.
-  </interfaces>
-  </context>
+</interfaces>
+</context>
 
 <tasks>
 
@@ -160,7 +156,6 @@ From `filter-diagnostics.spec.ts`:
     returned `program`. ASCII only; blank lines around control flow; always braces. Do NOT export
     `finalize`. Do NOT plan a real cross-project integration fixture (CONTEXT: best-effort only, not
     feasible cross-OS; the mock-harness unit test is the gate).
-
   </action>
   <verify>
     <automated>npx nx test angular-typechecker -- run-typecheck.ts infra-failure.spec.ts</automated>
@@ -217,7 +212,6 @@ From `filter-diagnostics.spec.ts`:
 
     All three edits: ASCII only; blank lines around control flow; always braces. No production code
     changes in this task.
-
   </action>
   <verify>
     <automated>npx nx test angular-typechecker -- filter-diagnostics.spec.ts infra-failure.spec.ts compiler-cli-types.runtime.spec.ts</automated>
@@ -269,7 +263,6 @@ From `filter-diagnostics.spec.ts`:
 
     All edits ASCII only; preserve JSONC comment style; do not reorder keys. No production logic
     changes (comment + dead-member + fixture removal only).
-
   </action>
   <verify>
     <automated>npx nx test angular-typechecker</automated>
@@ -287,21 +280,20 @@ From `filter-diagnostics.spec.ts`:
 </tasks>
 
 <threat_model>
-
 ## Trust Boundaries
 
-| Boundary               | Description                                                                                                               |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Boundary | Description |
+|----------|-------------|
 | compiler-cli -> engine | Diagnostics returned by `performCompilation` cross into the engine; classified by code/path only (no message-text trust). |
-| filesystem -> filter   | `realpath` may throw (EACCES / broken symlink) at the canonicalization boundary.                                          |
+| filesystem -> filter | `realpath` may throw (EACCES / broken symlink) at the canonicalization boundary. |
 
 ## STRIDE Threat Register
 
-| Threat ID | Category          | Component                        | Disposition | Mitigation Plan                                                                                                                                                                                                            |
-| --------- | ----------------- | -------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-dyd-01  | Denial of Service | filter-diagnostics canonicalizer | accept      | A throwing realpath is already caught and falls back to the raw path (filter-diagnostics.ts:129-138); T1 (Task 2) adds the out-of-project regression so the catch is proven on BOTH boundary sides. No new attack surface. |
-| T-dyd-02  | Tampering         | run-typecheck infra-500 re-throw | mitigate    | The re-throw classifies by CODE only (UNKNOWN_ERROR_CODE 500), never message text; T3 (Task 2) asserts the flattened message is surfaced verbatim, not parsed for control flow.                                            |
-| T-dyd-SC  | Tampering         | npm installs                     | accept      | No dependency adds/removes/upgrades in this task -- only source, spec, fixture, and JSONC-config edits on the main tree. No package-manager install runs; no Package Legitimacy Gate applies.                              |
+| Threat ID | Category | Component | Disposition | Mitigation Plan |
+|-----------|----------|-----------|-------------|-----------------|
+| T-dyd-01 | Denial of Service | filter-diagnostics canonicalizer | accept | A throwing realpath is already caught and falls back to the raw path (filter-diagnostics.ts:129-138); T1 (Task 2) adds the out-of-project regression so the catch is proven on BOTH boundary sides. No new attack surface. |
+| T-dyd-02 | Tampering | run-typecheck infra-500 re-throw | mitigate | The re-throw classifies by CODE only (UNKNOWN_ERROR_CODE 500), never message text; T3 (Task 2) asserts the flattened message is surfaced verbatim, not parsed for control flow. |
+| T-dyd-SC | Tampering | npm installs | accept | No dependency adds/removes/upgrades in this task -- only source, spec, fixture, and JSONC-config edits on the main tree. No package-manager install runs; no Package Legitimacy Gate applies. |
 
 All edits preserve the `core/**` purity boundary (no `console`/`process`); the I-1 detection
 field remains pure signalling rendered by the adapter, not a verdict reclassification (D-05 intact).
@@ -324,7 +316,6 @@ field remains pure signalling rendered by the adapter, not a verdict reclassific
 </verification>
 
 <success_criteria>
-
 - I-1 behavioral fix landed with a failing-then-passing mock-harness regression test; counts/verdict
   unchanged.
 - T1, T3, S-types coverage gaps closed with deterministic cross-OS assertions.
@@ -333,7 +324,7 @@ field remains pure signalling rendered by the adapter, not a verdict reclassific
 - Full engine vitest suite green on the main tree.
 - T2 NOT planned (REFUTED in --analyze: includeDeps:true is already covered e2e).
 - No unrelated code touched; no dependency changes; `core/**` purity intact.
-  </success_criteria>
+</success_criteria>
 
 <output>
 Create `.planning/quick/260630-dyd-address-all-review-findings/260630-dyd-SUMMARY.md` when done.

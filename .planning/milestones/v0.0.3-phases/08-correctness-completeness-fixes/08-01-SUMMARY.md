@@ -7,19 +7,19 @@ tags: [angular-compiler-cli, typescript, vitest, diagnostics, infrastructure-err
 # Dependency graph
 requires:
   - phase: 02-engine (v0.0.1)
-    provides: 'runTypecheck engine with TypecheckInfrastructureError + the post-performCompilation 500 scan and the D-03 parsed.errors fold'
+    provides: "runTypecheck engine with TypecheckInfrastructureError + the post-performCompilation 500 scan and the D-03 parsed.errors fold"
 provides:
-  - 'Early parsed.errors UNKNOWN_ERROR_CODE (500) scan in run-typecheck.ts, re-throwing TypecheckInfrastructureError BEFORE the zero-rootNames guard'
-  - 'Two-stage 500 defense-in-depth (config parse + post-performCompilation), both keyed on ng.UNKNOWN_ERROR_CODE'
-  - 'COR-01 failing-then-passing unit twin (mocked readConfiguration) + real-compiler integration case (nonexistent tsconfig path)'
+  - "Early parsed.errors UNKNOWN_ERROR_CODE (500) scan in run-typecheck.ts, re-throwing TypecheckInfrastructureError BEFORE the zero-rootNames guard"
+  - "Two-stage 500 defense-in-depth (config parse + post-performCompilation), both keyed on ng.UNKNOWN_ERROR_CODE"
+  - "COR-01 failing-then-passing unit twin (mocked readConfiguration) + real-compiler integration case (nonexistent tsconfig path)"
 affects: [08-02 (COR-02 global diagnostics), 08-03 (COR-03/COR-04), 10-drift-hardening (HARD-01 must keep UNKNOWN_ERROR_CODE in the drift assertion)]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - 'Code-only UNKNOWN_ERROR_CODE (500) detection mirrored at two stages (config parse + post-compilation)'
-    - 'Hoisted mockable readConfiguration handle in infra-failure.spec.ts (mirrors the existing performCompilation handle) to drive config-parse variants per test'
+    - "Code-only UNKNOWN_ERROR_CODE (500) detection mirrored at two stages (config parse + post-compilation)"
+    - "Hoisted mockable readConfiguration handle in infra-failure.spec.ts (mirrors the existing performCompilation handle) to drive config-parse variants per test"
 
 key-files:
   created: []
@@ -29,13 +29,13 @@ key-files:
     - packages/angular-typechecker/src/core/config-resolution.integration.spec.ts
 
 key-decisions:
-  - 'Early scan placed immediately after readConfiguration and BEFORE both the configDiagnostics fold and the zero-rootNames guard (the 500 case has rootNames: [], so a late scan would be swallowed and mis-counted as a type error)'
-  - 'Detect by ng.UNKNOWN_ERROR_CODE only (D-02), never source/message text; the existing post-performCompilation scan kept unchanged (two-stage defense-in-depth)'
-  - 'Only code 500 is infrastructure; every other parsed.errors entry (e.g. 5012) stays folded into configDiagnostics and is counted (D-03)'
-  - 'COR-01 integration fixture is a nonexistent tsconfig path (deterministic ENOENT, cross-OS) -- no fixture file committed'
+  - "Early scan placed immediately after readConfiguration and BEFORE both the configDiagnostics fold and the zero-rootNames guard (the 500 case has rootNames: [], so a late scan would be swallowed and mis-counted as a type error)"
+  - "Detect by ng.UNKNOWN_ERROR_CODE only (D-02), never source/message text; the existing post-performCompilation scan kept unchanged (two-stage defense-in-depth)"
+  - "Only code 500 is infrastructure; every other parsed.errors entry (e.g. 5012) stays folded into configDiagnostics and is counted (D-03)"
+  - "COR-01 integration fixture is a nonexistent tsconfig path (deterministic ENOENT, cross-OS) -- no fixture file committed"
 
 patterns-established:
-  - 'Failing-then-passing discipline verified: both new COR-01 assertions FAIL against the pre-fix source (errorCount: 2 via the guard) and PASS after the early scan'
+  - "Failing-then-passing discipline verified: both new COR-01 assertions FAIL against the pre-fix source (errorCount: 2 via the guard) and PASS after the early scan"
 
 requirements-completed: [COR-01]
 
@@ -57,7 +57,6 @@ completed: 2026-06-29
 - **Files modified:** 3
 
 ## Accomplishments
-
 - Added the early config-parse 500 scan (`configInfrastructureFailure`) on `parsed.errors`, keyed on `ng.UNKNOWN_ERROR_CODE`, positioned before the `configDiagnostics` fold and the `if (parsed.rootNames.length === 0)` guard, re-throwing `TypecheckInfrastructureError` with a flattened `messageText`.
 - Kept the existing post-`performCompilation` 500 scan unchanged -- two-stage defense-in-depth (D-02), both stages keyed by code only.
 - Proved the fix failing-then-passing with a stubbed-`readConfiguration` unit twin (`{ rootNames: [], errors: [code-500] }` rejects; `performCompilation` never called) plus a real-compiler integration case (a nonexistent tsconfig path rejects), and a code-5012 contrast confirming a genuine config diagnostic stays folded and is RETURNED (D-03 boundary).
@@ -72,13 +71,11 @@ Each task was committed atomically:
 _Note: this is a TDD plan; the source (GREEN-enabling) commit and the test commit are separate. The RED state was verified against the pre-Task-1 source before applying the fix (the two new assertions failed with `errorCount: 2` via the guard), then GREEN after._
 
 ## Files Created/Modified
-
 - `packages/angular-typechecker/src/core/run-typecheck.ts` - Added the early `parsed.errors` `UNKNOWN_ERROR_CODE` scan + `TypecheckInfrastructureError` re-throw, after `readConfiguration` and before the `configDiagnostics` fold / zero-rootNames guard.
 - `packages/angular-typechecker/src/core/infra-failure.spec.ts` - Hoisted `readConfiguration` to a mockable `vi.fn` handle (restored to the non-empty-rootNames default in `beforeEach`); added the COR-01 500 unit twin and the code-5012 D-03 contrast case.
 - `packages/angular-typechecker/src/core/config-resolution.integration.spec.ts` - Added the real-compiler COR-01 case asserting a nonexistent tsconfig path rejects with `TypecheckInfrastructureError`; existing malformed-5012 "does NOT throw" cases left unchanged.
 
 ## Decisions Made
-
 - **Scan placement before the guard is load-bearing.** The 500 case returns `rootNames: []`; the RED run reproduced the exact bug (the folded 500 + the synthesized guard diagnostic yielded `errorCount: 2` and the run resolved instead of throwing). Placing the scan after the guard would leave the bug intact.
 - **Code-only detection at both stages.** The config-parse 500 carries `source: 'angular'` but the post-compilation 500 does not; `=== ng.UNKNOWN_ERROR_CODE` is the uniform predicate matching the existing scan (D-02).
 - **No fixture file for the integration case.** A nonexistent tsconfig path triggers ENOENT in `readConfiguration`'s outer catch (the 500) deterministically on every OS, so no `tsconfig.does-not-exist.json` was committed (the path simply must not exist).
@@ -105,10 +102,9 @@ None - no external service configuration required.
 - `npx nx build angular-typechecker` -- green (GATE A `module: nodenext` compile).
 - `npx nx test angular-typechecker -- infra-failure config-resolution` -- green (all four COR-01 cases pass: 500 unit twin, 5012 contrast, nonexistent-path integration, plus the unchanged D-03 malformed cases).
 - `npx nx test angular-typechecker --skip-nx-cache` -- full suite green (20 files / 117 tests; `build` dependsOn also ran).
-- `npx nx lint angular-typechecker` -- 0 errors (1 pre-existing warning, see Deferred Issues); core/\*_ boundary unchanged (no new `@nx/_`/`process.exit`).
+- `npx nx lint angular-typechecker` -- 0 errors (1 pre-existing warning, see Deferred Issues); core/** boundary unchanged (no new `@nx/*` / `process.exit`).
 
 ## Next Phase Readiness
-
 - COR-01 complete and test-gated. The two-stage 500 defense is in place.
 - Cross-phase note for Phase 10 (HARD-01): the drift getter-set / error-code assertion must keep `ng.UNKNOWN_ERROR_CODE` covered so neither 500 scan can silently break on an Angular upgrade.
 - Plans 08-02 (COR-02 global diagnostics) and 08-03 (COR-03 empty-fileName + COR-04 exit-code policy) remain to execute for the phase.
@@ -122,6 +118,5 @@ None - no external service configuration required.
 - Commit `7561bd1` (test, Task 2) - FOUND in git log
 
 ---
-
-_Phase: 08-correctness-completeness-fixes_
-_Completed: 2026-06-29_
+*Phase: 08-correctness-completeness-fixes*
+*Completed: 2026-06-29*

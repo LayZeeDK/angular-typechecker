@@ -153,8 +153,7 @@ function resolveFileSet(inputList) {
   );
 }
 
-const SPEC_SOURCE =
-  'libs/typecheck-consumer/src/lib/consumer.component.spec.ts';
+const SPEC_SOURCE = 'libs/typecheck-consumer/src/lib/consumer.component.spec.ts';
 const SPEC_TSCONFIG = 'libs/typecheck-consumer/tsconfig.spec.json';
 const LIB_SOURCE = 'libs/typecheck-consumer/src/lib/consumer.component.ts';
 
@@ -164,16 +163,14 @@ const currentTargetSet = resolveFileSet(CURRENT_TARGET_INPUTS);
 const walkTargetSet = resolveFileSet(WALK_TARGET_INPUTS);
 
 // Sanity: confirm the extglob spec pattern actually matches the spec source.
-const specExtglob =
-  'libs/typecheck-consumer/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)';
+const specExtglob = 'libs/typecheck-consumer/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)';
 const extglobMatchesSpec = minimatch(SPEC_SOURCE, specExtglob, { dot: true });
 
 const assertions = [
   {
     id: 'C1-outputs-empty',
     pass: true, // from config: targetDefaults angular-typecheck outputs: []
-    detail:
-      'targetDefaults angular-typecheck already sets outputs: [] (no emit) -- correct for a no-emit type-check',
+    detail: 'targetDefaults angular-typecheck already sets outputs: [] (no emit) -- correct for a no-emit type-check',
   },
   {
     id: 'C2-default-includes-spec-source',
@@ -182,32 +179,23 @@ const assertions = [
   },
   {
     id: 'C3-production-excludes-spec-source',
-    pass:
-      !productionSet.includes(SPEC_SOURCE) &&
-      productionSet.includes(LIB_SOURCE) &&
-      extglobMatchesSpec,
+    pass: !productionSet.includes(SPEC_SOURCE) && productionSet.includes(LIB_SOURCE) && extglobMatchesSpec,
     detail: `production input EXCLUDES the spec source (extglob match=${extglobMatchesSpec}) but keeps the lib source`,
   },
   {
     id: 'C4-current-target-under-hashes-spec',
     pass: !currentTargetSet.includes(SPEC_SOURCE),
-    detail:
-      'THE FINDING: the shipped `production`-based target inputs do NOT hash the spec source -> a spec-only edit cannot bust a WALK target that checks specs -> STALE PASS',
+    detail: 'THE FINDING: the shipped `production`-based target inputs do NOT hash the spec source -> a spec-only edit cannot bust a WALK target that checks specs -> STALE PASS',
   },
   {
     id: 'C5-walk-target-hashes-spec',
-    pass:
-      walkTargetSet.includes(SPEC_SOURCE) && walkTargetSet.includes(LIB_SOURCE),
-    detail:
-      'FIX: swapping `production` -> `default` makes the union (lib + spec) hashed -> a spec edit busts the coarse target',
+    pass: walkTargetSet.includes(SPEC_SOURCE) && walkTargetSet.includes(LIB_SOURCE),
+    detail: 'FIX: swapping `production` -> `default` makes the union (lib + spec) hashed -> a spec edit busts the coarse target',
   },
   {
     id: 'C6-tsconfig-glob-covers-spec-tsconfig',
-    pass:
-      currentTargetSet.includes(SPEC_TSCONFIG) &&
-      walkTargetSet.includes(SPEC_TSCONFIG),
-    detail:
-      '`{projectRoot}/tsconfig*.json` already matches tsconfig.spec.json (config side of the union is covered in BOTH configs)',
+    pass: currentTargetSet.includes(SPEC_TSCONFIG) && walkTargetSet.includes(SPEC_TSCONFIG),
+    detail: '`{projectRoot}/tsconfig*.json` already matches tsconfig.spec.json (config side of the union is covered in BOTH configs)',
   },
 ];
 
@@ -224,7 +212,7 @@ const forensic = {
     walkTarget_inputs_fileset: walkTargetSet,
   },
   objectInputsNote:
-    "The target also carries ^default (hashes dependency projects' default inputs -> covers the " +
+    'The target also carries ^default (hashes dependency projects\' default inputs -> covers the ' +
     'non-buildable dep source, confirmed separately via `nx show projects --affected`), ' +
     'dependentTasksOutputFiles (transitive .d.ts/.tsbuildinfo), and externalDependencies ' +
     '[typescript, @angular/compiler-cli] (busts on compiler version change). These are UNCHANGED by ' +
@@ -244,29 +232,17 @@ const forensic = {
   verdict: allPass ? 'VALIDATED' : 'FAILED',
 };
 
-writeFileSync(
-  join(here, 'forensic-log.json'),
-  JSON.stringify(forensic, null, 2),
-);
+writeFileSync(join(here, 'forensic-log.json'), JSON.stringify(forensic, null, 2));
 
 console.log('=== Spike 005: coarse single-target caching ===');
 console.log(`projectRoot: ${projectRoot}`);
 console.log(`modeled files (real + walk-adds): ${files.length}`);
-console.log(
-  `  default set (${defaultSet.length}): includes spec source? ${defaultSet.includes(SPEC_SOURCE)}`,
-);
-console.log(
-  `  production set (${productionSet.length}): includes spec source? ${productionSet.includes(SPEC_SOURCE)}`,
-);
-console.log(
-  `  CURRENT target file-set: spec source hashed? ${currentTargetSet.includes(SPEC_SOURCE)} | tsconfig.spec.json hashed? ${currentTargetSet.includes(SPEC_TSCONFIG)}`,
-);
-console.log(
-  `  WALK target file-set:    spec source hashed? ${walkTargetSet.includes(SPEC_SOURCE)} | tsconfig.spec.json hashed? ${walkTargetSet.includes(SPEC_TSCONFIG)}`,
-);
+console.log(`  default set (${defaultSet.length}): includes spec source? ${defaultSet.includes(SPEC_SOURCE)}`);
+console.log(`  production set (${productionSet.length}): includes spec source? ${productionSet.includes(SPEC_SOURCE)}`);
+console.log(`  CURRENT target file-set: spec source hashed? ${currentTargetSet.includes(SPEC_SOURCE)} | tsconfig.spec.json hashed? ${currentTargetSet.includes(SPEC_TSCONFIG)}`);
+console.log(`  WALK target file-set:    spec source hashed? ${walkTargetSet.includes(SPEC_SOURCE)} | tsconfig.spec.json hashed? ${walkTargetSet.includes(SPEC_TSCONFIG)}`);
 console.log('--- assertions ---');
-for (const a of assertions)
-  console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
+for (const a of assertions) console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
 console.log(`\nVERDICT: ${forensic.verdict}`);
 
 process.exit(allPass ? 0 : 1);

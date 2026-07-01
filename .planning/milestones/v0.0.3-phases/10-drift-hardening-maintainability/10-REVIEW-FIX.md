@@ -16,7 +16,6 @@ status: partial
 **Iteration:** 1
 
 **Summary:**
-
 - Findings in scope: 7 (2 Warning, 5 Info; fix_scope = all)
 - Fixed: 3 (WR-01, WR-02, IN-01)
 - Skipped: 4 (IN-02, IN-03, IN-04, IN-05 -- all CONFIRMED FALSE POSITIVES with "Fix: None")

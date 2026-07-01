@@ -16,7 +16,6 @@ status: partial
 **Iteration:** 1
 
 **Summary:**
-
 - Findings in scope (fix_scope=all): 10 (0 Critical, 4 Warning, 6 Info)
 - Fixed: 4 (WR-01, WR-02, WR-03, IN-02)
 - Skipped: 6 (WR-04 + IN-01, IN-03, IN-04, IN-05, IN-06 -- all reviewer-marked advisory / acceptable-as-is / skip-by-design)
@@ -83,7 +82,6 @@ unacceptable risk in Phase 4).
 7-line input recipe (verified byte-identical: `JSON.stringify(a) === JSON.stringify(b)`),
 creating drift risk and a Phase-5 leak hazard.
 **Rationale for skip:**
-
 1. The reviewer explicitly marked WR-04 "advisory-only ... no code change is strictly
    required in Phase 4."
 2. The suggested JSON comment is UNSAFE: `executor-parity.int.spec.ts:111` reads nx.json
@@ -100,9 +98,9 @@ creating drift risk and a Phase-5 leak hazard.
    the inline arrays currently produce. The cache-correctness gate (TEST-04) is the
    centerpiece of this phase, so the reviewer's instruction "If a namedInputs refactor
    risks altering cache behavior, SKIP it" applies directly.
-   The Phase-5 checklist assertion (published README recipe keyed ONLY by
-   `angular-typechecker:angular-typecheck`) is a Phase-5 hand-off concern, not a Phase-4
-   code change, and is already documented in 04-03-SUMMARY deviation #1.
+The Phase-5 checklist assertion (published README recipe keyed ONLY by
+`angular-typechecker:angular-typecheck`) is a Phase-5 hand-off concern, not a Phase-4
+code change, and is already documented in 04-03-SUMMARY deviation #1.
 
 ### IN-01: loadTypescript duplicated across run-typecheck.ts and render-report.ts
 

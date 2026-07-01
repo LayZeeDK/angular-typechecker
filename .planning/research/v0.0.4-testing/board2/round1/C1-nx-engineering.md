@@ -24,7 +24,6 @@ the bespoke `createFsTree`/`flushFsTreeChanges` real-disk helpers in v0.0.4. Res
 uses it).**
 
 Concretely:
-
 - (a) `createTreeWithEmptyWorkspace` (in-memory) -- the `typecheck-configuration` generator
   unit specs, and (if added) the mid-tier executor-against-workspace spec (D3).
 - (b) real-disk `FsTree` via `nx/src/generators/tree` -- NOT in v0.0.4. Keep it as a
@@ -34,12 +33,11 @@ Concretely:
   three existing e2e projects already do it.
 
 The facts it rests on:
-
 - The generator's entire observable behavior is a `project.json` config edit:
   `readProjectConfiguration` -> mutate `targets` -> `updateProjectConfiguration` ->
   `formatFiles` (CURRENT-AUDIT B.1; SANDBOX-TECHNIQUES §1 shows the 33-line prior-art
   generator does exactly this). An in-memory Tree captures 100% of that; nothing reads the
-  Tree off real disk _during_ generation.
+  Tree off real disk *during* generation.
 - This is overwhelmingly what Nx itself does: **452 generator spec files import
   `createTreeWithEmptyWorkspace`; exactly ONE spec (`nx/src/generators/tree.spec.ts`)
   constructs a real-disk `FsTree`** (FACTS §6; NX-FSTREE-INTERNALS §6). The real-disk path
@@ -60,21 +58,19 @@ The facts it rests on:
   needs no internal import (CURRENT-AUDIT (2)).
 
 Facts I am missing (orchestrator can verify):
-
 - Whether the `typecheck-configuration` generator's FINAL design will emit any file via
   `generateFiles` (e.g. scaffold a `tsconfig.typecheck.json`), or whether it remains a pure
   `project.json` edit. If it emits a tsconfig whose VALUE is that the file is consumable on
   disk by a real `ngc`, that is the one scenario that could justify a real-disk tier -- but
   even then, the e2e tier (route 2 below) covers it better.
 - Whether `.planning/PROJECT.md`/`ARCHITECTURE.md` treat the bespoke `createFsTree` as a
-  _committed contract_ (a v0.0.1 carry-over deliverable that MUST land) vs. a design intent
+  *committed contract* (a v0.0.1 carry-over deliverable that MUST land) vs. a design intent
   that can be closed as "superseded by the public helper." CURRENT-AUDIT A.5 reads it as
   drift now correctly acknowledged, i.e. re-openable.
 
 The specific fact that would change my position:
-
 - If the generator is specified to write a standalone tsconfig (or any file) that a test must
-  flush to disk and feed to the REAL compiler _within the generator's own test boundary_
+  flush to disk and feed to the REAL compiler *within the generator's own test boundary*
   (not the e2e tier), then I would adopt the quarantined `createFsTree` for that one spec --
   the in-memory `/virtual` Tree cannot back a real `performCompilation` read
   (NX-FSTREE-INTERNALS §9: disk reads always miss on a `/virtual` tree).
@@ -91,7 +87,6 @@ The specific fact that would change my position:
 table, and do NOT switch the fixture mechanism to programmatic injection.**
 
 This is the lens-aligned choice on three axes:
-
 1. **Organization -- mirror Angular's own compiler-cli test layout, not a flat table.**
    Angular structures extended diagnostics as a centralized integration spec
    (`extended_template_diagnostics_spec.ts`) with many `it`s, grouped by check, plus a
@@ -119,7 +114,6 @@ This is the lens-aligned choice on three axes:
    `extended.promotion.integration.spec.ts` pattern.
 
 Facts it rests on:
-
 - 18 `ExtendedTemplateDiagnosticName` members verified against installed
   `@angular/compiler-cli@22.0.4` (FACTS §4); only 2 of 16 catalog extended codes asserted by
   exact code today, 14 missing (CURRENT-AUDIT A.3).
@@ -130,7 +124,6 @@ Facts it rests on:
   SANDBOX-TECHNIQUES §4 caveat; this repo does not have that limitation).
 
 Facts I am missing:
-
 - The exact `ErrorCode` enum value for each of the 18 names in installed compiler-cli 22.0.4
   (FACTS §4 says "to be read during work"), and whether `controlFlowPreventingContentProjection`
   (in the enum but absent from the catalog) and the two "undocumented" catalog codes
@@ -140,7 +133,6 @@ Facts I am missing:
   `skipHydrationNotStatic` needs hydration context).
 
 The specific fact that would change my position:
-
 - If several extended codes turn out to be un-triggerable by a committed standalone fixture
   (require runtime/hydration/build context the static `performCompilation` path cannot
   produce), I would split coverage: exact-code/category for the triggerable set via fixtures,
@@ -159,7 +151,6 @@ option -> real path resolution, and `normalizeOptions` against a real `project.j
 Keep it small; do not duplicate what the mocked-unit or tarball-e2e tiers already prove.**
 
 Facts it rests on:
-
 - Today the executor coverage jumps from seam-mocked unit specs (which build an
   `ExecutorContext` literal and `vi.mock` the four core seams + logger -- FACTS §3) straight
   to the tarball e2e, with nothing between (CURRENT-AUDIT A.2). Path resolution and
@@ -172,7 +163,6 @@ Facts it rests on:
   flags this as "the natural home for the substrate decision").
 
 Facts I am missing:
-
 - Whether the executor reads project configuration off the Tree/`context` at all, or whether
   it only consumes the resolved `tsConfig` path + `context.root` (FACTS §2 says the executor
   maps a `CoreResult` to `{ success }` over the core `runTypecheck`; the path-resolution
@@ -181,7 +171,6 @@ Facts I am missing:
   already covers purely, the mid-tier spec's value shrinks toward zero.
 
 The specific fact that would change my position:
-
 - If reading the executor source shows `context.root`/`projectsConfigurations`-driven
   `tsConfig` resolution is ALREADY exercised by an existing integration spec (e.g.
   `run-typecheck.integration.spec.ts` runs app + lib tsconfigs via `it.each` -- FACTS §3),
@@ -200,7 +189,6 @@ project (preferred) rather than spinning up a new e2e project, unless isolation 
 one.**
 
 Facts it rests on:
-
 - Nx's canonical plugin e2e is Verdaccio-backed (`@nx/js:verdaccio` globalSetup +
   `@nx/plugin/testing` `createTestProject` + `npx nx add <plugin>@e2e` -- FACTS §6;
   CURRENT-AUDIT B.3 route 2). BUT this repo deliberately does NOT use Verdaccio -- it uses
@@ -220,7 +208,6 @@ Facts it rests on:
   `install-e2e/project.json`). Extending `install-e2e` avoids the `ci.yml` edit entirely.
 
 Facts I am missing:
-
 - Whether the existing `install-e2e` harness's isolation model (per-spec tmp install, env
   strip) cleanly accommodates a `nx g` invocation, or whether the generator e2e needs a
   fully `create-nx-workspace`-scaffolded consumer (the generator needs a real project to
@@ -229,7 +216,6 @@ Facts I am missing:
   (SANDBOX-TECHNIQUES §6).
 
 The specific fact that would change my position:
-
 - If the generator requires a real, fully-generated Angular project to target (so the e2e
   must `create-nx-workspace` + `nx g @nx/angular:library` first), and that bootstrap does not
   fit the existing lean `install-e2e` harness, I would add a dedicated
@@ -248,7 +234,6 @@ project is unavoidable, add it by name to the Linux-only `e2e` job's explicit `-
 NO new required check; the single aggregate `ci` check stays the gate.**
 
 Facts it rests on:
-
 - A new `*.spec.ts`/`*.integration.spec.ts` under `packages/angular-typechecker` runs in the
   `test` job with no `ci.yml` change (FACTS §5; CURRENT-AUDIT A.4 -- matches the
   `vitest.config.mts` include glob). The drift gate is folded into the same `run-many`.
@@ -264,7 +249,6 @@ Facts it rests on:
   6-cell matrix is the right and sufficient breadth; no new cells needed.
 
 Facts I am missing:
-
 - The current `test`-job wall-clock budget per cell, and how much the 14 new NG8xxx
   integration specs (each a cold `performCompilation`, `testTimeout: 30000` -- FACTS §3) add
   to the slowest cell x6. A large catalog of cold compilations could push the matrix runtime
@@ -272,7 +256,6 @@ Facts I am missing:
   issue.
 
 The specific fact that would change my position:
-
 - If the 14 cold-compilation catalog specs materially blow the `test`-job time budget on the
   slowest cell, I would consider running the FULL catalog on Linux-only (one cell) and a
   representative SUBSET cross-OS -- but only with evidence, since splitting the catalog across
@@ -292,7 +275,6 @@ EXCLUDE the bespoke `createFsTree` deliverable, Verdaccio, and any cache/`depend
 correctness tests from this milestone.**
 
 Facts it rests on:
-
 - The milestone's NAMED scope is "a `typecheck-configuration` Nx generator plus testing work"
   (FACTS §1). The generator does not yet exist; `package.json` has `executors` but no
   `generators` field (FACTS §2; confirmed: only `"executors": "./executors.json"` present).
@@ -309,7 +291,6 @@ Facts it rests on:
   those is scope creep against both convention and evidence.
 
 Facts I am missing:
-
 - Whether the generator's required SHAPE includes per-project-type branching (app gets an
   explicit editor `tsConfig`; lib defers to a `targetDefaults` / `tsconfig.lib.json` -- the
   Connect Impl-C asymmetry, CONNECT-TECHNIQUES §2a/§3a) or is the single-shape sandbox
@@ -320,7 +301,6 @@ Facts I am missing:
   §3b/§6) -- if in scope they are net-new design, not a drop-in.
 
 The specific fact that would change my position:
-
 - If the generator is specified with full per-project-type branching across all five project
   types (app/local-lib/buildable-lib/publishable-lib/spec-tsconfig) AND distinct tsconfig
   shapes per type, the testing work roughly doubles (a `describe.each` project-type matrix +

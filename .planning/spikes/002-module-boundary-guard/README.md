@@ -2,7 +2,7 @@
 spike: 002
 name: module-boundary-guard
 type: standard
-validates: 'Given a solution tsconfig.json whose references[] include an out-of-project path plus a local path-mapped dep, when the walker resolves references, then out-of-project references are rejected/skipped at the walk boundary while local path-mapped dep sources stay governed by the existing filter-diagnostics + includeDeps'
+validates: "Given a solution tsconfig.json whose references[] include an out-of-project path plus a local path-mapped dep, when the walker resolves references, then out-of-project references are rejected/skipped at the walk boundary while local path-mapped dep sources stay governed by the existing filter-diagnostics + includeDeps"
 verdict: VALIDATED
 related: [001, 004]
 tags: [boundary, security, engine]
@@ -16,18 +16,18 @@ tags: [boundary, security, engine]
 (`./tsconfig.lib.json`) and an OUT-of-project leaf (`../outsider/tsconfig.lib.json`), and whose
 in-project leaf imports both an in-project path-mapped dep (`@in/dep`) and an out-of-project one
 (`@ext/dep`), **when** the walker resolves references and applies a module-boundary guard,
-**then** the out-of-project _reference_ is skipped from the walk (its diagnostics never gathered,
-and `includeDeps=true` does NOT resurrect it), while out-of-project imported _dep sources_ stay
+**then** the out-of-project *reference* is skipped from the walk (its diagnostics never gathered,
+and `includeDeps=true` does NOT resurrect it), while out-of-project imported *dep sources* stay
 governed by the EXISTING `filter-diagnostics` + `includeDeps` -- unchanged. [Objective 2]
 
 ## Research
 
 Two boundaries exist and must not be conflated:
 
-| Boundary                       | Layer                | Mechanism                                                                                                                                                                                                            | Toggle             |
-| ------------------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| WALK boundary (NEW)            | reference resolution | a referenced leaf is walked iff its resolved config path is UNDER the project dir (dirname of the solution tsconfig), canonicalized (realpath + case-fold) exactly like the diagnostic filter's basePath (D-05/D-06) | none -- structural |
-| DIAGNOSTIC boundary (EXISTING) | post-compilation     | `filter-diagnostics`: a diagnostic's `file` under the project basePath is kept, else suppressed; `node_modules` segment excluded                                                                                     | `includeDeps`      |
+| Boundary | Layer | Mechanism | Toggle |
+|----------|-------|-----------|--------|
+| WALK boundary (NEW) | reference resolution | a referenced leaf is walked iff its resolved config path is UNDER the project dir (dirname of the solution tsconfig), canonicalized (realpath + case-fold) exactly like the diagnostic filter's basePath (D-05/D-06) | none -- structural |
+| DIAGNOSTIC boundary (EXISTING) | post-compilation | `filter-diagnostics`: a diagnostic's `file` under the project basePath is kept, else suppressed; `node_modules` segment excluded | `includeDeps` |
 
 The engine core is path-based and Nx-agnostic (D-04), so path-containment under the project dir is
 the natural boundary at the core layer. A richer alternative exists ONE layer up (the Nx executor
@@ -51,11 +51,11 @@ true, plus a NO-GUARD baseline (walk every reference) at includeDeps=true for co
 
 ## What to Expect
 
-| Run                        | errorCount | files reported                                                   |
-| -------------------------- | ---------- | ---------------------------------------------------------------- |
-| guarded, includeDeps=false | 1          | in-project dep only (external dep suppressed, suppressedCount=1) |
-| guarded, includeDeps=true  | 2          | in-project dep + external dep (outsider STILL absent)            |
-| no-guard, includeDeps=true | 3          | in-project dep + external dep + OUTSIDER (leaks)                 |
+| Run | errorCount | files reported |
+|-----|-----------|----------------|
+| guarded, includeDeps=false | 1 | in-project dep only (external dep suppressed, suppressedCount=1) |
+| guarded, includeDeps=true | 2 | in-project dep + external dep (outsider STILL absent) |
+| no-guard, includeDeps=true | 3 | in-project dep + external dep + OUTSIDER (leaks) |
 
 All 7 assertions PASS; `VERDICT: VALIDATED`.
 
@@ -66,8 +66,8 @@ suppressedCount + reported files, and every assertion.
 
 ## Investigation Trail
 
-1. Built a fixture that separates the two boundaries: an out-of-project _referenced project_
-   (`outsider`) and an out-of-project _imported dep source_ (`external-dep`), plus an in-project
+1. Built a fixture that separates the two boundaries: an out-of-project *referenced project*
+   (`outsider`) and an out-of-project *imported dep source* (`external-dep`), plus an in-project
    dep (`indep`). Distinct files carry distinct TS2322s so presence is unambiguous per file.
 2. Implemented the guard as path-containment under the project dir, canonicalized with the same
    realpath+case-fold canonicalizer the diagnostic filter uses.

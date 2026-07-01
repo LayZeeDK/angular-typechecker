@@ -79,15 +79,13 @@ untouched -- this is a reachability change, not a security regression.
 requirement explicit so a future operator does not get a silent skip. Either widen the gate
 to also allow an explicit manual run, or (preferred, lowest-risk) extend the existing
 comment block to state it:
-
 ```yaml
-# ... existing comment ...
-# NOTE: this gate also applies to workflow_dispatch -- a MANUAL run must be
-# dispatched against a release TAG ref (refs/tags/angular-typechecker@<version>),
-# NOT a branch, or the publish job silently SKIPS.
-if: startsWith(github.ref, 'refs/tags/angular-typechecker@')
+    # ... existing comment ...
+    # NOTE: this gate also applies to workflow_dispatch -- a MANUAL run must be
+    # dispatched against a release TAG ref (refs/tags/angular-typechecker@<version>),
+    # NOT a branch, or the publish job silently SKIPS.
+    if: startsWith(github.ref, 'refs/tags/angular-typechecker@')
 ```
-
 If a branch-dispatch republish is ever a real need, the explicit form is:
 `if: startsWith(github.ref, 'refs/tags/angular-typechecker@') || github.event_name == 'workflow_dispatch'`
 (but that re-widens the surface RD-07 deliberately closed -- only do it if the use case is real).
@@ -109,7 +107,6 @@ which a single hardcoded cell index under-specifies.
 **Fix:** Assert the job FAMILY rather than a positional cell, e.g. match the stable prefix
 `[ci/test-` (any cell) instead of `[ci/test-1`, and -- if cell-count coverage matters --
 count the distinct `[ci/test-N` tokens and assert it equals 6:
-
 ```bash
 # selected at least one test cell (family match, suffix-agnostic):
 assert_selected "$PR_PLAN" "ci/test-" "pull_request"
@@ -135,7 +132,6 @@ job, not a false-pass: a dead `act` still fails the job (good), just without the
 **Fix:** Either drop the redundant bare `act --version` (the CI job already runs
 `act --version` in the install step, `ci.yml:103`), or guard it so a failure is counted and
 the summary still prints:
-
 ```bash
 if ! act --version; then
   fail "act --version: act not runnable"

@@ -2,7 +2,7 @@
 spike: 005
 name: coarse-single-target-caching
 type: standard
-validates: 'Given a single Nx angular-typecheck target that walks the lib + spec leaves, when the task cache key is computed, then outputs:[] is correct and the inputs must union the leaf inputs so any leaf/dep change busts the cache and nothing under-hashes'
+validates: "Given a single Nx angular-typecheck target that walks the lib + spec leaves, when the task cache key is computed, then outputs:[] is correct and the inputs must union the leaf inputs so any leaf/dep change busts the cache and nothing under-hashes"
 verdict: VALIDATED
 related: [002, 003]
 tags: [caching, nx, devex]
@@ -51,23 +51,21 @@ the spec source + spec tsconfig a walk would add) using `minimatch`, and asserts
 on all-pass; writes `forensic-log.json`.
 
 Dependency-edge (`^default`) coverage confirmed live:
-
 ```
 npx nx show projects --affected --files=libs/typecheck-consumer-dep/src/lib/dep.component.ts
 -> ["typecheck-consumer-dep","angular-typechecker-cache-e2e","typecheck-consumer"]
 ```
-
 `typecheck-consumer` is affected by a dep-source change -> the project-graph edge exists and
 `^default` hashes the non-buildable dep's source.
 
 ## What to Expect
 
-| File-set                             | spec SOURCE hashed? | tsconfig.spec.json hashed? |
-| ------------------------------------ | :-----------------: | :------------------------: |
-| `default` named input                |         yes         |            yes             |
-| `production` named input             |       **no**        |             no             |
-| CURRENT target inputs                |       **no**        | yes (via `tsconfig*.json`) |
-| WALK target inputs (`default`-based) |         yes         |            yes             |
+| File-set | spec SOURCE hashed? | tsconfig.spec.json hashed? |
+|----------|:-------------------:|:--------------------------:|
+| `default` named input | yes | yes |
+| `production` named input | **no** | no |
+| CURRENT target inputs | **no** | yes (via `tsconfig*.json`) |
+| WALK target inputs (`default`-based) | yes | yes |
 
 All 6 assertions PASS; `VERDICT: VALIDATED`.
 

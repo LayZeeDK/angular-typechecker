@@ -20,13 +20,24 @@ The generator adds a `typecheck` target to an EXISTING project's configuration. 
 `libs/nx-plugin/src/generators/typecheck-configuration/generator.ts`:
 
 ```typescript
-import { formatFiles, joinPathFragments, readProjectConfiguration, Tree, updateProjectConfiguration } from '@nx/devkit';
+import {
+  formatFiles,
+  joinPathFragments,
+  readProjectConfiguration,
+  Tree,
+  updateProjectConfiguration,
+} from '@nx/devkit';
 import { TypecheckConfigurationGeneratorSchema } from './schema';
 
-export async function typecheckConfigurationGenerator(tree: Tree, options: TypecheckConfigurationGeneratorSchema) {
+export async function typecheckConfigurationGenerator(
+  tree: Tree,
+  options: TypecheckConfigurationGeneratorSchema
+) {
   const projectConfig = readProjectConfiguration(tree, options.project);
 
-  const tsConfigPath = options.tsConfig ?? joinPathFragments(projectConfig.root, 'tsconfig.lib.json');
+  const tsConfigPath =
+    options.tsConfig ??
+    joinPathFragments(projectConfig.root, 'tsconfig.lib.json');
 
   projectConfig.targets ??= {};
   projectConfig.targets.typecheck = {
@@ -45,7 +56,6 @@ export default typecheckConfigurationGenerator;
 ```
 
 **`@nx/devkit` APIs used (exhaustive):**
-
 - `readProjectConfiguration(tree, project)` -- read the target project's config.
 - `joinPathFragments(root, 'tsconfig.lib.json')` -- compute the DEFAULT tsConfig path (POSIX join).
 - `updateProjectConfiguration(tree, project, config)` -- write the mutated config back.
@@ -81,7 +91,6 @@ export default typecheckConfigurationGenerator;
 ```
 
 Notes on schema conventions worth carrying:
-
 - `project` uses `$default: { $source: "argv", index: 0 }` so `nx g typecheck-configuration my-lib` binds the first positional arg to `project`, and `x-prompt` makes it interactive otherwise.
 - `tsConfig` is optional (only `project` is required); absence triggers the `tsconfig.lib.json` default in code.
 - `additionalProperties` is NOT set (defaults to permissive). The current repo's STACK.md recommends `false` for a strict tool.
@@ -123,7 +132,11 @@ The published `package.json` declares `"generators": "./generators.json"` and th
 
 ```typescript
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { Tree, addProjectConfiguration, readProjectConfiguration } from '@nx/devkit';
+import {
+  Tree,
+  addProjectConfiguration,
+  readProjectConfiguration,
+} from '@nx/devkit';
 
 import { typecheckConfigurationGenerator } from './generator';
 
@@ -157,13 +170,14 @@ describe('typecheck-configuration generator', () => {
     });
 
     const config = readProjectConfiguration(tree, 'test');
-    expect(config.targets?.typecheck?.options?.tsConfig).toBe('libs/test/custom.json');
+    expect(config.targets?.typecheck?.options?.tsConfig).toBe(
+      'libs/test/custom.json'
+    );
   });
 });
 ```
 
 **Mechanics:**
-
 - **Import of the tree factory:** `createTreeWithEmptyWorkspace` from `@nx/devkit/testing` (the public testing subpath). No internal `nx/src/...` import in the committed test.
 - **Real-disk vs in-memory:** fully in-memory. No `flushChanges`, no `fs` writes, no temp dirs. The tree is virtual; assertions read back through `readProjectConfiguration`.
 - **Setup/teardown:** `beforeEach` makes a fresh empty workspace and seeds ONE project (`'test'`, a library at `libs/test` with empty `targets`). No `afterEach` (in-memory tree is GC'd; nothing to clean).
@@ -203,9 +217,15 @@ vi.mock('@angular/compiler-cli', () => ({
 Typed handles to the mocks:
 
 ```typescript
-const mockReadConfiguration = compilerCli.readConfiguration as MockedFunction<typeof compilerCli.readConfiguration>;
-const mockPerformCompilation = compilerCli.performCompilation as MockedFunction<typeof compilerCli.performCompilation>;
-const mockFormatDiagnostics = compilerCli.formatDiagnostics as MockedFunction<typeof compilerCli.formatDiagnostics>;
+const mockReadConfiguration = compilerCli.readConfiguration as MockedFunction<
+  typeof compilerCli.readConfiguration
+>;
+const mockPerformCompilation = compilerCli.performCompilation as MockedFunction<
+  typeof compilerCli.performCompilation
+>;
+const mockFormatDiagnostics = compilerCli.formatDiagnostics as MockedFunction<
+  typeof compilerCli.formatDiagnostics
+>;
 ```
 
 ### How `ExecutorContext` is built in memory
@@ -244,14 +264,14 @@ mockFormatDiagnostics.mockReturnValue('');
 
 ### How it differs from the real-compiler integration tests
 
-| Dimension             | `executor.spec.ts` (unit)                         | `executor.angularNN.integration.spec.ts`                                       |
-| --------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Compiler              | mocked (`vi.mock`)                                | real `@angular/compiler-cli` via `runExecutor`                                 |
-| Context               | hand-built literal                                | from `createProjectGraphAsync()` + `readProjectsConfigurationFromProjectGraph` |
-| Diagnostics           | fabricated `ts.Diagnostic` objects                | produced by compiling real generated fixtures                                  |
-| Speed                 | instant                                           | 60s timeout per `it`, 120s suite                                               |
-| What it proves        | control flow / filtering / success-counting logic | that real diagnostics surface end-to-end per Angular version                   |
-| Assertion granularity | success boolean + call args                       | success boolean ONLY (no code/count assertions -- see section 4 caveat)        |
+| Dimension | `executor.spec.ts` (unit) | `executor.angularNN.integration.spec.ts` |
+|---|---|---|
+| Compiler | mocked (`vi.mock`) | real `@angular/compiler-cli` via `runExecutor` |
+| Context | hand-built literal | from `createProjectGraphAsync()` + `readProjectsConfigurationFromProjectGraph` |
+| Diagnostics | fabricated `ts.Diagnostic` objects | produced by compiling real generated fixtures |
+| Speed | instant | 60s timeout per `it`, 120s suite |
+| What it proves | control flow / filtering / success-counting logic | that real diagnostics surface end-to-end per Angular version |
+| Assertion granularity | success boolean + call args | success boolean ONLY (no code/count assertions -- see section 4 caveat) |
 
 ---
 
@@ -299,17 +319,17 @@ There are **no committed fixture projects**. Fixtures are generated at test time
 
 From the spec files and corroborated by `ANGULAR-COMPILER-ERRORS.md`:
 
-| File                                     | Angular major | Codes / scenarios asserted                                                                                                                                                                                                                                                                                                                                                              | Fixture(s)                                                                                                                                                                                                                                                                                                           |
-| ---------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File | Angular major | Codes / scenarios asserted | Fixture(s) |
+|---|---|---|---|
 | `executor.angular13.integration.spec.ts` | 13 (baseline) | `TS2322` (ts error), `TS2339` (template missing member), `NG2003`, `NG2007`, `NG8001`, `NG1019`/`NG8004` (missing pipe), `NG2005`/`NG1005` (illegal ctor decorator), `NG1001` (arg not literal), `NG2009` (shadow DOM selector), `NG8002` (invalid attribute/`ngModel` not imported), `NG3003`/`NG8003` (missing `exportAs`), plus a multi-error case and the dependency-filtering pair | clean-lib, ts-error-lib, template-error-lib, decorator-error-lib, ng-di-error-lib, ng-base-error-lib, unknown-element-lib, missing-pipe-lib, illegal-constructor-lib, argument-not-literal-lib, invalid-shadow-selector-lib, invalid-attribute-lib, missing-exportas-lib, multi-error-lib, main-lib + dependency-lib |
-| `executor.angular14.integration.spec.ts` | 14            | `NG6100` (`@NgModule({ id: module.id })`)                                                                                                                                                                                                                                                                                                                                               | ng-module-id-lib                                                                                                                                                                                                                                                                                                     |
-| `executor.angular15.integration.spec.ts` | 15            | `NG8101` (invalidBananaInBox) -- with `extendedDiagnostics.defaultCategory='error'`                                                                                                                                                                                                                                                                                                     | invalid-banana-lib                                                                                                                                                                                                                                                                                                   |
-| `executor.angular16.integration.spec.ts` | 16            | `NG8108` (skipHydrationNotStatic)                                                                                                                                                                                                                                                                                                                                                       | skip-hydration-lib                                                                                                                                                                                                                                                                                                   |
-| `executor.angular17.integration.spec.ts` | 17            | `NG8109` (interpolatedSignalNotInvoked)                                                                                                                                                                                                                                                                                                                                                 | signal-interpolation-lib                                                                                                                                                                                                                                                                                             |
-| `executor.angular18.integration.spec.ts` | 18            | `NG8111` (uninvokedFunctionInEventBinding)                                                                                                                                                                                                                                                                                                                                              | event-binding-lib                                                                                                                                                                                                                                                                                                    |
-| `executor.angular19.integration.spec.ts` | 19            | `NG8113` (unusedStandaloneImports)                                                                                                                                                                                                                                                                                                                                                      | unused-standalone-import-lib                                                                                                                                                                                                                                                                                         |
-| `executor.angular20.integration.spec.ts` | 20            | `NG8114`, `NG8115`, `NG8116`, `NG8117`                                                                                                                                                                                                                                                                                                                                                  | nullish-coalescing-lib, uninvoked-track-lib, missing-structural-directive-lib, text-interpolation-lib                                                                                                                                                                                                                |
-| `executor.angular21.integration.spec.ts` | 21            | `NG8021` (deferTriggerMisconfiguration)                                                                                                                                                                                                                                                                                                                                                 | defer-trigger-lib                                                                                                                                                                                                                                                                                                    |
+| `executor.angular14.integration.spec.ts` | 14 | `NG6100` (`@NgModule({ id: module.id })`) | ng-module-id-lib |
+| `executor.angular15.integration.spec.ts` | 15 | `NG8101` (invalidBananaInBox) -- with `extendedDiagnostics.defaultCategory='error'` | invalid-banana-lib |
+| `executor.angular16.integration.spec.ts` | 16 | `NG8108` (skipHydrationNotStatic) | skip-hydration-lib |
+| `executor.angular17.integration.spec.ts` | 17 | `NG8109` (interpolatedSignalNotInvoked) | signal-interpolation-lib |
+| `executor.angular18.integration.spec.ts` | 18 | `NG8111` (uninvokedFunctionInEventBinding) | event-binding-lib |
+| `executor.angular19.integration.spec.ts` | 19 | `NG8113` (unusedStandaloneImports) | unused-standalone-import-lib |
+| `executor.angular20.integration.spec.ts` | 20 | `NG8114`, `NG8115`, `NG8116`, `NG8117` | nullish-coalescing-lib, uninvoked-track-lib, missing-structural-directive-lib, text-interpolation-lib |
+| `executor.angular21.integration.spec.ts` | 21 | `NG8021` (deferTriggerMisconfiguration) | defer-trigger-lib |
 
 **Coverage gaps the sandbox itself documents** (`ANGULAR-COMPILER-ERRORS.md` lists these as existing diagnostics but they are NOT asserted by any spec): `NG8102` (nullishCoalescingNotNullable), `NG8103` (missingControlFlowDirective), `NG8104` (textAttributeNotBinding), `NG8105` (missingNgForOfLet), `NG8106` (suffixNotSupported), `NG8107` (optionalChainNotNullable). The v0.0.4 "every NG8xxx" goal must fill these.
 
@@ -333,12 +353,12 @@ const READY_FILE_NAME = 'angular-typecheck-fixtures.ready';
 async function acquireLock(lockPath: string): Promise<() => void> {
   while (true) {
     try {
-      mkdirSync(lockPath); // atomic dir create == lock
+      mkdirSync(lockPath);                       // atomic dir create == lock
       return () => rmSync(lockPath, { recursive: true, force: true });
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
         await sleep(200);
-        continue; // spin until lock released
+        continue;                                // spin until lock released
       }
       throw err;
     }
@@ -355,21 +375,18 @@ let activeSuites = 0;
 
 export function registerAngularTypecheckSuite(): AngularTypecheckTestContext {
   activeSuites++;
-  const pendingState = ensureState(); // memoized init
+  const pendingState = ensureState();          // memoized init
 
-  beforeAll(async () => {
-    await pendingState;
-  }, 600000); // 10-min ceiling
+  beforeAll(async () => { await pendingState; }, 600000);  // 10-min ceiling
 
   afterAll(async () => {
     activeSuites--;
-    if (activeSuites === 0) {
-      await cleanupState();
-    }
+    if (activeSuites === 0) { await cleanupState(); }
   });
 
   return {
-    runTypecheck: (projectName, options) => pendingState.then((ctx) => runTypecheckWithState(ctx, projectName, options)),
+    runTypecheck: (projectName, options) =>
+      pendingState.then((ctx) => runTypecheckWithState(ctx, projectName, options)),
   };
 }
 ```
@@ -379,24 +396,23 @@ export function registerAngularTypecheckSuite(): AngularTypecheckTestContext {
 ```typescript
 async function runTypecheckWithState(currentState, projectName, options = {}) {
   const { workspaceRoot, projectGraph } = currentState;
-  const projectsConfigurations = readProjectsConfigurationFromProjectGraph(projectGraph);
+  const projectsConfigurations =
+    readProjectsConfigurationFromProjectGraph(projectGraph);
 
   const context: ExecutorContext = {
-    root: workspaceRoot,
-    cwd: workspaceRoot,
-    isVerbose: false,
-    projectName,
-    projectGraph,
-    projectsConfigurations,
+    root: workspaceRoot, cwd: workspaceRoot, isVerbose: false,
+    projectName, projectGraph, projectsConfigurations,
     nxJsonConfiguration: {},
   };
 
-  const iterator = await runExecutor({ project: projectName, target: 'typecheck' }, { tsConfig: `${FIXTURE_DIR}/${projectName}/tsconfig.lib.json`, ...options }, context);
+  const iterator = await runExecutor(
+    { project: projectName, target: 'typecheck' },
+    { tsConfig: `${FIXTURE_DIR}/${projectName}/tsconfig.lib.json`, ...options },
+    context
+  );
 
   let success = true;
-  for await (const result of iterator) {
-    success = success && result.success;
-  }
+  for await (const result of iterator) { success = success && result.success; }
   return { success };
 }
 ```
@@ -412,13 +428,29 @@ The fixture-creation block (`initializeFixtures`) is one long sequence: for each
 ```typescript
 export function createAngularLibraryFixture(workspaceRoot, fixture): string {
   const projectRoot = `${FIXTURE_DIR}/${fixture.name}`;
-  const generateCmd = ['npx nx generate @nx/angular:library', `--name=${fixture.name}`, `--directory=${projectRoot}`, '--projectNameAndRootFormat=as-provided', '--standalone=true', '--prefix=test', '--style=none', '--skipTests=true', '--skipFormat=true', '--skipModule=true', '--skipPackageJson=true', '--changeDetection=OnPush', '--linter=none', '--unitTestRunner=none', '--no-interactive'].join(' ');
-  execSync(generateCmd, { cwd: workspaceRoot, stdio: 'pipe', env: { ...process.env, NX_DAEMON: 'false' } });
+  const generateCmd = [
+    'npx nx generate @nx/angular:library',
+    `--name=${fixture.name}`,
+    `--directory=${projectRoot}`,
+    '--projectNameAndRootFormat=as-provided',
+    '--standalone=true', '--prefix=test', '--style=none',
+    '--skipTests=true', '--skipFormat=true', '--skipModule=true',
+    '--skipPackageJson=true', '--changeDetection=OnPush',
+    '--linter=none', '--unitTestRunner=none', '--no-interactive',
+  ].join(' ');
+  execSync(generateCmd, { cwd: workspaceRoot, stdio: 'pipe',
+    env: { ...process.env, NX_DAEMON: 'false' } });
 
   // wire the typecheck target with the plugin's own generator
   const projectJson = JSON.parse(readFileSync(join(workspaceRoot, projectRoot, 'project.json'), 'utf-8'));
   const projectName = projectJson.name ?? fixture.name;
-  execSync(['npx nx generate @workspace/nx-plugin:typecheck-configuration', `--project=${projectName}`, `--tsConfig=${projectRoot}/tsconfig.lib.json`, '--no-interactive'].join(' '), { cwd: workspaceRoot, stdio: 'pipe', env: { ...process.env, NX_DAEMON: 'false' } });
+  execSync([
+    'npx nx generate @workspace/nx-plugin:typecheck-configuration',
+    `--project=${projectName}`,
+    `--tsConfig=${projectRoot}/tsconfig.lib.json`,
+    '--no-interactive',
+  ].join(' '), { cwd: workspaceRoot, stdio: 'pipe',
+    env: { ...process.env, NX_DAEMON: 'false' } });
 
   return join(workspaceRoot, projectRoot);
 }
@@ -427,7 +459,6 @@ export function createAngularLibraryFixture(workspaceRoot, fixture): string {
 **jscodeshift AST helpers** (`j = jscodeshift.withParser('tsx')`): `addImportSpecifier`, `addImportDeclaration` (with optional leading comment), `addClassProperty` (parses `class X { <prop> }` and unshifts the member), `setClassExtends`, `addToComponentImports` (finds the `@Component` decorator's `imports: [...]` array and pushes), `updateComponentMetadata` + `upsertMetadataProperty` (mutate `@Component` metadata, e.g. set `encapsulation: ViewEncapsulation.ShadowDom`). These let injections be surgical and idempotent rather than brittle string splices.
 
 **Injection style varies by diagnostic class:**
-
 - TS / decorator / DI errors: jscodeshift class-property / decorator edits to the `.component.ts`.
 - Template diagnostics: read the `.component.html` and append (or overwrite) a small broken snippet -- e.g. NG8001 appends `<unknown-widget></unknown-widget>`, NG8101 appends `<div ([value])="invalidBananaModel"></div>`, NG8115 writes a `@for (...; track trackById)` (uninvoked track), NG8021 writes a `@defer (on immediate; prefetch on idle)` block.
 - Some need extra files: NG2007 writes an `undecorated-base.ts` and `extends` it; NG3003 writes a directive missing `exportAs`; NG8113 writes an unused standalone directive.
@@ -491,14 +522,11 @@ import stopLocalRegistry from '../../tools/scripts/stop-local-registry';
 
 export default async function () {
   await startLocalRegistry();
-  return () => {
-    stopLocalRegistry();
-  };
+  return () => { stopLocalRegistry(); };
 }
 ```
 
 **`tools/scripts/start-local-registry.ts`** does the full publish dance:
-
 1. `spawn` `verdaccio` (resolved via `require.resolve('verdaccio/bin/verdaccio')`) on `127.0.0.1:4873`, with a fresh storage dir.
 2. Poll `GET /-/ping` up to 60x/250ms until healthy (`ensureRegistryHealthy`).
 3. `nx run nx-plugin:build` (via `execFileSync(process.execPath, [nxCli, ...])`, `NX_DAEMON=false`).
@@ -513,7 +541,6 @@ export default async function () {
 `createTestProject()` scaffolds a brand-new workspace with `create-nx-workspace@<workspace-nx-version> --preset angular-monorepo --nxCloud=skip` under `tmp/test-project`, writes a `.npmrc` pointing the `@workspace` scope at the local registry, then `npm install @workspace/nx-plugin@e2e`. The Nx version is read dynamically from the host workspace via `npm list nx --json` (`readWorkspaceNxVersion`).
 
 Three `it`s:
-
 1. **`should be installed`** -- `npm ls @workspace/nx-plugin` (fails if not installed).
 2. **`should add a typecheck target and run it`** -- `nx generate @nx/angular:library`, then `nx generate @workspace/nx-plugin:typecheck-configuration --project=...`, asserts via `nx show project ... --json` that `targets.typecheck.executor === '@workspace/nx-plugin:angular-typecheck'` and `options.tsConfig === '<root>/tsconfig.lib.json'`, then runs `nx run <proj>:typecheck` (expects exit 0 on a clean lib).
 3. **`should report template errors when running the typecheck target`** -- same scaffold, then writes an invalid template containing a sentinel token `__template_error_token__`, runs `nx run <proj>:typecheck` expecting a NON-ZERO exit, and asserts the combined stdout+stderr CONTAINS the sentinel token (proving the template diagnostic surfaced to the user, not just the failure). Finds the component template by walking the lib's `src/lib` tree for a `*.component.html`.

@@ -17,23 +17,23 @@
 
 ## File Classification
 
-| New file                                                                               | Role                         | Data Flow                           | Closest external analog                                                                             | Match quality                  |
-| -------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `packages/angular-typechecker/src/core/compiler-loader.ts`                             | engine-core                  | transform (lazy ESM load)           | `angular-cli .../angular-compilation.ts:34-38` (`loadCompilerCli`)                                  | exact (shape) -- version-bound |
-| `packages/angular-typechecker/src/core/gather-diagnostics.ts`                          | engine-core                  | transform (diagnostic aggregation)  | sandbox `.../angular-typecheck/executor.ts:19-37` (`gatherAllDiagnostics`)                          | exact (shape) -- version-bound |
-| `packages/angular-typechecker/src/core/run-typecheck.ts`                               | engine-core                  | request-response (config -> result) | sandbox `executor.ts:39-98` orchestration + `compiler-cli/.../perform_compile.ts:255-279` signature | role-match (recomposed)        |
-| `packages/angular-typechecker/src/index.ts`                                            | engine-core (export surface) | n/a                                 | nx-verdaccio `package.json main: ./src/index.js` (convention)                                       | role-match                     |
-| `packages/angular-typechecker/src/executors/angular-typecheck/executor.ts`             | executor-adapter             | request-response (Nx invoke)        | nx-verdaccio `kill-process/executor.ts:17-19` (default-export signature)                            | exact (signature)              |
-| `packages/angular-typechecker/src/executors/angular-typecheck/schema.json`             | config-manifest              | n/a                                 | nx-verdaccio `kill-process/schema.json`                                                             | exact -- simplify to 1 prop    |
-| `packages/angular-typechecker/src/executors/angular-typecheck/schema.d.ts`             | config-manifest (type)       | n/a                                 | nx-verdaccio `kill-process/schema.ts`                                                               | exact                          |
-| `packages/angular-typechecker/executors.json`                                          | config-manifest              | n/a                                 | nx-verdaccio `executors.json`                                                                       | exact -- 1 entry               |
-| `packages/angular-typechecker/package.json`                                            | config-manifest              | n/a                                 | nx-verdaccio `package.json` (shape) + `01-RESEARCH.md` Phase-1 scope (D-14)                         | role-match -- see deps delta   |
-| `packages/angular-typechecker/project.json`                                            | config-manifest              | n/a                                 | nx-verdaccio `project.json` (build asset-copy)                                                      | exact (build target)           |
-| `packages/angular-typechecker/tsconfig.json`                                           | config-manifest              | n/a                                 | nx-verdaccio `tsconfig.json` + Analog `tsconfig.base.json` (module/deprecation)                     | role-match -- module PATCH     |
-| `packages/angular-typechecker/tsconfig.lib.json`                                       | config-manifest              | n/a                                 | nx-verdaccio `tsconfig.lib.json`                                                                    | exact -- add fixtures exclude  |
-| `packages/angular-typechecker/src/**/gate-a-static.spec.ts`                            | test-spec                    | file-I/O (read built artifact)      | `01-RESEARCH.md` Code Examples (no external Vitest analog)                                          | role-match (research-derived)  |
-| `packages/angular-typechecker/src/**/gate-b.spec.ts`                                   | test-spec                    | request-response (drive core)       | `01-RESEARCH.md` Code Examples + `perform_compile.ts` differential                                  | role-match (research-derived)  |
-| `fixtures/gate-b-error/{error.component.ts,.html,tsconfig.app.json,tsconfig.lib.json}` | fixture                      | n/a (compiler input)                | sandbox `test-fixtures.ts` injectors (NG8109 + TS2322)                                              | exact (injected shapes)        |
+| New file | Role | Data Flow | Closest external analog | Match quality |
+|----------|------|-----------|-------------------------|---------------|
+| `packages/angular-typechecker/src/core/compiler-loader.ts` | engine-core | transform (lazy ESM load) | `angular-cli .../angular-compilation.ts:34-38` (`loadCompilerCli`) | exact (shape) -- version-bound |
+| `packages/angular-typechecker/src/core/gather-diagnostics.ts` | engine-core | transform (diagnostic aggregation) | sandbox `.../angular-typecheck/executor.ts:19-37` (`gatherAllDiagnostics`) | exact (shape) -- version-bound |
+| `packages/angular-typechecker/src/core/run-typecheck.ts` | engine-core | request-response (config -> result) | sandbox `executor.ts:39-98` orchestration + `compiler-cli/.../perform_compile.ts:255-279` signature | role-match (recomposed) |
+| `packages/angular-typechecker/src/index.ts` | engine-core (export surface) | n/a | nx-verdaccio `package.json main: ./src/index.js` (convention) | role-match |
+| `packages/angular-typechecker/src/executors/angular-typecheck/executor.ts` | executor-adapter | request-response (Nx invoke) | nx-verdaccio `kill-process/executor.ts:17-19` (default-export signature) | exact (signature) |
+| `packages/angular-typechecker/src/executors/angular-typecheck/schema.json` | config-manifest | n/a | nx-verdaccio `kill-process/schema.json` | exact -- simplify to 1 prop |
+| `packages/angular-typechecker/src/executors/angular-typecheck/schema.d.ts` | config-manifest (type) | n/a | nx-verdaccio `kill-process/schema.ts` | exact |
+| `packages/angular-typechecker/executors.json` | config-manifest | n/a | nx-verdaccio `executors.json` | exact -- 1 entry |
+| `packages/angular-typechecker/package.json` | config-manifest | n/a | nx-verdaccio `package.json` (shape) + `01-RESEARCH.md` Phase-1 scope (D-14) | role-match -- see deps delta |
+| `packages/angular-typechecker/project.json` | config-manifest | n/a | nx-verdaccio `project.json` (build asset-copy) | exact (build target) |
+| `packages/angular-typechecker/tsconfig.json` | config-manifest | n/a | nx-verdaccio `tsconfig.json` + Analog `tsconfig.base.json` (module/deprecation) | role-match -- module PATCH |
+| `packages/angular-typechecker/tsconfig.lib.json` | config-manifest | n/a | nx-verdaccio `tsconfig.lib.json` | exact -- add fixtures exclude |
+| `packages/angular-typechecker/src/**/gate-a-static.spec.ts` | test-spec | file-I/O (read built artifact) | `01-RESEARCH.md` Code Examples (no external Vitest analog) | role-match (research-derived) |
+| `packages/angular-typechecker/src/**/gate-b.spec.ts` | test-spec | request-response (drive core) | `01-RESEARCH.md` Code Examples + `perform_compile.ts` differential | role-match (research-derived) |
+| `fixtures/gate-b-error/{error.component.ts,.html,tsconfig.app.json,tsconfig.lib.json}` | fixture | n/a (compiler input) | sandbox `test-fixtures.ts` injectors (NG8109 + TS2322) | exact (injected shapes) |
 
 ## Pattern Assignments
 
@@ -42,7 +42,6 @@
 **Analog:** `D:/projects/github/angular/angular-cli/packages/angular/build/src/tools/angular/compilation/angular-compilation.ts:34-38`
 
 **Verified this session.** Source reads:
-
 ```typescript
 static async loadCompilerCli(): Promise<typeof ng> {
   AngularCompilation.#angularCompilerCliModule ??= await import('@angular/compiler-cli');
@@ -51,14 +50,12 @@ static async loadCompilerCli(): Promise<typeof ng> {
 }
 // (loadTypescript at :40-44 follows the same ??= memoize-via-await-import shape)
 ```
-
 The analog is a `static #private` class field; our core is a free function with a module-level
 `let cached`. Same memoize-via-`??=`-`await import()` shape, no class.
 
 **Shape to follow:**
-
 ```typescript
-import type * as ng from '@angular/compiler-cli'; // type-only -> no runtime require
+import type * as ng from '@angular/compiler-cli';   // type-only -> no runtime require
 
 let cached: typeof ng | undefined;
 
@@ -70,7 +67,6 @@ export async function loadCompilerCli(): Promise<typeof ng> {
 ```
 
 **Must CHANGE for the locked stack:**
-
 - The analog imports `@angular/compiler-cli@22.1.0-next.1`; re-validate the `??= await import(...)`
   emit against `@angular/compiler-cli@22.0.4` + `typescript@6.0.3`.
 - The build MUST compile this under `module: "nodenext"` (NOT the generator default `commonjs`) so
@@ -89,7 +85,6 @@ export async function loadCompilerCli(): Promise<typeof ng> {
 is the last one, `getNgSemanticDiagnostics()` (prototype line 34), which `ngc` skips.
 
 **Shape to follow (ported verbatim; only the import style changes):**
-
 ```typescript
 import type ts from 'typescript';
 import type { Program } from '@angular/compiler-cli';
@@ -100,16 +95,15 @@ export function gatherAllDiagnostics(program: Program): readonly ts.Diagnostic[]
   all.push(...program.getTsOptionDiagnostics());
   all.push(...program.getNgOptionDiagnostics());
   all.push(...program.getTsSyntacticDiagnostics());
-  all.push(...program.getTsSemanticDiagnostics()); // surfaces TS2322
+  all.push(...program.getTsSemanticDiagnostics());     // surfaces TS2322
   all.push(...program.getNgStructuralDiagnostics());
-  all.push(...program.getNgSemanticDiagnostics()); // surfaces NG8109 -- the getter ngc skips
+  all.push(...program.getNgSemanticDiagnostics());     // surfaces NG8109 -- the getter ngc skips
 
   return all;
 }
 ```
 
 **Must CHANGE for the locked stack:**
-
 - The prototype uses a STATIC `import { ... Program } from '@angular/compiler-cli'` (executor.ts:2-8)
   -- the v22 `ERR_REQUIRE_ESM` break. Use `import type { Program }` here (type-only erases at emit);
   the only runtime value-import of compiler-cli lives in `compiler-loader.ts`.
@@ -132,41 +126,38 @@ call (executor.ts:65-70) matches: `{ rootNames, options: compilerOptions, emitFl
 gatherDiagnostics: gatherAllDiagnostics }`.
 
 **Shape to follow (recomposed -- the prototype embeds this in the executor; we LIFT it into core):**
-
 ```typescript
 import type ts from 'typescript';
 import { loadCompilerCli } from './compiler-loader';
 import { gatherAllDiagnostics } from './gather-diagnostics';
 
-export interface CoreOptions {
-  tsConfigPath: string;
-}
+export interface CoreOptions { tsConfigPath: string; }
 export interface CoreResult {
   diagnostics: readonly ts.Diagnostic[];
-  codes: number[]; // code-based assertions (D-17): 2322, 8109
+  codes: number[];          // code-based assertions (D-17): 2322, 8109
   errorCount: number;
   warningCount: number;
-  durationMs: number; // cold-run timing (gate item 6)
+  durationMs: number;       // cold-run timing (gate item 6)
 }
 
 export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
-  const ng = await loadCompilerCli(); // GATE A runtime path
+  const ng = await loadCompilerCli();                       // GATE A runtime path
   const parsed = ng.readConfiguration(options.tsConfigPath);
   const start = performance.now();
   const result = ng.performCompilation({
     rootNames: parsed.rootNames,
-    options: { ...parsed.options, noEmit: true }, // fresh options object per call
+    options: { ...parsed.options, noEmit: true },           // fresh options object per call
     emitFlags: 0 as ng.EmitFlags,
     gatherDiagnostics: gatherAllDiagnostics,
   });
   const durationMs = performance.now() - start;
   // errorCount via DiagnosticCategory.Error; codes = diagnostics.map(d => d.code)
-  return { diagnostics: result.diagnostics, codes: result.diagnostics.map((d) => d.code), errorCount: /* ... */ 0, warningCount: /* ... */ 0, durationMs };
+  return { diagnostics: result.diagnostics, codes: result.diagnostics.map(d => d.code),
+           errorCount: /* ... */ 0, warningCount: /* ... */ 0, durationMs };
 }
 ```
 
 **Must CHANGE for the locked stack:**
-
 - The prototype lives ENTIRELY inside the executor (couples `@nx/devkit` + compiler-cli). Phase 1
   splits per the core/adapter rule: this file has ZERO `@nx/devkit` import; the adapter is thin.
 - The prototype STATIC-imports `readConfiguration`/`performCompilation`/`EmitFlags` (executor.ts:2-8)
@@ -186,24 +177,24 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 **Analog:** `D:/projects/github/push-based/nx-verdaccio/.../kill-process/executor.ts:17-19` (default-export signature)
 
 **Verified this session.** nx-verdaccio's default export:
-
 ```typescript
 export default async function runKillProcessExecutor(
   options: KillProcessExecutorOptions
 ): Promise<ExecutorOutput> {   // ExecutorOutput = { success: boolean; ... }
 ```
-
 The signature convention is `export default async function (options, context?): Promise<{ success }>`.
 nx-verdaccio omits the `context` param (unused); ours takes it but prefixes `_context`.
 
 **Shape to follow:**
-
 ```typescript
 import type { ExecutorContext } from '@nx/devkit';
 import type { AngularTypecheckExecutorOptions } from './schema';
 import { runTypecheck } from '../../core/run-typecheck';
 
-export default async function angularTypecheckExecutor(options: AngularTypecheckExecutorOptions, _context: ExecutorContext): Promise<{ success: boolean }> {
+export default async function angularTypecheckExecutor(
+  options: AngularTypecheckExecutorOptions,
+  _context: ExecutorContext,
+): Promise<{ success: boolean }> {
   const result = await runTypecheck({ tsConfigPath: options.tsConfig });
 
   return { success: result.errorCount === 0 };
@@ -211,7 +202,6 @@ export default async function angularTypecheckExecutor(options: AngularTypecheck
 ```
 
 **Must CHANGE for the locked stack:**
-
 - This is the ONLY tier that imports `@nx/devkit`; keep it thin (delegate to `runTypecheck`).
 - This compiled `executor.js` is the file GATE A reads. It MUST be built under `module: nodenext`
   so the `await import(` (reached transitively via `runTypecheck` -> `compiler-loader`) is NOT
@@ -230,7 +220,6 @@ export default async function angularTypecheckExecutor(options: AngularTypecheck
 schema.ts hand-authors a matching `Partial<{ ... }>` type (Nx does NOT generate it).
 
 **Shape to follow (minimal -- one `tsConfig` property for Phase 1):**
-
 ```jsonc
 // schema.json
 {
@@ -239,13 +228,12 @@ schema.ts hand-authors a matching `Partial<{ ... }>` type (Nx does NOT generate 
   "title": "Angular type-check executor",
   "type": "object",
   "properties": {
-    "tsConfig": { "type": "string", "description": "Path to the tsconfig to type-check" },
+    "tsConfig": { "type": "string", "description": "Path to the tsconfig to type-check" }
   },
   "required": ["tsConfig"],
-  "additionalProperties": false,
+  "additionalProperties": false
 }
 ```
-
 ```typescript
 // schema.d.ts  (matching hand-authored type; cli: "nx" convention belongs in executors.json/schema)
 export interface AngularTypecheckExecutorOptions {
@@ -254,7 +242,6 @@ export interface AngularTypecheckExecutorOptions {
 ```
 
 **Must CHANGE vs. the analog:**
-
 - nx-verdaccio uses `"additionalProperties": true` (lenient); for a strict typed tool use `false`
   (PROJECT.md convention -- "strict typed tool, `false` recommended").
 - nx-verdaccio's type is `Partial<{...}>`; ours has a REQUIRED `tsConfig`, so a plain `interface`
@@ -271,19 +258,17 @@ export interface AngularTypecheckExecutorOptions {
 (extensionless), `"schema": "./src/executors/<name>/schema.json"`, `"description"`.
 
 **Shape to follow (one entry):**
-
 ```jsonc
 {
   "executors": {
     "angular-typecheck": {
       "implementation": "./src/executors/angular-typecheck/executor",
       "schema": "./src/executors/angular-typecheck/schema.json",
-      "description": "Type-checks an Angular project (TS + template + extended NG8xxx) with no emit.",
-    },
-  },
+      "description": "Type-checks an Angular project (TS + template + extended NG8xxx) with no emit."
+    }
+  }
 }
 ```
-
 The `@nx/plugin:plugin`/`:executor` generator auto-emits this + the build asset-copy glob; verify
 the generated shape matches, then trim to one entry.
 
@@ -295,7 +280,6 @@ the generated shape matches, then trim to one entry.
 
 **Verified this session.** The `@nx/js:tsc` build target globs the executor manifests into the
 output:
-
 ```jsonc
 "build": {
   "executor": "@nx/js:tsc",
@@ -315,7 +299,6 @@ output:
 ```
 
 **Must CHANGE for the locked stack:**
-
 - DERIVE the GATE A `dist` path from the GENERATED `build.options.outputPath` (research Open
   Question 2) -- do NOT hard-code nx-verdaccio's `{projectName}/dist`. The `@nx/plugin` generator
   under `packages/angular-typechecker` may wire a different `outputPath`
@@ -332,7 +315,6 @@ output:
 (module + deprecation handling for Angular 22 / TS 6).
 
 **Verified this session.**
-
 - nx-verdaccio `tsconfig.json`: `"module": "CommonJS"`, `"target": "ES2018"`,
   `"verbatimModuleSyntax": false`, `files: []`, `include: []`, `references` -> lib + spec.
   **`module: "CommonJS"` here is the Nx-22-era shape RESEARCH FLAGS AS DEPRECATED -- do NOT copy it.**
@@ -343,27 +325,25 @@ output:
   `"ignoreDeprecations": "6.0"` -- the Angular 22 / TS 6 base shape.
 
 **Shape to follow (AFTER the Pitfall-1 patch):**
-
 ```jsonc
 // tsconfig.json (solution)
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "nodenext", // PATCHED from generator default "commonjs" -- the GATE A line
+    "module": "nodenext",            // PATCHED from generator default "commonjs" -- the GATE A line
     "moduleResolution": "nodenext",
-    "verbatimModuleSyntax": false, // keeps the await import() bridge type-checking (nx-verdaccio convention)
-    "ignoreDeprecations": "6.0", // carry if older option shapes appear on TS 6 (Analog base sets it)
+    "verbatimModuleSyntax": false,   // keeps the await import() bridge type-checking (nx-verdaccio convention)
+    "ignoreDeprecations": "6.0"      // carry if older option shapes appear on TS 6 (Analog base sets it)
   },
   "files": [],
   "include": [],
-  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.spec.json" }],
+  "references": [{ "path": "./tsconfig.lib.json" }, { "path": "./tsconfig.spec.json" }]
 }
 // tsconfig.lib.json: declaration:true, types:["node"], outDir, resolveJsonModule:true,
 //   include ["src/**/*.ts"], EXCLUDE "src/**/*.spec.ts" AND the fixtures dir.
 ```
 
 **Must CHANGE for the locked stack (this is the single most load-bearing edit in the phase):**
-
 - The `@nx/plugin:plugin` generator under `--preset=apps` emits `"module": "commonjs"`
   (`@nx/js` `library.ts:1132`, research-verified). Building as-is downlevels `await import()` to
   `require()` -> GATE A NO-GO. ADD an explicit Edit task setting `module: "nodenext"` +
@@ -381,7 +361,6 @@ output:
 `describe/it/expect` + `node:fs`/`node:path`.
 
 **Shape to follow:**
-
 ```typescript
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -393,9 +372,7 @@ const BUILT = join(__dirname, '../../../../dist/.../executors/angular-typecheck/
 describe('GATE A static', () => {
   it('built executor retains literal import( and never require()s compiler-cli', () => {
     const code = readFileSync(BUILT, 'utf-8')
-      .split('\n')
-      .filter((l) => !l.trimStart().startsWith('//'))
-      .join('\n'); // strip comments
+      .split('\n').filter(l => !l.trimStart().startsWith('//')).join('\n');  // strip comments
     expect(code).toMatch(/import\(/);
     expect(code).not.toMatch(/require\(["']@angular\/compiler-cli/);
   });
@@ -403,7 +380,6 @@ describe('GATE A static', () => {
 ```
 
 **Must CHANGE / WATCH:**
-
 - `dist/` is gitignored -> use `fs.readFileSync` (or `rg -uu`), NEVER `git grep` (silent zero matches).
 - Build MUST run before this spec (sampling-rate note: `nx build` precedes GATE A static).
 - Compute `BUILT` from the generated `outputPath`, not a literal.
@@ -421,44 +397,38 @@ final term `getNgSemanticDiagnostics()` (line 358-359) is NEVER evaluated -> NG8
 all-getter pushes it unconditionally. THIS is the differential the spec asserts.
 
 **Shape to follow:**
-
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { loadCompilerCli } from '../core/compiler-loader';
 import { gatherAllDiagnostics } from '../core/gather-diagnostics';
 
 async function codesFor(tsConfigPath: string, useDefault: boolean): Promise<number[]> {
-  const ng = await loadCompilerCli(); // GATE A runtime: no ERR_REQUIRE_ESM
+  const ng = await loadCompilerCli();                          // GATE A runtime: no ERR_REQUIRE_ESM
   const parsed = ng.readConfiguration(tsConfigPath);
   const result = ng.performCompilation({
     rootNames: parsed.rootNames,
-    options: { ...parsed.options, noEmit: true }, // FRESH options object per call (Open Q 1)
+    options: { ...parsed.options, noEmit: true },              // FRESH options object per call (Open Q 1)
     emitFlags: 0 as ng.EmitFlags,
     gatherDiagnostics: useDefault ? ng.defaultGatherDiagnostics : gatherAllDiagnostics,
   });
-  return result.diagnostics.map((d) => d.code);
+  return result.diagnostics.map(d => d.code);
 }
 
-describe.each([
-  ['app tsconfig', APP_TSCONFIG],
-  ['local-library tsconfig', LIB_TSCONFIG],
-])('GATE B on %s', (_label, tsConfigPath) => {
-  it('all-getter surfaces BOTH 2322 and 8109 (positive)', async () => {
-    const codes = await codesFor(tsConfigPath, false);
-    expect(codes).toContain(2322);
-    expect(codes).toContain(8109);
-    expect(codes).not.toContain(500); // no UNKNOWN_ERROR_CODE (GATE A runtime)
+describe.each([['app tsconfig', APP_TSCONFIG], ['local-library tsconfig', LIB_TSCONFIG]])(
+  'GATE B on %s', (_label, tsConfigPath) => {
+    it('all-getter surfaces BOTH 2322 and 8109 (positive)', async () => {
+      const codes = await codesFor(tsConfigPath, false);
+      expect(codes).toContain(2322); expect(codes).toContain(8109);
+      expect(codes).not.toContain(500);                        // no UNKNOWN_ERROR_CODE (GATE A runtime)
+    });
+    it('defaultGatherDiagnostics surfaces 2322 but NOT 8109 (differential)', async () => {
+      const codes = await codesFor(tsConfigPath, true);
+      expect(codes).toContain(2322); expect(codes).not.toContain(8109);
+    });
   });
-  it('defaultGatherDiagnostics surfaces 2322 but NOT 8109 (differential)', async () => {
-    const codes = await codesFor(tsConfigPath, true);
-    expect(codes).toContain(2322);
-    expect(codes).not.toContain(8109);
-  });
-});
 ```
 
 **Must CHANGE / WATCH:**
-
 - Assert on CODES `2322` + `8109`, NOT severity (extended diagnostics default to WARNING category,
   `compiler.ts:1056`).
 - Assert `not.toContain(500)` -- a failed `await import()` is caught by `performCompilation` and
@@ -476,7 +446,6 @@ describe.each([
 (:290-309) and `injectInterpolatedSignalNotInvokedError` (:769-803).
 
 **Verified this session.** The prototype injectors confirm both error shapes:
-
 - TS2322: `injectTypeScriptError` adds `count: number = 'not a number';` (test-fixtures.ts:304).
 - NG8109: `injectInterpolatedSignalNotInvokedError` imports `signal`, adds
   `statusSignal = signal('ready');` (test-fixtures.ts:793), and a template `<p>{{ statusSignal }}</p>`
@@ -489,7 +458,6 @@ property name is cosmetic. Use the research's `status`/`templateUrl` shape (comm
 AST injection), but the SIGNAL name must match between `.ts` and `.html`.
 
 **Shape to follow:**
-
 ```typescript
 // fixtures/gate-b-error/error.component.ts  (OUT OF GRAPH; nothing imports it)
 import { Component, signal } from '@angular/core';
@@ -500,29 +468,25 @@ import { Component, signal } from '@angular/core';
   templateUrl: './error.component.html',
 })
 export class GateBErrorComponent {
-  count: number = 'not a number'; // TS2322 (matches prototype injectTypeScriptError)
-  status = signal('ready'); // interpolated un-invoked below -> NG8109
+  count: number = 'not a number';     // TS2322 (matches prototype injectTypeScriptError)
+  status = signal('ready');           // interpolated un-invoked below -> NG8109
 }
 ```
-
 ```html
 <!-- error.component.html -->
-<p>{{ status }}</p>
-<!-- NG8109 INTERPOLATED_SIGNAL_NOT_INVOKED: must be status(), here status -->
+<p>{{ status }}</p>   <!-- NG8109 INTERPOLATED_SIGNAL_NOT_INVOKED: must be status(), here status -->
 ```
-
 ```jsonc
 // tsconfig.app.json (the lib variant differs only in rootNames/include shape)
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "noEmit": true, "moduleResolution": "bundler" },
-  "angularCompilerOptions": { "strictTemplates": true }, // set DIRECTLY (Pitfall 4)
-  "files": ["error.component.ts"],
+  "angularCompilerOptions": { "strictTemplates": true },   // set DIRECTLY (Pitfall 4)
+  "files": ["error.component.ts"]
 }
 ```
 
 **Must CHANGE for the locked stack:**
-
 - The prototype MUTATES generated library components at runtime via jscodeshift; Phase 1 ships a
   STATIC committed fixture (D-13). Port the error SHAPES, not the injection machinery.
 - Set `angularCompilerOptions.strictTemplates: true` DIRECTLY in the fixture tsconfig (most-derived
@@ -538,38 +502,32 @@ export class GateBErrorComponent {
 ## Shared Patterns
 
 ### Core/adapter split (zero-`@nx/devkit` core)
-
 **Source:** ARCHITECTURE.md + the prototype's coupling as the ANTI-pattern (sandbox `executor.ts`
 mixes `@nx/devkit` + compiler-cli in one file).
 **Apply to:** all `src/core/*.ts` files (no `@nx/devkit`, no CLI imports) and the executor adapter
 (the ONLY file importing `@nx/devkit`, kept thin -> delegates to `runTypecheck`).
 
 ### Memoized `await import()` ESM bridge
-
 **Source:** `angular-cli .../angular-compilation.ts:34-38`.
 **Apply to:** `compiler-loader.ts` is the SINGLE runtime value-import of `@angular/compiler-cli`;
 every other core file uses `import type` only. Compiled under `module: nodenext`.
 
 ### GATE A static-token discipline
-
 **Source:** D-12 + research NOTE (RESEARCH:250) -- a naive `import(` match hit a COMMENT line.
 **Apply to:** `compiler-loader.ts`, `executor.ts` (keep the literal `import(` out of comments); the
 GATE A spec strips `//` lines before matching. `dist/` is gitignored -> `fs.readFileSync`, never
 `git grep`.
 
 ### Assert on diagnostic CODE, not severity
-
 **Source:** `compiler.ts:1056` (extended diagnostics default to WARNING).
 **Apply to:** `gate-b.spec.ts` -- `expect(codes).toContain(8109)`, never `errorCount`-based for NG8109.
 
 ### `@nx/js:tsc` asset-copy for executor manifests
-
 **Source:** nx-verdaccio `project.json:15-32`.
 **Apply to:** `project.json` build target -- the `**/!(*.ts)` glob copies `schema.json`; the explicit
 `executors.json -> .` entry copies the manifest. Generator auto-injects these.
 
 ### `type: "commonjs"` package + `module: "nodenext"` tsconfig (the deliberate split)
-
 **Source:** D-11/D-14 + Nx #18801 (research Pitfall 2) -- `@nx/js:tsc`'s
 `determineModuleFormatFromTsConfig` READS `module` only to LABEL cjs/esm; it does NOT reassign it.
 **Apply to:** `package.json` `type: "commonjs"` (DELIBERATE) alongside tsconfig `module: "nodenext"`.
@@ -577,9 +535,9 @@ With this pairing the label is `cjs` AND the emit keeps a literal `import(` -- b
 
 ## No Analog Found
 
-| File                          | Role            | Data Flow | Reason                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ----------------------------- | --------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `package.json` (deps section) | config-manifest | n/a       | nx-verdaccio's deps are the REJECTED model: it declares `nx: "22.3.1"` + `@nx/plugin` as DIRECT dependencies and `@nx/js` as a peer. Phase 1 (D-14) declares ONLY `@nx/devkit@23.0.1` (pinned dep) + `tslib`, with `@angular/compiler-cli`/`typescript` as PEER RANGES and NO `nx`. The package.json SHAPE (type/main/types/executors/files) matches nx-verdaccio; the dependency CLASSIFICATION is original to this project. Use the `01-RESEARCH.md` Phase-1 `package.json` block (RESEARCH:565-585) as the authority, NOT nx-verdaccio's deps. `files`/`exports`/`keywords` DEFERRED to Phase 5. |
+| File | Role | Data Flow | Reason |
+|------|------|-----------|--------|
+| `package.json` (deps section) | config-manifest | n/a | nx-verdaccio's deps are the REJECTED model: it declares `nx: "22.3.1"` + `@nx/plugin` as DIRECT dependencies and `@nx/js` as a peer. Phase 1 (D-14) declares ONLY `@nx/devkit@23.0.1` (pinned dep) + `tslib`, with `@angular/compiler-cli`/`typescript` as PEER RANGES and NO `nx`. The package.json SHAPE (type/main/types/executors/files) matches nx-verdaccio; the dependency CLASSIFICATION is original to this project. Use the `01-RESEARCH.md` Phase-1 `package.json` block (RESEARCH:565-585) as the authority, NOT nx-verdaccio's deps. `files`/`exports`/`keywords` DEFERRED to Phase 5. |
 
 > Note: `src/index.ts` (export surface) and the two Vitest gate specs have only convention-level
 > analogs (nx-verdaccio `main: ./src/index.js`; research Code Examples) -- they are listed under
@@ -588,7 +546,6 @@ With this pairing the label is `cjs` AND the emit keeps a literal `import(` -- b
 ## Metadata
 
 **Analog search scope:**
-
 - `D:/projects/github/push-based/nx-verdaccio/projects/nx-verdaccio/` (Nx 22.3.1 published plugin)
 - `D:/projects/github/angular/angular-cli/packages/angular/build/` (v22.1.0-next.1 -- engine model)
 - `D:/projects/github/angular/angular/packages/compiler-cli/` (v22.1.0-next.3 -- signatures + differential)

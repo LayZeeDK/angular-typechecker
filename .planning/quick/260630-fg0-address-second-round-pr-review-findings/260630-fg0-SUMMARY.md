@@ -16,7 +16,7 @@ tech-stack:
   added: []
   patterns:
     - "Sentinel return (undefined) signals 'cannot classify' from a pure canonicalizer; the caller keeps the diagnostic"
-    - 'Defense-in-depth runtime guard converts a hypothetical bare TypeError into the existing infra-error class'
+    - "Defense-in-depth runtime guard converts a hypothetical bare TypeError into the existing infra-error class"
 key-files:
   created: []
   modified:
@@ -29,10 +29,10 @@ key-files:
     - packages/angular-typechecker/src/core/infra-failure.spec.ts
     - packages/angular-typechecker/src/core/run-typecheck.spec.ts
 decisions:
-  - 'A throwing realpath KEEPS the diagnostic (cannot prove out-of-project), inverting the prior suppress-on-throw test'
-  - 'The program-undefined guard is a runtime defense only; the vendored shim program type stays non-optional'
-  - 'S1 de-pins the emitFlags comment to a symbol reference instead of a drifting line number'
-  - 'TemplateCheckAborted.code is retained (pinned by tests) and documented as adapter-unused-but-kept'
+  - "A throwing realpath KEEPS the diagnostic (cannot prove out-of-project), inverting the prior suppress-on-throw test"
+  - "The program-undefined guard is a runtime defense only; the vendored shim program type stays non-optional"
+  - "S1 de-pins the emitFlags comment to a symbol reference instead of a drifting line number"
+  - "TemplateCheckAborted.code is retained (pinned by tests) and documented as adapter-unused-but-kept"
 metrics:
   duration: ~9 minutes
   completed: 2026-06-30
@@ -53,7 +53,6 @@ polish, and added four additive pinning tests -- all surgical and confined to
 ## What Was Built
 
 ### Task 1 (`fix(core)`, commit `f5b030f`) -- keep-on-throw realpath fix (#1) + inverted T1 test
-
 - `createCanonicalizer` return type widened to `(filePath: string) => string | undefined`; the
   catch now `return undefined` instead of falling back to the unresolved raw path. `undefined` is
   NOT cached (a transient EACCES could resolve on a later call).
@@ -68,9 +67,8 @@ polish, and added four additive pinning tests -- all surgical and confined to
   to `kept 1 / suppressed 0`, renamed it to the KEEP intent, and rewrote the comment block.
 
 ### Task 2 (`fix(core)` guard `b71447d`; `docs(core)` comments `f4648be`)
-
 - #3 guard (run-typecheck.ts): `if (result.program === undefined) throw new
-TypecheckInfrastructureError(...)` inserted between the post-compilation 500 scan and the
+  TypecheckInfrastructureError(...)` inserted between the post-compilation 500 scan and the
   `return finalize(...)`. Literal `angular-typecheck:`-prefixed message (no diagnostic to flatten);
   framed as defense-in-depth, disjoint from the 500 scan, runtime-only (shim stays non-optional).
 - #2 (diagnostic-codes.ts:71, :86): "reported set" -> "PRE-filter gathered set (the raw
@@ -81,7 +79,6 @@ TypecheckInfrastructureError(...)` inserted between the post-compilation 500 sca
   detector's public shape, pinned by tests, adapter-unused; the field was NOT dropped.
 
 ### Task 3 (`test(core)`, commit `cbfc881`) -- four additive pinning tests
-
 - S3 (executor.spec.ts): `errorCount 0 + templateCheckAborted set -> { success: true }` STILL emits
   `logger.warn` and no `logger.error` (advisory-not-verdict; verdict not forced false).
 - S5a (infra-failure.spec.ts): config-500 scan re-throws with NON-empty `rootNames` and never

@@ -56,7 +56,7 @@ verified the requested facts (FACTS §A1–A7 in ROUND2-BRIEF.md). Round 2 = con
 1. **The bespoke FsTree utilities are NOT built under this consensus.** This contradicts the earlier
    directive to bring `createFsTree`/`flushFsTreeChanges` in. All 8 lenses (incl. the maximalist)
    concluded they add no value for a `project.json`-edit generator and that the prior-art FsTree
-   helper lived only in Connect's _executor e2e_ (real-workspace edits), not in any generator unit
+   helper lived only in Connect's *executor e2e* (real-workspace edits), not in any generator unit
    test. Requires explicit human ratify-or-override.
 2. **Generator shape (decision B) is an assumption, not a discovered fact:** `project.json`-edit-only,
    emits no file, no per-project-type branching. The whole D1/D3/D6 convergence is conditioned on it.

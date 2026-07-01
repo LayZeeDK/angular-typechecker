@@ -4,33 +4,33 @@ plan: 05
 subsystem: core-engine-tests
 tags: [testing, walk-references, integration, unit, WALK-01]
 requires:
-  - 'fixtures/solution-style* (Plan 13-02)'
-  - 'runTypecheck reference-walk wiring (Plan 13-04)'
+  - "fixtures/solution-style* (Plan 13-02)"
+  - "runTypecheck reference-walk wiring (Plan 13-04)"
 provides:
-  - 'walk-references.integration.spec.ts (real-compiler SC1/SC2/SC3/D-04/D-05 proofs)'
-  - 'cross-leaf detectTemplateCheckAborted union unit'
-  - 'executor skippedReferences logger.warn render unit'
+  - "walk-references.integration.spec.ts (real-compiler SC1/SC2/SC3/D-04/D-05 proofs)"
+  - "cross-leaf detectTemplateCheckAborted union unit"
+  - "executor skippedReferences logger.warn render unit"
 affects:
-  - 'packages/angular-typechecker/src/core/walk-references.integration.spec.ts'
-  - 'packages/angular-typechecker/src/core/run-typecheck.spec.ts'
-  - 'packages/angular-typechecker/src/executors/angular-typecheck/executor.spec.ts'
+  - "packages/angular-typechecker/src/core/walk-references.integration.spec.ts"
+  - "packages/angular-typechecker/src/core/run-typecheck.spec.ts"
+  - "packages/angular-typechecker/src/executors/angular-typecheck/executor.spec.ts"
 tech-stack:
   added: []
   patterns:
-    - 'Real-compiler *.integration.spec.ts off CoreResult (30000 timeout inherited from vitest.config.mts)'
-    - 'it.each three-way SC3 split table'
-    - 'Synthesized cross-leaf diagnostic union for a pure detector unit'
-    - 'vi.hoisted mocked-core adapter unit (skippedReferences render seam)'
+    - "Real-compiler *.integration.spec.ts off CoreResult (30000 timeout inherited from vitest.config.mts)"
+    - "it.each three-way SC3 split table"
+    - "Synthesized cross-leaf diagnostic union for a pure detector unit"
+    - "vi.hoisted mocked-core adapter unit (skippedReferences render seam)"
 key-files:
   created:
-    - 'packages/angular-typechecker/src/core/walk-references.integration.spec.ts'
+    - "packages/angular-typechecker/src/core/walk-references.integration.spec.ts"
   modified:
-    - 'packages/angular-typechecker/src/core/run-typecheck.spec.ts'
-    - 'packages/angular-typechecker/src/executors/angular-typecheck/executor.spec.ts'
+    - "packages/angular-typechecker/src/core/run-typecheck.spec.ts"
+    - "packages/angular-typechecker/src/executors/angular-typecheck/executor.spec.ts"
 decisions:
   - "Task 2 required no source change: Plan 13-04 already rewrote the config-resolution solution-style block to the walk assertions and left COR-01 byte-unchanged; reconciled and confirmed against the plan's acceptance criteria."
 metrics:
-  duration: '~25 min'
+  duration: "~25 min"
   tasks_completed: 3
   files_created: 1
   files_modified: 2
@@ -50,7 +50,6 @@ proof off `CoreResult`.
 ## What Was Built
 
 ### Task 1 -- `walk-references.integration.spec.ts` (real compiler, 9 tests)
-
 Mirrors the `config-resolution.integration.spec.ts` harness (path helpers,
 `TS2322`/`NG()` consts, `codesOf` helper, inherited 30000 cold-compiler timeout).
 Drives `runTypecheck({ tsConfigPath })` against each solution-style fixture and
@@ -80,7 +79,6 @@ asserts off `CoreResult`:
   `reason: 'self-reference'`.
 
 ### Task 2 -- config-resolution solution-style block (RECONCILED, no source change)
-
 Plan 13-04 (commit `5ac2f0f`, already part of this plan's base) rewrote the
 `config-resolution.integration.spec.ts` solution-style block to the walk assertions
 (`rootNamesCount > 0`, `errorCount === 2`, two distinct-file TS2322,
@@ -94,7 +92,6 @@ block was untouched by the rewrite. No further edit was required, so this task h
 no commit.
 
 ### Task 3 -- cross-leaf TCB union unit + executor skippedReferences render unit (5 tests)
-
 - `run-typecheck.spec.ts` (+2): `detectTemplateCheckAborted` fires on a TCB fatal
   (`TCB_GENERATION_FATAL_DIAGNOSTIC_CODE === NG(3004)`) present in the SECOND leaf of
   a synthesized `[...leafAClean, ...leafBWithTcbFatal]` union (proving the pre-filter

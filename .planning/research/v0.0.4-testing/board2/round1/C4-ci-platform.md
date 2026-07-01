@@ -6,10 +6,9 @@ single required `ci` check. I evaluate D1-D6 by their CONSEQUENCES for the CI
 graph, not by test-design elegance.
 
 Grounding facts I rely on (verified this round):
-
 - `ci.yml`: `test` is a 6-cell matrix `{ubuntu:22,24,26; windows:24,26; macos:24}`,
   `fail-fast:false`, `NX_DAEMON:false`, runs `nx run-many -t typecheck-drift test
--p angular-typechecker`. A new in-plugin `*.spec.ts`/`*.integration.spec.ts`
+  -p angular-typechecker`. A new in-plugin `*.spec.ts`/`*.integration.spec.ts`
   runs in ALL SIX cells automatically (glob match, no ci.yml edit).
 - `e2e` is Linux-only, Node 24, runs an EXPLICIT `-p` project list of three e2e
   projects. A new e2e project is invisible to CI until added by name to that list.
@@ -35,8 +34,8 @@ mid-tier executor unit/integration specs; reserve real-disk (`fs`+`execSync`
 against a generated/installed workspace) for the e2e tier ONLY; do NOT author the
 bespoke `createFsTree`/`flushFsTreeChanges` deep-import helper in this milestone.**
 
-From the CI/DevEx lens the substrate choice is really a question of _where each
-test runs and how reliably it runs cross-platform_:
+From the CI/DevEx lens the substrate choice is really a question of *where each
+test runs and how reliably it runs cross-platform*:
 
 - In-memory `createTreeWithEmptyWorkspace` is pure, in-process, no disk I/O, no
   teardown. It runs identically on all six matrix cells including Windows-arm64,
@@ -47,7 +46,7 @@ test runs and how reliably it runs cross-platform_:
   cross-platform hazards land squarely in this lens: NX-FSTREE-INTERNALS notes the
   root must be normalized to NATIVE separators for Windows, and CONNECT-TECHNIQUES
   S7 logs the exact Windows file-handle / daemon-lock / cross-drive ENOENT family
-  that real-disk + execSync workspaces suffer. Putting that on the _matrix_ (which
+  that real-disk + execSync workspaces suffer. Putting that on the *matrix* (which
   includes two Windows cells) imports flake into the fast gate for a generator
   whose entire behavior is a `project.json` edit fully captured in memory.
 - The bespoke helper also adds a maintenance surface that the CI must carry: an
@@ -96,14 +95,13 @@ vitest.config comment). The latency and flake of that gate scale with file/`it`
 count TIMES six cells.
 
 Lens-driven choices among the otherwise-equivalent options:
-
 - DATA-TABLE within a per-version file (`it.each` over `[name, code, fixture]`)
   over one-file-per-code: fewer Vitest files = fewer cold module loads under the
   parallel pool = less Windows timeout exposure. Angular's own prior art is ONE
   centralized integration spec with many `it`s (CURRENT-AUDIT Part C), which also
   argues against file-per-code proliferation.
 - COMMITTED fixtures over programmatic AST injection (jscodeshift / `execSync nx
-generate`): committed fixtures need no `nx generate` subprocess, no
+  generate`): committed fixtures need no `nx generate` subprocess, no
   `NX_DAEMON=false` discipline, no fixture-dir-vs-gitignore trap (SANDBOX S9), and
   no shared-fixture lock. The repo already uses committed `fixtures/<scenario>/`.
   Programmatic injection (SANDBOX) is execSync-heavy and belongs nowhere near the
@@ -166,7 +164,6 @@ the cross-OS coverage; the e2e is a single Linux smoke that `nx g` wires a targe
 that then runs.**
 
 CI-lens reasoning:
-
 - A NEW e2e project is a CI liability: it is invisible until added BY NAME to the
   `e2e` job's explicit `-p` list (CURRENT-AUDIT A.4; FACTS S5). That explicit list
   is deliberate (RD-03, "consistent gate meaning"), so every new project is a
@@ -201,7 +198,6 @@ contaminate the existing install smoke, then a dedicated project (with the ci.ym
 ## D5 -- CI mapping (primary lens)
 
 **Position:**
-
 1. **In-plugin generator unit specs + the NG8xxx catalog integration specs + the
    D3 mid-tier spec: route to the existing 6-cell `test` matrix automatically via
    the include glob. NO ci.yml change.** This is correct: these are fast,
@@ -225,7 +221,6 @@ contaminate the existing install smoke, then a dedicated project (with the ci.ym
    skipped.
 
 CI-lens watch-items this milestone introduces:
-
 - **Matrix latency creep** from the catalog (D2): the 6-cell fan-out multiplies
   every new cold-compile `it`. Monitor `test`-job duration; this is the feedback-
   latency risk for the whole team since `ci` is the sole required check.

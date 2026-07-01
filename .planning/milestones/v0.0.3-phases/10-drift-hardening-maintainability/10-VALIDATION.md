@@ -18,14 +18,14 @@ validated: 2026-06-30
 
 ## Test Infrastructure
 
-| Property               | Value                                                                              |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| **Framework**          | Vitest 4.x via `@nx/vitest:test`                                                   |
-| **Config file**        | `packages/angular-typechecker/vite.config.ts` (existing)                           |
-| **Quick run command**  | `npx nx run angular-typechecker:test` (filter `-t <name>`)                         |
-| **Full suite command** | `npx nx run-many -t test -p angular-typechecker`                                   |
+| Property | Value |
+|----------|-------|
+| **Framework** | Vitest 4.x via `@nx/vitest:test` |
+| **Config file** | `packages/angular-typechecker/vite.config.ts` (existing) |
+| **Quick run command** | `npx nx run angular-typechecker:test` (filter `-t <name>`) |
+| **Full suite command** | `npx nx run-many -t test -p angular-typechecker` |
 | **Drift gate command** | `npx nx run angular-typechecker:typecheck-drift` (NEW; build-time tsc, not Vitest) |
-| **Estimated runtime**  | ~30-60s unit/integration; drift gate ~2-5s (cached)                                |
+| **Estimated runtime** | ~30-60s unit/integration; drift gate ~2-5s (cached) |
 
 ---
 
@@ -42,16 +42,16 @@ validated: 2026-06-30
 
 (Task IDs assigned during planning; this is the requirement-level contract.)
 
-| Req ID                         | Behavior                                                                                                       | Test Type                                                                                              | Automated Command                                                                                                          | File / Status                                                                                                                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| HARD-01                        | Removed/renamed/sig-changed getter or changed `UNKNOWN_ERROR_CODE`/`EmitFlags` breaks the build (exit != 0)    | build-time tsc                                                                                         | `npx nx run angular-typechecker:typecheck-drift`                                                                           | `compiler-cli-types.drift.ts` + `tsconfig.drift.json` -- **green** (exit 0 on corrected shim; negative drift proof tripped twice per 10-VERIFICATION SC1) |
-| HARD-01 (additions + encoding) | New upstream getter flagged at runtime; `NG(n) === ngErrorCode(n)`; `UNKNOWN_ERROR_CODE === 500`               | integration (real `await import`)                                                                      | `npx nx run angular-typechecker:test -t "compiler-cli-types runtime"`                                                      | `compiler-cli-types.runtime.spec.ts` (3 tests) -- **green** (subset containment; additions diff `toEqual([])`; encoding round-trip)                       |
-| HARD-02                        | Shim `EmitFlags` mirrors real members; `0 as EmitFlags` cast retained + still type-checks                      | build-time tsc (value-level assertion) + `nx build`                                                    | `npx nx run angular-typechecker:typecheck-drift` + `npx nx build angular-typechecker`                                      | drift value-level pins (DTS=1..All=31) + build -- **green** (both exit 0; cast retained at `run-typecheck.ts:229`)                                        |
-| HARD-03                        | Every vendored divergence carries the greppable marker                                                         | static grep assertion (note: static -- the marker count is a `git grep` invariant, not a runtime test) | `git grep -c "angular-typechecker: vendored" -- packages/angular-typechecker/src/core/compiler-cli-types.ts` (expect >= 6) | N/A (grep) -- **green** (returns 6, >= 6 met)                                                                                                             |
-| HARD-04                        | `getNgStructuralDiagnostics` retained + called + covered by the per-member probe                               | unit (existing) + build-time drift gate                                                                | `npx nx run angular-typechecker:test -t "gatherAllDiagnostics"` + drift gate                                               | `gather-diagnostics.spec.ts` (4 tests) -- **green** (`getNgStructuralDiagnostics` in call-order assertion; drift probe slot + runtime `GATHERED_GETTERS`) |
-| HARD-05                        | No `TS-99` substring survives the `color:false` path; an `NG####` label renders (real `cli.formatDiagnostics`) | integration                                                                                            | `npx nx run angular-typechecker:test -t "TS-99"`                                                                           | `ts99-leak.integration.spec.ts` (1 test) -- **green** (real NG8101 producer -> real `cli.formatDiagnostics`; `/NG\d{4}/` present, `TS-99` absent)         |
+| Req ID | Behavior | Test Type | Automated Command | File / Status |
+|--------|----------|-----------|-------------------|---------------|
+| HARD-01 | Removed/renamed/sig-changed getter or changed `UNKNOWN_ERROR_CODE`/`EmitFlags` breaks the build (exit != 0) | build-time tsc | `npx nx run angular-typechecker:typecheck-drift` | `compiler-cli-types.drift.ts` + `tsconfig.drift.json` -- **green** (exit 0 on corrected shim; negative drift proof tripped twice per 10-VERIFICATION SC1) |
+| HARD-01 (additions + encoding) | New upstream getter flagged at runtime; `NG(n) === ngErrorCode(n)`; `UNKNOWN_ERROR_CODE === 500` | integration (real `await import`) | `npx nx run angular-typechecker:test -t "compiler-cli-types runtime"` | `compiler-cli-types.runtime.spec.ts` (3 tests) -- **green** (subset containment; additions diff `toEqual([])`; encoding round-trip) |
+| HARD-02 | Shim `EmitFlags` mirrors real members; `0 as EmitFlags` cast retained + still type-checks | build-time tsc (value-level assertion) + `nx build` | `npx nx run angular-typechecker:typecheck-drift` + `npx nx build angular-typechecker` | drift value-level pins (DTS=1..All=31) + build -- **green** (both exit 0; cast retained at `run-typecheck.ts:229`) |
+| HARD-03 | Every vendored divergence carries the greppable marker | static grep assertion (note: static -- the marker count is a `git grep` invariant, not a runtime test) | `git grep -c "angular-typechecker: vendored" -- packages/angular-typechecker/src/core/compiler-cli-types.ts` (expect >= 6) | N/A (grep) -- **green** (returns 6, >= 6 met) |
+| HARD-04 | `getNgStructuralDiagnostics` retained + called + covered by the per-member probe | unit (existing) + build-time drift gate | `npx nx run angular-typechecker:test -t "gatherAllDiagnostics"` + drift gate | `gather-diagnostics.spec.ts` (4 tests) -- **green** (`getNgStructuralDiagnostics` in call-order assertion; drift probe slot + runtime `GATHERED_GETTERS`) |
+| HARD-05 | No `TS-99` substring survives the `color:false` path; an `NG####` label renders (real `cli.formatDiagnostics`) | integration | `npx nx run angular-typechecker:test -t "TS-99"` | `ts99-leak.integration.spec.ts` (1 test) -- **green** (real NG8101 producer -> real `cli.formatDiagnostics`; `/NG\d{4}/` present, `TS-99` absent) |
 
-_Status legend: pending / green / red / flaky_
+*Status legend: pending / green / red / flaky*
 
 **Validation run 2026-06-30 (retroactive audit):** `typecheck-drift` exit 0; `nx build` exit 0; full Vitest suite `26 test files, 147 tests passed`; `git grep -c "angular-typechecker: vendored"` = 6. Every HARD-01..HARD-05 requirement has a real, passing automated signal -- no coverage gap, no new test generated.
 
@@ -73,10 +73,10 @@ _Status legend: pending / green / red / flaky_
 ## Manual-Only Verifications
 
 | Behavior | Requirement | Why Manual | Test Instructions |
-| -------- | ----------- | ---------- | ----------------- |
-| (none)   | -           | -          | -                 |
+|----------|-------------|------------|-------------------|
+| (none) | - | - | - |
 
-_All phase behaviors have automated verification (the HARD-03 marker count is an automatable `git grep` assertion, not manual)._
+*All phase behaviors have automated verification (the HARD-03 marker count is an automatable `git grep` assertion, not manual).*
 
 ---
 

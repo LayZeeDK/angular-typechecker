@@ -41,7 +41,6 @@ Synthesize `90002` for a nonexistent leaf PATH (fold-and-count, B3); keep the DI
 BYTE-UNCHANGED.
 
 <user_constraints>
-
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions (from CONTEXT.md; do NOT re-open)
@@ -101,20 +100,19 @@ BYTE-UNCHANGED.
 - Transitive reference recursion (no Nx layout exercises it today).
 - WALK-FUT-01 (`createNodesV2` granular per-leaf targets) and WALK-FUT-02 (`NgtscProgram`
   incremental declaration-reuse).
-  </user_constraints>
+</user_constraints>
 
 <phase_requirements>
-
 ## Phase Requirements
 
-| ID      | Description                                                                                                                                                    | Research Support                                                                                                                                                                                                                     |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| WALK-01 | Accept a solution / references-only `tsconfig.json` and type-check each in-project referenced leaf in ONE call; union+dedupe into a single diagnostic set.     | Directives 1, 3, 5, 6 pin the walk module, union->single-finalize aggregation, `includeDeps`/`pathBase` once-per-run, and the cross-leaf Fatal scan. Spike 001 (union-dedupe) + Spike 004 (D-03a split) are the validated substrate. |
-| WALK-02 | Nx target inputs use `default` (not `production`) so a spec-only edit is not a stale PASS; `outputs: []`, `{projectRoot}/tsconfig*.json`, `^default` retained. | L-5 (Spike 005). One-line `nx.json` `targetDefaults` edit; Validation Architecture SC5 covers the production->default hashing proof.                                                                                                 |
+| ID | Description | Research Support |
+|----|-------------|------------------|
+| WALK-01 | Accept a solution / references-only `tsconfig.json` and type-check each in-project referenced leaf in ONE call; union+dedupe into a single diagnostic set. | Directives 1, 3, 5, 6 pin the walk module, union->single-finalize aggregation, `includeDeps`/`pathBase` once-per-run, and the cross-leaf Fatal scan. Spike 001 (union-dedupe) + Spike 004 (D-03a split) are the validated substrate. |
+| WALK-02 | Nx target inputs use `default` (not `production`) so a spec-only edit is not a stale PASS; `outputs: []`, `{projectRoot}/tsconfig*.json`, `^default` retained. | L-5 (Spike 005). One-line `nx.json` `targetDefaults` edit; Validation Architecture SC5 covers the production->default hashing proof. |
 
-_(WALK-01/WALK-02 are the two locked requirements in REQUIREMENTS.md for this phase. D-05's
+*(WALK-01/WALK-02 are the two locked requirements in REQUIREMENTS.md for this phase. D-05's
 `90002` code, the `skippedReferences` shape, and the fixture substrate all serve WALK-01's
-"complete, duplicate-free, no-false-PASS" contract.)_
+"complete, duplicate-free, no-false-PASS" contract.)*
 </phase_requirements>
 
 ## Project Constraints (from CLAUDE.md / AGENTS.md)
@@ -137,16 +135,16 @@ _(WALK-01/WALK-02 are the two locked requirements in REQUIREMENTS.md for this ph
 
 ## Architectural Responsibility Map
 
-| Capability                                          | Primary Tier                                                | Secondary Tier      | Rationale                                                                                            |
-| --------------------------------------------------- | ----------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------- |
-| Resolve `references[]` -> leaf tsconfig paths       | Core (`walk-references.ts`)                                 | --                  | Pure path resolution off `parsed.projectReferences`; no I/O beyond `readConfiguration` per leaf.     |
-| Module-boundary guard (in-project decision)         | Core (`walk-references.ts` reusing `filter-diagnostics.ts`) | --                  | D-01: structural path-containment; reuse `createCanonicalizer`/`isUnderDir`. Core stays Nx-agnostic. |
-| Per-leaf `performCompilation` + gather              | Core (`walk-references.ts` invoking `gatherAllDiagnostics`) | --                  | Approach A per leaf; the shipped unconditional all-getter is reused verbatim.                        |
-| Union + dedupe + count                              | Core (`finalize`, `run-typecheck.ts:394-456`)               | --                  | L-1: ONE `finalize` over the union; NO second dedupe layer.                                          |
-| Synthesize `90002` / `90001` guard diagnostics      | Core (`walk-references.ts` + `run-typecheck.ts`)            | --                  | Counted Error diagnostics; folded into the union so counts stay honest.                              |
-| `skippedReferences` detection (set the field)       | Core (pure)                                                 | --                  | D-02: pure detection field on `CoreResult`; no logging.                                              |
-| Render the skipped-reference `logger.warn` notice   | Executor adapter (`executor.ts:49-63` seam)                 | --                  | Adapter owns ALL I/O + logging + exit; core cannot log.                                              |
-| Nx target input hashing (`production` -> `default`) | Nx config (`nx.json` `targetDefaults`)                      | Executor invocation | L-5/WALK-02: cache-correctness lives in `nx.json`, not code.                                         |
+| Capability | Primary Tier | Secondary Tier | Rationale |
+|------------|-------------|----------------|-----------|
+| Resolve `references[]` -> leaf tsconfig paths | Core (`walk-references.ts`) | -- | Pure path resolution off `parsed.projectReferences`; no I/O beyond `readConfiguration` per leaf. |
+| Module-boundary guard (in-project decision) | Core (`walk-references.ts` reusing `filter-diagnostics.ts`) | -- | D-01: structural path-containment; reuse `createCanonicalizer`/`isUnderDir`. Core stays Nx-agnostic. |
+| Per-leaf `performCompilation` + gather | Core (`walk-references.ts` invoking `gatherAllDiagnostics`) | -- | Approach A per leaf; the shipped unconditional all-getter is reused verbatim. |
+| Union + dedupe + count | Core (`finalize`, `run-typecheck.ts:394-456`) | -- | L-1: ONE `finalize` over the union; NO second dedupe layer. |
+| Synthesize `90002` / `90001` guard diagnostics | Core (`walk-references.ts` + `run-typecheck.ts`) | -- | Counted Error diagnostics; folded into the union so counts stay honest. |
+| `skippedReferences` detection (set the field) | Core (pure) | -- | D-02: pure detection field on `CoreResult`; no logging. |
+| Render the skipped-reference `logger.warn` notice | Executor adapter (`executor.ts:49-63` seam) | -- | Adapter owns ALL I/O + logging + exit; core cannot log. |
+| Nx target input hashing (`production` -> `default`) | Nx config (`nx.json` `targetDefaults`) | Executor invocation | L-5/WALK-02: cache-correctness lives in `nx.json`, not code. |
 
 ## Directive 1 -- D-05 synthesized code + message
 
@@ -155,7 +153,7 @@ _(WALK-01/WALK-02 are the two locked requirements in REQUIREMENTS.md for this ph
 - **Chosen code:** `90002`. It is the next number in the private `9000x` synthesized family;
   the ONLY existing member is `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001` (`run-typecheck.ts:93`),
   so `90002` is the natural sibling with no conflict. `[VERIFIED: run-typecheck.ts:93 grep of the
-codebase shows 90001 as the sole 9000x code]`
+  codebase shows 90001 as the sole 9000x code]`
 - **Outside all reserved spaces** (same rationale the 90001 comment records at
   `run-typecheck.ts:89-92`): TS diagnostic codes are 1xxx-9xxx / TS18xxx range (all < 90000);
   Angular extended codes are NEGATIVE-encoded (`NG(code) = -990000 - code`, so all negative);
@@ -178,19 +176,18 @@ Angular-encoded.
 
 **How the two 9000x codes are consumed (the critical distinction):**
 
-| Case                                    | Trigger                                                                                                                | Code        | Consumed by                                                                                                                                                          |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| L-3 references-present-but-0-in-project | all references skipped by boundary guard; `rootNames.length === 0`                                                     | `90001`     | `synthesizeZeroRootNamesDiagnostic` (`run-typecheck.ts:329-356`), existing "references-none-in-project" message branch                                               |
-| L-3 empty project (no references)       | `rootNames.length === 0`, no `projectReferences`                                                                       | `90001`     | same synthesizer, "empty-project" message branch (unchanged)                                                                                                         |
-| D-05 nonexistent leaf PATH              | `ng.readConfiguration(leafPath)` for a walked leaf returns a code-500 `UNKNOWN_ERROR_CODE` in `parsed.errors` (ENOENT) | **`90002`** | NEW `synthesizeReferenceNotFoundDiagnostic`; RECLASSIFY the 500 -> `90002`, fold into the union, COUNT it, and CONTINUE walking surviving leaves (B3 fold-and-count) |
-| bad `extends` TARGET in a leaf          | leaf's `readConfiguration` returns a folded `5012` in `parsed.errors` (NOT a 500)                                      | `5012`      | folded verbatim into the union under shipped D-03 -- **NOT** part of D-05; no reclassification                                                                       |
+| Case | Trigger | Code | Consumed by |
+|------|---------|------|-------------|
+| L-3 references-present-but-0-in-project | all references skipped by boundary guard; `rootNames.length === 0` | `90001` | `synthesizeZeroRootNamesDiagnostic` (`run-typecheck.ts:329-356`), existing "references-none-in-project" message branch |
+| L-3 empty project (no references) | `rootNames.length === 0`, no `projectReferences` | `90001` | same synthesizer, "empty-project" message branch (unchanged) |
+| D-05 nonexistent leaf PATH | `ng.readConfiguration(leafPath)` for a walked leaf returns a code-500 `UNKNOWN_ERROR_CODE` in `parsed.errors` (ENOENT) | **`90002`** | NEW `synthesizeReferenceNotFoundDiagnostic`; RECLASSIFY the 500 -> `90002`, fold into the union, COUNT it, and CONTINUE walking surviving leaves (B3 fold-and-count) |
+| bad `extends` TARGET in a leaf | leaf's `readConfiguration` returns a folded `5012` in `parsed.errors` (NOT a 500) | `5012` | folded verbatim into the union under shipped D-03 -- **NOT** part of D-05; no reclassification |
 
 **The load-bearing distinction (verified against `<specifics>` + `config-resolution.integration.spec.ts:100-121`):**
 a nonexistent PATH reliably yields code-500 `UNKNOWN_ERROR_CODE` (ENOENT via `readConfiguration`'s
 outer catch), whereas a nonexistent `extends` TARGET yields a folded `5012`. Only the former (500)
 is subject to D-05's reclassification-to-`90002`. `[VERIFIED: CONTEXT.md <specifics> lines 281-283
-
-- config-resolution.integration.spec.ts:106-109 comment]`
++ config-resolution.integration.spec.ts:106-109 comment]`
 
 **COR-01 containment:** D-05's reclassification applies ONLY to a WALKED LEAF's per-leaf
 `ng.readConfiguration` 500. The DIRECT single-config path -- the top-level
@@ -213,10 +210,10 @@ export interface SkippedReference {
   referencePath: string;
   // Discriminator explaining why the reference was skipped or reclassified.
   reason:
-    | 'out-of-project' // D-01/L-4: path-containment guard skipped it (not under the solution dir)
-    | 'zero-root-names' // D-03b: the leaf resolved but produced rootNames.length === 0
-    | 'self-reference' // D-04: canonical path equals the solution tsconfig (redundant, skipped)
-    | 'not-found'; // D-05: ENOENT / code-500 -> reclassified to 90002 (still counted)
+    | 'out-of-project'   // D-01/L-4: path-containment guard skipped it (not under the solution dir)
+    | 'zero-root-names'  // D-03b: the leaf resolved but produced rootNames.length === 0
+    | 'self-reference'   // D-04: canonical path equals the solution tsconfig (redundant, skipped)
+    | 'not-found';       // D-05: ENOENT / code-500 -> reclassified to 90002 (still counted)
 }
 ```
 
@@ -247,17 +244,23 @@ export interface CoreResult {
 ```typescript
 // D-02 (Phase 13): surface the loud skipped-reference notice. Fires only when
 // the core recorded at least one skipped/reclassified reference during a walk.
-if (result.skippedReferences !== undefined && result.skippedReferences.length > 0) {
+if (
+  result.skippedReferences !== undefined &&
+  result.skippedReferences.length > 0
+) {
   for (const skipped of result.skippedReferences) {
-    logger.warn(`angular-typecheck: reference '${skipped.referencePath}' was ` + `${skipped.reason} and was skipped/reclassified during the ` + `solution-tsconfig walk. ...advisory only; the verdict is unchanged.`);
+    logger.warn(
+      `angular-typecheck: reference '${skipped.referencePath}' was ` +
+        `${skipped.reason} and was skipped/reclassified during the ` +
+        `solution-tsconfig walk. ...advisory only; the verdict is unchanged.`,
+    );
   }
 }
 ```
 
-Core sets the field only when non-empty (never `[]`) so the `!== undefined` presence check is
-sufficient, and the extra `.length > 0` is belt-and-suspenders. The notice is ADVISORY, never a
-verdict change (consistent with L-4 skip-with-notice). `[CITED: executor.ts:49-63; run-typecheck.ts:452-455]`
-
+  Core sets the field only when non-empty (never `[]`) so the `!== undefined` presence check is
+  sufficient, and the extra `.length > 0` is belt-and-suspenders. The notice is ADVISORY, never a
+  verdict change (consistent with L-4 skip-with-notice). `[CITED: executor.ts:49-63; run-typecheck.ts:452-455]`
 - **Core purity preserved:** the field is set by the pure walk in `walk-references.ts`; NO
   `console`/`process` in core (`eslint.config.mjs` `no-console`/`no-process` on `**/src/core/**`).
 - **`index.ts` export:** add `export type { SkippedReference } from './core/run-typecheck';` (or from
@@ -289,10 +292,10 @@ export interface WalkResult {
 }
 
 export async function walkReferences(
-  ng: CompilerCli, // the loaded @angular/compiler-cli (readConfiguration, performCompilation, UNKNOWN_ERROR_CODE)
+  ng: CompilerCli,                 // the loaded @angular/compiler-cli (readConfiguration, performCompilation, UNKNOWN_ERROR_CODE)
   ts: typeof import('typescript'),
   solutionParsed: ParsedConfiguration, // the already-parsed solution config (carries projectReferences)
-  solutionTsConfigPath: string, // absolute path to the solution tsconfig (for self-ref detection + basePath)
+  solutionTsConfigPath: string,    // absolute path to the solution tsconfig (for self-ref detection + basePath)
 ): Promise<WalkResult>;
 ```
 
@@ -344,13 +347,15 @@ Validation Architecture SC2/dedupe fixture), NOT the solution-style completeness
 **Fixture file shapes (`fixtures/solution-style/`):**
 
 `tsconfig.json` (solution -- ADD the spec leaf reference):
-
 ```json
 {
   "extends": "../../tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.spec.json" }]
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.spec.json" }
+  ]
 }
 ```
 
@@ -359,7 +364,6 @@ Validation Architecture SC2/dedupe fixture), NOT the solution-style completeness
 `error.component.ts` (REPLACE the current clean component with a component carrying a planted
 `TS2322` -- assign a `string` to a `number`-typed field; keep the template a plain literal so no
 NG8xxx fires):
-
 ```typescript
 import { Component } from '@angular/core';
 
@@ -377,7 +381,6 @@ export class SolutionStyleLeafComponent {
 ```
 
 NEW `tsconfig.spec.json` (the spec leaf -- its OWN include + a planted error in a spec file):
-
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -397,7 +400,6 @@ NEW `tsconfig.spec.json` (the spec leaf -- its OWN include + a planted error in 
 
 NEW `error.component.spec.ts` (spec-leaf source with its OWN DISTINCT planted TS2322 -- reachable
 ONLY through the spec leaf, the named differentiator vs a build):
-
 ```typescript
 import { SolutionStyleLeafComponent } from './error.component';
 
@@ -411,7 +413,6 @@ void SolutionStyleLeafComponent;
 
 **Expected codes / identities the rewritten spec asserts** (`config-resolution.integration.spec.ts`
 solution-style block, replacing `:124-152`):
-
 - `result.rootNamesCount` **> 0** (sum of both leaves' rootNames; was `=== 0`).
 - `result.errorCount` **=== 2** (two distinct TS2322s -- one per leaf; no dedupe collapse because
   distinct files).
@@ -428,7 +429,6 @@ solution-style block, replacing `:124-152`):
 a `tsconfig.json` with `"files": []` and NO `references` -> asserts the guard STILL fires
 (`rootNamesCount === 0`, `errorCount === 1`, code `90001`, leaf-tsconfig-naming message,
 `skippedReferences` undefined). Shape:
-
 ```json
 { "extends": "../../tsconfig.base.json", "files": [] }
 ```
@@ -478,7 +478,7 @@ ANY leaf fires the notice.** `[VERIFIED: run-typecheck.ts finalize + detectTempl
   The existing adapter `logger.warn` (`executor.ts:52-63`) then fires. No change to the detection
   logic is needed; only the walk must ensure it hands `finalize` the full pre-filter union (which
   the recommended `WalkResult.rawDiagnostics` does). `[VERIFIED: run-typecheck.ts:394-444; the
-`finalize` `diagnostics` arg is the pre-filter superset]`
+  `finalize` `diagnostics` arg is the pre-filter superset]`
 - Position relative to the union: the scan is at `run-typecheck.ts:444`, AFTER the boundary filter
   produces `kept`/`reported` (`:405-422`) but scanning the ORIGINAL `diagnostics` arg -- so an
   out-of-basePath Fatal that the boundary filter would suppress from `reported` is STILL caught
@@ -490,23 +490,23 @@ ANY leaf fires the notice.** `[VERIFIED: run-typecheck.ts finalize + detectTempl
 Verified the CONTEXT.md line references (captured 2026-07-01) against current line numbers. Drift
 corrections (the code has moved slightly since the earlier captures embedded in prose):
 
-| CONTEXT.md claim                                           | Cited lines                                     | Verified current lines                                                                                                                                      | Status                                                             |
-| ---------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001`                  | `run-typecheck.ts:93`                           | `:93`                                                                                                                                                       | CORRECT                                                            |
-| D-03a guard / split point                                  | `run-typecheck.ts:185-203` (and `:190`)         | guard at `:185-203`, trigger `if` at `:190`                                                                                                                 | CORRECT                                                            |
-| `synthesizeZeroRootNamesDiagnostic`                        | `run-typecheck.ts:329-356`                      | `:329-356`                                                                                                                                                  | CORRECT                                                            |
-| `finalize`                                                 | `run-typecheck.ts:394-456`                      | `:394-456`                                                                                                                                                  | CORRECT                                                            |
-| RES-02 `templateCheckAborted` pure-detection               | `run-typecheck.ts:52-71, 444-489`               | field `:52-71`, detect `:444` + fn `:474-489`                                                                                                               | CORRECT                                                            |
-| COR-01 500 scan/rethrow (direct path)                      | `run-typecheck.ts:149-178`                      | `:149-178`                                                                                                                                                  | CORRECT                                                            |
-| `TemplateCheckAborted` interface                           | `run-typecheck.ts:80-87`                        | `:80-87`                                                                                                                                                    | CORRECT                                                            |
-| `CoreResult` shape                                         | `run-typecheck.ts:38-42` (diagnostics doc)      | `:33-71` (full interface)                                                                                                                                   | CORRECT (the `:38-42` cite is the diagnostics-field doc, accurate) |
-| `createCanonicalizer` + `isUnderDir` + `isNodeModulesPath` | `filter-diagnostics.ts:121-201`                 | `createCanonicalizer :128`, `isNodeModulesPath :173`, `isUnderDir :184`; block spans `:121-201`                                                             | CORRECT                                                            |
-| executor `logger.warn` render seam                         | `executor.ts:49-63`                             | `:49-63` (the `templateCheckAborted` block)                                                                                                                 | CORRECT                                                            |
-| `CoreResult` export                                        | `index.ts:15`                                   | `:15` (`export type { CoreOptions, CoreResult }`)                                                                                                           | CORRECT                                                            |
-| spec solution-style block to rewrite                       | `config-resolution.integration.spec.ts:124-152` | `:124-152` (`describe('...solution-style guard fires...')`)                                                                                                 | CORRECT                                                            |
-| COR-01 pinning test (BYTE-UNCHANGED)                       | `config-resolution.integration.spec.ts:100-121` | `:100-121`                                                                                                                                                  | CORRECT                                                            |
-| `eslint.config.mjs` no-console/no-process scope            | `:16,54`                                        | Not re-read this session (per read-set) -- treated as accurate; the purity rule is independently confirmed by CLAUDE.md/AGENTS.md and the core doc comments | ASSUMED (see Assumptions Log A1)                                   |
-| `perform_compile.d.ts:18` `projectReferences` flat array   | `node_modules/@angular/compiler-cli/...`        | Not re-read (node_modules excluded from read-set) -- trusted from CONTEXT.md `<specifics>`                                                                  | ASSUMED (see Assumptions Log A2)                                   |
+| CONTEXT.md claim | Cited lines | Verified current lines | Status |
+|------------------|-------------|------------------------|--------|
+| `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001` | `run-typecheck.ts:93` | `:93` | CORRECT |
+| D-03a guard / split point | `run-typecheck.ts:185-203` (and `:190`) | guard at `:185-203`, trigger `if` at `:190` | CORRECT |
+| `synthesizeZeroRootNamesDiagnostic` | `run-typecheck.ts:329-356` | `:329-356` | CORRECT |
+| `finalize` | `run-typecheck.ts:394-456` | `:394-456` | CORRECT |
+| RES-02 `templateCheckAborted` pure-detection | `run-typecheck.ts:52-71, 444-489` | field `:52-71`, detect `:444` + fn `:474-489` | CORRECT |
+| COR-01 500 scan/rethrow (direct path) | `run-typecheck.ts:149-178` | `:149-178` | CORRECT |
+| `TemplateCheckAborted` interface | `run-typecheck.ts:80-87` | `:80-87` | CORRECT |
+| `CoreResult` shape | `run-typecheck.ts:38-42` (diagnostics doc) | `:33-71` (full interface) | CORRECT (the `:38-42` cite is the diagnostics-field doc, accurate) |
+| `createCanonicalizer` + `isUnderDir` + `isNodeModulesPath` | `filter-diagnostics.ts:121-201` | `createCanonicalizer :128`, `isNodeModulesPath :173`, `isUnderDir :184`; block spans `:121-201` | CORRECT |
+| executor `logger.warn` render seam | `executor.ts:49-63` | `:49-63` (the `templateCheckAborted` block) | CORRECT |
+| `CoreResult` export | `index.ts:15` | `:15` (`export type { CoreOptions, CoreResult }`) | CORRECT |
+| spec solution-style block to rewrite | `config-resolution.integration.spec.ts:124-152` | `:124-152` (`describe('...solution-style guard fires...')`) | CORRECT |
+| COR-01 pinning test (BYTE-UNCHANGED) | `config-resolution.integration.spec.ts:100-121` | `:100-121` | CORRECT |
+| `eslint.config.mjs` no-console/no-process scope | `:16,54` | Not re-read this session (per read-set) -- treated as accurate; the purity rule is independently confirmed by CLAUDE.md/AGENTS.md and the core doc comments | ASSUMED (see Assumptions Log A1) |
+| `perform_compile.d.ts:18` `projectReferences` flat array | `node_modules/@angular/compiler-cli/...` | Not re-read (node_modules excluded from read-set) -- trusted from CONTEXT.md `<specifics>` | ASSUMED (see Assumptions Log A2) |
 
 **Net:** all tracked-source line references in CONTEXT.md are CURRENT and accurate; no drift found
 in the files read this session. Two references point at files outside the read-set (`eslint.config.mjs`,
@@ -519,31 +519,29 @@ Nyquist validation is ENABLED (no `workflow.nyquist_validation: false` observed)
 `.planning/codebase/TESTING.md` conventions.
 
 ### Test Framework
-
-| Property           | Value                                                                                                                                                                                                 |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Framework          | Vitest `~4.1.0` via Nx executor `@nx/vitest:test`                                                                                                                                                     |
-| Config file        | `packages/angular-typechecker/vitest.config.mts` (include glob `{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}`; `testTimeout`/`hookTimeout` 30000 for cold-compiler integration specs) |
-| Quick run command  | `npx nx test angular-typechecker`                                                                                                                                                                     |
-| Full suite command | `npx nx run-many -t typecheck-drift test -p angular-typechecker` (drift tripwire + unit + integration)                                                                                                |
+| Property | Value |
+|----------|-------|
+| Framework | Vitest `~4.1.0` via Nx executor `@nx/vitest:test` |
+| Config file | `packages/angular-typechecker/vitest.config.mts` (include glob `{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}`; `testTimeout`/`hookTimeout` 30000 for cold-compiler integration specs) |
+| Quick run command | `npx nx test angular-typechecker` |
+| Full suite command | `npx nx run-many -t typecheck-drift test -p angular-typechecker` (drift tripwire + unit + integration) |
 
 ### Behaviors to sample (per ROADMAP SC1-5) and test tier
 
-| SC         | Observable behavior                                                                                                                                                                                                               | Tier                                                                                                                        | Fixture                                                                              | Automated command                           |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------- |
-| SC1        | UNION completeness: a solution `tsconfig.json` referencing app+spec leaves reports BOTH leaves' planted TS2322 (spec-only error present -- the build differentiator).                                                             | integration (`*.integration.spec.ts`, real compiler)                                                                        | `fixtures/solution-style` (upgraded)                                                 | `npx nx test angular-typechecker`           |
-| SC2        | DEDUPE collapse: two leaves sharing a source file collapse the shared diagnostic to ONE across `Program`s (cross-`Program` value dedupe).                                                                                         | integration                                                                                                                 | `fixtures/solution-style-overlap` (lib+spec share one source, per spike 001)         | `npx nx test angular-typechecker`           |
-| SC2        | BOTH leaves ran: two DISTINCT TS2322s (distinct files) reported; `errorCount === 2`.                                                                                                                                              | integration                                                                                                                 | `fixtures/solution-style`                                                            | `npx nx test angular-typechecker`           |
-| SC2        | Boundary skip vs no-guard baseline leak: an out-of-project reference is SKIPPED (its error never reported) AND recorded in `skippedReferences` (`reason: 'out-of-project'`).                                                      | integration                                                                                                                 | `fixtures/solution-style-oop`                                                        | `npx nx test angular-typechecker`           |
-| SC3        | Three-way D-03a split: (a) refs + in-project leaf -> WALK (`rootNamesCount > 0`); (b) refs + 0 in-project -> `90001` none-in-project; (c) no refs -> `90001` empty-project; (d) `rootNames > 0` direct-leaf UNCHANGED.            | integration (a,b,c) + integration (d, existing)                                                                             | `solution-style`, `solution-style-oop`, `solution-style-empty`, existing direct leaf | `npx nx test angular-typechecker`           |
-| SC3/D-05   | FOLD-and-count: a solution referencing a NONEXISTENT leaf PATH synthesizes ONE counted `90002` Error AND still walks the surviving leaf (survivor's TS2322 also reported); `skippedReferences` has a `reason: 'not-found'` entry. | integration                                                                                                                 | `fixtures/solution-style-broken-ref` (references a real leaf + a nonexistent path)   | `npx nx test angular-typechecker`           |
-| SC4        | Spec rewrite: `config-resolution.integration.spec.ts` solution-style block asserts the walk (rootNamesCount>0, two TS2322, no 18003); COR-01 pinning test (`:100-121`) BYTE-UNCHANGED.                                            | integration                                                                                                                 | `fixtures/solution-style`                                                            | `npx nx test angular-typechecker`           |
-| SC5        | production->default hashing: a spec-only edit BUSTS the Nx cache (no stale PASS).                                                                                                                                                 | e2e (`*.int.spec.ts`, cache-e2e project) + unit assertion on `nx.json` `targetDefaults`                                     | `e2e/angular-typechecker-cache-e2e` fixtures                                         | `npx nx test angular-typechecker-cache-e2e` |
-| cross-leaf | `templateCheckAborted` fires on a TCB-abort in ANY leaf (union pre-filter scan).                                                                                                                                                  | unit (pure `detectTemplateCheckAborted` over a synthesized union) + integration (poison fixture referenced from a solution) | synthesized set (unit) + `fixtures/fault-isolation`-style leaf under a solution      | `npx nx test angular-typechecker`           |
-| D-04       | self-reference / duplicate leaf skipped: a solution that references itself (or lists a leaf twice) skips the redundant compile; output unchanged; `skippedReferences` records `reason: 'self-reference'`.                         | integration                                                                                                                 | `fixtures/solution-style-selfref`                                                    | `npx nx test angular-typechecker`           |
+| SC | Observable behavior | Tier | Fixture | Automated command |
+|----|--------------------|------|---------|-------------------|
+| SC1 | UNION completeness: a solution `tsconfig.json` referencing app+spec leaves reports BOTH leaves' planted TS2322 (spec-only error present -- the build differentiator). | integration (`*.integration.spec.ts`, real compiler) | `fixtures/solution-style` (upgraded) | `npx nx test angular-typechecker` |
+| SC2 | DEDUPE collapse: two leaves sharing a source file collapse the shared diagnostic to ONE across `Program`s (cross-`Program` value dedupe). | integration | `fixtures/solution-style-overlap` (lib+spec share one source, per spike 001) | `npx nx test angular-typechecker` |
+| SC2 | BOTH leaves ran: two DISTINCT TS2322s (distinct files) reported; `errorCount === 2`. | integration | `fixtures/solution-style` | `npx nx test angular-typechecker` |
+| SC2 | Boundary skip vs no-guard baseline leak: an out-of-project reference is SKIPPED (its error never reported) AND recorded in `skippedReferences` (`reason: 'out-of-project'`). | integration | `fixtures/solution-style-oop` | `npx nx test angular-typechecker` |
+| SC3 | Three-way D-03a split: (a) refs + in-project leaf -> WALK (`rootNamesCount > 0`); (b) refs + 0 in-project -> `90001` none-in-project; (c) no refs -> `90001` empty-project; (d) `rootNames > 0` direct-leaf UNCHANGED. | integration (a,b,c) + integration (d, existing) | `solution-style`, `solution-style-oop`, `solution-style-empty`, existing direct leaf | `npx nx test angular-typechecker` |
+| SC3/D-05 | FOLD-and-count: a solution referencing a NONEXISTENT leaf PATH synthesizes ONE counted `90002` Error AND still walks the surviving leaf (survivor's TS2322 also reported); `skippedReferences` has a `reason: 'not-found'` entry. | integration | `fixtures/solution-style-broken-ref` (references a real leaf + a nonexistent path) | `npx nx test angular-typechecker` |
+| SC4 | Spec rewrite: `config-resolution.integration.spec.ts` solution-style block asserts the walk (rootNamesCount>0, two TS2322, no 18003); COR-01 pinning test (`:100-121`) BYTE-UNCHANGED. | integration | `fixtures/solution-style` | `npx nx test angular-typechecker` |
+| SC5 | production->default hashing: a spec-only edit BUSTS the Nx cache (no stale PASS). | e2e (`*.int.spec.ts`, cache-e2e project) + unit assertion on `nx.json` `targetDefaults` | `e2e/angular-typechecker-cache-e2e` fixtures | `npx nx test angular-typechecker-cache-e2e` |
+| cross-leaf | `templateCheckAborted` fires on a TCB-abort in ANY leaf (union pre-filter scan). | unit (pure `detectTemplateCheckAborted` over a synthesized union) + integration (poison fixture referenced from a solution) | synthesized set (unit) + `fixtures/fault-isolation`-style leaf under a solution | `npx nx test angular-typechecker` |
+| D-04 | self-reference / duplicate leaf skipped: a solution that references itself (or lists a leaf twice) skips the redundant compile; output unchanged; `skippedReferences` records `reason: 'self-reference'`. | integration | `fixtures/solution-style-selfref` | `npx nx test angular-typechecker` |
 
 ### Minimum fixture set
-
 - `fixtures/solution-style` (UPGRADED): app leaf (`error.component.ts` planted TS2322) + NEW
   `tsconfig.spec.json` leaf (`error.component.spec.ts` DISTINCT planted TS2322); solution references
   both. Proves union completeness + both-leaves-ran (SC1/SC2).
@@ -551,7 +549,7 @@ Nyquist validation is ENABLED (no `workflow.nyquist_validation: false` observed)
   spike 001's `widget.component.ts`), the shared diagnostic planted once. Proves cross-`Program`
   dedupe collapse (SC2). Use a plain TS error only (no interpolated signal) to avoid NG8117+NG8109.
 - `fixtures/solution-style-oop` (NEW): references ONLY an out-of-project leaf. Proves boundary skip
-  - `90001` none-in-project + `skippedReferences` (SC2/SC3).
+  + `90001` none-in-project + `skippedReferences` (SC2/SC3).
 - `fixtures/solution-style-empty` (NEW or reuse): `files: []`, no `references`. Proves the guard
   still fires (`90001` empty-project) -- the references-less branch (SC3).
 - `fixtures/solution-style-broken-ref` (NEW): references a real leaf + a NONEXISTENT path. Proves
@@ -560,7 +558,6 @@ Nyquist validation is ENABLED (no `workflow.nyquist_validation: false` observed)
   output-neutral dedupe + `skippedReferences` self-reference record.
 
 ### Exact assertions proving each SC (integration tier, off `CoreResult`)
-
 - **Union completeness (SC1):** `codes.filter(c => c === 2322).length === 2`; the two reported
   TS2322 have distinct `file.fileName` (`error.component.ts` vs `error.component.spec.ts`);
   `rootNamesCount > 0`.
@@ -595,40 +592,36 @@ Nyquist validation is ENABLED (no `workflow.nyquist_validation: false` observed)
   core returning `templateCheckAborted`).
 
 ### Sampling Rate
-
 - **Per task commit:** `npx nx test angular-typechecker` (unit + integration; the walk's fixtures run
   cold-compiler, ~30s timeout each).
 - **Per wave merge:** `npx nx run-many -t typecheck-drift test -p angular-typechecker`.
 - **Phase gate:** full plugin suite + cache-e2e green before `/gsd-verify-work`.
 
 ### Wave 0 Gaps
-
 - [ ] `packages/angular-typechecker/src/core/walk-references.spec.ts` -- pure unit tests for the walk
-      (reference resolution, self-ref dedupe, boundary skip, `90002` synthesis) against hand-built
-      `ParsedConfiguration` / stub programs (no cold compiler).
+  (reference resolution, self-ref dedupe, boundary skip, `90002` synthesis) against hand-built
+  `ParsedConfiguration` / stub programs (no cold compiler).
 - [ ] `packages/angular-typechecker/src/core/walk-references.integration.spec.ts` -- real-compiler
-      walk proofs (SC1/SC2/SC3/D-05) against the new fixtures.
+  walk proofs (SC1/SC2/SC3/D-05) against the new fixtures.
 - [ ] Fixtures: `solution-style` upgrade (+ `tsconfig.spec.json`, `error.component.spec.ts`,
-      planted TS2322 in `error.component.ts`); NEW `solution-style-overlap`, `solution-style-oop`,
-      `solution-style-empty`, `solution-style-broken-ref`, `solution-style-selfref`.
+  planted TS2322 in `error.component.ts`); NEW `solution-style-overlap`, `solution-style-oop`,
+  `solution-style-empty`, `solution-style-broken-ref`, `solution-style-selfref`.
 - [ ] `config-resolution.integration.spec.ts` solution-style block rewrite (`:124-152`); COR-01
-      block (`:100-121`) BYTE-UNCHANGED.
+  block (`:100-121`) BYTE-UNCHANGED.
 - [ ] cache-e2e spec + fixture for the production->default hashing proof (SC5); `nx.json`
-      `targetDefaults` edit.
+  `targetDefaults` edit.
 - [ ] `detectTemplateCheckAborted` unit coverage over a synthesized union (cross-leaf).
 - [ ] Framework install: none -- Vitest/`@nx/vitest` already present.
 
 ## Common Pitfalls
 
 ### Pitfall 1: Second dedupe layer over the union
-
 **What goes wrong:** re-deduping per-leaf then again at the union double-implements the merge and
 misreconciles counts.
 **How to avoid:** L-1 -- feed ONE union into the SINGLE existing `finalize`; `ts.sortAndDeduplicateDiagnostics`
 handles cross-`Program` dedupe by `file.path` string identity in one place (`run-typecheck.ts:422`).
 
 ### Pitfall 2: Filtering per-leaf instead of once over the union
-
 **What goes wrong:** applying the boundary filter / `includeDeps` per leaf changes suppressedCount
 semantics and can drop a diagnostic that is in-project relative to the SOLUTION dir but out-of-project
 relative to a leaf dir.
@@ -636,26 +629,22 @@ relative to a leaf dir.
 once against the SOLUTION-directory basePath with the run-level `includeDeps` (Directive 5).
 
 ### Pitfall 3: Co-firing extended diagnostics muddying union/dedupe assertions
-
 **What goes wrong:** an interpolated un-invoked signal co-fires NG8117 + NG8109 (spike 001), inflating
 expected counts and making multiset assertions brittle.
 **How to avoid:** plant PLAIN TS2322 errors (Directive 4); keep fixture templates literal (no `{{ signal }}`).
 
 ### Pitfall 4: D-05 reclassifying the DIRECT-path 500 (COR-01 regression)
-
 **What goes wrong:** applying fold-and-count to the top-level `configInfrastructureFailure` scan
 would turn a direct nonexistent-config 500 into a counted `90002`, breaking the COR-01 pinning test.
 **How to avoid:** fold-and-count applies ONLY inside the walk's per-leaf resolution; the direct
 `run-typecheck.ts:167-178` scan and its test (`:100-121`) stay BYTE-UNCHANGED.
 
 ### Pitfall 5: `rootNamesCount` wrong on the walk path
-
 **What goes wrong:** returning a leaf count or `0` instead of the SUM confuses "did anything run".
 **How to avoid:** `rootNamesCount` = sum of `parsed.rootNames.length` over WALKED (surviving) leaves
 (L-3); a broken/skipped leaf contributes 0 but still records a `skippedReferences` entry / a `90002`.
 
 ### Pitfall 6: `createCanonicalizer`/`isUnderDir` are module-private
-
 **What goes wrong:** the walk cannot reuse them without an export, tempting a duplicate canonicalizer
 (violates D-01's "reuse tested machinery verbatim").
 **How to avoid:** export `createCanonicalizer` + `isUnderDir` from `filter-diagnostics.ts` (they are
@@ -664,11 +653,11 @@ walk imports the SAME implementation.
 
 ## Assumptions Log
 
-| #   | Claim                                                                                                                                                           | Section                                 | Risk if Wrong                                                                                                                                                                                                                  |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A1  | `eslint.config.mjs:16,54` scopes `no-console`/`no-process` to `**/src/core/**` exactly as CONTEXT.md states.                                                    | Project Constraints / line verification | LOW -- the purity rule is independently stated in CLAUDE.md + AGENTS.md + core doc comments; only the precise line numbers are unverified this session. If off, the planner re-reads `eslint.config.mjs`.                      |
-| A2  | `ParsedConfiguration.projectReferences` is a flat `readonly ts.ProjectReference[]` with no nested `references` (single-level walk is the data's natural shape). | Directive 3 / D-03                      | LOW -- verified in CONTEXT.md `<specifics>` (perform_compile.d.ts:18) and matches every spike; node_modules was excluded from this session's read-set. If wrong, D-03 (already locked) would need recursion (deferred anyway). |
-| A3  | `90002` is unused elsewhere in the codebase (only `90001` exists in the `9000x` family).                                                                        | Directive 1                             | LOW -- based on the read-set; the planner should confirm with a repo-wide `git grep 90002` returning zero matches before adding the constant.                                                                                  |
+| # | Claim | Section | Risk if Wrong |
+|---|-------|---------|---------------|
+| A1 | `eslint.config.mjs:16,54` scopes `no-console`/`no-process` to `**/src/core/**` exactly as CONTEXT.md states. | Project Constraints / line verification | LOW -- the purity rule is independently stated in CLAUDE.md + AGENTS.md + core doc comments; only the precise line numbers are unverified this session. If off, the planner re-reads `eslint.config.mjs`. |
+| A2 | `ParsedConfiguration.projectReferences` is a flat `readonly ts.ProjectReference[]` with no nested `references` (single-level walk is the data's natural shape). | Directive 3 / D-03 | LOW -- verified in CONTEXT.md `<specifics>` (perform_compile.d.ts:18) and matches every spike; node_modules was excluded from this session's read-set. If wrong, D-03 (already locked) would need recursion (deferred anyway). |
+| A3 | `90002` is unused elsewhere in the codebase (only `90001` exists in the `9000x` family). | Directive 1 | LOW -- based on the read-set; the planner should confirm with a repo-wide `git grep 90002` returning zero matches before adding the constant. |
 
 ## Open Questions
 
@@ -700,11 +689,11 @@ already installed; the walk reuses shipped machinery.
 new network, filesystem-write, auth, crypto, or user-input surface. `ng.readConfiguration` /
 `performCompilation` operate on developer-controlled tsconfig paths already trusted by the executor.
 
-| ASVS Category                | Applies | Standard Control                                                                                                                                                      |
-| ---------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| V5 Input Validation          | minimal | Reference paths come from the developer's own `tsconfig.json`; a nonexistent path is handled deterministically (D-05 `90002`, no crash). No untrusted external input. |
-| V6 Cryptography              | no      | none                                                                                                                                                                  |
-| V2/V3/V4 Auth/Session/Access | no      | not a networked or multi-user surface                                                                                                                                 |
+| ASVS Category | Applies | Standard Control |
+|---------------|---------|-----------------|
+| V5 Input Validation | minimal | Reference paths come from the developer's own `tsconfig.json`; a nonexistent path is handled deterministically (D-05 `90002`, no crash). No untrusted external input. |
+| V6 Cryptography | no | none |
+| V2/V3/V4 Auth/Session/Access | no | not a networked or multi-user surface |
 
 **Threat pattern note:** the only correctness-security concern is a FALSE PASS (a type-checker that
 lies). D-05 fold-and-count + D-03b zero-rootNames notice + the boundary guard's `skippedReferences`
@@ -713,7 +702,6 @@ record all close the "silent under-check" hazard -- covered by the Validation Ar
 ## Sources
 
 ### Primary (HIGH confidence)
-
 - `packages/angular-typechecker/src/core/run-typecheck.ts` -- engine: `CoreOptions`/`CoreResult`
   (`:11-71`), `TemplateCheckAborted` (`:80-87`), `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001` (`:93`),
   COR-01 direct 500 scan (`:149-178`), D-03a guard/split (`:185-203`),
@@ -739,19 +727,16 @@ record all close the "silent under-check" hazard -- covered by the Validation Ar
   facts (2026-07-01).
 
 ### Secondary (MEDIUM confidence)
-
 - CONTEXT.md `<specifics>` re: `ts.sortAndDeduplicateDiagnostics` keying on `file.path` (typescript@6.0.3)
   and `perform_compile.d.ts:18` flat `projectReferences` -- corroborated by spike 001 source-read but
   not re-verified in node_modules this session.
 
 ### Tertiary (LOW confidence)
-
 - None.
 
 ## Metadata
 
 **Confidence breakdown:**
-
 - Directive pins (1-6): HIGH -- all resolved against tracked source read this session; codes/shapes/
   invocation points cited to exact lines.
 - Line-reference verification: HIGH for read-set files (all CURRENT); two out-of-read-set refs

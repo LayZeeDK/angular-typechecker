@@ -31,7 +31,6 @@ every axis I raised in round 1:
 ## The two round-1 divergences, each disarmed by a verified fact
 
 ### D1 -- do NOT author `createFsTree` (round 1: author it now). CONVERGE.
-
 My round-1 drop-trigger was explicit: "generator guaranteed file-emission-free AND D4 runs
 the generated target -> gate FsTree's single use." Decision B locks the generator as a
 project.json-edit-only, no-file-emission, no-project-type-branching shape (the 33-line
@@ -45,7 +44,6 @@ Trigger met. Authoring `createFsTree` would add an internal-API (`nx/src/generat
 import + drift tripwire with no regression class left for it to catch. CONVERGE.
 
 ### D3 -- no mid-tier executor-against-workspace test (round 1: add it). CONVERGE.
-
 My round-1 non-negotiable was "path resolution + published-id binding covered on a
 Windows-running tier," with the drop-trigger "executor path logic is 100% node:path with
 zero hand-rolled separators." Fact A4 verified directly in source

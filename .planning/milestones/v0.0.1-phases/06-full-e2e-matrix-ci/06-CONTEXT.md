@@ -82,10 +82,10 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   Use `nx run-many` (deterministic), NOT `nx affected` (the gate must always run so `ci` has
   consistent meaning; the e2e graph is tiny + `implicitDependencies:["angular-typechecker"]`
   makes almost everything "affected" anyway). Set `NX_DAEMON: false` job-wide (defense-in-depth;
-  the specs already set it internally). Do NOT introduce Nx Cloud. _Runner-up (a maintainer
+  the specs already set it internally). Do NOT introduce Nx Cloud. *Runner-up (a maintainer
   style call, NOT auto-locked as superior): a dedicated `e2e` target on the e2e projects --
   cleaner `nx run-many -t e2e` split, but a 2+ file `project.json` edit; explicit-project-list
-  wins on zero-config-change + determinism._
+  wins on zero-config-change + determinism.*
 
 - **D-04 `[research]`: Install + cache = `npm ci` + `actions/setup-node` `cache: npm`; NO
   cross-job Nx cache, NO Nx Cloud.** `npm ci` auto-honors the committed root `.npmrc`
@@ -180,7 +180,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   pnpm/integration fixture but DOCUMENT that it only has teeth on the macOS/Windows legs.)
 
 ### Claude's Discretion
-
 - Exact CI workflow filename (`ci.yml` recommended); the `concurrency` group string; whether
   the Linux-only e2e runs as ONE `e2e` job or split (install-e2e + matrix-e2e as separate jobs
   for finer gate granularity -- either is fine, both feed the single `ci` gate via `needs`).
@@ -190,16 +189,14 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   optional for plain `npm ci`).
 - The precise construction of the D-09 regression symlink + the D-10 extra unit cases.
 - Whether unit + integration share one matrix `test` target or integration gets its own.
-  </decisions>
+</decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Phase 6 spec + scope (this repo)
-
 - `.planning/ROADMAP.md` Phase 6 section -- goal + 3 success criteria (5 project types vs
   installed tarball + pnpm + mixed-case; Node 22/24/26 x Linux/Windows/macOS matrix, e2e
   Linux-only; full matrix green + required gate). Phase 7 section -- the DOWNSTREAM consumer:
@@ -214,7 +211,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   fast tier + tarball CI gate").
 
 ### Phase 1-5 carry-forwards (this repo) -- MUST read
-
 - `.planning/phases/05-packaging-publish-hardening-e2e-smoke-mvp/05-CONTEXT.md` -- the e2e
   smoke harness shape (D-17..D-22) this phase EXTENDS; **B-03 honesty invariant: a clean
   consumer install (no `legacy-peer-deps`) SUCCEEDS on stable Angular 22 + Nx 23 -- do NOT
@@ -228,7 +224,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   backstop" (the literal charter for TEST-03's two special fixtures); cache-correctness Nx gaps.
 
 ### Current source this phase grows / depends on (this repo)
-
 - `.github/workflows/release.yml` -- the hardening + SHA-pin style + action SHAs to MATCH/REUSE
   (D-05); do NOT modify it (Phase 5.1 froze it OIDC-only).
 - `.github/dependabot.yml` -- already tracks the `github-actions` ecosystem; the new CI
@@ -250,7 +245,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   shape references for the local-lib / dep / application project types.
 
 ### External reference sources (read-only; re-validate against installed versions)
-
 - `D:/projects/github/push-based/nx-verdaccio/.github/workflows/` + e2e -- real Nx-plugin CI +
   install-fixture patterns (Nx 22-era; re-validate on Nx 23). `NX_NON_NATIVE_HASHER` CI env.
 - `D:/projects/github/nrwl/nx/.github/workflows/` -- `@nx/js` local-registry + e2e
@@ -259,7 +253,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   `concurrency` cancel-in-progress pattern.
 
 ### External docs / facts (URLs; re-validate at execution -- this area moved in 2025-2026)
-
 - GitHub-hosted runners reference (labels -> OS/arch; `ubuntu-latest`=Ubuntu 24.04 x64,
   `windows-latest`=Win Server 2025 x64, `macos-latest`=macOS 15 arm64/M1):
   https://docs.github.com/en/actions/reference/runners/github-hosted-runners
@@ -274,14 +267,12 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
 - Nx buildable & publishable libraries: https://nx.dev/docs/concepts/buildable-and-publishable-libraries
   ; @nx/angular generators (`library --buildable/--publishable`, `@nx/angular:package` /
   `:ng-packagr-lite`): https://nx.dev/docs/technologies/angular/generators
-  </canonical_refs>
+</canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - **`install-e2e` harness** (`e2e/angular-typechecker-install-e2e/`): `vitest.config.mts`
   (serialized: forks/singleFork/no-parallel/300000-timeouts/node-env) -> CLONE for the new
   `matrix-e2e`. `install-smoke.int.spec.ts` `buildCleanEnv` (strips 8 cache-defeating `NX_*`
@@ -300,7 +291,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
 - **`release.yml`** hardening envelope + SHA pins -> MATCH + reuse for the new CI workflow (D-05).
 
 ### Established Patterns
-
 - One serialized e2e Nx project per concern, each cloning the same `vitest.config.mts` +
   re-declaring `buildCleanEnv` (cache-e2e, install-e2e -> matrix-e2e is the third).
 - Committed-fixture-as-installed-consumer: pack the FRESH dist, install the tarball into a
@@ -312,7 +302,6 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   `includeDeps:true` folds everything back.
 
 ### Integration Points
-
 - source -> `@nx/js:tsc` -> dist -> `npm pack` tarball -> `npm install`/`pnpm add` into a tmp
   consumer-workspace -> `nx run <type>:angular-typecheck` (PUBLISHED id) -> resolves
   `node_modules/angular-typechecker/executors.json` -> implementation `.js`. The matrix-e2e
@@ -322,11 +311,10 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
   ruleset requires `ci`.
 
 ### Prior-art learnings (sanitized; inspiration only)
-
 - The public Nx 19.8 sandbox: `injectTypeScriptError` recipe, fixture-discovery trap (Nx skips
   gitignored/excluded dirs), `NX_DAEMON=false`, Vitest-over-Jest for ESM compiler-cli -- all
   re-validated on Nx 23; copy no removed-generator flags.
-  </code_context>
+</code_context>
 
 <specifics>
 ## Specific Ideas
@@ -337,16 +325,15 @@ installed Nx 23.0.1 / Angular 22.0.4 generator surface + local public clones (`n
 - **Action pins (reuse release.yml):** `actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1`, `actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0`; top-level `permissions: { contents: read }`, `persist-credentials: false`, `concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }`.
 - **5-type fixture targets:** app (`tsconfig.app.json`), local lib (`tsconfig.lib.json`, no build), buildable lib (`@nx/angular:ng-packagr-lite` build target), publishable lib (`@nx/angular:package` + `importPath`), spec (`tsconfig.spec.json`).
 - **pnpm install of tarball:** `pnpm add <abs-path-to.tgz>` in the tmp consumer (or `file:` dep + `pnpm install --no-frozen-lockfile`).
-  </specifics>
+</specifics>
 
 <deferred>
 ## Deferred Ideas
 
 All roadmap-scoped or out-of-milestone (NOT new in-phase capabilities):
-
 - **The branch-protection RULESET SWITCH** (enable "Default branch", delete temporary "v0.0.1")
-  - **the Release-PR workflow** + **clean public changelog** -> Phase 7. Phase 6 only DEFINES
-    the `ci` required-check NAME that Phase 7's ruleset will reference (D-02).
+  + **the Release-PR workflow** + **clean public changelog** -> Phase 7. Phase 6 only DEFINES
+  the `ci` required-check NAME that Phase 7's ruleset will reference (D-02).
 - **OpenSSF Scorecard action, StepSecurity harden-runner, CodeQL, signed commits/tags** ->
   later (continuous-assurance tooling; deferred from Phase 5 D-16).
 - **Nx community-registry-listing PR** (`approved-community-plugins.json`) -> post-publish
@@ -472,7 +459,7 @@ conflict. D-02..D-10 (gate name `ci`, e2e-Linux-only, the harness/fixture shapes
   `node_modules/.bun/...`, and plain `node_modules/<pkg>/...` (synthetic realpaths; NO install) --
   proving the segment match is not accidentally hardcoded to `.pnpm`. Extends `filter-diagnostics.spec.ts`.
 - **RD-05 -- act test suite (Req 1).** `tools/act/act-compat.sh` + `tools/act/events/{push-main,
-push-tag,pull_request,workflow_dispatch}.json`. **KEY act-fidelity fact (verified v0.2.89):** act
+  push-tag,pull_request,workflow_dispatch}.json`. **KEY act-fidelity fact (verified v0.2.89):** act
   does NOT evaluate `on:` filters (`branches`/`tags`/`paths`/`types`) -- only the event NAME
   (`--apply-event-filters` PR #2729 unmerged). So tag-vs-branch discrimination is encoded as an `if:`
   ref gate (RD-07) and asserted via **dry-run (`act -n`) + injected `GITHUB_REF`/event-payload**
@@ -526,7 +513,7 @@ lint-workflows + aggregate gate, RD-06/08/09) + the `release.yml` `if:` gate + r
 
 ---
 
-_Phase: 6-Full e2e Matrix + CI_
-_Context gathered: 2026-06-29_
-_Validation strategy addendum: 2026-06-29 (D-11..D-13)_
-_Re-discuss v2 (LOCKED): 2026-06-29 (RD-01..RD-12) -- supersedes D-01 matrix + arm64-forward exploration_
+*Phase: 6-Full e2e Matrix + CI*
+*Context gathered: 2026-06-29*
+*Validation strategy addendum: 2026-06-29 (D-11..D-13)*
+*Re-discuss v2 (LOCKED): 2026-06-29 (RD-01..RD-12) -- supersedes D-01 matrix + arm64-forward exploration*

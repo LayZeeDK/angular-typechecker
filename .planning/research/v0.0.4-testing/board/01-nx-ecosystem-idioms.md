@@ -16,7 +16,6 @@ prior art it claims fidelity to does not actually use it for generators.
 ## D1 SUBSTRATE per tier
 
 **Recommendation:**
-
 - Generator unit/integration: **AGREE -- use the public in-memory `createTreeWithEmptyWorkspace()`
   from `@nx/devkit/testing`. This is the only idiomatic choice.**
 - Bespoke real-disk `createFsTree`/`flushFsTreeChanges`: **DO NOT author it for v0.0.4.**
@@ -26,19 +25,18 @@ prior art it claims fidelity to does not actually use it for generators.
   is to not take on the internal import in the first place.
 
 **Rationale (from this lens):**
-
 1. **This is THE dominant Nx idiom, by a wide margin.** The NX-FSTREE-INTERNALS research counted
    452 Nx generator spec files importing `createTreeWithEmptyWorkspace`; ZERO `@nx/*` generator
    specs flush to real disk. The only real-disk consumer in all of Nx is `tree.spec.ts` -- the
-   spec for `FsTree` _itself_. A seasoned Nx author reading our repo expects exactly the
+   spec for `FsTree` *itself*. A seasoned Nx author reading our repo expects exactly the
    `@nx/plugin:executor`-scaffold shape: `createTreeWithEmptyWorkspace()` ->
    `addProjectConfiguration(...)` -> run generator -> `readProjectConfiguration(...)` ->
    `toEqual`. Both prior arts (sandbox `generator.spec.ts`, Connect Impl-C) used precisely this.
 2. **`createFsTree` is a deep import into `nx/src/generators/tree` -- explicitly internal.** It is
-   re-exported by NO public barrel; only the `Tree`/`FileChange` _types_ are public. Adopting it
+   re-exported by NO public barrel; only the `Tree`/`FileChange` *types* are public. Adopting it
    buys an `eslint-disable`, a quarantine module, AND a build-time drift tripwire to maintain --
-   a standing tax paid on every Nx upgrade -- to gain real-disk fidelity _this generator does not
-   need_. The generator's entire observable behavior is a `project.json` config edit
+   a standing tax paid on every Nx upgrade -- to gain real-disk fidelity *this generator does not
+   need*. The generator's entire observable behavior is a `project.json` config edit
    (`readProjectConfiguration` -> mutate `targets` -> `updateProjectConfiguration` -> `formatFiles`);
    the in-memory Tree captures 100% of that. Nothing reads the Tree off disk mid-generation.
 3. **"Stay faithful to the prior art" is factually backwards here.** PROJECT.md D34 says the
@@ -54,7 +52,7 @@ prior art it claims fidelity to does not actually use it for generators.
 4. **Where real-disk fidelity is genuinely wanted, the repo already has a better tool.** "Does the
    generated target actually run?" is already answered end-to-end by the tarball e2e tier
    (`install-smoke`, `matrix-5types`) -- a higher-fidelity proof than a real-disk `FsTree`, using
-   a mechanism the repo already maintains. A `createFsTree` fidelity tier would sit _between_
+   a mechanism the repo already maintains. A `createFsTree` fidelity tier would sit *between*
    in-memory unit and tarball e2e proving almost nothing the e2e tier doesn't, at high cost.
 
 **Risk:** Low. The only residual risk is the documented nx#32588 hazard (an in-memory generator
@@ -75,21 +73,19 @@ ever needs real-disk semantics (none does today).
 ## D2 NG8xxx CATALOG
 
 **Recommendation:**
-
 - Organization: **per-introduction-version drop-in files** (`extended.angularNN.integration.spec.ts`
   / `baseline.angularNN.integration.spec.ts`), NOT a single data-driven `it.each`. The repo has
   already established this naming (`extended.angular13.integration.spec.ts`) and the catalog
   prescribes it (`DIAGNOSTIC-CATALOG.md:60`). Inside each file, an `it.each` over that major's
   codes is fine and welcome -- but keep the FILE split by introduction version.
-- Assertions: \*\*assert all 16 extended (+ the missing baseline NG codes) by exact code + category
-  - count\*\*, using the repo's existing `NG()` negative-encoding helper. This matches Angular's
-    OWN compiler-cli test idiom (`extended_template_diagnostics_spec.ts`: find by exact code, assert
-    `.category`).
+- Assertions: **assert all 16 extended (+ the missing baseline NG codes) by exact code + category
+  + count**, using the repo's existing `NG()` negative-encoding helper. This matches Angular's
+  OWN compiler-cli test idiom (`extended_template_diagnostics_spec.ts`: find by exact code, assert
+  `.category`).
 - Error injection: **committed fixtures** under `fixtures/extended-vNN/` (or per-code component
   dirs), NOT programmatic temp-dir/jscodeshift.
 
 **Rationale (from this lens):**
-
 1. **The per-version file split is a maintenance idiom, not just an aesthetic.** A future Angular
    major becomes a single new `*.angularNN.integration.spec.ts` drop-in file -- no edit to a
    central data table that every reviewer must re-read. This mirrors the sandbox's proven
@@ -107,7 +103,7 @@ ever needs real-disk semantics (none does today).
    to solve a problem committed fixtures already solve. Don't import that complexity.
 3. **`forceExtendedDiagnosticsAsErrors` is the one technique to carry, as fixture config.** Most
    NG81xx are warnings unless `strictTemplates: true` + `extendedDiagnostics.defaultCategory:
-"error"`. The repo already proves promotion for NG8101 (`extended.promotion.integration.spec.ts`).
+   "error"`. The repo already proves promotion for NG8101 (`extended.promotion.integration.spec.ts`).
    Bake that into each extended fixture's `tsconfig` (committed), rather than mutating tsconfig at
    runtime. Assert BOTH default-WARNING and promoted-ERROR for at least one code per major to lock
    the category contract (Angular's `template_typecheck_spec.ts` config-validation layer analogue).
@@ -131,7 +127,6 @@ Angular's own compiler-cli tests.
 substrate (D1), not a real-disk wrapper.** It is a real, currently-empty rung, not redundant.
 
 **Rationale (from this lens):**
-
 - The audit (CURRENT-AUDIT A.2) shows a genuine gap: today the ladder jumps from mocked-unit
   (`executor.spec.ts` mocks the 4 seams + logger; never touches an `ExecutorContext` against any
   workspace) straight to full-tarball-e2e, with nothing between. The mid-tier proves the executor
@@ -146,7 +141,7 @@ substrate (D1), not a real-disk wrapper.** It is a real, currently-empty rung, n
   a `createTreeWithEmptyWorkspace`-seeded project." It reuses the D1 substrate the generator tests
   already establish -- one substrate, two consumers. No new mechanism.
 
-**Risk:** Low, but watch scope. The mid-tier should assert _plumbing_ (path resolution, option
+**Risk:** Low, but watch scope. The mid-tier should assert *plumbing* (path resolution, option
 normalization, binding under the published id where cheap), NOT re-prove diagnostic behavior
 (that is the integration tier's job) or full install fidelity (the e2e tier's). Keep it to a
 handful of cases or it duplicates two neighbors.
@@ -163,7 +158,6 @@ the mid-tier can be a thin follow-on. It is worth doing, but it is not the headl
 Verdaccio. Do NOT use a real-disk FsTree workspace for the generator e2e.**
 
 **Rationale (from this lens):**
-
 1. **One e2e mechanism is a maintenance virtue.** The repo already has a proven, hardened tarball
    harness (`install-smoke.int.spec.ts`) with `buildCleanEnv`/nested-nx env-strip, empty-`.npmrc`
    honesty, `mkdtempSync` isolation, `pool: 'forks'` + `singleFork` serialization, and Windows-arm64
@@ -201,7 +195,6 @@ into `install-e2e` (sharing one pack/install) mitigates it.
 ## D5 CI JOBS
 
 **Recommendation:**
-
 - **Generator unit/integration + the NG8xxx catalog specs: ZERO ci.yml change needed.** They land
   automatically in the existing `test` 6-cell matrix the moment they match the plugin
   `vitest.config.mts` include glob. This is the idiomatic, low-friction path -- do nothing.
@@ -239,7 +232,6 @@ minimal coherent strategy is: ship the generator the idiomatic (in-memory-tested
 jscodeshift toolkit, and Verdaccio.**
 
 **Rationale (from this lens):**
-
 - The generator is justified on two grounds: (a) it is a real deferred deliverable (the GEN-family
   config generator), and (b) it is the natural VEHICLE for the generator-testing technique the
   milestone wants. A `feat` legitimately bumps 0.0.3 -> 0.0.4. The 33-line sandbox generator +
@@ -252,9 +244,9 @@ jscodeshift toolkit, and Verdaccio.**
   2. jscodeshift error-injection toolkit (D2) -- 1300+ lines of AST mutation to replace committed
      fixtures the repo already uses.
   3. Verdaccio (D4) -- a second e2e mechanism with a Windows-arm64 liability.
-     Each is "faithful to the sandbox" in letter but the sandbox needed them for a live-workspace
-     fixture-build apparatus this repo does not have. Carrying technique without carrying the context
-     that motivated it is the creep.
+  Each is "faithful to the sandbox" in letter but the sandbox needed them for a live-workspace
+  fixture-build apparatus this repo does not have. Carrying technique without carrying the context
+  that motivated it is the creep.
 - **The minimal coherent strategy:**
   1. Generator: `@nx/plugin`-idiomatic; `readProjectConfiguration`/`updateProjectConfiguration`/
      `formatFiles`; idempotent (`OverwriteStrategy.KeepExisting` semantics or skip-if-present);

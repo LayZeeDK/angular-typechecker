@@ -17,7 +17,6 @@ The canonical rule from `nx.dev/docs/extending-nx/publish-plugin`:
 > Include `@nx/devkit` as a **`dependency`** (not a `peerDependency`) so your plugin pins the tested version. Do **NOT** list `nx` as a direct dependency **or** a peerDependency at all -- `@nx/devkit` carries the `nx` version range for you.
 
 Evidence (npm registry, 2026-06-27):
-
 - `@nx/devkit@23.0.1` declares `nx` as a **peerDependency**: `">= 22 <= 24 || ^23.0.0-0"`. So when your plugin depends on `@nx/devkit`, the consumer's `nx` is satisfied transitively through that peer -- you never declare `nx` yourself.
 - `@nx/plugin@23.0.1` lists `@nx/devkit`, `@nx/js`, `@nx/eslint`, `@nx/jest` all as **exact-pinned `dependencies`** (`"23.0.1"`), zero peerDependencies.
 - `@push-based/nx-verdaccio` ships `"dependencies": { "nx": "22.3.1", "@nx/plugin": "22.3.1", "tslib": "2.8.1" }` and only `@nx/js` as a peer.
@@ -30,34 +29,34 @@ Evidence (npm registry, 2026-06-27):
 
 ### Core Technologies (supporting toolchain -- the locked stack lives in PROJECT.md)
 
-| Technology              | Version (2026-06-27)                         | Purpose                                                                                   | Why Recommended                                                                                                                                                                                                                                                     |
-| ----------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | -------------------------------------------------------------------------- |
-| `@nx/devkit`            | `23.0.1` (pin exact)                         | Plugin authoring API (`ExecutorContext`, `logger`, `readJsonFile`, etc.)                  | `[adds]` Ship as a pinned `dependency`. Its own `nx` peer (`>= 22 <= 24                                                                                                                                                                                             |     | ^23.0.0-0`) is what satisfies the consumer's Nx -- you never declare `nx`. |
-| `@nx/js` (`@nx/js:tsc`) | `23.0.1`                                     | Build executor for the plugin library                                                     | `[confirms PROJECT.md (compiled .js)]` Official + default builder for plugins; emits CJS `.js` + `.d.ts` via native `tsc`. Both reference plugins use `@nx/js:tsc`. NOT esbuild/swc (see "What NOT to Use").                                                        |
-| `@nx/plugin`            | `23.0.1`                                     | Generators: `@nx/plugin:plugin` (scaffold), `@nx/plugin:executor` (scaffold the executor) | `[adds]` Use as a **devDependency** in your repo to scaffold; it is not shipped. `@nx/plugin:executor` is `path`-based in Nx 23 and supports `--unitTestRunner=vitest`.                                                                                             |
-| `@nx/vitest`            | `23.0.1`                                     | Vitest test executor (`@nx/vitest:test`)                                                  | `[adds]` In Nx 22.2 Nx **split Vitest out of `@nx/vite` into a dedicated `@nx/vitest` package** (verified: `@nx/vitest@23.0.1` exists; nx-verdaccio carries the `migrate-vitest-to-vitest-package` migration). On Nx 23 use `@nx/vitest:test`, NOT `@nx/vite:test`. |
-| `@nx/eslint`            | `23.0.1`                                     | Lint executor + flat config + `@nx/dependency-checks` rule                                | `[adds]` Provides the publishable-package dependency linter (see below). Peer-depends on `vite`/`vitest`/itself.                                                                                                                                                    |
-| `vitest`                | `4.1.9` (latest)                             | Test runner                                                                               | `[confirms PROJECT.md]` `@nx/vitest@23.0.1` peer accepts `^3.0.0                                                                                                                                                                                                    |     | ^4.0.0`. Use 4.x.                                                          |
-| `tslib`                 | `^2.3.0` (latest `2.8.1`)                    | Runtime helper for `importHelpers`                                                        | `[adds]` Standard `dependency` in every Nx-generated lib/plugin. Pair with `"importHelpers": true`.                                                                                                                                                                 |
-| TypeScript              | `6.0.3` (latest; range `>=6.0.0 <6.1.0`)     | Compiles the plugin AND is a runtime peer                                                 | `[confirms PROJECT.md]` Latest in the locked window is `6.0.3`. (TS 7 is `7.0.1-rc` / `next`; out of scope per PROJECT.md.)                                                                                                                                         |
-| `@angular/compiler-cli` | `22.0.4` (latest; `22.1.0-next.3` on `next`) | The type-check engine (peer, ESM, `await import()`)                                       | `[confirms PROJECT.md]` Latest stable Angular 22 is `22.0.4`.                                                                                                                                                                                                       |
-| `nx`                    | `23.0.1` (latest)                            | Workspace runtime (your dev repo + consumer)                                              | `[confirms PROJECT.md "Nx 23.x"]` Declared by no one in your package.json -- flows in via `@nx/devkit`'s peer.                                                                                                                                                      |
+| Technology | Version (2026-06-27) | Purpose | Why Recommended |
+|------------|----------------------|---------|-----------------|
+| `@nx/devkit` | `23.0.1` (pin exact) | Plugin authoring API (`ExecutorContext`, `logger`, `readJsonFile`, etc.) | `[adds]` Ship as a pinned `dependency`. Its own `nx` peer (`>= 22 <= 24 || ^23.0.0-0`) is what satisfies the consumer's Nx -- you never declare `nx`. |
+| `@nx/js` (`@nx/js:tsc`) | `23.0.1` | Build executor for the plugin library | `[confirms PROJECT.md (compiled .js)]` Official + default builder for plugins; emits CJS `.js` + `.d.ts` via native `tsc`. Both reference plugins use `@nx/js:tsc`. NOT esbuild/swc (see "What NOT to Use"). |
+| `@nx/plugin` | `23.0.1` | Generators: `@nx/plugin:plugin` (scaffold), `@nx/plugin:executor` (scaffold the executor) | `[adds]` Use as a **devDependency** in your repo to scaffold; it is not shipped. `@nx/plugin:executor` is `path`-based in Nx 23 and supports `--unitTestRunner=vitest`. |
+| `@nx/vitest` | `23.0.1` | Vitest test executor (`@nx/vitest:test`) | `[adds]` In Nx 22.2 Nx **split Vitest out of `@nx/vite` into a dedicated `@nx/vitest` package** (verified: `@nx/vitest@23.0.1` exists; nx-verdaccio carries the `migrate-vitest-to-vitest-package` migration). On Nx 23 use `@nx/vitest:test`, NOT `@nx/vite:test`. |
+| `@nx/eslint` | `23.0.1` | Lint executor + flat config + `@nx/dependency-checks` rule | `[adds]` Provides the publishable-package dependency linter (see below). Peer-depends on `vite`/`vitest`/itself. |
+| `vitest` | `4.1.9` (latest) | Test runner | `[confirms PROJECT.md]` `@nx/vitest@23.0.1` peer accepts `^3.0.0 || ^4.0.0`. Use 4.x. |
+| `tslib` | `^2.3.0` (latest `2.8.1`) | Runtime helper for `importHelpers` | `[adds]` Standard `dependency` in every Nx-generated lib/plugin. Pair with `"importHelpers": true`. |
+| TypeScript | `6.0.3` (latest; range `>=6.0.0 <6.1.0`) | Compiles the plugin AND is a runtime peer | `[confirms PROJECT.md]` Latest in the locked window is `6.0.3`. (TS 7 is `7.0.1-rc` / `next`; out of scope per PROJECT.md.) |
+| `@angular/compiler-cli` | `22.0.4` (latest; `22.1.0-next.3` on `next`) | The type-check engine (peer, ESM, `await import()`) | `[confirms PROJECT.md]` Latest stable Angular 22 is `22.0.4`. |
+| `nx` | `23.0.1` (latest) | Workspace runtime (your dev repo + consumer) | `[confirms PROJECT.md "Nx 23.x"]` Declared by no one in your package.json -- flows in via `@nx/devkit`'s peer. |
 
 ### Supporting Libraries / Tools
 
-| Tool                                           | Version              | Purpose                                                                  | When to Use                                                                                                                                                                                   |
-| ---------------------------------------------- | -------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@nx/eslint` `@nx/dependency-checks` rule      | `23.0.1`             | Catches missing/obsolete/mismatched deps in the published `package.json` | `[adds]` MANDATORY for a publishable plugin. Add `{projectRoot}/package.json` to the lint file set and enable the rule (details below).                                                       |
-| Prettier                                       | latest (`3.x`)       | Formatting                                                               | `[adds]` Nx default. Use `.prettierrc` with `"singleQuote": true` per your global pref.                                                                                                       |
-| ESLint flat config (`eslint.config.mjs`/`.js`) | ESLint `9.x`         | Lint                                                                     | `[adds]` Nx 23 generators emit **flat config** by default. nx-verdaccio's `.eslintrc.json` is legacy (Nx 22-era); do not copy that shape for a greenfield Nx 23 repo.                         |
-| `verdaccio`                                    | `6.7.4` (latest 6.x) | Local registry for tarball/e2e publish-install tests                     | `[adds]` Standard for the "install the real tarball" e2e tier PROJECT.md describes. `@push-based/nx-verdaccio` itself wraps this. Optional but recommended for the late-phase tarball matrix. |
+| Tool | Version | Purpose | When to Use |
+|------|---------|---------|-------------|
+| `@nx/eslint` `@nx/dependency-checks` rule | `23.0.1` | Catches missing/obsolete/mismatched deps in the published `package.json` | `[adds]` MANDATORY for a publishable plugin. Add `{projectRoot}/package.json` to the lint file set and enable the rule (details below). |
+| Prettier | latest (`3.x`) | Formatting | `[adds]` Nx default. Use `.prettierrc` with `"singleQuote": true` per your global pref. |
+| ESLint flat config (`eslint.config.mjs`/`.js`) | ESLint `9.x` | Lint | `[adds]` Nx 23 generators emit **flat config** by default. nx-verdaccio's `.eslintrc.json` is legacy (Nx 22-era); do not copy that shape for a greenfield Nx 23 repo. |
+| `verdaccio` | `6.7.4` (latest 6.x) | Local registry for tarball/e2e publish-install tests | `[adds]` Standard for the "install the real tarball" e2e tier PROJECT.md describes. `@push-based/nx-verdaccio` itself wraps this. Optional but recommended for the late-phase tarball matrix. |
 
 ### Build executor decision: `@nx/js:tsc` (NOT esbuild, NOT swc)
 
 `[confirms PROJECT.md "compiled .js" + "CJS executor"]` -- with explicit rationale:
 
 - **Nx loads executors via `require()`** across Nx 21/22/23. The shipped executor entry must be **CommonJS `.js`**. `@nx/js:tsc` -> `tsconfig.lib.json` with `"module": "CommonJS"` produces exactly that, plus `.d.ts` declarations, plus per-file output (no bundling) -- which is what Nx expects for `executors.json` `implementation` paths.
-- **esbuild/swc bundle or transpile-without-typecheck.** Bundling an executor into one file fights the multi-file `implementation` + `schema.json` layout, and swc skips type-checking (you want full TS checking on a type-checking tool). `@nx/esbuild`/`@nx/rollup` are for ESM/CJS dual-format _consumable libraries_, not for an executor whose only consumer is the Nx CLI's `require()`.
+- **esbuild/swc bundle or transpile-without-typecheck.** Bundling an executor into one file fights the multi-file `implementation` + `schema.json` layout, and swc skips type-checking (you want full TS checking on a type-checking tool). `@nx/esbuild`/`@nx/rollup` are for ESM/CJS dual-format *consumable libraries*, not for an executor whose only consumer is the Nx CLI's `require()`.
 - The CJS executor then does `await import('@angular/compiler-cli')` to reach the ESM-only compiler -- this is the standard CJS->ESM bridge and works under `"module": "CommonJS"`. `[confirms PROJECT.md]`
 
 ---
@@ -71,39 +70,36 @@ Composite of the official recipe + `@analogjs/platform` (published) + `@push-bas
   "name": "angular-typechecker",
   "version": "0.0.1",
   "license": "MIT",
-  "type": "commonjs", // executor must be require()-able  [confirms PROJECT.md]
-  "main": "./src/index.js", // compiled entry (NOT .ts)
-  "types": "./src/index.d.ts", // a.k.a. "typings" in older plugins
-  "executors": "./executors.json", // REQUIRED marker -> Nx discovers the executor  [adds]
-  "exports": {
-    // [adds] modern; analog uses this
+  "type": "commonjs",                       // executor must be require()-able  [confirms PROJECT.md]
+  "main": "./src/index.js",                 // compiled entry (NOT .ts)
+  "types": "./src/index.d.ts",              // a.k.a. "typings" in older plugins
+  "executors": "./executors.json",          // REQUIRED marker -> Nx discovers the executor  [adds]
+  "exports": {                              // [adds] modern; analog uses this
     ".": "./src/index.js",
-    "./package.json": "./package.json",
+    "./package.json": "./package.json"
   },
   "dependencies": {
-    "@nx/devkit": "23.0.1", // pinned, NOT peer  [contradicts PROJECT.md]
-    "tslib": "^2.3.0",
+    "@nx/devkit": "23.0.1",                 // pinned, NOT peer  [contradicts PROJECT.md]
+    "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@angular/compiler-cli": "^22.0.0", // resolve from consumer  [confirms PROJECT.md]
-    "typescript": ">=6.0.0 <6.1.0", //   "      "      "       [confirms PROJECT.md]
+    "@angular/compiler-cli": "^22.0.0",     // resolve from consumer  [confirms PROJECT.md]
+    "typescript": ">=6.0.0 <6.1.0"          //   "      "      "       [confirms PROJECT.md]
   },
-  "files": [
-    // [adds] whitelist published files
+  "files": [                                // [adds] whitelist published files
     "src",
     "executors.json",
-    "README.md",
+    "README.md"
   ],
-  "keywords": ["nx", "nx-plugin", "angular", "typecheck", "type-check", "ngc"], // [adds] discovery
-  "repository": {
-    // [adds] REQUIRED for registry listing
+  "keywords": ["nx", "nx-plugin", "angular", "typecheck", "type-check", "ngc"],  // [adds] discovery
+  "repository": {                           // [adds] REQUIRED for registry listing
     "type": "git",
-    "url": "git+https://github.com/<owner>/angular-typechecker.git",
+    "url": "git+https://github.com/<owner>/angular-typechecker.git"
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true, // [adds] analog ships provenance
-  },
+    "provenance": true                      // [adds] analog ships provenance
+  }
 }
 ```
 
@@ -128,11 +124,11 @@ Field-by-field notes:
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/master/packages/nx/schemas/executors-schema.json",
   "executors": {
     "angular-typecheck": {
-      "implementation": "./src/executors/angular-typecheck/executor", // no .js extension
+      "implementation": "./src/executors/angular-typecheck/executor",  // no .js extension
       "schema": "./src/executors/angular-typecheck/schema.json",
-      "description": "Type-check an Angular project with the full Angular compiler diagnostic set, no emit.",
-    },
-  },
+      "description": "Type-check an Angular project with the full Angular compiler diagnostic set, no emit."
+    }
+  }
 }
 ```
 
@@ -150,18 +146,18 @@ Field-by-field notes:
   "$id": "AngularTypecheckExecutorOptions",
   "title": "angular-typecheck executor",
   "type": "object",
-  "cli": "nx", // marks it as an Nx Devkit executor
+  "cli": "nx",                         // marks it as an Nx Devkit executor
   "properties": {
     "tsConfig": {
       "type": "string",
-      "description": "Path to the tsconfig to type-check (single tsconfig per target).",
+      "description": "Path to the tsconfig to type-check (single tsconfig per target)."
     },
-    "failFast": { "type": "boolean", "default": false },
-    "includeDeps": { "type": "boolean", "default": false },
-    "maxWarnings": { "type": "number" },
+    "failFast":   { "type": "boolean", "default": false },
+    "includeDeps":{ "type": "boolean", "default": false },
+    "maxWarnings":{ "type": "number" }
   },
   "required": ["tsConfig"],
-  "additionalProperties": false, // prefer false for a typed contract
+  "additionalProperties": false        // prefer false for a typed contract
 }
 ```
 
@@ -197,7 +193,7 @@ Field-by-field notes:
 
 - **README.md**: ship it (in `files`). Document the manual `project.json` target wiring (PROJECT.md already commits to manual wiring in v0.0.1). The registry submission also surfaces the README.
 - **migrations.json**: NOT needed for v0.0.1. `[confirms PROJECT.md "no config generator / ng-add / nx-add in v0.0.1"]` Add a `migrations` (a.k.a. `nx-migrations`) field + `migrations.json` only when you ship breaking-change migrations later. (nx-verdaccio's `migrations.json` exists because it has shipped multiple versions.)
-- **Registry listing is a PR, not metadata.** `[adds]` To appear in `nx list` / the Nx plugin registry you open a PR adding an entry (`name`, `url`, `description`) to Nx's `approved-community-plugins.json`. Hard criteria: (1) automated **e2e tests** in the repo, (2) **`@nx/devkit` as a `dependency`**, (3) **`repository.url`** in `package.json`. Note criterion (2) is the same rule that contradicts PROJECT.md's peer-dep plan -- listing in the registry _requires_ devkit-as-dependency. PROJECT.md already plans e2e tests and a repo, so the only gap is the dependency classification.
+- **Registry listing is a PR, not metadata.** `[adds]` To appear in `nx list` / the Nx plugin registry you open a PR adding an entry (`name`, `url`, `description`) to Nx's `approved-community-plugins.json`. Hard criteria: (1) automated **e2e tests** in the repo, (2) **`@nx/devkit` as a `dependency`**, (3) **`repository.url`** in `package.json`. Note criterion (2) is the same rule that contradicts PROJECT.md's peer-dep plan -- listing in the registry *requires* devkit-as-dependency. PROJECT.md already plans e2e tests and a repo, so the only gap is the dependency classification.
 
 ### nx release configuration norms
 
@@ -234,54 +230,51 @@ nx g @nx/plugin:executor packages/angular-typechecker/src/executors/angular-type
 
 ## Alternatives Considered
 
-| Recommended                       | Alternative                   | When to Use Alternative                                                                                                                          |
-| --------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@nx/js:tsc` build                | `@nx/esbuild` / `@nx/rollup`  | Only for a dual-format ESM+CJS _consumable library_. Never for an executor (Nx `require()`s it; bundling fights the multi-file executor layout). |
-| `@nx/js:tsc` (native tsc)         | `@nx/js:swc`                  | swc is faster but **skips type-checking** -- wrong for a type-checking tool; you want full TS checking on your own source.                       |
-| `@nx/vitest:test`                 | `@nx/vite:test`               | Only on Nx <= 22.1. On Nx 22.2+ / 23 the Vitest executor moved to the dedicated `@nx/vitest` package; `@nx/vite:test` is legacy/migrated-away.   |
-| `@nx/devkit` as `dependency`      | devkit as `peerDependency`    | Effectively never for a plugin. Peer-devkit reintroduces version-skew risk and **disqualifies registry listing**.                                |
-| ESLint flat config                | `.eslintrc.json` (legacy)     | Only when matching an existing legacy workspace. Greenfield Nx 23 = flat config.                                                                 |
-| Conventional-commits `nx release` | Manual/independent versioning | Fine, but conventional commits is the documented norm and automates changelog -- use it.                                                         |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| `@nx/js:tsc` build | `@nx/esbuild` / `@nx/rollup` | Only for a dual-format ESM+CJS *consumable library*. Never for an executor (Nx `require()`s it; bundling fights the multi-file executor layout). |
+| `@nx/js:tsc` (native tsc) | `@nx/js:swc` | swc is faster but **skips type-checking** -- wrong for a type-checking tool; you want full TS checking on your own source. |
+| `@nx/vitest:test` | `@nx/vite:test` | Only on Nx <= 22.1. On Nx 22.2+ / 23 the Vitest executor moved to the dedicated `@nx/vitest` package; `@nx/vite:test` is legacy/migrated-away. |
+| `@nx/devkit` as `dependency` | devkit as `peerDependency` | Effectively never for a plugin. Peer-devkit reintroduces version-skew risk and **disqualifies registry listing**. |
+| ESLint flat config | `.eslintrc.json` (legacy) | Only when matching an existing legacy workspace. Greenfield Nx 23 = flat config. |
+| Conventional-commits `nx release` | Manual/independent versioning | Fine, but conventional commits is the documented norm and automates changelog -- use it. |
 
 ## What NOT to Use
 
-| Avoid                                                                | Why                                                                                                                    | Use Instead                                                                                                 |
-| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `nx` in `dependencies` OR `peerDependencies` of the published plugin | Official recipe forbids it; `@nx/devkit`'s own peer (`>= 22 <= 24                                                      |                                                                                                             | ^23.0.0-0`) already constrains the consumer's `nx`. Declaring it yourself causes double-constraint/skew. | Depend only on `@nx/devkit` (pinned); let its peer carry `nx`. |
-| `@nx/devkit` as a `peerDependency`                                   | `[contradicts PROJECT.md]` Loses the tested-version pin and **fails the Nx registry criteria**.                        | `@nx/devkit` as a pinned `dependency` (`"23.0.1"`).                                                         |
-| `@nx/vite:test` executor on Nx 23                                    | Vitest support moved out to `@nx/vitest` in Nx 22.2 (there is a literal `migrate-vitest-to-vitest-package` migration). | `@nx/vitest:test`.                                                                                          |
-| esbuild/swc to "build the plugin"                                    | swc skips type-checking; esbuild bundles -- both wrong for a `require()`-loaded, multi-file executor.                  | `@nx/js:tsc` -> CommonJS `.js` + `.d.ts`.                                                                   |
-| `type: "module"` / `module` field on the plugin                      | The executor is loaded by `require()`; ESM here breaks the loader.                                                     | `type: "commonjs"`, no `module` field; reach ESM `@angular/compiler-cli` via `await import()`.              |
-| Shipping `.ts` source as `main` / publishing tests                   | Consumers `require()` compiled JS; tests bloat the tarball and can fail dependency-checks.                             | `main: ./src/index.js`, `types: ./src/index.d.ts`, `files` whitelist, test excludes in `tsconfig.lib.json`. |
-| copying nx-verdaccio's `.eslintrc.json` shape verbatim               | That repo is Nx 22-era legacy ESLint config.                                                                           | Nx 23 flat config (`eslint.config.mjs`) emitted by the generator + `@nx/dependency-checks`.                 |
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `nx` in `dependencies` OR `peerDependencies` of the published plugin | Official recipe forbids it; `@nx/devkit`'s own peer (`>= 22 <= 24 || ^23.0.0-0`) already constrains the consumer's `nx`. Declaring it yourself causes double-constraint/skew. | Depend only on `@nx/devkit` (pinned); let its peer carry `nx`. |
+| `@nx/devkit` as a `peerDependency` | `[contradicts PROJECT.md]` Loses the tested-version pin and **fails the Nx registry criteria**. | `@nx/devkit` as a pinned `dependency` (`"23.0.1"`). |
+| `@nx/vite:test` executor on Nx 23 | Vitest support moved out to `@nx/vitest` in Nx 22.2 (there is a literal `migrate-vitest-to-vitest-package` migration). | `@nx/vitest:test`. |
+| esbuild/swc to "build the plugin" | swc skips type-checking; esbuild bundles -- both wrong for a `require()`-loaded, multi-file executor. | `@nx/js:tsc` -> CommonJS `.js` + `.d.ts`. |
+| `type: "module"` / `module` field on the plugin | The executor is loaded by `require()`; ESM here breaks the loader. | `type: "commonjs"`, no `module` field; reach ESM `@angular/compiler-cli` via `await import()`. |
+| Shipping `.ts` source as `main` / publishing tests | Consumers `require()` compiled JS; tests bloat the tarball and can fail dependency-checks. | `main: ./src/index.js`, `types: ./src/index.d.ts`, `files` whitelist, test excludes in `tsconfig.lib.json`. |
+| copying nx-verdaccio's `.eslintrc.json` shape verbatim | That repo is Nx 22-era legacy ESLint config. | Nx 23 flat config (`eslint.config.mjs`) emitted by the generator + `@nx/dependency-checks`. |
 
 ## Stack Patterns by Variant
 
 **If you want registry listing in v0.0.1:**
-
 - You MUST have e2e tests (PROJECT.md already plans them), `@nx/devkit` as a dependency, and `repository.url`. Then open a PR to Nx's `approved-community-plugins.json`. The dependency-classification fix is the only blocker.
 
 **If a later milestone adds generators / `nx add` / `ng add` (deferred per PROJECT.md):**
-
 - Add `generators: "./generators.json"` (+ `schematics` alias for `ng add`) and `ng-update`/`migrations: "./migrations.json"` fields, plus glob those JSON files into build `assets`. None of this in v0.0.1.
 
 **If you adopt `@nx/js:tsc` batch mode for faster CI builds:**
-
 - Requires all built deps to also use `@nx/js:tsc` and `clean: false` (preserves `.tsbuildinfo`). Optional; only worth it once the workspace has several buildable libs.
 
 ## Version Compatibility
 
-| Package                        | Pin / range                           | Notes                                                                                                                      |
-| ------------------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --------------------------- |
-| `nx`                           | `23.0.1` (workspace runtime; latest)  | `[confirms PROJECT.md "Nx 23.x"]` Not declared in the plugin's package.json.                                               |
-| `@nx/devkit` (dependency)      | exact `23.0.1`                        | Its peer `nx: ">= 22 <= 24                                                                                                 |     | ^23.0.0-0"`is WIDER than PROJECT.md's Nx-23-only intent.`[adds]`If you want to *prevent* installs on Nx 22/24, you cannot do it via devkit's peer; document "Nx 23 only" in the README and/or add an`engines`-style note. Pinning devkit to `23.0.1` keeps your own behavior on 23. |
-| `@nx/vitest`                   | `23.0.1`                              | Peer `vitest: "^3.0.0                                                                                                      |     | ^4.0.0"`, `vite: "^5                                                                                                                                                                                                                                                                |     | ^6  |     | ^7  |     | ^8"`, `@nx/eslint: 23.0.1`. |
-| `vitest`                       | `4.1.9` (latest)                      | In `@nx/vitest@23.0.1`'s accepted range.                                                                                   |
-| `typescript` (peer)            | `>=6.0.0 <6.1.0` -> latest `6.0.3`    | `[confirms PROJECT.md]` TS 7 is RC/next; out of scope.                                                                     |
-| `@angular/compiler-cli` (peer) | `^22.0.0` -> latest `22.0.4`          | `[confirms PROJECT.md]` `22.1.0-next.3` on `next`; engine already verified against `22.1.0-next.3` per PROJECT.md context. |
-| Node (consumer `engines`)      | `^22.22.3 \|\| ^24.15.0 \|\| ^26.0.0` | `[confirms PROJECT.md]` Add to `engines` so npm warns on unsupported Node.                                                 |
-| `tslib`                        | `^2.3.0` (latest `2.8.1`)             | Standard runtime dependency with `importHelpers`.                                                                          |
-| `verdaccio`                    | `6.7.4`                               | Latest 6.x; for the tarball/e2e tier.                                                                                      |
+| Package | Pin / range | Notes |
+|---------|-------------|-------|
+| `nx` | `23.0.1` (workspace runtime; latest) | `[confirms PROJECT.md "Nx 23.x"]` Not declared in the plugin's package.json. |
+| `@nx/devkit` (dependency) | exact `23.0.1` | Its peer `nx: ">= 22 <= 24 || ^23.0.0-0"` is WIDER than PROJECT.md's Nx-23-only intent. `[adds]` If you want to *prevent* installs on Nx 22/24, you cannot do it via devkit's peer; document "Nx 23 only" in the README and/or add an `engines`-style note. Pinning devkit to `23.0.1` keeps your own behavior on 23. |
+| `@nx/vitest` | `23.0.1` | Peer `vitest: "^3.0.0 || ^4.0.0"`, `vite: "^5||^6||^7||^8"`, `@nx/eslint: 23.0.1`. |
+| `vitest` | `4.1.9` (latest) | In `@nx/vitest@23.0.1`'s accepted range. |
+| `typescript` (peer) | `>=6.0.0 <6.1.0` -> latest `6.0.3` | `[confirms PROJECT.md]` TS 7 is RC/next; out of scope. |
+| `@angular/compiler-cli` (peer) | `^22.0.0` -> latest `22.0.4` | `[confirms PROJECT.md]` `22.1.0-next.3` on `next`; engine already verified against `22.1.0-next.3` per PROJECT.md context. |
+| Node (consumer `engines`) | `^22.22.3 \|\| ^24.15.0 \|\| ^26.0.0` | `[confirms PROJECT.md]` Add to `engines` so npm warns on unsupported Node. |
+| `tslib` | `^2.3.0` (latest `2.8.1`) | Standard runtime dependency with `importHelpers`. |
+| `verdaccio` | `6.7.4` | Latest 6.x; for the tarball/e2e tier. |
 
 ## Sources
 
@@ -295,6 +288,5 @@ nx g @nx/plugin:executor packages/angular-typechecker/src/executors/angular-type
 - Local clone `D:/projects/github/analogjs/analog` (Angular 22 / Nx 22) -- HIGH: `@analogjs/platform` published package.json (`exports` map, `executors`/`builders`/`generators`/`schematics`/`ng-update` fields, `peerDependenciesMeta`, `publishConfig.provenance`, `keywords`), nx-plugin `@nx/js:tsc` build with executors.json/generators.json assets, Angular 22 tsconfig base (`moduleResolution: bundler`, `ignoreDeprecations: "6.0"`).
 
 ---
-
-_Stack research for: Nx plugin (single executor) authoring + publishing, 2026_
-_Researched: 2026-06-27_
+*Stack research for: Nx plugin (single executor) authoring + publishing, 2026*
+*Researched: 2026-06-27*

@@ -29,7 +29,7 @@ handed the host's `typescript` module instance, so TS is never bundled in (more 
 The public entry is `LanguageService.getSemanticDiagnostics(fileName)`
 (`language_service.ts:129`). It branches on file kind:
 
-- **TypeScript file** (inline templates / decorators): get the source file from the _current_
+- **TypeScript file** (inline templates / decorators): get the source file from the *current*
   program and call the NgCompiler with **single-file optimization**:
   ```ts
   // language_service.ts:133-137
@@ -45,7 +45,6 @@ The public entry is `LanguageService.getSemanticDiagnostics(fileName)`
 `NgCompiler.getDiagnosticsForFile(file, optimizeFor)`
 (`packages\compiler-cli\src\ngtsc\core\src\compiler.ts:616`) is the aggregator. It assembles **three**
 diagnostic families, all filtered to `diag.file === file`:
-
 1. **Non-template** (TS decorator/trait diagnostics) via `getNonTemplateDiagnostics()` (memoized,
    `compiler.ts:1243`).
 2. **Template type-check** via `getTemplateDiagnosticsForFile(file, optimizeFor)` ->
@@ -63,7 +62,7 @@ diagnostic instead of throwing (`compiler.ts:649-670`).
 ### Comparison to our whole-program `performCompilation` + all-getter approach
 
 - The LS calls **`getDiagnosticsForFile(sf, OptimizeFor.SingleFile)`** (or `...ForComponent`) -- it
-  scopes work to _one_ file/component for latency. Our tool wants _everything_, so the analogous
+  scopes work to *one* file/component for latency. Our tool wants *everything*, so the analogous
   public surface for us is the **whole-program** call. Note that `NgtscProgram.getNgSemanticDiagnostics()`
   (`packages\compiler-cli\src\ngtsc\program.ts:238-241`) does exactly the all-or-one split:
   no filename -> `compiler.getDiagnostics()`; with filename -> `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`.
@@ -76,14 +75,13 @@ diagnostic instead of throwing (`compiler.ts:649-670`).
   family unconditionally (subject to the `strictTemplates` gate and the fatal-error try/catch). That
   matches our "run every diagnostic phase unconditionally" design.
 
-## Incremental & per-file type-checking (THE most important section for us)
+## Incremental & per-file type-checking  (THE most important section for us)
 
 This is the concrete recipe for our deferred `--watch`/incremental REP feature. The LS keeps one
-long-lived `CompilerFactory` and rebuilds the `NgCompiler` _incrementally_ from the previous one on
+long-lived `CompilerFactory` and rebuilds the `NgCompiler` *incrementally* from the previous one on
 every request.
 
 ### The driver: `CompilerFactory.getOrCreate()`
-
 `packages\language-service\src\compiler_factory.ts:43`. One factory instance per `LanguageService`,
 holding `private compiler: NgCompiler | null` and a single
 `private readonly incrementalStrategy = new TrackedIncrementalBuildStrategy()` (line 34). On each
@@ -98,7 +96,6 @@ call:
 4. **Otherwise (TS changed)** -> `incrementalFromCompilerTicket(this.compiler, program, incrementalStrategy, programStrategy, modifiedResourceFiles, null)` (`compiler_factory.ts:76-83`).
 
 So the **API recipe** for an incremental step is:
-
 ```
 oldCompiler  (kept across requests)
    + newProgram (from ProgramDriver.getProgram())
@@ -107,7 +104,6 @@ oldCompiler  (kept across requests)
 ```
 
 ### What `incrementalFromCompilerTicket` actually reuses
-
 `packages\compiler-cli\src\ngtsc\core\src\compiler.ts:247`. It pulls the **old program** and the
 **old `IncrementalState`** off the old compiler
 (`oldCompiler.getCurrentProgram()`, `oldCompiler.incrementalStrategy.getIncrementalState(oldProgram)`,
@@ -116,7 +112,6 @@ builds `IncrementalCompilation.incremental(newProgram, versionMap, oldProgram, o
 (lines 275-282).
 
 ### How "affected files" are computed (what makes per-file re-check cheap)
-
 `IncrementalCompilation.incremental(...)` in
 `packages\compiler-cli\src\ngtsc\incremental\src\incremental.ts:111`:
 
@@ -139,7 +134,6 @@ builds `IncrementalCompilation.incremental(newProgram, versionMap, oldProgram, o
    `changedResourceFiles`, and a pointer to the `lastAnalyzedState` (`incremental.ts:220-225`).
 
 ### Per-file reuse at type-check time
-
 `NgCompiler.fromTicket` -> the `TemplateTypeChecker` (`TemplateTypeCheckerImpl` in
 `packages\compiler-cli\src\ngtsc\typecheck\src\checker.ts`) reuses prior TCB results through
 `maybeAdoptPriorResults()` (`checker.ts:948`). For each source file it asks
@@ -151,7 +145,6 @@ prior results relied on inlining** (`incremental.ts:352-372`) -- inline-dependen
 reused because inlines mutate user files.
 
 ### Two key takeaways for our incremental milestone
-
 - The whole machinery is **already public-ish**: `freshCompilationTicket`,
   `incrementalFromCompilerTicket`, `incrementalFromStateTicket`, `resourceChangeTicket`,
   `NgCompiler.fromTicket`, `TrackedIncrementalBuildStrategy`, and `ProgramDriver` are all exported
@@ -170,17 +163,17 @@ reused because inlines mutate user files.
   `typeCheckProgram.getSemanticDiagnostics(shimSf)` on the shim and converting the spans back
   (`checker.ts:685-693`).
 - **`OptimizeFor` controls how much of the program gets TCBs generated before answering**
-  (`packages\compiler-cli\src\ngtsc\typecheck\api\checker.ts:388-407`). It optimizes _TCB-generation
-  breadth_, not the diagnostic algorithm:
+  (`packages\compiler-cli\src\ngtsc\typecheck\api\checker.ts:388-407`). It optimizes *TCB-generation
+  breadth*, not the diagnostic algorithm:
   - `OptimizeFor.SingleFile` -> `ensureAllShimsForOneFile(sf)` (only that file's shim)
     (`checker.ts:664-665`, `1011`).
   - `OptimizeFor.WholeProgram` -> `ensureAllShimsForAllFiles()` (every non-shim, non-`.d.ts` file)
     (`checker.ts:661-662`, `980`).
-    The enum's own doc: SingleFile "wants results as fast as possible" but "successively for multiple
-    files ... can result in significant unnecessary overhead"; WholeProgram "initial calls may take
-    longer, but repeated calls ... will be significantly faster" (`api/checker.ts:388-406`). **This is
-    the single most important knob for a batch checker: a whole-program checker should pass
-    `OptimizeFor.WholeProgram` once, NOT loop files with `SingleFile`.**
+  The enum's own doc: SingleFile "wants results as fast as possible" but "successively for multiple
+  files ... can result in significant unnecessary overhead"; WholeProgram "initial calls may take
+  longer, but repeated calls ... will be significantly faster" (`api/checker.ts:388-406`). **This is
+  the single most important knob for a batch checker: a whole-program checker should pass
+  `OptimizeFor.WholeProgram` once, NOT loop files with `SingleFile`.**
 - **Laziness:** `NgCompiler` does no work until an output method is called; the analysis state is
   built on demand by `ensureAnalyzed()` (`compiler.ts:357,367`). Shim generation is lazy and
   guarded by `FileTypeCheckingData.isComplete` flags (`checker.ts:997-1003`, `1018-1021`,
@@ -201,7 +194,6 @@ reused because inlines mutate user files.
 ## Integration & diagnostic-span mapping
 
 ### Plugin / project-system wiring
-
 - **`plugin-factory.ts`** exports the `ts.server.PluginModuleFactory` that `require`s the rollup
   bundle and calls `initialize(mod)`.
 - **`src\ts_plugin.ts`** is the real plugin body. `initialize(mod)` returns
@@ -230,9 +222,7 @@ reused because inlines mutate user files.
   equivalent adapter, but a simpler one (no editor `ScriptInfo` tracking).
 
 ### Diagnostic span mapping (template diagnostics -> original source)
-
 Diagnostics are first produced against the **TCB shim** source file, then mapped back:
-
 - `getDiagnosticsForFile` calls `convertDiagnostic(diag, fileRecord.sourceManager)` on each shim
   diagnostic (`checker.ts:687-692`).
 - Mapping uses `getSourceMapping(shimSf, positionInFile, sourceManager, isDiagnosticsRequest)`
@@ -255,7 +245,7 @@ Diagnostics are first produced against the **TCB shim** source file, then mapped
 - **It ships a single rollup bundle** `bundles/language-service.js` with a custom AMD-to-CJS header
   (`bundles\rollup.config.js:16-45`) that **externalizes `typescript`** (and `os/fs/path`) and
   receives the host's TS instance at call time: `module.exports = function(provided){ const ts =
-provided['typescript']; ... }`. This is the canonical pattern for "do not bundle TS; use the
+  provided['typescript']; ... }`. This is the canonical pattern for "do not bundle TS; use the
   caller's TS version." `index.ts`/`index.d.ts` just re-export the factory (`index.d.ts:9-13`).
 - **`api.ts`** is the stable public surface (the `NgLanguageService` interface, `PluginConfig`,
   `GetTcbResponse`, etc.); **`private.ts`** is a separate "private but exported for the LSP server"
@@ -274,15 +264,15 @@ provided['typescript']; ... }`. This is the canonical pattern for "do not bundle
    `SingleFile`.** The enum doc and the `getLatestComponentState`/`getDiagnosticsForFile` switch
    (`typecheck\api\checker.ts:388-406`; `typecheck\src\checker.ts:659-667`) prove `SingleFile` in a
    loop generates per-file TCB shims repeatedly ("significant unnecessary overhead"). If we ever
-   expose a per-file mode, still call the whole-program shim-generation first. _Pattern to reuse:_
+   expose a per-file mode, still call the whole-program shim-generation first. *Pattern to reuse:*
    `NgCompiler.getDiagnostics()` (whole program) or `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`
    per file after a single `ensureAllShimsForAllFiles()`.
 
 2. **[REP] The incremental `--watch` recipe is a public-from-compiler-cli ticket dance, not
    `performCompilation`.** Keep one long-lived `NgCompiler` + one `TrackedIncrementalBuildStrategy`
    across runs; on each change build `incrementalFromCompilerTicket(oldCompiler, newProgram, strategy,
-driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
-   (`language-service\src\compiler_factory.ts:43-87`). _APIs to reuse (all from `@angular/compiler-cli`):_
+   driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
+   (`language-service\src\compiler_factory.ts:43-87`). *APIs to reuse (all from `@angular/compiler-cli`):*
    `freshCompilationTicket`, `incrementalFromCompilerTicket`, `resourceChangeTicket`,
    `NgCompiler.fromTicket`, `TrackedIncrementalBuildStrategy`, `ProgramDriver`. **Version-fragile:**
    these are `ngtsc` internals, not in `@angular/language-service/api`; pin behavior to a known
@@ -292,7 +282,7 @@ driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
    computation + per-file `FileTypeCheckingData.isComplete` reuse.** A file is rechecked only if it,
    a TS dependency, or a resource dependency changed (`incremental\src\dependency_tracking.ts:111-145`);
    otherwise its prior TCB results are adopted wholesale (`typecheck\src\checker.ts:948-978`,
-   `PerfEvent.ReuseTypeCheckFile`). _What we could do:_ for `--watch`, feed an accurate
+   `PerfEvent.ReuseTypeCheckFile`). *What we could do:* for `--watch`, feed an accurate
    `ProgramDriver.getSourceFileVersion` and trust the dep graph instead of hand-rolling invalidation.
    **Caveat to encode:** any `.d.ts` change forces a full fresh build (`incremental.ts:188-190`), and
    inline-dependent results are never reused (`incremental.ts:369-371`).
@@ -300,7 +290,7 @@ driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
 4. **[REP] Wrap every TCB-producing call in an `isFatalDiagnosticError` try/catch.** `NgCompiler`
    does this in `getDiagnostics`, `getDiagnosticsForFile`, and `getDiagnosticsForComponent`
    (`core\src\compiler.ts:594-606`, `626-636`, `649-670`) so an ungeneratable TCB yields one
-   diagnostic rather than crashing the run. _Pattern to reuse:_ mirror this so our batch run never
+   diagnostic rather than crashing the run. *Pattern to reuse:* mirror this so our batch run never
    aborts on a single poisoned component. `isFatalDiagnosticError` is exported from
    `@angular/compiler-cli` (the LS imports it: `language_service.ts:18`).
 
@@ -317,7 +307,7 @@ driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
 6. **[REP/SUR] Resource-only (template/style) changes have a dedicated cheap path -
    `resourceChangeTicket` + `invalidateClass`** (`compiler_factory.ts:50-54`;
    `core\src\compiler.ts:539-574`). In `--watch`, detect "only `.html`/`.css` changed, program
-   identity unchanged" and take this path instead of a full incremental TS step. _APIs to reuse:_
+   identity unchanged" and take this path instead of a full incremental TS step. *APIs to reuse:*
    `resourceChangeTicket`, `NgCompilerAdapter.getModifiedResourceFiles` (track resource versions like
    `LanguageServiceAdapter`, `adapters.ts:144-152`).
 
@@ -338,8 +328,8 @@ driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
 
 9. **[REP] `strictTemplates` gates the extended/NG8xxx checks.** `runAdditionalChecks` and
    `getDiagnosticsForComponent` only run `extendedTemplateChecker` when `this.strictTemplates`
-   (`core\src\compiler.ts:662`, `1281`). The LS even emits a _suggestion_ diagnostic telling users to
-   enable `strictTemplates` for full features (`language_service.ts:902-913`). _What we could do:_
+   (`core\src\compiler.ts:662`, `1281`). The LS even emits a *suggestion* diagnostic telling users to
+   enable `strictTemplates` for full features (`language_service.ts:902-913`). *What we could do:*
    surface the same hint (or hard-require `strictTemplates`) in our reporter so users understand why
    NG8xxx diagnostics are absent when it's off. Our "complete diagnostic set" promise is only
    delivered when `strictTemplates: true`.
@@ -365,7 +355,7 @@ driver, modifiedResources, null)` then `NgCompiler.fromTicket(ticket, adapter)`
   `supportsInlineOperations: true` (the LS uses `false` + `CopySourceToTcb`). Our current
   `performCompilation` path hides the driver choice; the incremental path forces us to pick one.
 - **Verify the `OptimizeFor.WholeProgram` perf claim holds for a one-shot batch run** (no second
-  query). The optimization pays off on _repeated_ whole-program queries; for a single batch pass the
+  query). The optimization pays off on *repeated* whole-program queries; for a single batch pass the
   cost of `ensureAllShimsForAllFiles()` is unavoidable either way, so confirm there's no penalty vs
   our current `performCompilation` aggregation.
 - **`.d.ts`-change -> full-fresh-rebuild rule** (`incremental.ts:188-190`): confirm this still holds

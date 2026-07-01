@@ -73,11 +73,11 @@ function getDiagnosticsForSourceFile(sourceFile, disableTypeChecking, program, a
   const syntacticDiagnostics = program.getSyntacticDiagnostics(sourceFile);
   if (disableTypeChecking) {
     // Syntax errors are cheap ... always show these regardless
-    return syntacticDiagnostics; // <-- DEFAULT: syntactic only
+    return syntacticDiagnostics;                       // <-- DEFAULT: syntactic only
   }
   const semanticDiagnostics = program.getSemanticDiagnostics(sourceFile);
   const angularDiagnostics = angularCompiler
-    ? angularCompiler.getDiagnosticsForFile(sourceFile, 1) // Angular template diagnostics
+    ? angularCompiler.getDiagnosticsForFile(sourceFile, 1)   // Angular template diagnostics
     : [];
   return [...syntacticDiagnostics, ...semanticDiagnostics, ...angularDiagnostics];
 }
@@ -105,7 +105,6 @@ This is the load-bearing finding -- the literal integration point angular-typech
 `packages/vite-plugin-angular/README.md:53-71`:
 
 > ## Fast Compile Mode
->
 > `fastCompile` opts the plugin into a single-pass compilation path that emits Ivy
 > instructions directly and skips Angular's template type-checking. ...
 >
@@ -153,7 +152,7 @@ not re-resolving the program on every invocation.
 
 ---
 
-## storybook-angular & \*.stories.ts type-check
+## storybook-angular & *.stories.ts type-check
 
 ### How stories are built/compiled
 
@@ -173,7 +172,6 @@ angular({
 ```
 
 Key facts:
-
 - **Stories compile in JIT mode by default** (`jit` defaults to `true`, preset.ts:102-105).
   In the fastCompile plugin's JIT branch (`fast-compile-plugin.ts:165-166, 401-437`) there
   is NO registry scan and NO type-check -- `jitTransform` only rewrites decorators and
@@ -191,7 +189,6 @@ Key facts:
 ### What type-checking `*.stories.ts` with our tool would require (deferred SUR)
 
 A Storybook story type-check (the deferred SUR feature) needs:
-
 1. **A tsconfig whose `include` covers `*.stories.ts`** -- in practice
    `.storybook/tsconfig.json` (or a dedicated `tsconfig.storybook.json`) that extends the
    project tsconfig and adds the stories glob. The user already has this for Storybook to
@@ -222,17 +219,17 @@ components"), cold production builds ("the kind CI runs"). Quotes are verbatim.
 
 ### The four pipelines and their times
 
-| Pipeline                                                                                | Type-checks? | Build time | Notes                                  |
-| --------------------------------------------------------------------------------------- | ------------ | ---------- | -------------------------------------- |
-| Webpack + `@ngtools/webpack` (whole-program AOT, legacy)                                | Yes          | **~49s**   | Deprecated as of Angular v22           |
-| `@angular/build:application` (whole-program AOT, esbuild -- modern default, `ng build`) | Yes          | **~36s**   | Same `ngtsc`; only the bundler changed |
-| AnalogJS `fastCompile` (per-file transpile)                                             | **No**       | **~14.5s** | Vite/rolldown bundler                  |
-| Oxc Angular Compiler (experimental, Rust, per-file transpile)                           | **No**       | **~7.7s**  | Research project, not a roadmap item   |
+| Pipeline | Type-checks? | Build time | Notes |
+| --- | --- | --- | --- |
+| Webpack + `@ngtools/webpack` (whole-program AOT, legacy) | Yes | **~49s** | Deprecated as of Angular v22 |
+| `@angular/build:application` (whole-program AOT, esbuild -- modern default, `ng build`) | Yes | **~36s** | Same `ngtsc`; only the bundler changed |
+| AnalogJS `fastCompile` (per-file transpile) | **No** | **~14.5s** | Vite/rolldown bundler |
+| Oxc Angular Compiler (experimental, Rust, per-file transpile) | **No** | **~7.7s** | Research project, not a roadmap item |
 
 The isolated type-check reference point:
 
 > "The dashed bar is the reference point: type-checking the app on its own -- **`ngc
---noEmit` with `strictTemplates`, no codegen, no bundling -- takes about 15 seconds**, as
+> --noEmit` with `strictTemplates`, no codegen, no bundling -- takes about 15 seconds**, as
 > long as an entire per-file build."
 
 > "`ngc --noEmit` puts a number on it: the whole-program type-check alone is **~15s** --
@@ -249,7 +246,6 @@ The isolated type-check reference point:
 
 **PROJECT.md's figures HOLD and are accurate.** PROJECT.md cites "~15s standalone `ngc
 --noEmit` vs ~36s full esbuild build." The article gives:
-
 - standalone `ngc --noEmit` with `strictTemplates`: **~15s** -> matches PROJECT.md's ~15s.
 - full esbuild application builder build: **~36s** -> matches PROJECT.md's ~36s.
 
@@ -264,7 +260,7 @@ quote these refinements verbatim.
 - The article does NOT name a specific tool; it establishes the PRINCIPLE: the fast
   per-file compilers "skip the check entirely" and "it's why you still run the type-check,
   just elsewhere." The editor's Language Service covers the live loop; CI runs `ngc
---noEmit`.
+  --noEmit`.
 - "That's the same analysis your editor runs as you type and your CI runs on every push;
   `ngc --noEmit` does it standalone in ~15s."
 - Forward-looking: TypeScript 7 (Go port, "~10x speedup") could eventually make Angular's
@@ -314,7 +310,7 @@ quote these refinements verbatim.
 
 6. **[docs-recipe -- Analog/Vite non-Nx] Standalone-CLI wiring (deferred SUR).** A non-Nx
    AnalogJS/Vite user today writes `"build": "ngc -p tsconfig.app.json --noEmit && vite
-build"`. Our deferred standalone CLI should mirror exactly that ergonomic:
+   build"`. Our deferred standalone CLI should mirror exactly that ergonomic:
    `angular-typecheck -p tsconfig.app.json` as the `&&`-gate before `vite build`. The CLI's
    minimum viable surface is "take a `-p <tsconfig>`, run the complete diagnostic set, exit
    non-zero on error" -- a direct `ngc --noEmit` analog. This is the simplest possible
@@ -323,7 +319,7 @@ build"`. Our deferred standalone CLI should mirror exactly that ergonomic:
 7. **[docs-recipe -- Nx + Analog] Nx user wiring.** An Nx + Analog user replaces the shell
    `ngc --noEmit` gate with an Nx target: add `angular-typecheck` executor target to the
    project, and make the app's `build` (or a CI `check`) target `dependsOn:
-["angular-typecheck"]`. Because Analog projects on Nx use `@nx/vite`/Vite builders that
+   ["angular-typecheck"]`. Because Analog projects on Nx use `@nx/vite`/Vite builders that
    skip the type-check, the Nx-cached `angular-typecheck` target becomes the canonical
    "elsewhere" -- and unlike the shell `&&`, it's cached and graph-aware. Document this as
    the flagship recipe.

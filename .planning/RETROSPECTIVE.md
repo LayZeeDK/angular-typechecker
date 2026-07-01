@@ -1,6 +1,6 @@
 # Project Retrospective
 
-_A living document updated after each milestone. Lessons feed forward into future planning._
+*A living document updated after each milestone. Lessons feed forward into future planning.*
 
 ## Milestone: v0.0.1 -- Complete Angular type-check, decoupled from build/test
 
@@ -102,17 +102,17 @@ _A living document updated after each milestone. Lessons feed forward into futur
 
 ### Process Evolution
 
-| Milestone | Phases | Plans | Key Change                                                                                 |
-| --------- | ------ | ----- | ------------------------------------------------------------------------------------------ |
-| v0.0.1    | 8      | 29    | Baseline: gated spike, engine-before-Nx, vertical MVP, Release-PR flow with PR-only `main` |
+| Milestone | Phases | Plans | Key Change |
+|-----------|--------|-------|------------|
+| v0.0.1 | 8 | 29 | Baseline: gated spike, engine-before-Nx, vertical MVP, Release-PR flow with PR-only `main` |
 
 ### Cumulative Quality
 
-| Milestone | Package source LOC      | Project types validated | Live npm publishes |
-| --------- | ----------------------- | ----------------------- | ------------------ |
-| v0.0.1    | ~1,162 (33 `.ts` files) | 5/5                     | 2 (0.0.1, 0.0.2)   |
+| Milestone | Package source LOC | Project types validated | Live npm publishes |
+|-----------|--------------------|-------------------------|--------------------|
+| v0.0.1 | ~1,162 (33 `.ts` files) | 5/5 | 2 (0.0.1, 0.0.2) |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. _(established this milestone)_ Assert built/packed artifacts, not source.
-2. _(established this milestone)_ Close requirement statuses at phase verification, not at milestone audit.
+1. *(established this milestone)* Assert built/packed artifacts, not source.
+2. *(established this milestone)* Close requirement statuses at phase verification, not at milestone audit.

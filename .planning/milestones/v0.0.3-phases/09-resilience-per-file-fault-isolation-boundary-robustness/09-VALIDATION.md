@@ -19,13 +19,13 @@ audited: 2026-06-29
 
 ## Test Infrastructure
 
-| Property               | Value                                                                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Framework**          | Vitest 4.x via `@nx/vitest:test` (`environment: jsdom`, `globals: true`)                                               |
-| **Config file**        | `packages/angular-typechecker/vitest.config.mts` (`testTimeout`/`hookTimeout` already 30000ms for cold-compiler specs) |
-| **Quick run command**  | `npx nx test angular-typechecker -- <file>` (single spec)                                                              |
-| **Full suite command** | `npx nx test angular-typechecker` (target `dependsOn: ["build"]`)                                                      |
-| **Estimated runtime**  | unit specs: seconds; cold-compiler integration specs: ~tens of seconds each                                            |
+| Property | Value |
+|----------|-------|
+| **Framework** | Vitest 4.x via `@nx/vitest:test` (`environment: jsdom`, `globals: true`) |
+| **Config file** | `packages/angular-typechecker/vitest.config.mts` (`testTimeout`/`hookTimeout` already 30000ms for cold-compiler specs) |
+| **Quick run command** | `npx nx test angular-typechecker -- <file>` (single spec) |
+| **Full suite command** | `npx nx test angular-typechecker` (target `dependsOn: ["build"]`) |
+| **Estimated runtime** | unit specs: seconds; cold-compiler integration specs: ~tens of seconds each |
 
 ---
 
@@ -42,16 +42,16 @@ audited: 2026-06-29
 
 > Reconciled to as-shipped after execution (`/gsd:validate-phase`). Gate ordering (RES-01 before RES-02) was enforced by plan wave order (09-02 `depends_on` 09-01). Full suite: 143 tests / 24 files green; build + lint clean.
 
-| Req                  | Plan  | Wave | Threat Ref | Secure Behavior                                                                                                                                                        | Test Type                                                               | Automated Command                                                                                          | Status   |
-| -------------------- | ----- | ---- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------- |
-| RES-01 (GATE)        | 09-01 | 1    | T-09-01    | GO decision (HYBRID) recorded before any isolation code                                                                                                                | spike artifact (GO recorded; throwaway probe removed post-spike, IN-04) | artifact `09-RES-01-SPIKE.md` (GO=HYBRID); verified by gsd-verifier                                        | ✅ green |
-| RES-02               | 09-02 | 2    | T-09-01    | A TCB-gen `FatalDiagnosticError` yields exactly one diagnostic, no whole-run 500 collapse; survivors' TS + non-template diagnostics still reported (reframed contract) | integration (real compiler, multi-file fixture) + unit                  | `npx nx test angular-typechecker -- fault-isolation.integration.spec.ts` + `-- gather-diagnostics.spec.ts` | ✅ green |
-| RES-02 (loud notice) | 09-05 | 3    | T-09-05    | TCB-gen Fatal surfaces a loud executor notice naming the source file; never silent                                                                                     | unit (pure detection) + integration + executor                          | `-- run-typecheck.spec.ts` + `-- fault-isolation.integration.spec.ts` + `-- executor.spec.ts`              | ✅ green |
-| RES-03               | 09-03 | 1    | T-09-02    | A throwing `realpath()` is caught; in-project diagnostics still kept; pass does not abort                                                                              | unit (pure, injected throwing realpath stub)                            | `npx nx test angular-typechecker -- filter-diagnostics.spec.ts`                                            | ✅ green |
-| RES-04               | 09-04 | 1    | T-09-03    | `suppressOutputPathCheck: true` passed to `readConfiguration`; no output-path nuisance diagnostic surfaces; safe under `noEmit:true`                                   | unit (`readConfiguration` spy) + integration (no-nuisance assertion)    | `-- infra-failure.spec.ts` + `-- suppress-output-path.integration.spec.ts`                                 | ✅ green |
+| Req | Plan | Wave | Threat Ref | Secure Behavior | Test Type | Automated Command | Status |
+|-----|------|------|------------|-----------------|-----------|-------------------|--------|
+| RES-01 (GATE) | 09-01 | 1 | T-09-01 | GO decision (HYBRID) recorded before any isolation code | spike artifact (GO recorded; throwaway probe removed post-spike, IN-04) | artifact `09-RES-01-SPIKE.md` (GO=HYBRID); verified by gsd-verifier | ✅ green |
+| RES-02 | 09-02 | 2 | T-09-01 | A TCB-gen `FatalDiagnosticError` yields exactly one diagnostic, no whole-run 500 collapse; survivors' TS + non-template diagnostics still reported (reframed contract) | integration (real compiler, multi-file fixture) + unit | `npx nx test angular-typechecker -- fault-isolation.integration.spec.ts` + `-- gather-diagnostics.spec.ts` | ✅ green |
+| RES-02 (loud notice) | 09-05 | 3 | T-09-05 | TCB-gen Fatal surfaces a loud executor notice naming the source file; never silent | unit (pure detection) + integration + executor | `-- run-typecheck.spec.ts` + `-- fault-isolation.integration.spec.ts` + `-- executor.spec.ts` | ✅ green |
+| RES-03 | 09-03 | 1 | T-09-02 | A throwing `realpath()` is caught; in-project diagnostics still kept; pass does not abort | unit (pure, injected throwing realpath stub) | `npx nx test angular-typechecker -- filter-diagnostics.spec.ts` | ✅ green |
+| RES-04 | 09-04 | 1 | T-09-03 | `suppressOutputPathCheck: true` passed to `readConfiguration`; no output-path nuisance diagnostic surfaces; safe under `noEmit:true` | unit (`readConfiguration` spy) + integration (no-nuisance assertion) | `-- infra-failure.spec.ts` + `-- suppress-output-path.integration.spec.ts` | ✅ green |
 
-_Status: pending · ✅ green · red · flaky_
-_Deferred (REP-RES-02b, NgtscProgram milestone): faithful recovery of survivors' TEMPLATE diagnostics after a TCB-gen Fatal -- intentionally NOT covered here (mechanically unachievable on the locked surface; see `09-RES-02-DECISION.md`)._
+*Status: pending · ✅ green · red · flaky*
+*Deferred (REP-RES-02b, NgtscProgram milestone): faithful recovery of survivors' TEMPLATE diagnostics after a TCB-gen Fatal -- intentionally NOT covered here (mechanically unachievable on the locked surface; see `09-RES-02-DECISION.md`).*
 
 ---
 
@@ -65,17 +65,17 @@ _Deferred (REP-RES-02b, NgtscProgram milestone): faithful recovery of survivors'
 - [x] `run-typecheck.spec.ts` + `executor.spec.ts` -- the loud-notice detection + render (09-05).
 - [x] Framework install: none -- Vitest infrastructure existed.
 
-_Existing test infrastructure (the `runTypecheck`-against-workspace-root-`fixtures/` idiom + the pure `filterDiagnostics`-with-injected-realpath idiom + the raised cold-compiler timeout) covers all four requirements with NO new harness._
+*Existing test infrastructure (the `runTypecheck`-against-workspace-root-`fixtures/` idiom + the pure `filterDiagnostics`-with-injected-realpath idiom + the raised cold-compiler timeout) covers all four requirements with NO new harness.*
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior                   | Requirement | Why Manual                                                                                                                                                                                                     | Test Instructions                                                                                                                                |
-| -------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| RES-01 GO decision quality | RES-01      | The spike's empirical judgement (did it POSITIVELY enumerate every non-template diagnostic as file-bearing-and-matched, or default to HYBRID?) is a human/agent-reviewable artifact, not a permanent assertion | Read the recorded GO artifact: confirm it states SIMPLE only with positive proof, else HYBRID; verify the v22.0.4 citations and the fixture used |
+| Behavior | Requirement | Why Manual | Test Instructions |
+|----------|-------------|------------|-------------------|
+| RES-01 GO decision quality | RES-01 | The spike's empirical judgement (did it POSITIVELY enumerate every non-template diagnostic as file-bearing-and-matched, or default to HYBRID?) is a human/agent-reviewable artifact, not a permanent assertion | Read the recorded GO artifact: confirm it states SIMPLE only with positive proof, else HYBRID; verify the v22.0.4 citations and the fixture used |
 
-_All other phase behaviors have automated verification._
+*All other phase behaviors have automated verification.*
 
 ---
 
@@ -94,12 +94,12 @@ _All other phase behaviors have automated verification._
 
 ## Validation Audit 2026-06-29
 
-| Metric                       | Count                                    |
-| ---------------------------- | ---------------------------------------- |
-| Requirements audited         | 4 (RES-01..04) + the loud notice (09-05) |
-| Covered (automated/artifact) | 5                                        |
-| Partial                      | 0                                        |
-| Missing                      | 0                                        |
-| Tests generated this audit   | 0 (existing suite covers all SCs)        |
+| Metric | Count |
+|--------|-------|
+| Requirements audited | 4 (RES-01..04) + the loud notice (09-05) |
+| Covered (automated/artifact) | 5 |
+| Partial | 0 |
+| Missing | 0 |
+| Tests generated this audit | 0 (existing suite covers all SCs) |
 
 State-A audit: no MISSING gaps -- the as-shipped suite (143 tests / 24 files, green; build + lint clean) covers every success criterion. The only deferred behavior (survivors' TEMPLATE diagnostics after a TCB-gen Fatal) is REP-RES-02b, intentionally out of scope (see `09-RES-02-DECISION.md`); recorded as a known limitation, not a coverage gap. `nyquist_compliant: true`.

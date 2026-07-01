@@ -70,8 +70,7 @@ function isUnderDir(file, dir) {
   return file.startsWith(d);
 }
 function filterDiagnostics(diagnostics, options) {
-  if (options.includeDeps)
-    return { kept: [...diagnostics], suppressedCount: 0 };
+  if (options.includeDeps) return { kept: [...diagnostics], suppressedCount: 0 };
   const canon = createCanonicalizer(options);
   const base = canon(options.basePath);
   const kept = [];
@@ -132,9 +131,7 @@ function isInProjectReference(leafConfigPath, projectDir) {
   return cf !== undefined && base !== undefined && isUnderDir(cf, base);
 }
 function readAndCompile(tsConfigPath) {
-  const parsed = ng.readConfiguration(tsConfigPath, {
-    suppressOutputPathCheck: true,
-  });
+  const parsed = ng.readConfiguration(tsConfigPath, { suppressOutputPathCheck: true });
   if (parsed.rootNames.length === 0) {
     return { rootNames: 0, raw: [...parsed.errors] };
   }
@@ -144,10 +141,7 @@ function readAndCompile(tsConfigPath) {
     emitFlags: 0,
     gatherDiagnostics: gatherAllDiagnostics,
   });
-  return {
-    rootNames: parsed.rootNames.length,
-    raw: [...parsed.errors, ...result.diagnostics],
-  };
+  return { rootNames: parsed.rootNames.length, raw: [...parsed.errors, ...result.diagnostics] };
 }
 function finalize(rawUnion, basePath) {
   const filtered = filterDiagnostics(rawUnion, {
@@ -157,9 +151,7 @@ function finalize(rawUnion, basePath) {
     realpath: (p) => ts.sys.realpath?.(p) ?? p,
   });
   const reported = ts.sortAndDeduplicateDiagnostics(filtered.kept);
-  const errorCount = reported.filter(
-    (d) => d.category === ts.DiagnosticCategory.Error,
-  ).length;
+  const errorCount = reported.filter((d) => d.category === ts.DiagnosticCategory.Error).length;
   return { reported, errorCount };
 }
 function synthesize(messageText) {
@@ -175,21 +167,14 @@ function synthesize(messageText) {
 
 // ---- THE SURGICAL SPLIT ----
 function runWithSplit(entryTsConfig) {
-  const parsed = ng.readConfiguration(entryTsConfig, {
-    suppressOutputPathCheck: true,
-  });
+  const parsed = ng.readConfiguration(entryTsConfig, { suppressOutputPathCheck: true });
   const projectDir = dirname(entryTsConfig);
 
   // Untouched normal path: a leaf with input files compiles directly.
   if (parsed.rootNames.length > 0) {
     const { raw } = readAndCompile(entryTsConfig);
     const { reported, errorCount } = finalize(raw, projectDir);
-    return {
-      mode: 'compile-direct',
-      rootNamesCount: parsed.rootNames.length,
-      reported,
-      errorCount,
-    };
+    return { mode: 'compile-direct', rootNamesCount: parsed.rootNames.length, reported, errorCount };
   }
 
   // rootNames === 0 -> the D-03a split.
@@ -201,18 +186,11 @@ function runWithSplit(entryTsConfig) {
         'Point the tsConfig option at a leaf tsconfig that includes source files, e.g. ' +
         'tsconfig.app.json, tsconfig.lib.json, or tsconfig.spec.json.',
     );
-    return {
-      mode: 'guard-error:empty-project',
-      rootNamesCount: 0,
-      reported: [guard],
-      errorCount: 1,
-    };
+    return { mode: 'guard-error:empty-project', rootNamesCount: 0, reported: [guard], errorCount: 1 };
   }
 
   const resolved = references.map((r) => resolveReferenceToConfigFile(r.path));
-  const inProject = resolved.filter((leaf) =>
-    isInProjectReference(leaf, projectDir),
-  );
+  const inProject = resolved.filter((leaf) => isInProjectReference(leaf, projectDir));
 
   if (inProject.length === 0) {
     const guard = synthesize(
@@ -234,21 +212,13 @@ function runWithSplit(entryTsConfig) {
   const rawUnion = perLeaf.flatMap((l) => l.raw);
   const { reported, errorCount } = finalize(rawUnion, projectDir);
   const rootNamesCount = perLeaf.reduce((n, l) => n + l.rootNames, 0);
-  return {
-    mode: 'walk',
-    rootNamesCount,
-    reported,
-    errorCount,
-    walkedLeaves: inProject.length,
-  };
+  return { mode: 'walk', rootNamesCount, reported, errorCount, walkedLeaves: inProject.length };
 }
 
 // The SHIPPED guard: always errors when rootNames === 0 (no split). Used to show the regression
 // the rewrite fixes for the with-refs case.
 function currentEngineMode(entryTsConfig) {
-  const parsed = ng.readConfiguration(entryTsConfig, {
-    suppressOutputPathCheck: true,
-  });
+  const parsed = ng.readConfiguration(entryTsConfig, { suppressOutputPathCheck: true });
   return parsed.rootNames.length === 0 ? 'guard-error' : 'compile-direct';
 }
 
@@ -275,9 +245,7 @@ const rOop = runWithSplit(oopRefs);
 const rEmpty = runWithSplit(empty);
 const rDirect = runWithSplit(directLeaf);
 
-const noTs18003 = [rWith, rOop, rEmpty, rDirect].every(
-  (r) => !codes(r.reported).includes(18003),
-);
+const noTs18003 = [rWith, rOop, rEmpty, rDirect].every((r) => !codes(r.reported).includes(18003));
 
 const assertions = [
   {
@@ -292,8 +260,7 @@ const assertions = [
   {
     id: 'S1b-with-refs-was-guard-error-in-shipped-engine',
     pass: currentEngineMode(withRefs) === 'guard-error',
-    detail:
-      'the SHIPPED engine returns guard-error here -> this is the config-resolution.integration.spec.ts:124-130 rewrite',
+    detail: 'the SHIPPED engine returns guard-error here -> this is the config-resolution.integration.spec.ts:124-130 rewrite',
   },
   {
     id: 'S2-oop-refs-still-errors',
@@ -305,8 +272,7 @@ const assertions = [
   },
   {
     id: 'S3-empty-still-errors',
-    pass:
-      rEmpty.mode === 'guard-error:empty-project' && rEmpty.errorCount === 1,
+    pass: rEmpty.mode === 'guard-error:empty-project' && rEmpty.errorCount === 1,
     detail: `mode=${rEmpty.mode} err=${rEmpty.errorCount} (unchanged D-03a behavior)`,
   },
   {
@@ -320,8 +286,7 @@ const assertions = [
   {
     id: 'S5-no-branch-gates-on-ts18003',
     pass: noTs18003,
-    detail:
-      'D-03a / L-2 preserved: no branch depends on TS18003 (references-suppressed "No inputs")',
+    detail: 'D-03a / L-2 preserved: no branch depends on TS18003 (references-suppressed "No inputs")',
   },
 ];
 const allPass = assertions.every((a) => a.pass);
@@ -359,24 +324,16 @@ const forensic = {
   verdict: allPass ? 'VALIDATED' : 'FAILED',
 };
 
-writeFileSync(
-  join(here, 'forensic-log.json'),
-  JSON.stringify(forensic, null, 2),
-);
+writeFileSync(join(here, 'forensic-log.json'), JSON.stringify(forensic, null, 2));
 
 console.log('=== Spike 004: D-03a surgical split ===');
 console.log(`env: node ${process.version} | ts ${ts.version}`);
 for (const [name, r] of Object.entries(forensic.scenarios)) {
-  console.log(
-    `  ${name}\n     -> mode=${r.mode} rootNames=${r.rootNamesCount} err=${r.errorCount} codes=${JSON.stringify(r.codes)}`,
-  );
+  console.log(`  ${name}\n     -> mode=${r.mode} rootNames=${r.rootNamesCount} err=${r.errorCount} codes=${JSON.stringify(r.codes)}`);
 }
-console.log(
-  `  shipped engine on with-refs: ${forensic.shippedEngineOnWithRefs} (the regression the rewrite addresses)`,
-);
+console.log(`  shipped engine on with-refs: ${forensic.shippedEngineOnWithRefs} (the regression the rewrite addresses)`);
 console.log('--- assertions ---');
-for (const a of assertions)
-  console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
+for (const a of assertions) console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
 console.log(`\nVERDICT: ${forensic.verdict}`);
 
 process.exit(allPass ? 0 : 1);

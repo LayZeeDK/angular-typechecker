@@ -1,15 +1,15 @@
 ---
 phase: 13
-phase_name: 'engine-solution-tsconfig-reference-walking'
-project: 'angular-typechecker'
-generated: '2026-07-01'
+phase_name: "engine-solution-tsconfig-reference-walking"
+project: "angular-typechecker"
+generated: "2026-07-01"
 counts:
   decisions: 5
   lessons: 6
   patterns: 6
   surprises: 4
 missing_artifacts:
-  - 'UAT.md'
+  - "UAT.md"
 ---
 
 # Phase 13 Learnings: engine-solution-tsconfig-reference-walking
@@ -17,7 +17,6 @@ missing_artifacts:
 ## Decisions
 
 ### Export the two path helpers rather than extract a new module
-
 Made `createCanonicalizer` and `isUnderDir` `export`ed from `filter-diagnostics.ts` (two
 `export` keywords, bodies byte-unchanged) instead of extracting a new `path-canonicalize.ts`.
 `isNodeModulesPath` stayed private.
@@ -27,7 +26,6 @@ duplicate canonicalizer (RESEARCH Open Question 1 / Pitfall 6); minimizes public
 **Source:** 13-01-SUMMARY.md
 
 ### 90002 not-found is detected by code only, never by source/message text
-
 The walk reclassifies a per-leaf `ng.readConfiguration` failure to a synthesized `90002` only
 when `code === ng.UNKNOWN_ERROR_CODE` (500).
 
@@ -36,7 +34,6 @@ matches the existing 90001 idiom. Fold-and-count then continues walking survivor
 **Source:** 13-03-SUMMARY.md
 
 ### skippedReferences threaded onto CoreResult non-empty-only, attached after finalize
-
 `SkippedReference` lives in `walk-references.ts`, is re-exported from `index.ts`, and is attached
 to `CoreResult` only when the array is non-empty (`[] -> undefined`) via the same conditional-spread
 idiom as `templateCheckAborted` -- attached AFTER `finalize` returns rather than adding a `finalize`
@@ -47,7 +44,6 @@ existing pure-detection / adapter-render seam (RESEARCH Directive 2 / Open Quest
 **Source:** 13-03-SUMMARY.md, 13-04-SUMMARY.md
 
 ### WALK-02 uses the `default` named input, not `production`
-
 `nx.json` `targetDefaults` for the walk target swapped `production` -> `default`, retaining
 `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default`.
 
@@ -57,7 +53,6 @@ the correct coarse input (L-5 / Spike 005).
 **Source:** 13-06-SUMMARY.md
 
 ### Execute multi-plan waves in isolated worktrees, single-plan waves on the main tree
-
 Waves 1 and 4 (two disjoint plans each) ran as parallel git-worktree executors with a shared
 `node_modules` junction; waves 2 and 3 (single plan each) ran sequentially on the main checkout.
 
@@ -69,7 +64,6 @@ teardown to stay safe on Windows.
 ## Lessons
 
 ### The walk target's nx.json key is the executor id, and there are TWO of them
-
 The plan assumed a `targetDefaults["angular-typecheck"]` key. The real keys are
 `angular-typechecker:angular-typecheck` (dev-workspace executor id) AND
 `@angular-typechecker/angular-typechecker:angular-typecheck` (published-package executor id) -- two
@@ -80,7 +74,6 @@ default forms of the SAME executor. The `production -> default` swap had to be a
 **Source:** 13-06-SUMMARY.md (deviation, Rule 3)
 
 ### A fixture upgrade + engine wiring in the same phase breaks an existing spec before its rewrite plan runs
-
 13-02 upgraded `fixtures/solution-style` (app+spec leaves, two TS2322) and 13-04 wired the walk;
 together they made the pre-existing `config-resolution.integration.spec.ts` solution-style block
 (which asserted the old zero-rootNames short-circuit) fail. 13-04 had to rewrite that block (SC4)
@@ -92,7 +85,6 @@ plan, not a later validation plan.
 **Source:** 13-04-SUMMARY.md, 13-05-SUMMARY.md
 
 ### Distinguish vitest/esbuild transpile-noise from real lint findings via `nx lint`, not the editor
-
 The editor TS LSP flagged `import.meta`/`node16`-extension/implicit-`any` errors across the new
 `*.spec.ts` files. All were false positives (vitest transpiles specs via esbuild without full
 type-check; the spec tsconfig differs from the editor view) -- `nx lint` reported 0 errors and
@@ -103,7 +95,6 @@ transpile-noise, but do not dismiss all editor flags either -- confirm each agai
 **Source:** 13-REVIEW.md (WR-01/WR-02), 13-VERIFICATION.md
 
 ### CI has no lint gate, so dead code persists unflagged
-
 `.github/workflows/ci.yml` runs `typecheck-drift` + `test` but NOT `lint`. The two unused-`NG`
 warnings would have shipped silently if the code review had not caught them.
 
@@ -112,7 +103,6 @@ Consider adding `nx lint` to CI (candidate for a later phase).
 **Source:** 13-REVIEW.md
 
 ### Windows path resolution: key stub programs on the module's own resolve() output
-
 The `walk-references.spec.ts` unit spec initially hardcoded POSIX leaf paths; on Windows
 `resolve(solutionDir, ref.path)` yields drive-prefixed backslash paths, so 5 tests failed for a
 path-fixture reason (the module was correct). Fix: compute every expected leaf path with the same
@@ -123,7 +113,6 @@ same resolver the code uses -- never hardcode POSIX separators on a Windows-prim
 **Source:** 13-03-SUMMARY.md (deviation, Rule 3)
 
 ### The cache-e2e harness is graph-driven, not tarball/Verdaccio-based
-
 `angular-typechecker-cache-e2e` drives in-workspace fixture libs through the real `nx run` CLI +
 project graph; it does NOT install a tarball or use Verdaccio (contrary to the plan's read_first
 description). The new WALK-02 cache-bust scenario mirrored that existing graph-driven harness.
@@ -135,7 +124,6 @@ tarball or a new e2e project.
 ## Patterns
 
 ### File-less synthesized diagnostic (90001/90002)
-
 Mirror `synthesizeZeroRootNamesDiagnostic`: a `ts.Diagnostic` with `file/start/length` undefined,
 `category` Error, and a bare positive code chosen OUTSIDE the TS (1xxx-9xxx / TS18xxx), Angular
 (negative-encoded), and 500 UNKNOWN_ERROR_CODE ranges.
@@ -145,7 +133,6 @@ tsconfig not found) that must survive the file-less-keep rule and be counted by 
 **Source:** 13-03-SUMMARY.md, 13-04-SUMMARY.md
 
 ### Confine a guard split to one branch to keep sibling paths byte-unchanged
-
 The three-way D-03a split lives entirely inside the `parsed.rootNames.length === 0` branch, so the
 `rootNames > 0` direct-leaf path and the COR-01 direct-500 scan/rethrow are provably byte-unchanged
 (verified by `git diff` + the untouched COR-01 pinning test).
@@ -155,7 +142,6 @@ not regress -- scope the new branch, then assert the diff touches nothing else.
 **Source:** 13-04-SUMMARY.md, 13-REVIEW.md
 
 ### RAW union into one finalize
-
 The walk returns the RAW (pre-filter, pre-dedupe) union of per-leaf diagnostics; the single existing
 `finalize` does filter + `ts.sortAndDeduplicateDiagnostics` + explicit category counts ONCE over the
 union (one dedupe call, `includeDeps` applied once).
@@ -166,7 +152,6 @@ pre-filter TCB-abort scan sees the whole union (Pitfalls 1/2, Directive 6).
 **Source:** 13-03-SUMMARY.md, 13-04-SUMMARY.md
 
 ### Reuse tested containment machinery verbatim across core modules
-
 The walk imports `createCanonicalizer`/`isUnderDir` from `filter-diagnostics.ts` rather than
 re-implementing realpath/case-fold path-containment.
 
@@ -175,7 +160,6 @@ visibility instead of duplicating the logic (a duplicate would silently diverge 
 **Source:** 13-01-SUMMARY.md, 13-SECURITY.md (T-13-01)
 
 ### Stub-program pure unit spec (no cold compiler)
-
 `walk-references.spec.ts` builds a stub `ng` (hand-built `ParsedConfiguration` per path,
 `performCompilation` returning hand-built `ts.Diagnostic[]`, `UNKNOWN_ERROR_CODE = 500`) and passes
 the real `ts`, proving every walk decision (resolution, self/dup dedupe, boundary skip, 90002 synth,
@@ -186,7 +170,6 @@ the fast feedback loop while the integration spec covers the real-compiler proof
 **Source:** 13-03-SUMMARY.md
 
 ### Worktree-parallel wave with node_modules junction + link-only teardown
-
 For a multi-plan disjoint wave: spawn one worktree executor per plan (staggered to avoid
 `.git/config.lock` races), each creating a `node_modules` junction into the main checkout as its
 first action, running Nx with `NX_DAEMON=false --skip-nx-cache`. Teardown: merge branches, delete
@@ -200,7 +183,6 @@ cleanup's `git worktree remove --force` would otherwise follow the junction and 
 ## Surprises
 
 ### The nx.json executor default appears under two keys
-
 `targetDefaults` carried both the dev-workspace executor id and the published-package executor id as
 separate keys for the same executor -- the plan (and a naive swap) assumed one.
 
@@ -209,7 +191,6 @@ have left the published-id path on the stale `production` input.
 **Source:** 13-06-SUMMARY.md
 
 ### 13-05 Task 2 produced no commit (pre-empted by 13-04)
-
 Because 13-04's necessary SC4 rewrite already put the config-resolution block in its walk-asserting
 form, 13-05's "rewrite the solution-style block" task became a verify-only reconcile with zero source
 change -- the plan artifact was "provided" by the base, not by 13-05.
@@ -219,7 +200,6 @@ verifier so it did not read the empty diff as missing work.
 **Source:** 13-05-SUMMARY.md
 
 ### A stock-Nx emoji in README broke the ASCII gate
-
 README line 5 carried a stock Nx-generated non-ASCII glyph that failed 13-06 Task 3's ASCII gate (and
 the repo's ASCII-only rule); it was replaced with ASCII.
 
@@ -228,7 +208,6 @@ over the file -- worth an ASCII sweep of other generated docs.
 **Source:** 13-06-SUMMARY.md
 
 ### Fixture types-array inconsistency across spec leaves
-
 `fixtures/solution-style/tsconfig.spec.json` uses `["vitest/globals","node"]` while the sibling spec
 fixtures use `[]`. Both compile and prove their point, so it is cosmetic, but the inconsistency was
 unintended.

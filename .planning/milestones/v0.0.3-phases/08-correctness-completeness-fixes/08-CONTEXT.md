@@ -26,7 +26,6 @@ the design here only ensures we do not paint them into a corner.
 ## Implementation Decisions
 
 ### COR-01 -- Config-resolution infrastructure-crash detection
-
 - **D-01:** Immediately after `ng.readConfiguration(options.tsConfigPath)` (BEFORE
   the zero-rootNames guard and BEFORE `performCompilation`), scan `parsed.errors`
   for a diagnostic whose `code === ng.UNKNOWN_ERROR_CODE` (500). If found,
@@ -45,7 +44,6 @@ the design here only ensures we do not paint them into a corner.
   is "strictly better than @nx/js (throws) and AnalogJS (silent)".
 
 ### COR-02 -- Global / location-less TypeScript diagnostics
-
 - **D-04:** Add `program.getTsProgram().getGlobalDiagnostics()` to
   `gatherAllDiagnostics` (`gather-diagnostics.ts`) -- the natural home (all gathering
   lives there; the Angular `api.Program` already exposes `getTsProgram()`, used at
@@ -59,7 +57,6 @@ the design here only ensures we do not paint them into a corner.
   call cannot silently drop out on an Angular upgrade.
 
 ### COR-03 -- Present-but-empty `fileName`
-
 - **D-06:** In `filter-diagnostics.ts`, extend the file-less guard from
   `diagnostic.file === undefined` (`:77`) to also treat a present-but-empty
   `fileName` as file-less: `diagnostic.file === undefined || diagnostic.file.fileName === ''`.
@@ -67,7 +64,6 @@ the design here only ensures we do not paint them into a corner.
   boundary filter (a false negative). File-less diagnostics are always kept.
 
 ### COR-04 -- Infra-vs-type classification + exit-code policy (3-surface design)
-
 > Decision made interactively (this run, `--auto` paused for a trap-quadrant call).
 > The literal ngc-style 2-vs-1 OS exit code can only live cleanly at a
 > process-owning surface; the Nx executor is bound to `{ success }` -> 0/1.
@@ -104,7 +100,6 @@ the design here only ensures we do not paint them into a corner.
   the `nx` clone at the exact `23.0.1` tag.
 
 ### Claude's Discretion
-
 - Exact filenames / signatures (`core/exit-codes.ts`, `toExitCode` name), the
   precise placement of `getGlobalDiagnostics()` within the `gatherAllDiagnostics`
   array, and test-fixture mechanics are left to research/planning.
@@ -113,13 +108,11 @@ the design here only ensures we do not paint them into a corner.
 </decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Grounding research (the source of every COR requirement)
-
 - `.planning/research/prior-art/PRIOR-ART-SUMMARY.md` -- improvements #1/#2/#5 map to
   COR-01/COR-02/COR-03; the "what is already correct -- do NOT change" list.
 - `.planning/research/prior-art/ENGINE-REFERENCE.md` -- the `@angular/build` gatherer
@@ -129,12 +122,10 @@ the design here only ensures we do not paint them into a corner.
 - `.planning/research/prior-art/SHIM-HARDENING.md` -- the empty-`fileName` edge (#5).
 
 ### Requirements / roadmap (as amended by this discussion)
-
 - `.planning/REQUIREMENTS.md` -- COR-01..COR-04 (COR-04 reframed; see D-10).
 - `.planning/ROADMAP.md` -- Phase 8 goal + Success Criteria (SC4 reframed; see D-10).
 
 ### Engine source (the exact edit points)
-
 - `packages/angular-typechecker/src/core/run-typecheck.ts` -- config parse
   (`:105-110`), existing 500 detection (`:168-179`), `TypecheckInfrastructureError`
   (`:70`), `finalize` + `sortAndDeduplicateDiagnostics` (`:292-338`).
@@ -151,7 +142,6 @@ the design here only ensures we do not paint them into a corner.
   exit-code policy must stay PURE (no `process.exit`).
 
 ### External prior art (reference only -- NOT in this repo)
-
 - `nx` clone `D:/projects/github/nrwl/nx` @ tag `23.0.1`: `packages/nx/src/command-line/run/run.ts:72`,
   `.../run/command-object.ts:30`, `.../tasks-runner/run-command.ts:475`,
   `packages/nx/src/executors/run-script/run-script.impl.ts:106`,
@@ -160,11 +150,9 @@ the design here only ensures we do not paint them into a corner.
 </canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - `TypecheckInfrastructureError` (`run-typecheck.ts:70`) is ALREADY the typed
   infra-vs-type signal -- reuse for COR-01 (re-throw) and COR-04 (`toExitCode`
   discriminator). No new error class needed.
@@ -175,7 +163,6 @@ the design here only ensures we do not paint them into a corner.
   the COR-02 global/per-file overlap safe -- no manual dedup required.
 
 ### Established Patterns
-
 - CORE is framework-agnostic and PURE: eslint bans `@nx/*` / `@angular-devkit/*`
   imports AND `process.exit` in `**/src/core/**` only. The COR-04 exit-code policy
   belongs in core but must NOT touch `process` -- process side effects live in the
@@ -188,7 +175,6 @@ the design here only ensures we do not paint them into a corner.
   one core policy, thin adapters per surface.
 
 ### Integration Points
-
 - `run-typecheck.ts` orchestrates COR-01 (new early scan) + COR-02 (via the
   `gatherDiagnostics` callback) + COR-03 (via `filterDiagnostics`).
 - `executor.ts` catch block is the COR-04 D-08 wiring point.
@@ -226,5 +212,5 @@ the design here only ensures we do not paint them into a corner.
 
 ---
 
-_Phase: 8-correctness-completeness-fixes_
-_Context gathered: 2026-06-29_
+*Phase: 8-correctness-completeness-fixes*
+*Context gathered: 2026-06-29*

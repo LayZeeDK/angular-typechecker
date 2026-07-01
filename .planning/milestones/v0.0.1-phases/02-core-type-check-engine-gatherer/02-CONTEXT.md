@@ -25,11 +25,11 @@ All decisions below are research-backed (four parallel `gsd-advisor-researcher` 
 - Consolidated final shape (after D-04 / D-06 / D-07 below):
   ```ts
   interface CoreResult {
-    tsConfigPath: string; // resolved absolute path actually checked (D-07b)
-    rootNamesCount: number; // input file count; 0 => the D-03 guard fired
-    diagnostics: readonly ts.Diagnostic[]; // GENUINE compiler diagnostics only (D-06)
-    errorCount: number; // category === Error
-    warningCount: number; // category === Warning (explicit, not total - errors)
+    tsConfigPath: string;                    // resolved absolute path actually checked (D-07b)
+    rootNamesCount: number;                  // input file count; 0 => the D-03 guard fired
+    diagnostics: readonly ts.Diagnostic[];   // GENUINE compiler diagnostics only (D-06)
+    errorCount: number;                      // category === Error
+    warningCount: number;                    // category === Warning (explicit, not total - errors)
     durationMs: number;
   }
   ```
@@ -91,44 +91,37 @@ All decisions below are research-backed (four parallel `gsd-advisor-researcher` 
 - **D-07d: Assert EXACT codes + counts** via a `const NG = (c: number) => -990000 - c;` helper (so NG8109 -> assert `-998109`); recover human codes via `Math.abs(code) - 990000`. Drop the sandbox's success-boolean-only assertions -- they do not meet TEST-02. Be explicit per fixture about whether an extended diagnostic is asserted as a Warning (default category, present in `codes`) or promoted to Error via `extendedDiagnostics.defaultCategory: "error"` -- otherwise a test can fail for the wrong reason.
 
 ### Claude's Discretion
-
 - Exact fixture directory/file names and the shared-base tsconfig layout; precise Vitest unit-vs-integration config split; the private synthesized-diagnostic code value/namespace (e.g. `ATC1001`); the exact throw type for D-06 infra failures and how the Phase-4 executor maps it (Phase 4 concern); module-level memoization of `loadCompilerCli`/`loadTypescript` is already correct and reused across multiple `runTypecheck` calls in one process.
 - Re-verify exact NG code numbers + names against the Angular 22 clone on implementation (the catalog flags this at its top; e.g. NG8116 shipped 19.2.0 despite docs lag; NG8110/NG8112 are NOT documented extended diagnostics -- do not author fixtures for them).
-  </decisions>
+</decisions>
 
 <canonical_refs>
-
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Phase 2 spec + scope (this repo)
-
 - `.planning/PROJECT.md` -- locked stack, dependency model, module format, engine approach (Approach A), Key Decisions.
 - `.planning/REQUIREMENTS.md` -- ENG-01, ENG-02, ENG-04, EXE-02, TEST-02 (the Phase 2 set).
 - `.planning/ROADMAP.md` Phase 2 section -- goal + 4 success criteria.
 
 ### Phase 1 carry-forwards (this repo) -- MUST read; these decisions are built on Phase 1
-
 - `.planning/phases/01-workspace-bootstrap-engine-spike-gated/01-CONTEXT.md` -- D-16 (gatherer getter-order), D-17/D-18 (GATE B fixture + stable 22.0.4), engine specifics.
 - `.planning/STATE.md` Accumulated Context -- the three Phase-2 code-review inputs: MD-01 (dropped `readConfiguration` errors -> resolved by D-03), MD-02 (warning-count conflation -> resolved by D-01), LW-01 (barrel import -> resolved in gatherer section).
 - `.planning/research/DIAGNOSTIC-CATALOG.md` -- the v13->v22 catalog + per-introduction-version test organization + provenance method (`git tag --contains` over docs-diff). Primary input for D-07.
 
 ### Project research (this repo)
-
 - `.planning/research/ARCHITECTURE.md` -- core/adapter split + proposed tree. CAVEAT (from 01-CONTEXT): lines ~314 / ~376 stale on dep classification; PROJECT.md is authoritative.
 - `.planning/research/FOLLOWUP-FINDINGS.md` -- engine confirmation vs Angular v22 source; `@nx/vitest:test`; node16.
 - `.planning/research/PITFALLS.md` -- `import()`->`require()` rewrite (GATE A, now proven); fresh-options-per-call.
 
 ### Current tracer-bullet core (this repo) -- the code Phase 2 grows
-
 - `packages/angular-typechecker/src/core/run-typecheck.ts` -- current `runTypecheck` + `CoreResult` (the minimal `{...parsed.options, noEmit:true}` to REPLACE per D-05; the `warningCount = total - errorCount` to FIX per D-01; the dropped `parsed.errors` to FIX per D-03).
 - `packages/angular-typechecker/src/core/gather-diagnostics.ts` -- the unconditional all-getter (keep; ENG-02).
 - `packages/angular-typechecker/src/core/compiler-loader.ts` -- memoized `await import('@angular/compiler-cli')` (keep; ENG-03).
 - `packages/angular-typechecker/src/core/compiler-cli-types.ts` -- nodenext-safe type shim (import `Program` from HERE per LW-01; widen as the engine grows).
 
 ### External reference codebases (absolute paths, read-only; re-validate against locked Angular 22.0.4 / TS 6.0.3)
-
 - `D:/projects/github/angular/angular/packages/compiler-cli/src/perform_compile.ts` -- `readConfiguration` (75-181), `calcProjectFileAndBasePath` (62), `performCompilation` outer try/catch + `UNKNOWN_ERROR_CODE` synth (255-327, esp. 314-327), emit gated by `emitFlags` (302-309), `options.diagnostics` Message (295-300), `exitCodeFromResult`/`hasErrors` (244-253), `ParsedConfiguration` (53-60).
 - `D:/projects/github/angular/angular/packages/compiler-cli/src/ngtsc/program.ts` -- plain `ts.createProgram` (82-84); confirms no builder/incremental program on this path; `getTsOptionDiagnostics` -> options diagnostics; `emitFlags & JS` gate (293).
 - `D:/projects/github/angular/angular/packages/compiler-cli/src/ngtsc/diagnostics/src/error_code.ts` -- `INVALID_BANANA_IN_BOX = 8101` (496), `INTERPOLATED_SIGNAL_NOT_INVOKED = 8109` (586), `SUGGEST_SUBOPTIMAL_TYPE_INFERENCE = 10002` (724), `DEFER_TRIGGER_MISCONFIGURATION = 8021` (447).
@@ -141,29 +134,24 @@ All decisions below are research-backed (four parallel `gsd-advisor-researcher` 
 - `D:/projects/sandbox/nx19-8-angular18-2-esbuild-playwright-storybook` -- prior prototype (Angular 18.2, version-bound): `gatherAllDiagnostics` shape, NG8xxx fixtures, `injectMultipleErrors` (the anti-pattern D-07 improves on), `executor.angularNN.integration.spec.ts` split, `INTEGRATION-TESTING-LEARNINGS.md` (Nx discovery-exclusion + lock pitfalls; Vitest-over-Jest ESM rationale).
 
 ### External issue references (option-conflict provenance for D-05)
-
 - TS5053 (`noEmit` + `composite` / `emitDeclarationOnly`): microsoft/TypeScript#36917, #32380. TS6304 ("Composite projects may not disable declaration emit"): ionic-team/stencil#2349, TypeStrong/ts-node#656.
-  </canonical_refs>
+</canonical_refs>
 
 <code_context>
-
 ## Existing Code Insights
 
 ### Reusable Assets
-
 - The entire Phase-1 tracer-bullet `core/` (`run-typecheck.ts`, `gather-diagnostics.ts`, `compiler-loader.ts`, `compiler-cli-types.ts`) is the promoted seed; Phase 2 grows it in place (NOT a rewrite). `runTypecheck` + `CoreResult` already exist with `codes`/`errorCount`/`warningCount`/`durationMs` and the fresh-options-per-call guard.
 - `gatherAllDiagnostics` is the production-ready ENG-02 gatherer as-is.
 - The sandbox's NG8xxx fixture shapes + per-version spec split are portable structure (re-validate sources on Angular 22).
 
 ### Established Patterns
-
 - Core is framework-agnostic with ZERO `@nx/devkit`/CLI imports; value-imports `@angular/compiler-cli` only via the single memoized `await import()` in `compiler-loader.ts`; everywhere else uses `import type` through the `compiler-cli-types` shim (nodenext-safe). Phase 2 keeps this invariant absolutely (module-boundary enforcement lands in Phase 3 / WS-04).
 - `@nx/js:tsc` -> CJS `.js` + `.d.ts` under `module: nodenext`; the built `compiler-loader.js` must retain literal `import(` (GATE A, proven Phase 1).
 
 ### Integration Points
-
 - `runTypecheck(CoreOptions): Promise<CoreResult>` is the sole core seam. The Phase-4 executor adapter (sub-50-line) is the first consumer: it resolves `tsConfig` -> absolute path (D-04), calls `runTypecheck`, catches D-06 throws, and maps `{ errorCount }` -> `{ success }`. Phase 3 filtering/modes/`--max-warnings`/`formatDiagnostics` also consume `CoreResult` (diagnostics[] + counts).
-  </code_context>
+</code_context>
 
 <specifics>
 ## Specific Ideas
@@ -172,13 +160,12 @@ All decisions below are research-backed (four parallel `gsd-advisor-researcher` 
 - The exact no-emit override object is specified verbatim in D-05.
 - The zero-rootNames guard message must name the leaf tsconfigs explicitly: `tsconfig.app.json` / `tsconfig.lib.json` / `tsconfig.spec.json` (D-03).
 - The `NG(c) => -990000 - c` assertion helper and the multi-error ENG-02 fixture are the named must-haves for the test suite (D-07).
-  </specifics>
+</specifics>
 
 <deferred>
 ## Deferred Ideas
 
 All deferrals below are roadmap-scoped to later phases (NOT new capabilities / not scope creep):
-
 - Out-of-project + `node_modules` diagnostic filtering (absolute realpath-normalized `fileName`) -> Phase 3 (OUT-02).
 - Report-all/fail-fast modes + `--max-warnings=<n>` + deterministic/idempotent `formatDiagnostics` human output + non-zero exit semantics -> Phase 3 (EXE-03/04/05, OUT-01/02/03). The D-06 throw-to-exit mapping and the D-01 count fields are the inputs these consume.
 - Unit tests that MOCK `@angular/compiler-cli` (gatherer/filtering/tsconfig-resolution/modes/`--max-warnings`) -> Phase 3 (TEST-01). Phase 2 owns the REAL-compiler integration tier (TEST-02) only.
@@ -193,5 +180,5 @@ None of the discussion drifted outside the Phase 2 boundary.
 
 ---
 
-_Phase: 2-Core Type-Check Engine + Gatherer_
-_Context gathered: 2026-06-27_
+*Phase: 2-Core Type-Check Engine + Gatherer*
+*Context gathered: 2026-06-27*
