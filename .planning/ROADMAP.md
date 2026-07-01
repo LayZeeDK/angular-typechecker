@@ -58,7 +58,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 > **NOTE (D-13, for the milestone audit):** SC3's parenthetical "(out-of-band / not promotable)" and requirement CAT-02's matching parenthetical are FACTUALLY SUPERSEDED -- NG8011 IS promotable (triple-verified docs+source+runtime; CONTEXT.md D-09 corrected). The implementation treats NG8011 as a normal promotable Warning-default member; the ROADMAP/REQUIREMENTS/CONSENSUS text is left as-is this phase (no re-ratification) and reconciled at the milestone audit. CAT-02 stays satisfied by the single NG8101 promotion proof (D-08).
 
 **Plans**: 4 plans
-- [ ] 12-01-PLAN.md -- Source-of-truth `EXTENDED_DIAGNOSTIC_MEMBERS` (`as const`) + the DRIFT-01 type-level enum-vs-list completeness tripwire wired into `typecheck-drift` (DRIFT-01)
+- [x] 12-01-PLAN.md -- Source-of-truth `EXTENDED_DIAGNOSTIC_MEMBERS` (`as const`) + the DRIFT-01 type-level enum-vs-list completeness tripwire wired into `typecheck-drift` (DRIFT-01)
 - [ ] 12-02-PLAN.md -- The 18-row extended `it.each` catalog (exact code+category+count) + the NG8101 promotion proof + ~7 new extended fixtures; folds/deletes the two extended specs (CAT-01, CAT-02, CAT-04)
 - [ ] 12-03-PLAN.md -- The sibling baseline TS/NG `it.each` table + ~2 baseline fixtures; folds/deletes `baseline.angular13` and corrects the TESTING.md spec count (CAT-03)
 - [ ] 12-04-PLAN.md -- Rewrite `research/DIAGNOSTIC-CATALOG.md` to the authoritative 18-member enum set (CAT-05)
@@ -101,6 +101,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
-| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 0/4 | Planned | - |
+| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 1/4 | In Progress|  |
 | 13. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
 | 14. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |

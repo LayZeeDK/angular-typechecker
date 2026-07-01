@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.0.4
 milestone_name: typecheck-configuration generator and extended testing strategy
 status: executing
-stopped_at: Phase 12 context gathered
-last_updated: "2026-07-01T00:22:32.750Z"
-last_activity: 2026-07-01 -- Phase 12 planning complete
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-07-01T06:28:53.698Z"
+last_activity: 2026-07-01
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-30 after v0.0.3 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone v0.0.4 -- Phase 12: Extended-diagnostic catalog + completeness tripwire (roadmap created; ready to plan).
+**Current focus:** Phase 12 — extended-diagnostic-catalog-completeness-tripwire
 
 ## Current Position
 
-Phase: 12 of 14 (Extended-diagnostic catalog + completeness tripwire)
-Plan: — (not yet planned)
-Status: Ready to execute
-Last activity: 2026-07-01 -- Phase 12 planning complete
+Phase: 12 (extended-diagnostic-catalog-completeness-tripwire) — EXECUTING
+Plan: 2 of 4
+Status: Plan 01 complete (DRIFT-01 tripwire green); ready to execute Plan 02
+Last activity: 2026-07-01 -- completed 12-01 (extended-diagnostic source of truth + completeness tripwire)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 25%
 
 ## v0.0.4 Phase Map
 
@@ -53,6 +53,9 @@ All milestone decisions (v0.0.1 + v0.0.3) are logged in PROJECT.md Key Decisions
 - v0.0.1 decision log: `.planning/milestones/v0.0.1-ROADMAP.md` + `.planning/milestones/v0.0.1-phases/`.
 
 v0.0.4 testing strategy ratified by a unanimous 8-lens Opus board (record: `.planning/research/v0.0.4-testing/board2/CONSENSUS.md`): in-memory `createTreeWithEmptyWorkspace` substrate (NO bespoke `createFsTree`); single enum-keyed `it.each` catalog over committed fixtures (exact code + category + count + one promotion case; NG8011 out-of-band/not promotable); enum-vs-table completeness tripwire; generator e2e folded into `angular-typechecker-install-e2e` (no Verdaccio, no new e2e project); in-plugin specs auto-route into the existing 6-cell `test` matrix (no `ci.yml` structural change); a `-p` set-equality guard; single required `ci` gate unchanged.
+
+- [Phase 12]: Phase 12 Plan 01 (DRIFT-01): the extended-diagnostic completeness tripwire deep-imports ExtendedTemplateDiagnosticName from the sub-barrel @angular/compiler-cli/src/ngtsc/diagnostics under classic resolution -- compiled green on first typecheck-drift run, no leaf-path fallback needed (Assumption A2 resolved).
+- [Phase 12]: Phase 12 Plan 01 (D-02): EXTENDED_DIAGNOSTIC_MEMBERS is the single dependency-free as-const source of truth (18 enum VALUES, declaration order) consumed by BOTH the Plan 02 catalog spec and the type-level tripwire; deliberate-RED proof confirmed it fails loudly (TS2344 at the CatalogCoversEnum probe) on drift and returns green when restored.
 
 ### Blockers/Concerns
 
@@ -88,6 +91,6 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-06-30T22:53:14.324Z
-Stopped at: Phase 12 context gathered
-Next step: `/gsd-plan-phase 12` to plan the extended-diagnostic catalog + completeness tripwire (the highest-value, generator-independent deliverable). Phase 13's generator shape (GEN-02/03) carries an open design decision to resolve in its discussion/research before planning.
+Last session: 2026-07-01T06:24:58.266Z
+Stopped at: Completed 12-01-PLAN.md (DRIFT-01: extended-diagnostic member source of truth + type-level completeness tripwire, green under typecheck-drift with a recorded deliberate-RED proof)
+Next step: Execute 12-02-PLAN.md (the 18-member enum-keyed `it.each` catalog integration spec + sibling baseline table + CAT-05 DIAGNOSTIC-CATALOG.md rewrite), which consumes the EXTENDED_DIAGNOSTIC_MEMBERS source of truth this plan established.

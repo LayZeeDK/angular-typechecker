@@ -25,7 +25,7 @@
 
 ### DRIFT — completeness tripwire
 
-- [ ] **DRIFT-01**: A completeness tripwire asserts the catalog's covered-code set equals the `ExtendedTemplateDiagnosticName` enum, so an Angular release that adds/renames/removes a member fails CI loudly. Runs in the `test` (or `typecheck-drift`) job; consumes the enum at build/test time.
+- [x] **DRIFT-01**: A completeness tripwire asserts the catalog's covered-code set equals the `ExtendedTemplateDiagnosticName` enum, so an Angular release that adds/renames/removes a member fails CI loudly. Runs in the `test` (or `typecheck-drift`) job; consumes the enum at build/test time.
 
 ### GE2E — generator end-to-end (folded into `angular-typechecker-install-e2e`)
 
@@ -71,7 +71,7 @@ Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's
 | CAT-03 | Phase 12 | Pending |
 | CAT-04 | Phase 12 | Pending |
 | CAT-05 | Phase 12 | Pending |
-| DRIFT-01 | Phase 12 | Pending |
+| DRIFT-01 | Phase 12 | Complete |
 | GEN-01 | Phase 13 | Pending |
 | GEN-02 | Phase 13 | Pending |
 | GEN-03 | Phase 13 | Pending |
