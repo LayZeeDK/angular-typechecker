@@ -1,0 +1,15 @@
+{
+  "name": "typecheck-walk-consumer",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/typecheck-walk-consumer/src",
+  "projectType": "library",
+  "tags": ["scope:fixture"],
+  "targets": {
+    "angular-typecheck": {
+      "executor": "@angular-typechecker/angular-typechecker:angular-typecheck",
+      "options": {
+        "tsConfig": "libs/typecheck-walk-consumer/tsconfig.json"
+      }
+    }
+  }
+}
