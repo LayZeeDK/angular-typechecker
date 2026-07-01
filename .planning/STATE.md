@@ -4,13 +4,13 @@ milestone: v0.0.4
 milestone_name: typecheck-configuration generator and extended testing strategy
 status: executing
 stopped_at: Phase 13 context gathered
-last_updated: "2026-07-01T15:58:27.167Z"
-last_activity: 2026-07-01 -- Phase 13 execution started
+last_updated: "2026-07-01T16:27:35.009Z"
+last_activity: 2026-07-01
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 4
+  completed_plans: 7
   percent: 25
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 ## Current Position
 
 Phase: 13 (engine-solution-tsconfig-reference-walking) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 13
-Last activity: 2026-07-01 -- Phase 13 execution started
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-07-01
 
-Progress: [██░░░░░░░░] 25%
+Progress: [███████░░░] 70%
 
 ## v0.0.4 Phase Map
 
@@ -62,6 +62,8 @@ v0.0.4 re-scoped 2026-07-01: spikes 001-005 (`.planning/spikes/MANIFEST.md`, all
 - [Phase 12]: Phase 12 Plan 04 (CAT-05 / D-10..D-13): DIAGNOSTIC-CATALOG.md is now enum-driven -- the extended section lists all 18 ExtendedTemplateDiagnosticName members (adds NG8011 controlFlowPreventingContentProjection + NG8112 unusedLetDeclaration), notes NG8110/NG8118 as non-enum ErrorCodes, frames NG8011/NG8113 as out-of-band-but-promotable (all 18 promotable via defaultCategory), and replaces the per-version file-split + programmatic-injection test-org guidance with the single enum-keyed it.each + completeness-tripwire decision. The stale un-promotable-exception framing for NG8011 (CONSENSUS D2 / CAT-02 parenthetical) is superseded per D-13 and reconciled at the milestone audit, not re-ratified this phase.
 - [Phase 12]: Phase 12 Plan 02 (CAT-01/CAT-02/CAT-04, D-03..D-09): the 18-row extended-diagnostic it.each catalog (extended-catalog.integration.spec.ts) keyed on EXTENDED_DIAGNOSTIC_MEMBERS asserts every member by exact NG() code + DiagnosticCategory + occurrence count against real @angular/compiler-cli@22.0.4; ZERO it.skip rows (all 18 fire from a static fixture, RESEARCH A1 confirmed by a real run). NG8011 is a normal Warning-default promotable row (D-09), not skipped. The single NG8101 promotion proof + count invariant are folded in (D-08); extended.angular13 + extended.promotion deleted (D-07). Two D-03 fixture-count bugs auto-fixed: NG8105 split into its own CommonModule-importing fixture (bare *ngFor co-fires NG8103), and NG8108 uses the static ngSkipHydration="yes" text-attribute trigger ([ngSkipHydration] binding co-fires NG8002).
 - [Phase ?]: [Phase 12]: Phase 12 Plan 03 (CAT-03 / D-06/D-07): all 12 baseline TS/NG codes asserted by exact code in a sibling it.each table inside the one catalog of record; NG6100 asserted as a Warning. Two new fixtures (ng-baseline-extra fires 8 NG codes; ng-baseline-import-cycle fires NG3003 via an NgModule declarations cycle under compilationMode: partial -- standalone imports forward-declare and never fire NG3003; NG2005 needs a constructor dependency). baseline.angular13 folded+deleted; TESTING.md integration-spec count 10 -> 8.
+- [Phase 13]: Phase 13 Plan 03 (WALK-01): walk-references.ts is the pure core walk (walkReferences + WalkResult + SkippedReference); 90002 not-found code + file-less synthesizer co-located in the walk module; detect-by-code-only 500->90002; returns raw union + summed rootNamesCount + skippedReferences; reuses exported createCanonicalizer/isUnderDir (no duplicate canonicalizer)
+- [Phase 13]: Phase 13 Plan 03: the pre-compile canonicalizer sources realpath + useCaseSensitiveFileNames from ts.sys (no per-leaf Program exists yet at boundary-guard time); keeps core pure and is injectable in the stub-driven unit spec
 
 ### Blockers/Concerns
 
@@ -98,6 +100,6 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-01T14:53:25.585Z
+Last session: 2026-07-01T16:27:34.996Z
 Stopped at: Phase 13 context gathered
 Next step: Plan Phase 13 (Engine: solution-tsconfig reference-walking, WALK-01/02) via `/gsd-plan-phase 13`. The engine change is Approach-A-compatible (existing `performCompilation`, no new compiler machinery); ground the plan in spikes 001-005 and the spike `MANIFEST.md` locked requirements.
