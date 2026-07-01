@@ -3,14 +3,22 @@
 **Defined:** 2026-07-01
 **Core Value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests — faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
 **Strategy basis:** Unanimous 8-lens Opus board (5 constructive + 3 adversarial), fact-only, 2 rounds to consensus — `.planning/research/v0.0.4-testing/board2/CONSENSUS.md`.
+**Re-scoped 2026-07-01:** spikes 001-005 (`.planning/spikes/`, all VALIDATED — see `MANIFEST.md`) proved runtime solution-tsconfig reference-walking feasible on the existing `performCompilation` engine. Added **WALK-01/02** (engine) and reshaped **GEN-01/02/03** (the generator now wires ONE `typecheck` target at the solution `tsconfig.json`). This supersedes the D-03a solution-style short-circuit and the board's decision-B "no executor change" assumption (D1 in-memory generator tests unchanged; the executor changes, not the generator).
 
 ## Milestone v0.0.4 Requirements
 
+### WALK — solution-tsconfig reference-walking (engine)
+
+*Added 2026-07-01 (spikes 001-005 GO). Prerequisite for the reshaped GEN-02/03. Supersedes the D-03a solution-style short-circuit.*
+
+- [ ] **WALK-01**: The `angular-typecheck` engine (`runTypecheck`) accepts a solution / references-only `tsconfig.json` and type-checks each IN-PROJECT referenced leaf in one call: it resolves `references[]` to leaf tsconfigs, runs `performCompilation` per leaf, UNIONs the raw per-leaf diagnostics into a single `finalize` pass (dedupe by `ts.sortAndDeduplicateDiagnostics` value identity — `file.path`+start+length+code+`messageText`; explicit post-dedupe `DiagnosticCategory` counts, never `length - errorCount`; basePath = the solution tsconfig's directory). A reference-resolution-layer **module-boundary guard** SKIPS out-of-project references (skip-with-notice, path-containment under the project dir), orthogonal to and composable with the existing `filter-diagnostics` + `includeDeps` (which continue to govern imported *source* diagnostics unchanged). The **D-03a zero-rootNames guard splits three-way**: references present + ≥1 in-project leaf → walk; references present + 0 in-project → new synthesized error (code 90001, distinct message); no references → unchanged empty-project error. `rootNames > 0` direct-leaf path untouched; no branch gates on TS18003. `rootNamesCount` = sum over walked leaves. The locked `config-resolution.integration.spec.ts:124-130` assertion is rewritten, and `fixtures/solution-style` gains a KNOWN diagnostic + a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking occurred.
+- [ ] **WALK-02**: A walk target's Nx `targetDefaults` inputs use the `default` named input (the lib+spec source union), NOT `production` (which excludes `*.spec.ts` and would under-hash spec sources → stale PASS); `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default` are retained. Any leaf/dep change busts the (coarse) single-target cache. README consumer guidance updated to the walk recipe. *(DEFERRED synergy, tracked below: project references / `NgtscProgram` incremental declaration-reuse to collapse the double-compile tax — additive, not blocking.)*
+
 ### GEN — `typecheck-configuration` generator
 
-- [ ] **GEN-01**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire an `angular-typecheck` target into the project's `project.json` (edits configuration only via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles`; no `generateFiles`, no file emission).
-- [ ] **GEN-02**: The generator defaults the target's `tsConfig` by project type — application → `tsconfig.app.json`, library → `tsconfig.lib.json` — with an explicit `--tsConfig` override. *(Generator-phase design decision: detection method, and single-target+option vs. multiple targets vs. `configurations`. Nx workspaces only; Angular CLI `angular.json` layouts deferred; prod tsconfigs e.g. `tsconfig.lib.prod.json` skipped — no-emit.)*
-- [ ] **GEN-03**: The generator supports spec-tsconfig (`tsconfig.spec.json`) type-checking when a spec tsconfig exists (target/configuration shape finalized with GEN-02 in the generator phase).
+- [ ] **GEN-01**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire a `typecheck` target (executor `angular-typechecker:angular-typecheck`) into the project's `project.json` (edits configuration only via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles`; no `generateFiles`, no file emission).
+- [ ] **GEN-02**: The generator wires ONE target pointed at the project's **solution `tsconfig.json`** (relying on WALK-01 to type-check its in-project referenced leaves), with an explicit `--tsConfig` override and a **flat-project fallback** (point at the leaf `tsconfig.app.json`/`tsconfig.lib.json` when the project has no solution tsconfig / no `references`). Per-project-type `tsConfig` detection is obviated by the walk. Configurable `targetName` (default `typecheck`). *(Nx workspaces only; Angular CLI `angular.json` layouts deferred; prod tsconfigs e.g. `tsconfig.lib.prod.json` are not referenced by the solution tsconfig and so are not walked — no-emit.)*
+- [ ] **GEN-03**: Spec-tsconfig (`tsconfig.spec.json`) type-checking is automatic via WALK-01 (the spec tsconfig is an in-project referenced leaf the engine walks) — no separate target or `configuration` is wired. In the flat-project fallback (no solution tsconfig), spec checking is out of the single leaf target's scope and left to the consumer.
 - [ ] **GEN-04**: Re-running the generator on an already-wired project is idempotent (no duplicate target, no clobbered config).
 - [ ] **GEN-05**: The generator ships a hand-authored `schema.json` + `schema.d.ts`, registered via `generators.json` and the published `package.json` `generators` field; the generator + schema are included in the tarball `files` set.
 - [ ] **GEN-06**: Generator unit tests run on the public in-memory `createTreeWithEmptyWorkspace` substrate and assert the written target configuration for each project type plus idempotency; a schema-parity spec asserts `schema.json` keys === the `schema.d.ts` interface.
@@ -47,6 +55,11 @@
 - **GEN-FUT-01**: Angular CLI (`angular.json`) workspace support for the generator (via `convertNxGenerator`).
 - **GEN-FUT-02**: `ng add` / `nx add` install schematics.
 
+### Engine / performance (WALK follow-ups)
+
+- **WALK-FUT-01**: `createNodesV2` inference of GRANULAR per-leaf `typecheck` targets (one per referenced tsconfig) so a single `nx run-many -t typecheck` fans out to independently-cached tasks — the granular counterpart to the coarse single walk target (WALK-02). Carried-forward INF deferral (PROJECT.md Out of Scope; "next milestone").
+- **WALK-FUT-02**: Project references / `NgtscProgram` incremental declaration-reuse to compile a shared dependency once and reuse its declarations across walked leaves, collapsing the walk's double-compile tax toward zero (spike 003: ~1 extra `performCompilation` per leaf; the tax grows at the PROJECT.md ~15s scale). Additive, not blocking; requires the deferred `NgtscProgram` engine (Approach B).
+
 ## Out of Scope
 
 | Feature | Reason |
@@ -72,21 +85,23 @@ Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's
 | CAT-04 | Phase 12 | Complete |
 | CAT-05 | Phase 12 | Complete |
 | DRIFT-01 | Phase 12 | Complete |
-| GEN-01 | Phase 13 | Pending |
-| GEN-02 | Phase 13 | Pending |
-| GEN-03 | Phase 13 | Pending |
-| GEN-04 | Phase 13 | Pending |
-| GEN-05 | Phase 13 | Pending |
-| GEN-06 | Phase 13 | Pending |
-| GE2E-01 | Phase 14 | Pending |
-| GE2E-02 | Phase 14 | Pending |
-| GUARD-01 | Phase 14 | Pending |
+| WALK-01 | Phase 13 | Pending |
+| WALK-02 | Phase 13 | Pending |
+| GEN-01 | Phase 14 | Pending |
+| GEN-02 | Phase 14 | Pending |
+| GEN-03 | Phase 14 | Pending |
+| GEN-04 | Phase 14 | Pending |
+| GEN-05 | Phase 14 | Pending |
+| GEN-06 | Phase 14 | Pending |
+| GE2E-01 | Phase 15 | Pending |
+| GE2E-02 | Phase 15 | Pending |
+| GUARD-01 | Phase 15 | Pending |
 
 **Coverage:**
-- v0.0.4 requirements: 15 total
-- Mapped to phases: 15 (Phase 12: 6 · Phase 13: 6 · Phase 14: 3)
+- v0.0.4 requirements: 17 total
+- Mapped to phases: 17 (Phase 12: 6 · Phase 13: 2 · Phase 14: 6 · Phase 15: 3)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 after roadmap creation (15/15 requirements mapped across Phases 12-14)*
+*Last updated: 2026-07-01 — v0.0.4 re-scoped after spikes 001-005 GO: added WALK-01/02 (engine reference-walking), reshaped GEN-01/02/03 (one `typecheck` target → solution `tsconfig.json`). Now 17/17 requirements mapped across Phases 12-15 (12 shipped; 13 engine-walk; 14 generator; 15 e2e + guard).*
