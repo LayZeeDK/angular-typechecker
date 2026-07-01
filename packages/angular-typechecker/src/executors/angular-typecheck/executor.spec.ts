@@ -84,6 +84,19 @@ function abortedCoreResult(fileName: string | undefined): CoreResult {
   };
 }
 
+// WALK-01 (Phase 13, D-02 adapter render): a CoreResult carrying the NON-EMPTY
+// skippedReferences the adapter must turn into one loud logger.warn per entry.
+// Core sets the field only when non-empty (mapping the walk's `[]` -> undefined),
+// so `errorCount` here models a walked verdict independent of the advisory notice.
+function skippedRefsCoreResult(
+  skippedReferences: CoreResult['skippedReferences'],
+): CoreResult {
+  return {
+    ...coreResult(1),
+    skippedReferences,
+  };
+}
+
 const context = { root: '/ws' } as ExecutorContext;
 const options = { tsConfig: 'libs/x/tsconfig.lib.json' };
 
@@ -206,6 +219,82 @@ describe('angularTypecheckExecutor (D-01/D-04)', () => {
         fileName: '/ws/libs/x/poison.component.ts',
       },
     });
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    const result = await executor(options, context);
+
+    expect(result).toEqual({ success: true });
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  // WALK-01 (Phase 13, D-02 adapter render): the executor renders the core's
+  // pure skippedReferences detection as a loud, path-named logger.warn advisory.
+  it('WALK-01 D-02: emits one logger.warn per skippedReferences entry naming the path + reason', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      skippedRefsCoreResult([
+        {
+          referencePath: '/ws/fixtures/solution-style-oop/tsconfig.app.json',
+          reason: 'out-of-project',
+        },
+        {
+          referencePath: '/ws/fixtures/solution-style/tsconfig.missing.json',
+          reason: 'not-found',
+        },
+      ]),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    // One warn per skipped reference (two entries -> two warns), each naming its
+    // resolved path and reason. Advisory-only: no logger.error.
+    expect(mocks.loggerWarn).toHaveBeenCalledTimes(2);
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/ws/fixtures/solution-style-oop/tsconfig.app.json',
+      ),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('out-of-project'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/ws/fixtures/solution-style/tsconfig.missing.json',
+      ),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('not-found'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('WALK-01 D-02: does NOT warn for skippedReferences when the field is undefined (no false positive)', async () => {
+    // Core maps the walk's empty array to undefined, so the common direct/clean-walk
+    // path carries no field -- the adapter must stay silent.
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  it('WALK-01 D-02: the skipped-reference notice does NOT change the success verdict (advisory-only)', async () => {
+    // errorCount 1 in skippedRefsCoreResult, but evaluateResult is the SOLE verdict
+    // authority -- stubbed { success: true } here. The advisory warn must not
+    // override it (a skip NEVER flips the verdict).
+    mocks.runTypecheck.mockResolvedValue(
+      skippedRefsCoreResult([
+        {
+          referencePath: '/ws/fixtures/solution-style-selfref/tsconfig.json',
+          reason: 'self-reference',
+        },
+      ]),
+    );
     mocks.evaluateResult.mockReturnValue({ success: true });
 
     const { default: executor } = await import('./executor');
