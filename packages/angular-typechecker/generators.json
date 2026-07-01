@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "name": "angular-typechecker",
+  "version": "0.1",
+  "generators": {
+    "configuration": {
+      "factory": "./src/generators/configuration/generator",
+      "schema": "./src/generators/configuration/schema.json",
+      "description": "Wire a typecheck target (executor angular-typechecker:typecheck) into a project."
+    },
+    "init": {
+      "factory": "./src/generators/init/generator",
+      "schema": "./src/generators/init/schema.json",
+      "description": "Seed nx.json targetDefaults so the typecheck target is cacheable."
+    }
+  }
+}

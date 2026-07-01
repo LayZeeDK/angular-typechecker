@@ -31,6 +31,11 @@
           },
           {
             "input": "./packages/angular-typechecker",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./packages/angular-typechecker",
             "glob": "LICENSE",
             "output": "."
           }
