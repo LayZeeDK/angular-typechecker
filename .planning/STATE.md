@@ -4,13 +4,13 @@ milestone: v0.0.4
 milestone_name: typecheck-configuration generator and extended testing strategy
 status: executing
 stopped_at: Phase 13 context gathered
-last_updated: "2026-07-01T16:27:35.009Z"
+last_updated: "2026-07-01T16:44:02.469Z"
 last_activity: 2026-07-01
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
   percent: 25
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 ## Current Position
 
 Phase: 13 (engine-solution-tsconfig-reference-walking) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-07-01
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 80%
 
 ## v0.0.4 Phase Map
 
@@ -64,6 +64,8 @@ v0.0.4 re-scoped 2026-07-01: spikes 001-005 (`.planning/spikes/MANIFEST.md`, all
 - [Phase ?]: [Phase 12]: Phase 12 Plan 03 (CAT-03 / D-06/D-07): all 12 baseline TS/NG codes asserted by exact code in a sibling it.each table inside the one catalog of record; NG6100 asserted as a Warning. Two new fixtures (ng-baseline-extra fires 8 NG codes; ng-baseline-import-cycle fires NG3003 via an NgModule declarations cycle under compilationMode: partial -- standalone imports forward-declare and never fire NG3003; NG2005 needs a constructor dependency). baseline.angular13 folded+deleted; TESTING.md integration-spec count 10 -> 8.
 - [Phase 13]: Phase 13 Plan 03 (WALK-01): walk-references.ts is the pure core walk (walkReferences + WalkResult + SkippedReference); 90002 not-found code + file-less synthesizer co-located in the walk module; detect-by-code-only 500->90002; returns raw union + summed rootNamesCount + skippedReferences; reuses exported createCanonicalizer/isUnderDir (no duplicate canonicalizer)
 - [Phase 13]: Phase 13 Plan 03: the pre-compile canonicalizer sources realpath + useCaseSensitiveFileNames from ts.sys (no per-leaf Program exists yet at boundary-guard time); keeps core pure and is injectable in the stub-driven unit spec
+- [Phase 13]: Phase 13 Plan 04 (WALK-01): run-typecheck D-03a three-way split invokes walkReferences; the walk-branch finalize sources useCaseSensitiveFileNames + realpath from ts.sys (no per-leaf Program in runTypecheck); union feeds the single existing finalize (solution-dir basePath, includeDeps once); skippedReferences threaded non-empty-only ([] -> undefined); COR-01 direct 500 path + direct override block byte-unchanged; one sortAndDeduplicateDiagnostics call
+- [Phase 13]: Phase 13 Plan 04 (D-02): SkippedReference re-exported from ./core/walk-references via index.ts; executor adapter renders a per-reference advisory logger.warn AFTER the templateCheckAborted block, gated presence-AND-non-empty, verdict unchanged (L-4), no new import. Rewrote the now-stale config-resolution solution-style block to assert the walk (rootNamesCount>0, errorCount 2, two distinct-file TS2322, skippedReferences undefined) so existing coverage does not regress; COR-01 pinning block byte-unchanged
 
 ### Blockers/Concerns
 
@@ -100,6 +102,6 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-01T16:27:34.996Z
+Last session: 2026-07-01T16:39:12.505Z
 Stopped at: Phase 13 context gathered
 Next step: Plan Phase 13 (Engine: solution-tsconfig reference-walking, WALK-01/02) via `/gsd-plan-phase 13`. The engine change is Approach-A-compatible (existing `performCompilation`, no new compiler machinery); ground the plan in spikes 001-005 and the spike `MANIFEST.md` locked requirements.

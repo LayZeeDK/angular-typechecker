@@ -78,7 +78,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] 13-01-PLAN.md -- Export createCanonicalizer + isUnderDir from filter-diagnostics.ts (D-01/D-04 reuse) (WALK-01)
 - [x] 13-02-PLAN.md -- Upgrade fixtures/solution-style + 5 sibling fixtures (overlap/oop/empty/broken-ref/selfref) (WALK-01)
 - [x] 13-03-PLAN.md -- NEW pure core walk-references.ts (walk + boundary guard + 90002 fold-and-count) + unit spec (WALK-01)
-- [ ] 13-04-PLAN.md -- run-typecheck.ts D-03a three-way split + CoreResult.skippedReferences + index.ts export + executor logger.warn (WALK-01)
+- [x] 13-04-PLAN.md -- run-typecheck.ts D-03a three-way split + CoreResult.skippedReferences + index.ts export + executor logger.warn (WALK-01)
 - [ ] 13-05-PLAN.md -- Integration walk proofs + config-resolution rewrite + cross-leaf TCB unit + executor unit (WALK-01)
 - [ ] 13-06-PLAN.md -- nx.json production->default input + cache-e2e stale-PASS proof + README walk recipe (WALK-02)
 
@@ -121,6 +121,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
 | 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete | 2026-07-01 |
-| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 3/6 | In Progress|  |
+| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 4/6 | In Progress|  |
 | 14. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
 | 15. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |
