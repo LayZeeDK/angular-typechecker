@@ -4,7 +4,7 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: executing
 stopped_at: Phase 14 context gathered
-last_updated: "2026-07-01T23:45:39.622Z"
+last_updated: "2026-07-01T23:55:07.905Z"
 last_activity: 2026-07-01
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 ## Current Position
 
 Phase: 14 (configuration + init generators, nx add) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-01
 
@@ -72,6 +72,7 @@ v0.0.4 re-scoped 2026-07-01: spikes 001-005 (`.planning/spikes/MANIFEST.md`, all
 - [Phase 13]: Phase 13 Plan 04 (D-02): SkippedReference re-exported from ./core/walk-references via index.ts; executor adapter renders a per-reference advisory logger.warn AFTER the templateCheckAborted block, gated presence-AND-non-empty, verdict unchanged (L-4), no new import. Rewrote the now-stale config-resolution solution-style block to assert the walk (rootNamesCount>0, errorCount 2, two distinct-file TS2322, skippedReferences undefined) so existing coverage does not regress; COR-01 pinning block byte-unchanged
 - [Phase ?]: Phase 13.1 (EXEC-01): renamed the shipped Nx executor angular-typechecker:angular-typecheck to angular-typechecker:typecheck (executors.json key, impl dir via git mv, impl/schema paths, schema $id + TS options interface to TypecheckExecutorOptions, default-export to typecheckExecutor, nx.json targetDefaults both id forms with WALK-02 value preserved, all consumers/fixtures/specs/READMEs). Behavior unchanged; committed as breaking feat! (956e657). Human-facing message prefixes moved to package name angular-typechecker:.
 - [Phase 14]: Plan 14-01 (GEN-07): standalone init generator seeds ONLY the unscoped angular-typechecker:typecheck targetDefaults key with the WALK-02 block copied verbatim from nx.json (D-04), whole-entry ??= don't-clobber (D-05); readNxJson null guard; config-edit only (no generateFiles). GEN-05/06 only partially advanced (init slice), left Pending until configuration + generators.json land. — Idiomatic first-party Nx init pattern; whole-entry ??= keeps the coherent WALK-02 block (default-not-production inputs, outputs:[], cache:true are interdependent) from being merged into an incoherent state.
+- [Phase ?]: Plan 14-02 (GEN-01/02/03/04/08): configuration generator awaits initGenerator { skipFormat:true } FIRST then formats once (D-10); resolves tsConfig by D-07 order (override absolute-verbatim / relative-joinPathFragments; solution tsconfig.json w/ non-empty references[]; flat leaf by projectType + tree.exists; else located error); writes ONE workspace-root-relative typecheck target; collision-by-EXECUTOR (idempotent rewrite for angular-typechecker:typecheck, throw otherwise); reads virtual Tree only (no node:fs).
 
 ### Blockers/Concerns
 
@@ -109,6 +110,6 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-01T23:45:22.822Z
+Last session: 2026-07-01T23:54:54.388Z
 Stopped at: Phase 14 context gathered
 Next step: Plan Phase 13 (Engine: solution-tsconfig reference-walking, WALK-01/02) via `/gsd-plan-phase 13`. The engine change is Approach-A-compatible (existing `performCompilation`, no new compiler machinery); ground the plan in spikes 001-005 and the spike `MANIFEST.md` locked requirements.
