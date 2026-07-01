@@ -56,6 +56,7 @@ silent. None of those hold for ordinary feature code; all three hold here.
 ## D1 -- Test substrate
 
 ### Position
+
 Use ALL THREE substrates, each at the tier where it catches a distinct regression
 class -- this is defense-in-depth, not redundancy-for-its-own-sake:
 
@@ -78,6 +79,7 @@ existing `typecheck-drift` gate). The infrastructure to do this SAFELY is fully
 specified.
 
 ### Factual basis
+
 - In-memory tree captures 100% of a pure config-edit generator
   (CURRENT-AUDIT-AND-GENERATOR.md (2) reasoning; 452 Nx generator specs use it).
 - `FsTree`/`flushChanges` are reachable, verified present at `nx@23.0.1`, and
@@ -90,6 +92,7 @@ specified.
   fidelity is the right tool when a compiler must see the output.
 
 ### Facts the orchestrator can verify
+
 - Whether the generator's intended behavior stays a pure `project.json` edit, or
   whether milestone scope adds `generateFiles` (a `tsconfig.typecheck.json` template,
   per-project-type tsconfig emission). If it emits FILES, the real-disk "is the
@@ -98,6 +101,7 @@ specified.
   test (it should be -- one helper, two consumers).
 
 ### What would change my position
+
 If the generator is GUARANTEED (locked in scope) to never emit files and only ever
 edit `project.json` targets, AND the D4 tarball e2e is committed to run the generated
 target end-to-end, then the real-disk `FsTree` tier's UNIQUE catch (compiler reads
@@ -111,6 +115,7 @@ documentation-drift and leaves the mid-tier (D3) without a real-disk option.
 ## D2 -- Diagnostic coverage
 
 ### Position
+
 MAXIMAL coverage is mandatory and cheap. Specifically:
 
 1. **Assert ALL 18 `ExtendedTemplateDiagnosticName` members by exact code +
@@ -151,6 +156,7 @@ injection buys nothing here because the repo does not generate workspaces at tes
 time for the integration tier; it loads committed tsconfigs.
 
 ### Factual basis
+
 - `runTypecheck` returns the full `diagnostics` array; the exact-code +
   `.category` assertion is committed and working (run-typecheck.ts:42;
   extended.angular13.integration.spec.ts). Marginal cost per code = one fixture +
@@ -168,6 +174,7 @@ time for the integration tier; it loads committed tsconfigs.
   installed compiler; the catalog's 16 is a labeling choice.
 
 ### Facts the orchestrator can verify
+
 - The exact NG-code for each of the 18 names, read from the compiler-cli `ErrorCode`
   enum at `@angular/compiler-cli@22.0.4` (FACTS.md section 4 flags this as
   read-during-work). Two names (`controlFlowPreventingContentProjection`, the second
@@ -178,6 +185,7 @@ time for the integration tier; it loads committed tsconfigs.
   the sandbox's `forceExtendedDiagnosticsAsErrors`).
 
 ### What would change my position
+
 If the orchestrator verifies that one or more of the 18 enum members is NOT
 independently triggerable at v22.0.4 (the check is gated behind a config combo the
 tool never runs, or the code was reserved-but-unimplemented), I would scope THAT
@@ -192,15 +200,17 @@ the maximalist principle (no silent holes) is preserved either way.
 ## D3 -- Executor-against-workspace test (the mid-tier)
 
 ### Position
+
 ADD IT. The current architecture jumps from seam-mocked unit specs straight to the
 full-tarball e2e with NOTHING in between (CURRENT-AUDIT-AND-GENERATOR.md A.2). That
 missing mid-tier is exactly where a whole class of regressions hides: `context.root`
-+ `tsConfig` option -> real on-disk path resolution; `normalizeOptions` against a
-real `project.json` target; the executor binding under its PUBLISHED id against a
-real `ExecutorContext`. Today (per the audit) path-resolution and id-binding are
-proven ONLY at the slow Linux-only tarball tier, and option-normalization only via a
-pure unit. A bug in `context.root` join logic on Windows would currently be invisible
-until the e2e tier -- which does not run on Windows in CI (e2e is Linux-only).
+
+- `tsConfig` option -> real on-disk path resolution; `normalizeOptions` against a
+  real `project.json` target; the executor binding under its PUBLISHED id against a
+  real `ExecutorContext`. Today (per the audit) path-resolution and id-binding are
+  proven ONLY at the slow Linux-only tarball tier, and option-normalization only via a
+  pure unit. A bug in `context.root` join logic on Windows would currently be invisible
+  until the e2e tier -- which does not run on Windows in CI (e2e is Linux-only).
 
 Build it on the `createFsTree` substrate from D1 (the helper pays for itself by
 serving two tiers). Run the executor against a real-disk seeded workspace +
@@ -209,18 +219,19 @@ path is the on-disk one. This runs in the 6-cell `test` matrix -- so it gets the
 Windows + macOS coverage the e2e tier lacks, closing a real cross-platform hole.
 
 ### Factual basis
+
 - The mid-tier gap is explicitly identified (CURRENT-AUDIT-AND-GENERATOR.md A.2:
   "There is no mid-tier ... the jump is mocked-unit -> full-tarball-e2e with nothing
   in between").
 - Path resolution + published-id binding are e2e-only today; e2e is Linux-only
-  (ci.yml e2e job; FACTS.md section 5). The `test` matrix runs Windows 24/26 + macOS
-  24. A mid-tier executor test in the `test` matrix is the ONLY way path-resolution
+  (ci.yml e2e job; FACTS.md section 5). The `test` matrix runs Windows 24/26 + macOS 24. A mid-tier executor test in the `test` matrix is the ONLY way path-resolution
   gets cross-platform coverage without making e2e multi-OS (which would be far more
   expensive).
 - The substrate decision is reusable (CURRENT-AUDIT-AND-GENERATOR.md (3) "this is
   where the FsTree substrate choice is reused").
 
 ### Facts the orchestrator can verify
+
 - Whether `context.root` + tsConfig resolution has any OS-sensitive path logic
   (separators, drive letters) that a Linux-only e2e would miss. If the executor
   delegates 100% to `node:path` with no manual string joins, the cross-platform
@@ -228,6 +239,7 @@ Windows + macOS coverage the e2e tier lacks, closing a real cross-platform hole.
   OS-independent value).
 
 ### What would change my position
+
 If the orchestrator confirms (a) the executor does ALL path resolution via
 `node:path`/devkit helpers with zero hand-rolled separator logic, AND (b) a cheap
 ADDITION to the existing matrix-e2e (already runs all 5 project types) would assert
@@ -242,6 +254,7 @@ not the specific tier.
 ## D4 -- Generator e2e
 
 ### Position
+
 YES, test the generator end-to-end, with FULL fidelity: pack + install the real
 tarball, run `npx nx g angular-typechecker:typecheck-configuration <proj>` as a
 consumer would, assert the on-disk `project.json` got the target, AND assert that
@@ -267,17 +280,19 @@ foot-gun. Reusing an existing project means zero ci.yml change and automatic
 inclusion.
 
 ### Factual basis
+
 - The generator does not exist yet; the tarball harness DOES and is proven
   (install-smoke, matrix-5types; FACTS.md section 3).
 - matrix-e2e already commits a 5-project-type consumer workspace
   (git ls-files: `consumer-workspace/{apps/app, libs/{local,buildable,publishable}-lib}`
-  + a `local-lib` spec tsconfig). The per-type substrate is sunk cost.
+  - a `local-lib` spec tsconfig). The per-type substrate is sunk cost.
 - Verdaccio is deliberately avoided; Windows `execFileSync(nx)` failure is a named
   hazard (CURRENT-AUDIT-AND-GENERATOR.md B.3; CONNECT-TECHNIQUES.md section 7).
 - A new e2e project is CI-invisible until added to the `-p` list (FACTS.md section
   5; CURRENT-AUDIT-AND-GENERATOR.md A.4).
 
 ### Facts the orchestrator can verify
+
 - Whether the matrix-e2e fixture workspace can host a `nx g` invocation without
   Verdaccio (it installs the tarball; running a generator from an installed plugin in
   a committed workspace needs the plugin resolvable from that workspace's
@@ -288,6 +303,7 @@ inclusion.
   side effect of fixture wiring.
 
 ### What would change my position
+
 If the orchestrator finds the existing `install-e2e`/`matrix-e2e` projects cannot
 host a generator invocation without a NEW e2e project (resolution constraints), I
 would accept a new `generator-e2e` project ONLY with the ci.yml `-p`-list addition
@@ -300,6 +316,7 @@ across project types) does not change.
 ## D5 -- CI mapping
 
 ### Position
+
 Maximal coverage must run where it catches the MOST regression classes, and CI must
 FAIL CLOSED on every new tier:
 
@@ -328,6 +345,7 @@ FAIL CLOSED on every new tier:
    guard by review discipline + the D4 "extend existing project" preference.
 
 ### Factual basis
+
 - In-plugin specs auto-join the `test` matrix; new e2e projects need explicit `-p`
   addition (FACTS.md section 5; CURRENT-AUDIT-AND-GENERATOR.md A.4).
 - The boundary filter is OS-sensitive (`useCaseSensitiveFileNames`, `realpath` in
@@ -339,12 +357,14 @@ FAIL CLOSED on every new tier:
   e2e project would NOT fail the gate (fail-open hazard).
 
 ### Facts the orchestrator can verify
+
 - Whether running the FULL 14-fixture catalog in all 6 cells materially increases CI
   wall-clock (each fixture is a cold `performCompilation`; `testTimeout`/`hookTimeout`
   are 30000). If the catalog adds, say, 14 x cold-compile x 6 cells, the matrix time
   could grow non-trivially.
 
 ### What would change my position
+
 If the orchestrator measures that running the full catalog on all 6 cells pushes the
 `test` matrix past an acceptable wall-clock budget, I would accept running the full
 catalog on ONE Linux cell (Node 24) and a REDUCED smoke subset (one warning, one
@@ -358,6 +378,7 @@ one Windows cell must run enough of the catalog to exercise case-folding/realpat
 ## D6 -- Scope
 
 ### Position
+
 The `typecheck-configuration` generator BELONGS in this milestone (it is the
 milestone's named scope -- FACTS.md section 1), and the testing work should be
 SCOPED MAXIMALLY around correctness, not minimally around effort. Concretely, the
@@ -391,6 +412,7 @@ dependency-error-busts-cache, which is the high-value cache invariant. I do NOT 
 for deeper Nx-scheduler testing -- that is the genuine YAGNI line.
 
 ### Factual basis
+
 - Generator is the milestone's named scope (FACTS.md section 1).
 - The catalog gap (14/16 missing) and the FsTree drift are DOCUMENTED as v0.0.4's
   job (CURRENT-AUDIT-AND-GENERATOR.md A.3, A.5; PROJECT.md references).
@@ -401,6 +423,7 @@ for deeper Nx-scheduler testing -- that is the genuine YAGNI line.
   shipping more is identical, so scope is not constrained by release mechanics.
 
 ### Facts the orchestrator can verify
+
 - Whether the milestone has a stated time/effort budget that the full body (1-7)
   exceeds. The maximalist case rests on the marginal cost being low; if the
   orchestrator has a hard budget, items 2 (full catalog) and 4 (FsTree) are the
@@ -409,6 +432,7 @@ for deeper Nx-scheduler testing -- that is the genuine YAGNI line.
   infrastructure.
 
 ### What would change my position
+
 If the orchestrator establishes that the generator's behavior is genuinely trivial
 (33-line sandbox-grade, pure `project.json` edit, no project-type branching, no file
 emission) AND a hard milestone budget exists, I would still hold items 2 + 4 as

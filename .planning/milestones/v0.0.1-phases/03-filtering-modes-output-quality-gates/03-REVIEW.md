@@ -37,7 +37,7 @@ status: issues_found
 
 ## Summary
 
-Deep, cross-file review of the Phase-3 core/** modules (`filterDiagnostics`,
+Deep, cross-file review of the Phase-3 core/\*\* modules (`filterDiagnostics`,
 `evaluateResult`, `formatReport`) and the `runTypecheck` seam that composes them,
 plus the sibling-import fixture and the rewritten ESLint config that locks the
 core boundary. The verdict logic, the boundary-filter segment/realpath handling,
@@ -57,6 +57,7 @@ instead of failing safe (the most material), and a per-call canonicalizer cache
 whose pattern invites an unbounded-leak refactor. The remaining items are minor.
 
 I verified several plausible crash/correctness paths and cleared them:
+
 - realpath-of-nonexistent-path (e.g. `.ngtypecheck.ts` virtual shadow files):
   `ts.sys.realpath` swallows ENOENT and returns the input path
   (typescript.js:8640-8646), and `runTypecheck` additionally guards with

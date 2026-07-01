@@ -53,23 +53,23 @@ CI  .github/workflows/ci.yml  -- NO structural change (jobs unchanged)
 
 ### Component Responsibilities
 
-| Component | Responsibility | New / Modified / Existing |
-|-----------|----------------|---------------------------|
-| `generators.json` (package root) | Plugin marker that registers `typecheck-configuration` -> factory + schema path; the generator analogue of `executors.json` | **NEW file** |
-| `src/generators/typecheck-configuration/generator.ts` | Default async `(tree, options)` fn: `readProjectConfiguration` -> guard/merge an `angular-typecheck` target into `targets` -> `updateProjectConfiguration` -> `formatFiles`. NO `generateFiles`, NO file emission | **NEW** |
-| `src/generators/typecheck-configuration/schema.{json,d.ts}` | Hand-authored option schema (`project` positional via `$default` argv, `--tsConfig` override, target-name; `additionalProperties:false`) + matching TS interface | **NEW** |
-| `generator.spec.ts` | In-memory `createTreeWithEmptyWorkspace` + `addProjectConfiguration` seed -> run generator -> assert written target per project type + idempotency | **NEW** |
-| generator schema-parity spec | `schema.json` keys === `schema.d.ts` interface keys -- extends the existing executor `schema-parity.spec.ts` idiom | **NEW (idiom reused)** |
-| `extended-catalog.integration.spec.ts` | ONE `it.each` table keyed on the 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes; exact code + `DiagnosticCategory` + count + one promotion case; real compiler over committed fixtures | **NEW (replaces/absorbs the partial v13 split)** |
-| completeness tripwire | Asserts catalog covered-code set === the `ExtendedTemplateDiagnosticName` enum, consumed at test time; `it.skip`-with-reason rows stay counted | **NEW** |
-| `install-e2e/.../consumer-app` fixture | Gains a SECOND project WITHOUT a pre-wired target, so the generator has something to wire | **MODIFIED fixture** |
-| generator e2e spec (in `install-e2e`) | Pack+install tarball -> `nx g angular-typechecker:typecheck-configuration` -> assert `project.json` -> `nx run <proj>:angular-typecheck --skip-nx-cache` (clean=success, injected error=failure with code visible) | **NEW spec, folded into existing project** |
-| `-p` set-equality guard spec | Reads `ci.yml` e2e job `-p` list and the Nx project graph; asserts list === all `e2e/*` projects (quantifier `every`) | **NEW (in the `test` tier)** |
-| build target `assets` (`project.json`) | Must glob `generators.json` into `dist` (mirror the existing `executors.json` asset block) | **MODIFIED** |
-| `package.json` `files` + `generators` | Add `generators.json` to the tarball allowlist; add the `"generators"` field | **MODIFIED** |
-| core engine (`src/core/**`) | The whole-program type-check; consumed by the generated target at runtime | **EXISTING, untouched** |
-| executor adapter | Consumed by the target the generator writes; unchanged | **EXISTING, untouched** |
-| `ci.yml` jobs | `test` / `e2e` / `fallow` / aggregate `ci` -- structurally unchanged | **EXISTING, untouched** |
+| Component                                                   | Responsibility                                                                                                                                                                                                     | New / Modified / Existing                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `generators.json` (package root)                            | Plugin marker that registers `typecheck-configuration` -> factory + schema path; the generator analogue of `executors.json`                                                                                        | **NEW file**                                     |
+| `src/generators/typecheck-configuration/generator.ts`       | Default async `(tree, options)` fn: `readProjectConfiguration` -> guard/merge an `angular-typecheck` target into `targets` -> `updateProjectConfiguration` -> `formatFiles`. NO `generateFiles`, NO file emission  | **NEW**                                          |
+| `src/generators/typecheck-configuration/schema.{json,d.ts}` | Hand-authored option schema (`project` positional via `$default` argv, `--tsConfig` override, target-name; `additionalProperties:false`) + matching TS interface                                                   | **NEW**                                          |
+| `generator.spec.ts`                                         | In-memory `createTreeWithEmptyWorkspace` + `addProjectConfiguration` seed -> run generator -> assert written target per project type + idempotency                                                                 | **NEW**                                          |
+| generator schema-parity spec                                | `schema.json` keys === `schema.d.ts` interface keys -- extends the existing executor `schema-parity.spec.ts` idiom                                                                                                 | **NEW (idiom reused)**                           |
+| `extended-catalog.integration.spec.ts`                      | ONE `it.each` table keyed on the 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes; exact code + `DiagnosticCategory` + count + one promotion case; real compiler over committed fixtures         | **NEW (replaces/absorbs the partial v13 split)** |
+| completeness tripwire                                       | Asserts catalog covered-code set === the `ExtendedTemplateDiagnosticName` enum, consumed at test time; `it.skip`-with-reason rows stay counted                                                                     | **NEW**                                          |
+| `install-e2e/.../consumer-app` fixture                      | Gains a SECOND project WITHOUT a pre-wired target, so the generator has something to wire                                                                                                                          | **MODIFIED fixture**                             |
+| generator e2e spec (in `install-e2e`)                       | Pack+install tarball -> `nx g angular-typechecker:typecheck-configuration` -> assert `project.json` -> `nx run <proj>:angular-typecheck --skip-nx-cache` (clean=success, injected error=failure with code visible) | **NEW spec, folded into existing project**       |
+| `-p` set-equality guard spec                                | Reads `ci.yml` e2e job `-p` list and the Nx project graph; asserts list === all `e2e/*` projects (quantifier `every`)                                                                                              | **NEW (in the `test` tier)**                     |
+| build target `assets` (`project.json`)                      | Must glob `generators.json` into `dist` (mirror the existing `executors.json` asset block)                                                                                                                         | **MODIFIED**                                     |
+| `package.json` `files` + `generators`                       | Add `generators.json` to the tarball allowlist; add the `"generators"` field                                                                                                                                       | **MODIFIED**                                     |
+| core engine (`src/core/**`)                                 | The whole-program type-check; consumed by the generated target at runtime                                                                                                                                          | **EXISTING, untouched**                          |
+| executor adapter                                            | Consumed by the target the generator writes; unchanged                                                                                                                                                             | **EXISTING, untouched**                          |
+| `ci.yml` jobs                                               | `test` / `e2e` / `fallow` / aggregate `ci` -- structurally unchanged                                                                                                                                               | **EXISTING, untouched**                          |
 
 ## Recommended Project Structure
 
@@ -127,6 +127,7 @@ e2e/angular-typechecker-install-e2e/
 **Trade-offs:** Two markers + two `package.json` fields + two build-asset globs to keep honest; offset by the fact that the generator's only job is to write the executor's target, so the two surfaces are tightly co-designed (the generated `executor` id and `tsConfig` option must match the executor's published id and schema).
 
 **Example:**
+
 ```jsonc
 // generators.json (NEW, sibling to executors.json)
 {
@@ -135,9 +136,9 @@ e2e/angular-typechecker-install-e2e/
     "typecheck-configuration": {
       "factory": "./src/generators/typecheck-configuration/generator",
       "schema": "./src/generators/typecheck-configuration/schema.json",
-      "description": "Add the angular-typecheck target to a project."
-    }
-  }
+      "description": "Add the angular-typecheck target to a project.",
+    },
+  },
 }
 ```
 
@@ -150,6 +151,7 @@ e2e/angular-typechecker-install-e2e/
 **Trade-offs:** In-memory proves the recorded CHANGE, not on-disk consumability -- but that on-disk proof already exists at the e2e tier (GE2E-02 runs the real target after generating). The alternative (bespoke real-disk `createFsTree` over the internal `nx/src/generators/tree`) would add an eslint-disable quarantine + a drift tripwire for fidelity this generator does not need; CONSENSUS rejected it unanimously.
 
 **Example:**
+
 ```typescript
 const project = readProjectConfiguration(tree, options.project); // throws if absent
 project.targets ??= {};
@@ -171,20 +173,21 @@ await formatFiles(tree);
 **Trade-offs:** A single big table is less granular than per-code files but is the ONLY shape that lets the set-equality tripwire be a one-liner against the enum. The enum must be imported by value from `@angular/compiler-cli` (verify it is a runtime enum, not a type-only const) -- if type-only, the tripwire reads the shipped `.d.ts` member list the same way `schema-parity.spec.ts` encodes the expected key set.
 
 **Example:**
+
 ```typescript
 // rows keyed on the enum; introduction-version is a field, not a file split
-it.each(CATALOG)('$code ($name, v$introducedIn): exact code + category + count',
-  async ({ code, category, count, fixture, skipReason }) => {
-    if (skipReason) { /* it.skip path: row stays counted by the tripwire */ return; }
-    const result = await runTypecheck({ tsConfigPath: fixture });
-    const hits = result.diagnostics.filter((d) => d.code === code);
-    expect(hits).toHaveLength(count);
-    expect(hits[0].category).toBe(category);
-  });
+it.each(CATALOG)('$code ($name, v$introducedIn): exact code + category + count', async ({ code, category, count, fixture, skipReason }) => {
+  if (skipReason) {
+    /* it.skip path: row stays counted by the tripwire */ return;
+  }
+  const result = await runTypecheck({ tsConfigPath: fixture });
+  const hits = result.diagnostics.filter((d) => d.code === code);
+  expect(hits).toHaveLength(count);
+  expect(hits[0].category).toBe(category);
+});
 
 it('completeness tripwire: catalog covers exactly the enum', () => {
-  expect(new Set(CATALOG.map((r) => r.name)))
-    .toEqual(new Set(Object.values(ExtendedTemplateDiagnosticName)));
+  expect(new Set(CATALOG.map((r) => r.name))).toEqual(new Set(Object.values(ExtendedTemplateDiagnosticName)));
 });
 ```
 
@@ -250,12 +253,12 @@ assert  Set(ci -p list) === Set(e2e/* graph projects)   (predicate quantifier: e
 
 (For a build/test plugin, "scale" = number of fixtures, projects, and Angular versions, not user count.)
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| v0.0.4 (1 generator, 18+baseline codes, 3 e2e projects) | Single enum-keyed catalog file; generator e2e folded into install-e2e; in-memory generator tests. Cold-compile ~0.5s/fixture, ~9s/cell parallelized (CONSENSUS D5) -- comfortable; no `test`-target split. |
+| Scale                                                     | Architecture Adjustments                                                                                                                                                                                           |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| v0.0.4 (1 generator, 18+baseline codes, 3 e2e projects)   | Single enum-keyed catalog file; generator e2e folded into install-e2e; in-memory generator tests. Cold-compile ~0.5s/fixture, ~9s/cell parallelized (CONSENSUS D5) -- comfortable; no `test`-target split.         |
 | Next milestone (createNodesV2 inference, more generators) | A second generator slots into `src/generators/<name>/` under the same `generators.json`; if a generator EMITS files a compiler must read back, re-open FSTREE-01 (the deferred real-disk helper) -- but only then. |
-| Future Angular majors (new NG8xxx) | The enum-keyed catalog makes a new code a new ROW + fixture; the tripwire forces it red until added. No file proliferation. |
-| Angular CLI (`angular.json`) workspaces (GEN-FUT-01) | Re-export the generator via `convertNxGenerator` (a thin adapter, same core); deferred -- Nx workspaces only in v0.0.4. |
+| Future Angular majors (new NG8xxx)                        | The enum-keyed catalog makes a new code a new ROW + fixture; the tripwire forces it red until added. No file proliferation.                                                                                        |
+| Angular CLI (`angular.json`) workspaces (GEN-FUT-01)      | Re-export the generator via `convertNxGenerator` (a thin adapter, same core); deferred -- Nx workspaces only in v0.0.4.                                                                                            |
 
 ### Scaling Priorities
 
@@ -298,25 +301,25 @@ assert  Set(ci -p list) === Set(e2e/* graph projects)   (predicate quantifier: e
 
 ### Internal Boundaries
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| generator <-> executor | The generated target's `executor` id string + `tsConfig` option must match the executor's published id (`angular-typechecker:angular-typecheck`) and its `schema.json` | Load-bearing seam; GE2E-02 verifies it by running the generated target |
-| generator <-> `@nx/devkit` | `readProjectConfiguration` / `updateProjectConfiguration` / `formatFiles` / `joinPathFragments` (all public, verified in `nx@23.0.1`) | No deep imports; no `nx/src/*` |
-| generator <-> Nx CLI | `generators.json` marker + `package.json` `"generators"` field; build `assets` glob copies `generators.json` to `dist` | Mirror the existing `executors.json` plumbing exactly |
-| catalog <-> core engine | Calls `runTypecheck` directly against committed fixtures; asserts off `CoreResult.diagnostics` (code, `.category`, count) | Same idiom as existing `*.integration.spec.ts`; no engine change |
-| catalog <-> `ExtendedTemplateDiagnosticName` | Enum imported (by value if runtime, else `.d.ts` member list) and compared to the table's covered set | The completeness tripwire's single source of truth |
-| generator e2e <-> install-e2e harness | Reuses `buildCleanEnv` / nested-nx env-strip / `npm pack` + `mkdtempSync` tmp install from `install-smoke.int.spec.ts`; runs with `--skip-nx-cache` | No new harness; rides the existing `implicitDependencies: ["angular-typechecker"]` tarball build |
-| guard spec <-> ci.yml + project graph | Parses the `e2e` job `-p` list and reads the graph; asserts set equality (`every`) | Meta-test in the `test` tier; protects the e2e gate's meaning |
+| Boundary                                     | Communication                                                                                                                                                          | Notes                                                                                            |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| generator <-> executor                       | The generated target's `executor` id string + `tsConfig` option must match the executor's published id (`angular-typechecker:angular-typecheck`) and its `schema.json` | Load-bearing seam; GE2E-02 verifies it by running the generated target                           |
+| generator <-> `@nx/devkit`                   | `readProjectConfiguration` / `updateProjectConfiguration` / `formatFiles` / `joinPathFragments` (all public, verified in `nx@23.0.1`)                                  | No deep imports; no `nx/src/*`                                                                   |
+| generator <-> Nx CLI                         | `generators.json` marker + `package.json` `"generators"` field; build `assets` glob copies `generators.json` to `dist`                                                 | Mirror the existing `executors.json` plumbing exactly                                            |
+| catalog <-> core engine                      | Calls `runTypecheck` directly against committed fixtures; asserts off `CoreResult.diagnostics` (code, `.category`, count)                                              | Same idiom as existing `*.integration.spec.ts`; no engine change                                 |
+| catalog <-> `ExtendedTemplateDiagnosticName` | Enum imported (by value if runtime, else `.d.ts` member list) and compared to the table's covered set                                                                  | The completeness tripwire's single source of truth                                               |
+| generator e2e <-> install-e2e harness        | Reuses `buildCleanEnv` / nested-nx env-strip / `npm pack` + `mkdtempSync` tmp install from `install-smoke.int.spec.ts`; runs with `--skip-nx-cache`                    | No new harness; rides the existing `implicitDependencies: ["angular-typechecker"]` tarball build |
+| guard spec <-> ci.yml + project graph        | Parses the `e2e` job `-p` list and reads the graph; asserts set equality (`every`)                                                                                     | Meta-test in the `test` tier; protects the e2e gate's meaning                                    |
 
 ### Build / Packaging Integration
 
-| Artifact | Change | Notes |
-|----------|--------|-------|
-| `package.json` `"generators"` | ADD `"generators": "./generators.json"` (sibling to `"executors"`) | Makes Nx discover the generator from an install |
-| `package.json` `files` | ADD `"generators.json"` to the allowlist | `schema.json` already ships via `src` + the `**/!(*.ts)` asset glob |
-| `project.json` build `assets` | ADD a glob block for `generators.json` (mirror the `executors.json` block at lines 29-33) | Without it the marker is absent from `dist` and the generator is unresolvable |
-| `@nx/dependency-checks` | No new runtime dep (generator uses the already-declared `@nx/devkit`) | The catalog/tripwire consume the peer `@angular/compiler-cli` (already declared) |
-| tarball audit (`tarball-audit.int.spec.ts`) | Its file-set gate must now expect `generators.json` in the tarball | Update the expected-files assertion alongside the `files` change |
+| Artifact                                    | Change                                                                                    | Notes                                                                            |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `package.json` `"generators"`               | ADD `"generators": "./generators.json"` (sibling to `"executors"`)                        | Makes Nx discover the generator from an install                                  |
+| `package.json` `files`                      | ADD `"generators.json"` to the allowlist                                                  | `schema.json` already ships via `src` + the `**/!(*.ts)` asset glob              |
+| `project.json` build `assets`               | ADD a glob block for `generators.json` (mirror the `executors.json` block at lines 29-33) | Without it the marker is absent from `dist` and the generator is unresolvable    |
+| `@nx/dependency-checks`                     | No new runtime dep (generator uses the already-declared `@nx/devkit`)                     | The catalog/tripwire consume the peer `@angular/compiler-cli` (already declared) |
+| tarball audit (`tarball-audit.int.spec.ts`) | Its file-set gate must now expect `generators.json` in the tarball                        | Update the expected-files assertion alongside the `files` change                 |
 
 ## Suggested Build Order (Phases 12-14)
 
@@ -340,5 +343,6 @@ Consistent with the ratified roadmap (Phase 12 catalog, Phase 13 generator, Phas
 - `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md` (v0.0.4 section) -- HIGH -- the 15 requirements and the Phase 12-14 mapping this build order is consistent with.
 
 ---
-*Architecture research for: v0.0.4 generator + extended-testing integration*
-*Researched: 2026-07-01*
+
+_Architecture research for: v0.0.4 generator + extended-testing integration_
+_Researched: 2026-07-01_

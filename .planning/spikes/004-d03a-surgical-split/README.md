@@ -2,7 +2,7 @@
 spike: 004
 name: d03a-surgical-split
 type: standard
-validates: "Given the zero-rootNames guard, when references[] are present and at least one survives the boundary guard the engine walks the leaves; when references are present but none are in-project, or there are no references, it still synthesizes the deterministic error; the rootNames>0 direct path is untouched"
+validates: 'Given the zero-rootNames guard, when references[] are present and at least one survives the boundary guard the engine walks the leaves; when references are present but none are in-project, or there are no references, it still synthesizes the deterministic error; the rootNames>0 direct path is untouched'
 verdict: VALIDATED
 related: [001, 002]
 tags: [guard, regression, engine]
@@ -48,12 +48,12 @@ rewrite note).
 
 ## What to Expect
 
-| Scenario | entry | mode | err | codes |
-|----------|-------|------|-----|-------|
-| solution, in-project ref | `with-refs/tsconfig.json` | **walk** | 1 | `[2322]` (the leaf's error) |
-| solution, out-of-project ref only | `oop-refs/tsconfig.json` | **guard-error:references-none-in-project** | 1 | `[90001]` |
-| empty (no files, no refs) | `empty/tsconfig.json` | **guard-error:empty-project** | 1 | `[90001]` |
-| direct leaf (rootNames>0) | `with-refs/tsconfig.lib.json` | **compile-direct** | 1 | `[2322]` |
+| Scenario                          | entry                         | mode                                       | err | codes                       |
+| --------------------------------- | ----------------------------- | ------------------------------------------ | --- | --------------------------- |
+| solution, in-project ref          | `with-refs/tsconfig.json`     | **walk**                                   | 1   | `[2322]` (the leaf's error) |
+| solution, out-of-project ref only | `oop-refs/tsconfig.json`      | **guard-error:references-none-in-project** | 1   | `[90001]`                   |
+| empty (no files, no refs)         | `empty/tsconfig.json`         | **guard-error:empty-project**              | 1   | `[90001]`                   |
+| direct leaf (rootNames>0)         | `with-refs/tsconfig.lib.json` | **compile-direct**                         | 1   | `[2322]`                    |
 
 Shipped engine on the with-refs case: `guard-error` (the regression the rewrite fixes). All 6
 assertions PASS; `VERDICT: VALIDATED`.
@@ -86,6 +86,7 @@ assertions PASS; `VERDICT: VALIDATED`.
 - **TS18003 independence preserved** (D-03a / L-2).
 
 **Concrete spec rewrite for `config-resolution.integration.spec.ts:124-130`:**
+
 1. The current block asserts the solution-style fixture returns `rootNamesCount: 0` + `errorCount: 1`.
    Under the split it now WALKS. Repoint it to the walk outcome: `rootNamesCount > 0` and the leaf's
    diagnostics reported. **The `fixtures/solution-style` leaf is currently clean** (`error.component.ts`

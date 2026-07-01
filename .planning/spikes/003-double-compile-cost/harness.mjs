@@ -65,7 +65,9 @@ function overrideOptions(o) {
 
 function timeCompile(tsConfigPath) {
   const parseStart = performance.now();
-  const parsed = ng.readConfiguration(tsConfigPath, { suppressOutputPathCheck: true });
+  const parsed = ng.readConfiguration(tsConfigPath, {
+    suppressOutputPathCheck: true,
+  });
   const parseMs = performance.now() - parseStart;
 
   const compileStart = performance.now();
@@ -120,7 +122,13 @@ timeCompile(lib);
 timeCompile(spec);
 
 const samples = { lib: [], spec: [], depOnly: [], combined: [], floor: [] };
-const meta = { lib: null, spec: null, depOnly: null, combined: null, floor: null };
+const meta = {
+  lib: null,
+  spec: null,
+  depOnly: null,
+  combined: null,
+  floor: null,
+};
 for (let i = 0; i < ITERATIONS; i++) {
   const l = timeCompile(lib);
   const s = timeCompile(spec);
@@ -160,7 +168,10 @@ const depInCombined = meta.combined.depSourceFiles;
 const assertions = [
   {
     id: 'V1-both-clean',
-    pass: meta.lib.errorCount === 0 && meta.spec.errorCount === 0 && meta.combined.errorCount === 0,
+    pass:
+      meta.lib.errorCount === 0 &&
+      meta.spec.errorCount === 0 &&
+      meta.combined.errorCount === 0,
     detail: `lib err=${meta.lib.errorCount} spec err=${meta.spec.errorCount} combined err=${meta.combined.errorCount}`,
   },
   {
@@ -217,7 +228,11 @@ const forensic = {
       'target OR the generator wires N separate targets. The walk adds no compile work vs the ' +
       'multi-target alternative; it trades finer per-leaf caching for one coarse target (see spike 005).',
   },
-  depSourceFilesInProgram: { lib: depInLib, spec: depInSpec, combined: depInCombined },
+  depSourceFilesInProgram: {
+    lib: depInLib,
+    spec: depInSpec,
+    combined: depInCombined,
+  },
   deferredSynergy:
     'project references + NgtscProgram incremental declaration-reuse (per-file NgtscProgram ' +
     'migration, already DEFERRED in PROJECT.md) could compile the dep once and reuse its emitted ' +
@@ -230,23 +245,39 @@ const forensic = {
   verdict: allPass ? 'VALIDATED' : 'FAILED',
 };
 
-writeFileSync(join(here, 'forensic-log.json'), JSON.stringify(forensic, null, 2));
+writeFileSync(
+  join(here, 'forensic-log.json'),
+  JSON.stringify(forensic, null, 2),
+);
 
 console.log('=== Spike 003: double-compile cost [Q1] ===');
-console.log(`env: node ${process.version} | ts ${ts.version} | iterations ${ITERATIONS} (median)`);
+console.log(
+  `env: node ${process.version} | ts ${ts.version} | iterations ${ITERATIONS} (median)`,
+);
 console.log('--- median wall-clock (parse + compile), ms ---');
-console.log(`  fixed floor      : ${r1(medFloor)}   (1 trivial component -- pure per-compile overhead)`);
+console.log(
+  `  fixed floor      : ${r1(medFloor)}   (1 trivial component -- pure per-compile overhead)`,
+);
 console.log(`  lib leaf         : ${r1(medLib)}`);
 console.log(`  spec leaf        : ${r1(medSpec)}`);
-console.log(`  dep-only         : ${r1(medDep)}   (dep marginal = ${r1(depMarginal)} above floor)`);
+console.log(
+  `  dep-only         : ${r1(medDep)}   (dep marginal = ${r1(depMarginal)} above floor)`,
+);
 console.log(`  combined (1 prog): ${r1(medCombined)}`);
 console.log(`  WALK (lib+spec)  : ${r1(medWalk)}`);
 console.log(`  ---`);
-console.log(`  redundancy tax   : ${r1(tax)} ms  (${r1(taxPct)}% over the single-program cost)`);
-console.log(`  fixed floor is ${r1(fixedFloorPct)}% of a dep-only compile -> double-compile is fixed-overhead-bound at this scale`);
-console.log(`  dep source files in program: lib=${depInLib} spec=${depInSpec} combined=${depInCombined}`);
+console.log(
+  `  redundancy tax   : ${r1(tax)} ms  (${r1(taxPct)}% over the single-program cost)`,
+);
+console.log(
+  `  fixed floor is ${r1(fixedFloorPct)}% of a dep-only compile -> double-compile is fixed-overhead-bound at this scale`,
+);
+console.log(
+  `  dep source files in program: lib=${depInLib} spec=${depInSpec} combined=${depInCombined}`,
+);
 console.log('--- assertions ---');
-for (const a of assertions) console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
+for (const a of assertions)
+  console.log(`  [${a.pass ? 'PASS' : 'FAIL'}] ${a.id}: ${a.detail}`);
 console.log('\nDEFERRED synergy:', forensic.deferredSynergy);
 console.log(`\nVERDICT: ${forensic.verdict}`);
 

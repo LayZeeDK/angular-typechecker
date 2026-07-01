@@ -16,11 +16,13 @@ status: all_fixed
 **Iteration:** 1
 
 **Summary:**
+
 - Findings in scope: 6 (0 critical, 2 warning, 4 info; fix_scope = all)
 - Fixed: 6
 - Skipped: 0
 
 **Verification gate (authoritative, re-run after the last fix):**
+
 - `npx nx build angular-typechecker` -- SUCCESS
 - `npx nx test angular-typechecker` -- 39 passed (39) across 12 test files (12 passed)
 

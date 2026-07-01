@@ -9,10 +9,10 @@ requires:
   - phase: 08-correctness-completeness-fixes (plan 01)
     provides: TypecheckInfrastructureError + the run-typecheck.ts engine flow COR-02's gatherer feeds into
 provides:
-  - "Seventh diagnostic getter: gatherAllDiagnostics now calls program.getTsProgram().getGlobalDiagnostics() so global/location-less TS diagnostics (e.g. TS2318) are gathered (COR-02 / D-04)"
-  - "fixtures/global-diagnostics (noLib + types:[]) real-compiler fixture that triggers a raw TS2318"
-  - "Unit + integration proof that TS2318 surfaces through the engine (failing-then-passing)"
-  - "Deterministic test suite (raised vitest testTimeout) -- removed the rotating cold-compiler timeout flake"
+  - 'Seventh diagnostic getter: gatherAllDiagnostics now calls program.getTsProgram().getGlobalDiagnostics() so global/location-less TS diagnostics (e.g. TS2318) are gathered (COR-02 / D-04)'
+  - 'fixtures/global-diagnostics (noLib + types:[]) real-compiler fixture that triggers a raw TS2318'
+  - 'Unit + integration proof that TS2318 surfaces through the engine (failing-then-passing)'
+  - 'Deterministic test suite (raised vitest testTimeout) -- removed the rotating cold-compiler timeout flake'
 affects: [09-resilience, 10-drift-hardening]
 
 # Tech tracking
@@ -20,7 +20,7 @@ tech-stack:
   added: []
   patterns:
     - "Append-only all-getter extension: a new diagnostic source is one all.push(...) before return all; ordering/overlap is safe via finalize's sortAndDeduplicateDiagnostics"
-    - "Real-compiler integration proof in a dedicated *.integration.spec.ts asserting through result.diagnostics (the engine), not the raw getter"
+    - 'Real-compiler integration proof in a dedicated *.integration.spec.ts asserting through result.diagnostics (the engine), not the raw getter'
 
 key-files:
   created:
@@ -33,13 +33,13 @@ key-files:
     - packages/angular-typechecker/vitest.config.mts
 
 key-decisions:
-  - "No compiler-cli-types.ts edit: getGlobalDiagnostics is on the public ts.Program, reachable via the existing TsProgram = ts.Program & {...} declaration"
-  - "Assert the RAW positive TS code 2318 (never the negative NG() encoding -- it is a TypeScript code, not an Angular extended code)"
-  - "Fixture does NOT extend tsconfig.base.json -- the global type loss (noLib + types:[]) must be real or the TS2318 vanishes"
-  - "Raised vitest testTimeout/hookTimeout to 30000ms to make the cold real-compiler integration specs deterministic (pre-existing latent flake surfaced by the COR-02 verification gate)"
+  - 'No compiler-cli-types.ts edit: getGlobalDiagnostics is on the public ts.Program, reachable via the existing TsProgram = ts.Program & {...} declaration'
+  - 'Assert the RAW positive TS code 2318 (never the negative NG() encoding -- it is a TypeScript code, not an Angular extended code)'
+  - 'Fixture does NOT extend tsconfig.base.json -- the global type loss (noLib + types:[]) must be real or the TS2318 vanishes'
+  - 'Raised vitest testTimeout/hookTimeout to 30000ms to make the cold real-compiler integration specs deterministic (pre-existing latent flake surfaced by the COR-02 verification gate)'
 
 patterns-established:
-  - "Seventh getter / append-only gatherer growth: extend gatherAllDiagnostics with one all.push(...) and let the downstream sort+dedup absorb placement/overlap"
+  - 'Seventh getter / append-only gatherer growth: extend gatherAllDiagnostics with one all.push(...) and let the downstream sort+dedup absorb placement/overlap'
 
 requirements-completed: [COR-02]
 
@@ -99,6 +99,7 @@ _Note: this is a `tdd="true"` plan; Task 1 ships the fixture + production change
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] The unconditional 7th getter threw in two pre-existing unit tests that omit `getTsProgram`**
+
 - **Found during:** Task 2 (failing-then-passing verification)
 - **Issue:** Adding `program.getTsProgram().getGlobalDiagnostics()` to `gatherAllDiagnostics` made every gatherer invocation call `getTsProgram()`. The two pre-existing `gather-diagnostics.spec.ts` tests ("calls all six getters...", "still calls getNgSemanticDiagnostics...") stub a `program` whose object literal does NOT declare `getTsProgram`, so they threw `TypeError: program.getTsProgram is not a function`. The plan anticipated adding a SEPARATE `it` (which I did) but did not foresee that the new unconditional call breaks the existing stubs.
 - **Fix:** Added a minimal `getTsProgram: () => ({ getGlobalDiagnostics: () => [] })` stub to both pre-existing tests. Returning no globals keeps their six-in-order code assertions (`[1,2,3,2322,5,8109]`) and order assertions exactly unchanged.
@@ -107,6 +108,7 @@ _Note: this is a `tdd="true"` plan; Task 1 ships the fixture + production change
 - **Committed in:** 9305123 (Task 2 commit)
 
 **2. [Rule 3 - Blocking] Non-deterministic cold-compiler test timeout flake blocked the deterministic verification gate**
+
 - **Found during:** Task 2 (full-suite verification)
 - **Issue:** The full `npx nx test angular-typechecker` produced a NON-deterministic, rotating set of failures -- each failing spec was a real-compiler `*.integration.spec.ts` (`extended-v13`, `ts-baseline`, `config-resolution`, `run-typecheck.integration` ENG-01, `composite-triangle`, ...) hitting Vitest's default 5000ms `testTimeout`. Across five runs five different failing combinations appeared; the COR-02 specs passed every time. Root cause: a cold `@angular/compiler-cli` `performCompilation` (ESM load + whole-program no-emit) can exceed 5s under the parallel pool on this Windows arm64 box. Pre-existing latent flake (the vitest config has carried the 5s default since the 01-02 scaffold), surfaced by this plan's "full suite green" gate.
 - **Fix:** Raised `testTimeout` and `hookTimeout` to 30000ms in `vitest.config.mts` -- exactly what Vitest's own timeout message recommends for legitimately long-running tests. Changes NO test semantics; only the patience.
@@ -138,5 +140,6 @@ None - no external service configuration required.
 All created files verified on disk (fixture pair, integration spec, modified gatherer/spec/vitest config, SUMMARY) and both task commits (`5f13ad8`, `9305123`) verified in git history.
 
 ---
-*Phase: 08-correctness-completeness-fixes*
-*Completed: 2026-06-29*
+
+_Phase: 08-correctness-completeness-fixes_
+_Completed: 2026-06-29_

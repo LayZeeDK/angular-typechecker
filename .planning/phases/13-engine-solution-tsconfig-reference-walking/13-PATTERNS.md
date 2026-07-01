@@ -11,17 +11,17 @@ extends a mature engine, so every pattern is a verbatim mirror of shipped code. 
 
 ## File Classification
 
-| New/Changed File | Role | Data Flow | Closest Analog | Match Quality |
-|------------------|------|-----------|----------------|---------------|
-| NEW `src/core/walk-references.ts` | core module (pure) | batch / transform (per-leaf compile -> union) | `src/core/filter-diagnostics.ts` (module shape) + `src/core/run-typecheck.ts` (synth/compile idioms) | role-match (new capability, mirrored idioms) |
-| CHANGED `src/core/run-typecheck.ts` | core engine | request-response (single call -> CoreResult) | itself: `synthesizeZeroRootNamesDiagnostic` (90001) + `TemplateCheckAborted` field + D-03a guard | exact (extend in place) |
-| CHANGED `src/core/filter-diagnostics.ts` | core utility | transform | itself: existing `export function filterDiagnostics` style | exact |
-| CHANGED `src/index.ts` (barrel) | config / barrel | n/a | itself: existing `export type { CoreOptions, CoreResult }` at `:15` | exact |
-| CHANGED `src/executors/angular-typecheck/executor.ts` | executor adapter | request-response + logging | itself: `templateCheckAborted` render seam `:49-63` | exact |
-| NEW `walk-references.spec.ts` (unit) | test (pure unit) | n/a | `run-typecheck.ts` `detectTemplateCheckAborted` (exported for unit tier) + `gather-diagnostics.spec.ts` shape | role-match |
-| NEW `walk-references.integration.spec.ts` | test (real-compiler integration) | n/a | `config-resolution.integration.spec.ts` (fixtures + `it.each` + `NG()` + `runTypecheck` off CoreResult) | exact |
-| UPGRADED `fixtures/solution-style/*` + 5 NEW sibling fixtures | fixture | n/a | existing `fixtures/solution-style/{tsconfig.json,tsconfig.app.json,error.component.ts}` | exact |
-| CHANGED `nx.json` `targetDefaults["angular-typecheck"]` | config | n/a | existing `targetDefaults["angular-typecheck"]` block (one-line `production`->`default`) | exact |
+| New/Changed File                                              | Role                             | Data Flow                                     | Closest Analog                                                                                                | Match Quality                                |
+| ------------------------------------------------------------- | -------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| NEW `src/core/walk-references.ts`                             | core module (pure)               | batch / transform (per-leaf compile -> union) | `src/core/filter-diagnostics.ts` (module shape) + `src/core/run-typecheck.ts` (synth/compile idioms)          | role-match (new capability, mirrored idioms) |
+| CHANGED `src/core/run-typecheck.ts`                           | core engine                      | request-response (single call -> CoreResult)  | itself: `synthesizeZeroRootNamesDiagnostic` (90001) + `TemplateCheckAborted` field + D-03a guard              | exact (extend in place)                      |
+| CHANGED `src/core/filter-diagnostics.ts`                      | core utility                     | transform                                     | itself: existing `export function filterDiagnostics` style                                                    | exact                                        |
+| CHANGED `src/index.ts` (barrel)                               | config / barrel                  | n/a                                           | itself: existing `export type { CoreOptions, CoreResult }` at `:15`                                           | exact                                        |
+| CHANGED `src/executors/angular-typecheck/executor.ts`         | executor adapter                 | request-response + logging                    | itself: `templateCheckAborted` render seam `:49-63`                                                           | exact                                        |
+| NEW `walk-references.spec.ts` (unit)                          | test (pure unit)                 | n/a                                           | `run-typecheck.ts` `detectTemplateCheckAborted` (exported for unit tier) + `gather-diagnostics.spec.ts` shape | role-match                                   |
+| NEW `walk-references.integration.spec.ts`                     | test (real-compiler integration) | n/a                                           | `config-resolution.integration.spec.ts` (fixtures + `it.each` + `NG()` + `runTypecheck` off CoreResult)       | exact                                        |
+| UPGRADED `fixtures/solution-style/*` + 5 NEW sibling fixtures | fixture                          | n/a                                           | existing `fixtures/solution-style/{tsconfig.json,tsconfig.app.json,error.component.ts}`                       | exact                                        |
+| CHANGED `nx.json` `targetDefaults["angular-typecheck"]`       | config                           | n/a                                           | existing `targetDefaults["angular-typecheck"]` block (one-line `production`->`default`)                       | exact                                        |
 
 ## Pattern Assignments
 
@@ -180,12 +180,9 @@ RESEARCH). Add `SkippedReference` alongside it:
 
 ```typescript
 if (result.templateCheckAborted !== undefined) {
-  const offendingFile =
-    result.templateCheckAborted.fileName ?? 'an unknown file';
+  const offendingFile = result.templateCheckAborted.fileName ?? 'an unknown file';
 
-  logger.warn(
-    `angular-typecheck: a fatal template-compilation error ...`,
-  );
+  logger.warn(`angular-typecheck: a fatal template-compilation error ...`);
 }
 ```
 
@@ -208,6 +205,7 @@ parameterized idiom (CONTEXT `<code_context>`).
 
 **Integration analog:** `config-resolution.integration.spec.ts` (read in full) -- copy its whole
 harness shape:
+
 - Path setup: `packageRoot`/`workspaceRoot` via `dirname(fileURLToPath(import.meta.url))` then
   `join(workspaceRoot, 'fixtures', '<name>', 'tsconfig.json')` (`:32-52`).
 - `const TS2322 = 2322;` and `const NG = (code) => -990000 - code;` (`:29-30`) -- assert bare TS
@@ -236,9 +234,11 @@ the `:142-151` TS18003-independence `it`), `skippedReferences` undefined. The CO
 **Analog:** the existing `fixtures/solution-style/{tsconfig.json,tsconfig.app.json,error.component.ts}` (all read).
 
 **`tsconfig.json`** currently (`fixtures/solution-style/tsconfig.json`):
+
 ```json
 { "extends": "../../tsconfig.base.json", "compileOnSave": false, "files": [], "references": [{ "path": "./tsconfig.app.json" }] }
 ```
+
 Add the spec-leaf reference: `{ "path": "./tsconfig.spec.json" }` to the `references` array.
 
 **`tsconfig.app.json`** structure is the template for the NEW `tsconfig.spec.json` (mirror the
@@ -271,6 +271,7 @@ change the input hash or a spec-only change yields a stale PASS.
 ## Shared Patterns
 
 ### Core purity (no logging in core; adapter renders)
+
 **Source:** `run-typecheck.ts` `templateCheckAborted` (pure detection field, `:52-71,444`) ->
 `executor.ts:52-63` (`logger.warn`).
 **Apply to:** `walk-references.ts` (sets `skippedReferences` purely) + `executor.ts` (renders it).
@@ -278,24 +279,28 @@ Core has ZERO `console`/`process`/`@nx/devkit`. The `no-console`/`no-process` ES
 scoped to `**/src/core/**`.
 
 ### Synthesized private diagnostic codes (outside TS/NG/500 spaces)
+
 **Source:** `run-typecheck.ts:89-93` (`ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001` + rationale comment).
 **Apply to:** the new `90002` REFERENCE_NOT_FOUND constant + synthesizer. File-less shape
 (`file/start/length: undefined`) so `filter-diagnostics.ts:85` always keeps it and `finalize`
 counts it as an Error.
 
 ### Detect-by-CODE-only (never source/message text)
+
 **Source:** the infra-500 scans (`run-typecheck.ts:167-169,244-246`) and `detectTemplateCheckAborted`
 (`:474-479`).
 **Apply to:** the walk's per-leaf 500 detection (`diagnostic.code === ng.UNKNOWN_ERROR_CODE`) ->
 reclassify to 90002. NEVER match on `source`/messageText.
 
 ### Single-`finalize`-over-the-union aggregation
+
 **Source:** `run-typecheck.ts` `finalize` (`:394-456`) -- filter -> `ts.sortAndDeduplicateDiagnostics`
 -> explicit category counts (NEVER `length - errorCount`).
 **Apply to:** the walk branch feeds ONE union into the EXISTING `finalize`; NO second dedupe/merge
 layer (Pitfall 1). Cross-`Program` dedupe is by `file.path` STRING identity (L-2).
 
 ### Integration-spec harness (fixtures + NG() + off-CoreResult)
+
 **Source:** `config-resolution.integration.spec.ts` (full file).
 **Apply to:** both new spec files -- `join(workspaceRoot, 'fixtures', ...)` paths, `TS2322`/`NG()`
 consts, `messageTextOf`, assertions off `runTypecheck(...)` `CoreResult`, `it.each` for the

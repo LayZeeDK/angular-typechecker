@@ -7,28 +7,28 @@ tags: [angular-compiler-cli, typescript, vitest, nx-plugin, type-check, diagnost
 # Dependency graph
 requires:
   - phase: 01-workspace-bootstrap-engine-spike-gated
-    provides: "Phase-1 tracer-bullet core/ (run-typecheck.ts, gather-diagnostics.ts, compiler-loader.ts, compiler-cli-types.ts); GATE A/B proof; nodenext-safe shim"
+    provides: 'Phase-1 tracer-bullet core/ (run-typecheck.ts, gather-diagnostics.ts, compiler-loader.ts, compiler-cli-types.ts); GATE A/B proof; nodenext-safe shim'
 provides:
-  - "Real runTypecheck engine + locked CoreResult contract (tsConfigPath, rootNamesCount, diagnostics, errorCount, warningCount, durationMs)"
-  - "Explicit category counting (Error/Warning), never length - errorCount (D-01/MD-02)"
-  - "Config-error prepend so a malformed tsconfig is never silently clean (D-03/MD-01)"
-  - "Zero-rootNames guard synthesizing one Error naming the leaf tsconfigs (D-03/D-03a)"
-  - "Full D-05 emit-neutralizing override + diagnostics:false (D-05/D-02)"
-  - "TypecheckInfrastructureError re-throw on UNKNOWN_ERROR_CODE 500 (D-06)"
-  - "Widened CompilerCli shim exposing UNKNOWN_ERROR_CODE"
-  - "REAL-compiler integration tier (*.integration.spec.ts) + focused D-06 stub spec"
-  - "tsconfig.lib.json excludes all fixtures/** (Wave-2 slices are fixture-only additions)"
+  - 'Real runTypecheck engine + locked CoreResult contract (tsConfigPath, rootNamesCount, diagnostics, errorCount, warningCount, durationMs)'
+  - 'Explicit category counting (Error/Warning), never length - errorCount (D-01/MD-02)'
+  - 'Config-error prepend so a malformed tsconfig is never silently clean (D-03/MD-01)'
+  - 'Zero-rootNames guard synthesizing one Error naming the leaf tsconfigs (D-03/D-03a)'
+  - 'Full D-05 emit-neutralizing override + diagnostics:false (D-05/D-02)'
+  - 'TypecheckInfrastructureError re-throw on UNKNOWN_ERROR_CODE 500 (D-06)'
+  - 'Widened CompilerCli shim exposing UNKNOWN_ERROR_CODE'
+  - 'REAL-compiler integration tier (*.integration.spec.ts) + focused D-06 stub spec'
+  - 'tsconfig.lib.json excludes all fixtures/** (Wave-2 slices are fixture-only additions)'
 affects: [02-02-config-resolution, 02-03-diagnostic-catalog, phase-03-filtering-modes-output, phase-04-executor-adapter]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Explicit ts.DiagnosticCategory counting (Error + Warning), invariant errorCount + warningCount <= diagnostics.length"
-    - "Config errors prepended to diagnostics; never thrown for config problems (compiler-cli exitCodeFromResult contract)"
+    - 'Explicit ts.DiagnosticCategory counting (Error + Warning), invariant errorCount + warningCount <= diagnostics.length'
+    - 'Config errors prepended to diagnostics; never thrown for config problems (compiler-cli exitCodeFromResult contract)'
     - "Infrastructure-failure detection by code === 500 only, NOT source === 'angular' (L-3/V-3); re-throw as TypecheckInfrastructureError"
-    - "Fresh per-call options object spread (footgun guard against mutated noEmit leaking across calls)"
-    - "Focused single mock of loadCompilerCli for the D-06 path (broad mocking deferred to Phase-3 TEST-01)"
+    - 'Fresh per-call options object spread (footgun guard against mutated noEmit leaking across calls)'
+    - 'Focused single mock of loadCompilerCli for the D-06 path (broad mocking deferred to Phase-3 TEST-01)'
 
 key-files:
   created:
@@ -45,12 +45,12 @@ key-files:
 key-decisions:
   - "Synthesized zero-rootNames diagnostic code = 90001 (outside TS range and Angular -99xxxx/500 space; Claude's discretion per CONTEXT/RESEARCH)"
   - "TypecheckInfrastructureError extends Error, exported from index.ts so the Phase-4 executor can catch it; carries the 500 diagnostic's flattened messageText"
-  - "tsconfig.lib.json: kept the explicit fixtures/gate-b-error line AND added a broad fixtures/**/* exclude (future-proof; no same-file conflict with Wave-2 slices)"
-  - "Integration specs reuse the gate-b-error fixture (F1+F7: TS2322 + NG8109) via describe.each over app+lib tsconfigs; no jsdom needed but inherited config kept (no over-configuration)"
+  - 'tsconfig.lib.json: kept the explicit fixtures/gate-b-error line AND added a broad fixtures/**/* exclude (future-proof; no same-file conflict with Wave-2 slices)'
+  - 'Integration specs reuse the gate-b-error fixture (F1+F7: TS2322 + NG8109) via describe.each over app+lib tsconfigs; no jsdom needed but inherited config kept (no over-configuration)'
 
 patterns-established:
-  - "REAL-compiler integration tier named *.integration.spec.ts (D-07c: one performCompilation per fixture, multiple assertions, NG() helper)"
-  - "NG(code) => -990000 - code assertion helper; TS codes asserted raw; count by .category never by code sign (L-4)"
+  - 'REAL-compiler integration tier named *.integration.spec.ts (D-07c: one performCompilation per fixture, multiple assertions, NG() helper)'
+  - 'NG(code) => -990000 - code assertion helper; TS codes asserted raw; count by .category never by code sign (L-4)'
   - "D-06 stub pattern: vi.hoisted mutable performCompilation + vi.mock('./compiler-loader') returning a CompilerCli with UNKNOWN_ERROR_CODE: 500"
 
 requirements-completed: [ENG-01, ENG-02, ENG-04]
@@ -106,7 +106,7 @@ _Note: Task 1 and Task 2 are TDD-flagged. Here the plan splits the cycle across 
 
 - **Synthesized zero-rootNames diagnostic code = `90001`** - a small private positive outside the TypeScript code range and outside the Angular negative `-99xxxx` encoding and the `500` UNKNOWN_ERROR_CODE space, so it can never collide with a genuine TS or NG diagnostic. Discretion granted by CONTEXT/RESEARCH (suggested `ATC1001`/`90001`).
 - **`TypecheckInfrastructureError extends Error`** carries the flattened `messageText` of the 500 diagnostic and is exported from `index.ts`. The exact Phase-4 executor mapping is out of scope here (Phase-4 concern).
-- **`tsconfig.lib.json`: broad `fixtures/**/*` plus the explicit `gate-b-error` line** - future-proof and avoids same-file conflicts with the parallel Wave-2 slices (02-02/02-03), which now add fixtures without re-touching this config.
+- **`tsconfig.lib.json`: broad `fixtures/**/\*`plus the explicit`gate-b-error` line\*\* - future-proof and avoids same-file conflicts with the parallel Wave-2 slices (02-02/02-03), which now add fixtures without re-touching this config.
 - **D-06 detection by `code === ng.UNKNOWN_ERROR_CODE` (500) only** - never the `source === 'angular'` predicate `exitCodeFromResult` uses, because the synthesized 500 diagnostic sets no `source` (L-3/V-3).
 
 ## Deviations from Plan
@@ -134,5 +134,6 @@ None - no external service configuration required.
 All claimed created/modified files exist on disk; all task commits (`2062c70`, `873c352`, `82b82d5`) plus the SUMMARY commit (`a14fa26`) are present in git history. Full verification re-run green: `npx nx build angular-typechecker` succeeds; `npx nx test angular-typechecker` is 27/27 across 7 test files.
 
 ---
-*Phase: 02-core-type-check-engine-gatherer*
-*Completed: 2026-06-27*
+
+_Phase: 02-core-type-check-engine-gatherer_
+_Completed: 2026-06-27_

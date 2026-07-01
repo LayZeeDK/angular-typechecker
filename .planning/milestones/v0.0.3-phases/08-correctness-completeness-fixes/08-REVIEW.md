@@ -57,8 +57,8 @@ real `@angular/compiler-cli@22.0.4`:
   in the comment is accurate, and `sortAndDeduplicateDiagnostics` keeps all 10
   (they are distinct global type names, not duplicates -- the dedup claim holds).
 - **COR-03** (file-less guard widened to `file === undefined || file.fileName ===
-  ''`): correct; the empty-`fileName` canonicalizes to `''` and `isUnderDir('',
-  base) === false`, so the widened guard prevents a real-error false PASS. Spec
+''`): correct; the empty-`fileName` canonicalizes to `''` and `isUnderDir('',
+base) === false`, so the widened guard prevents a real-error false PASS. Spec
   asserts the failing-then-passing transition.
 - **COR-04** (pure `toExitCode` 0/1/2): pure (imports only `./run-typecheck`,
   within the `core/**` boundary), correctly NOT wired into the executor return
@@ -114,10 +114,7 @@ EXIT-CODE CONTRACT and document that the CLI must combine `toExitCode` with the
 `evaluateResult` verdict for the warning gate. Concretely, option (a):
 
 ```ts
-export function toExitCode(
-  input: Pick<CoreResult, 'errorCount' | 'warningCount'> | TypecheckInfrastructureError,
-  options: { maxWarnings?: number } = {},
-): 0 | 1 | 2 {
+export function toExitCode(input: Pick<CoreResult, 'errorCount' | 'warningCount'> | TypecheckInfrastructureError, options: { maxWarnings?: number } = {}): 0 | 1 | 2 {
   if (input instanceof TypecheckInfrastructureError) {
     return 2;
   }
@@ -127,8 +124,7 @@ export function toExitCode(
   }
 
   const { maxWarnings } = options;
-  const gatesWarnings =
-    maxWarnings !== undefined && Number.isFinite(maxWarnings) && maxWarnings >= 0;
+  const gatesWarnings = maxWarnings !== undefined && Number.isFinite(maxWarnings) && maxWarnings >= 0;
 
   if (gatesWarnings && input.warningCount > maxWarnings) {
     return 1;
@@ -161,6 +157,7 @@ The header comment "Nx executor now" is therefore factually inaccurate for the
 current state -- the Nx executor consumes `evaluateResult`, not this policy.
 
 **Fix:** Pick one and make the comment match reality:
+
 - If `toExitCode` is meant to be consumable by the deferred CLI/builder, export
   it from `src/index.ts` now (`export { toExitCode } from './core/exit-codes';`)
   so it is part of the published contract the future consumers import, and the

@@ -7,56 +7,56 @@ tags: [nx, nx-plugin, angular-22, typescript-6, nodenext, esm-cjs-bridge, vitest
 # Dependency graph
 requires:
   - phase: 01-01
-    provides: "Nx 23 integrated Angular monorepo (--preset=apps) over the preserved .git/; root toolchain pinned EXACT (nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3)"
+    provides: 'Nx 23 integrated Angular monorepo (--preset=apps) over the preserved .git/; root toolchain pinned EXACT (nx 23.0.1 / @angular/compiler-cli 22.0.4 / typescript 6.0.3)'
 provides:
-  - "angular-typechecker plugin project in the Nx graph (packages/angular-typechecker) with @nx/js:tsc build (outputPath dist/packages/angular-typechecker) + @nx/vitest:test test target"
-  - "Plugin solution tsconfig patched to module/moduleResolution: nodenext (the GATE A enabling edit; await import() survives @nx/js:tsc emit)"
-  - "Phase-1 plugin package.json (D-14): type:commonjs, @nx/devkit pinned dep 23.0.1, @angular/compiler-cli ^22.0.0 + typescript >=6.0.0 <6.1.0 peers, engines.node, executors:./executors.json"
+  - 'angular-typechecker plugin project in the Nx graph (packages/angular-typechecker) with @nx/js:tsc build (outputPath dist/packages/angular-typechecker) + @nx/vitest:test test target'
+  - 'Plugin solution tsconfig patched to module/moduleResolution: nodenext (the GATE A enabling edit; await import() survives @nx/js:tsc emit)'
+  - 'Phase-1 plugin package.json (D-14): type:commonjs, @nx/devkit pinned dep 23.0.1, @angular/compiler-cli ^22.0.0 + typescript >=6.0.0 <6.1.0 peers, engines.node, executors:./executors.json'
   - "Real Angular 22 standalone app apps/ng-spike-app in the graph (the spike's in-graph type-check target; builds green)"
-  - "Generator-created tsconfig.base.json + .prettierrc (resolves the Wave 1 carryover that --preset=apps did not emit them)"
-  - "Root deps re-pinned to Angular 22.0.4 across all @angular/* framework+tooling packages; .npmrc legacy-peer-deps=true for the Nx-23 / Angular-22 peer-range reconciliation"
+  - 'Generator-created tsconfig.base.json + .prettierrc (resolves the Wave 1 carryover that --preset=apps did not emit them)'
+  - 'Root deps re-pinned to Angular 22.0.4 across all @angular/* framework+tooling packages; .npmrc legacy-peer-deps=true for the Nx-23 / Angular-22 peer-range reconciliation'
 affects: [01-03-tracer-bullet-core, 01-04-gate-specs, phase-2-core-engine, phase-4-executor, phase-5-publish]
 
 # Tech tracking
 tech-stack:
   added:
-    - "@angular/core/common/compiler/forms/platform-browser/router 22.0.4 (runtime deps for the spike app)"
-    - "@angular/build, @angular/cli, @angular/language-service, @angular-devkit/core, @angular-devkit/schematics, @schematics/angular all 22.0.4 (re-pinned from generator default 21.2)"
-    - "angular-eslint ^22.0.0, eslint 9 flat config (Nx 23 default), prettier (.prettierrc singleQuote:true)"
-    - "vitest 4.1.x via @nx/vitest:test (vitest.config.mts + vitest.workspace.ts)"
+    - '@angular/core/common/compiler/forms/platform-browser/router 22.0.4 (runtime deps for the spike app)'
+    - '@angular/build, @angular/cli, @angular/language-service, @angular-devkit/core, @angular-devkit/schematics, @schematics/angular all 22.0.4 (re-pinned from generator default 21.2)'
+    - 'angular-eslint ^22.0.0, eslint 9 flat config (Nx 23 default), prettier (.prettierrc singleQuote:true)'
+    - 'vitest 4.1.x via @nx/vitest:test (vitest.config.mts + vitest.workspace.ts)'
   patterns:
-    - "type:commonjs package manifest + module:nodenext tsconfig split (the deliberate cjs-label / nodenext-emit divergence; @nx/js:tsc only READS module to label cjs/esm, never reassigns it)"
-    - "Generator-then-pin: scaffold with @nx/* generators, then re-pin the framework deps the generator under-versioned to the locked stack (exact-dev per D-15)"
-    - "Out-of-graph fixture exclusion in tsconfig.lib.json (fixtures/gate-b-error/**/*) so the deliberate-error fixture is never compiled into the package (D-13)"
+    - 'type:commonjs package manifest + module:nodenext tsconfig split (the deliberate cjs-label / nodenext-emit divergence; @nx/js:tsc only READS module to label cjs/esm, never reassigns it)'
+    - 'Generator-then-pin: scaffold with @nx/* generators, then re-pin the framework deps the generator under-versioned to the locked stack (exact-dev per D-15)'
+    - 'Out-of-graph fixture exclusion in tsconfig.lib.json (fixtures/gate-b-error/**/*) so the deliberate-error fixture is never compiled into the package (D-13)'
 
 key-files:
   created:
-    - "packages/angular-typechecker/project.json (@nx/js:tsc build + @nx/vitest:test)"
-    - "packages/angular-typechecker/package.json (Phase-1 D-14 manifest)"
-    - "packages/angular-typechecker/tsconfig.json (module:nodenext PATCH)"
-    - "packages/angular-typechecker/tsconfig.lib.json (excludes fixtures/gate-b-error)"
-    - "packages/angular-typechecker/tsconfig.spec.json"
-    - "packages/angular-typechecker/vitest.config.mts"
-    - "packages/angular-typechecker/src/index.ts (placeholder; core/executor land in Plan 03)"
-    - "apps/ng-spike-app/ (full standalone Angular 22 app; tsconfig.app.json)"
-    - "tsconfig.base.json (generator-created; was missing after Wave 1)"
-    - ".prettierrc, .prettierignore, eslint.config.mjs, vitest.workspace.ts"
-    - ".npmrc (legacy-peer-deps=true; Angular-22/Nx-23 peer reconciliation)"
+    - 'packages/angular-typechecker/project.json (@nx/js:tsc build + @nx/vitest:test)'
+    - 'packages/angular-typechecker/package.json (Phase-1 D-14 manifest)'
+    - 'packages/angular-typechecker/tsconfig.json (module:nodenext PATCH)'
+    - 'packages/angular-typechecker/tsconfig.lib.json (excludes fixtures/gate-b-error)'
+    - 'packages/angular-typechecker/tsconfig.spec.json'
+    - 'packages/angular-typechecker/vitest.config.mts'
+    - 'packages/angular-typechecker/src/index.ts (placeholder; core/executor land in Plan 03)'
+    - 'apps/ng-spike-app/ (full standalone Angular 22 app; tsconfig.app.json)'
+    - 'tsconfig.base.json (generator-created; was missing after Wave 1)'
+    - '.prettierrc, .prettierignore, eslint.config.mjs, vitest.workspace.ts'
+    - '.npmrc (legacy-peer-deps=true; Angular-22/Nx-23 peer reconciliation)'
   modified:
-    - "package.json (re-pinned all @angular/* to 22.0.4; added eslint/vitest/swc dev toolchain)"
-    - "nx.json (generator target defaults)"
-    - ".gitignore, .vscode/extensions.json, .vscode/settings.json"
+    - 'package.json (re-pinned all @angular/* to 22.0.4; added eslint/vitest/swc dev toolchain)'
+    - 'nx.json (generator target defaults)'
+    - '.gitignore, .vscode/extensions.json, .vscode/settings.json'
 
 key-decisions:
   - "Re-pinned all @angular/* framework + tooling deps from the generator default ~21.2.0 to EXACT 22.0.4 (locked stack is Angular 22; the generator's Angular 21 default conflicts with @angular/compiler-cli@22.0.4)"
-  - ".npmrc legacy-peer-deps=true: @nx/angular@23.0.1 caps its @angular/build (optional) + @angular-devkit/* + @schematics/angular (hard) peers at < 22.0.0; the locked Angular-22 tree legitimately exceeds that known peer-range ceiling"
-  - "Plugin tsconfig module commonjs -> nodenext is the single load-bearing GATE A enabler; tsconfig.lib.json inherits it (no commonjs re-override)"
-  - "Plugin package.json unscoped to angular-typechecker (was @angular-typechecker/angular-typechecker) + dropped generator private:true (publishable manifest; files/exports/hardening land in Phase 5)"
-  - "Spike app generated with --unitTestRunner=none --e2eTestRunner=none (D-06 minimal scaffold; the app is a type-check target, not a unit-test host; e2e is a separate Phase 6 concern per D-07)"
+  - '.npmrc legacy-peer-deps=true: @nx/angular@23.0.1 caps its @angular/build (optional) + @angular-devkit/* + @schematics/angular (hard) peers at < 22.0.0; the locked Angular-22 tree legitimately exceeds that known peer-range ceiling'
+  - 'Plugin tsconfig module commonjs -> nodenext is the single load-bearing GATE A enabler; tsconfig.lib.json inherits it (no commonjs re-override)'
+  - 'Plugin package.json unscoped to angular-typechecker (was @angular-typechecker/angular-typechecker) + dropped generator private:true (publishable manifest; files/exports/hardening land in Phase 5)'
+  - 'Spike app generated with --unitTestRunner=none --e2eTestRunner=none (D-06 minimal scaffold; the app is a type-check target, not a unit-test host; e2e is a separate Phase 6 concern per D-07)'
 
 patterns-established:
-  - "Generated plugin build.options.outputPath = dist/packages/angular-typechecker (Plan 04 DERIVES its GATE A dist/.../executor.js path from this verbatim value; built executor will be dist/packages/angular-typechecker/src/executors/angular-typecheck/executor.js once Plan 03 adds it)"
-  - "Each task committed atomically, files staged BY NAME (never git add .); single-writer STATE.md/ROADMAP.md in sequential main-tree mode"
+  - 'Generated plugin build.options.outputPath = dist/packages/angular-typechecker (Plan 04 DERIVES its GATE A dist/.../executor.js path from this verbatim value; built executor will be dist/packages/angular-typechecker/src/executors/angular-typecheck/executor.js once Plan 03 adds it)'
+  - 'Each task committed atomically, files staged BY NAME (never git add .); single-writer STATE.md/ROADMAP.md in sequential main-tree mode'
 
 requirements-completed: [WS-02, WS-03, CMP-01, CMP-02]
 
@@ -119,6 +119,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] @nx/angular generator wrote Angular 21.2 framework deps, conflicting with the locked Angular 22 stack**
+
 - **Found during:** Task 1 (spike app generation -- the generator's post-scaffold `npm install` aborted)
 - **Issue:** `@nx/angular@23.0.1`'s `:application` generator added `@angular/core/common/compiler/forms/platform-browser/router`, `@angular/build`, `@angular/cli`, `@angular/language-service`, `@angular-devkit/*`, `@schematics/angular` all at `~21.2.0` (its baseline default), and `angular-eslint ^21.2.0`. These conflict with Wave 1's locked `@angular/compiler-cli@22.0.4` (whose peer requires `@angular/compiler@22.0.4`) -> `ERESOLVE`. The locked stack is Angular 22 + TS 6 (PROJECT.md MUST).
 - **Fix:** Re-pinned every `@angular/*` framework + tooling package to EXACT `22.0.4` and `angular-eslint` to `^22.0.0` in the root `package.json` (D-15 exact-dev). Verified `npm ls` resolves `@angular/core@22.0.4` / `@angular/build@22.0.4` / `@angular/compiler-cli@22.0.4` / `typescript@6.0.3` deduped.
@@ -127,6 +128,7 @@ Each task was committed atomically:
 - **Committed in:** `58023c0` (Task 1 commit)
 
 **2. [Rule 3 - Blocking] @nx/angular@23.0.1 peers cap Angular tooling at < 22.0.0; install needs legacy-peer-deps**
+
 - **Found during:** Task 1 (re-running `npm install` after the Angular-22 re-pin)
 - **Issue:** `@nx/angular@23.0.1` declares `@angular/build` (optional), `@angular-devkit/core`, `@angular-devkit/schematics`, `@schematics/angular` (hard peers) with the range `">= 19.0.0 < 22.0.0"` -- it formally supports Angular up to 21. The locked Angular-22 tree legitimately exceeds that ceiling, so a strict `npm install` aborts on the peer conflict. This is a real, accepted ecosystem version-skew tied to a PROJECT.md MUST (Angular 22 + Nx 23), NOT a package-legitimacy issue: no new/unknown packages were introduced -- all are the official `@nx/*` / `@angular/*` set already pinned exact and legitimacy-audited in Wave 1 (threat T-01-SC disposition `accept`).
 - **Fix:** Created a root `.npmrc` with `legacy-peer-deps=true` and a documenting comment explaining the Nx-23 / Angular-22 reconciliation and when to revisit (a stable `@nx/angular` 23.1.x whose peers admit Angular 22). `latest` `@nx/angular` is `23.0.1` (no stable patch widens the peer); only `next`/beta does, which is unsuitable for the locked stack. This is the standard, single correct resolution -- not an architectural change (no library switch, no new dependency).
@@ -164,5 +166,6 @@ None - no external service configuration required.
 - Functional gates: `nx show projects` lists `[angular-typechecker, ng-spike-app]`; plugin `tsconfig.json` module/moduleResolution = nodenext; plugin builds (`dist/packages/angular-typechecker/src/index.js`); spike app builds green
 
 ---
-*Phase: 01-workspace-bootstrap-engine-spike-gated*
-*Completed: 2026-06-27*
+
+_Phase: 01-workspace-bootstrap-engine-spike-gated_
+_Completed: 2026-06-27_

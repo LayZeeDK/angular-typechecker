@@ -9,33 +9,25 @@
       "mode": "walk",
       "rootNamesCount": 1,
       "errorCount": 1,
-      "codes": [
-        2322
-      ]
+      "codes": [2322]
     },
     "oop-refs (solution, out-of-project ref only)": {
       "mode": "guard-error:references-none-in-project",
       "rootNamesCount": 0,
       "errorCount": 1,
-      "codes": [
-        90001
-      ]
+      "codes": [90001]
     },
     "empty (no files, no references)": {
       "mode": "guard-error:empty-project",
       "rootNamesCount": 0,
       "errorCount": 1,
-      "codes": [
-        90001
-      ]
+      "codes": [90001]
     },
     "direct-leaf (rootNames > 0)": {
       "mode": "compile-direct",
       "rootNamesCount": 1,
       "errorCount": 1,
-      "codes": [
-        2322
-      ]
+      "codes": [2322]
     }
   },
   "shippedEngineOnWithRefs": "guard-error",

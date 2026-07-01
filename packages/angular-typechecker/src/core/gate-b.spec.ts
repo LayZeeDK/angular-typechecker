@@ -77,7 +77,9 @@ describe.each([
     // Self-documenting recovery of the magic number's meaning: an extended NG
     // code stored negative recovers to its 4-digit ErrorCode via
     // Math.abs(c) - 990000 (here 998109 - 990000 === 8109).
-    expect(allCodes.some((code) => Math.abs(code) - 990000 === 8109)).toBe(true);
+    expect(allCodes.some((code) => Math.abs(code) - 990000 === 8109)).toBe(
+      true,
+    );
     // GATE A runtime guard: a masked ESM-load failure would surface as code 500.
     expect(allCodes).not.toContain(UNKNOWN_ERROR_CODE);
   });

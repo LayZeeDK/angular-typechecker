@@ -16,27 +16,27 @@ affects: [06-full-e2e-matrix-ci re-plan (the 5-type e2e spec + pnpm + ci.yml bui
 tech-stack:
   added: []
   patterns:
-    - "Self-contained multi-project consumer fixture (own nx.json, no base tsconfig) wiring the published executor id"
-    - "Hand-authored @nx/angular:ng-packagr-lite / :package build targets WITHOUT an @nx/angular dep (executor only reads tsConfig; Nx 23 ignores the sibling build executor at graph time)"
+    - 'Self-contained multi-project consumer fixture (own nx.json, no base tsconfig) wiring the published executor id'
+    - 'Hand-authored @nx/angular:ng-packagr-lite / :package build targets WITHOUT an @nx/angular dep (executor only reads tsConfig; Nx 23 ignores the sibling build executor at graph time)'
 
 key-files:
   created:
-    - "e2e/angular-typechecker-matrix-e2e/{project.json,vitest.config.mts,tsconfig.json,tsconfig.spec.json}"
-    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/{nx.json,package.json}"
-    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/apps/app/** (application type)"
-    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/local-lib/** (local non-buildable lib + spec tsconfig)"
-    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/buildable-lib/** (ng-packagr-lite build target, no @nx/angular dep)"
-    - "e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/publishable-lib/** (@nx/angular:package build target + importPath, no @nx/angular dep)"
+    - 'e2e/angular-typechecker-matrix-e2e/{project.json,vitest.config.mts,tsconfig.json,tsconfig.spec.json}'
+    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/{nx.json,package.json}'
+    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/apps/app/** (application type)'
+    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/local-lib/** (local non-buildable lib + spec tsconfig)'
+    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/buildable-lib/** (ng-packagr-lite build target, no @nx/angular dep)'
+    - 'e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/publishable-lib/** (@nx/angular:package build target + importPath, no @nx/angular dep)'
   modified: []
 
 key-decisions:
-  - "OQ-1 RESOLVED EMPIRICALLY: clean npm install (empty .npmrc, no legacy-peer-deps) of the 5-type fixture succeeds -> the Phase-5 B-03 honesty invariant is preserved; no @nx/angular dependency is needed in the fixture."
-  - "The original Task 3 (the 5-type e2e spec) is RE-SCOPED forward to the re-discuss-v2 plan set (per RD-11): the spec is re-authored under the new e2e design (Linux-only, Node 24, npm path). The committed fixtures here are the dependency it builds on."
+  - 'OQ-1 RESOLVED EMPIRICALLY: clean npm install (empty .npmrc, no legacy-peer-deps) of the 5-type fixture succeeds -> the Phase-5 B-03 honesty invariant is preserved; no @nx/angular dependency is needed in the fixture.'
+  - 'The original Task 3 (the 5-type e2e spec) is RE-SCOPED forward to the re-discuss-v2 plan set (per RD-11): the spec is re-authored under the new e2e design (Linux-only, Node 24, npm path). The committed fixtures here are the dependency it builds on.'
 
 patterns-established:
-  - "5-project-type fixture topology: one install-once consumer workspace exposing 5 angular-typecheck targets"
+  - '5-project-type fixture topology: one install-once consumer workspace exposing 5 angular-typecheck targets'
 
-requirements-completed: []  # 06-01 delivers the FIXTURE FOUNDATION + the OQ-1 result only. TEST-03 is validated by the re-planned 5-type spec plan (which claims TEST-03), not here.
+requirements-completed: [] # 06-01 delivers the FIXTURE FOUNDATION + the OQ-1 result only. TEST-03 is validated by the re-planned 5-type spec plan (which claims TEST-03), not here.
 
 duration: ~40min (killed mid-Task-3 during re-discuss; Tasks 1+2 committed)
 completed: 2026-06-29

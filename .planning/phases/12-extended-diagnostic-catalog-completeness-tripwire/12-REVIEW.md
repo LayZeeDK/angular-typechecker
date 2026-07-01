@@ -90,7 +90,7 @@ Verification performed (not merely read):
   equals the 18-member `ExtendedTemplateDiagnosticName` string-value union in
   `extended_template_diagnostic_name.d.ts`, same order.
 - **The spec actually passes against the real compiler.** `npx vitest run
-  extended-catalog.integration.spec.ts` -> 33 passed (18 extended rows + 1
+extended-catalog.integration.spec.ts` -> 33 passed (18 extended rows + 1
   structure guard + 2 promotion + 12 baseline). This proves each fixture fires
   its target code exactly once at the asserted category, and that NG8101 promotes
   from Warning to Error under `defaultCategory:"error"` (D-08/CAT-02).

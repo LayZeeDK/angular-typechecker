@@ -2,8 +2,8 @@
 
 **Advisor seat:** Product value / consumer.
 **Lens question for every decision:** Does this test protect what AI coding agents and CI
-pipelines depend on -- a fast, complete, trustworthy type-check *pass/fail and diagnostic
-signal*, decoupled from building or running tests? Tests that protect that signal earn their
+pipelines depend on -- a fast, complete, trustworthy type-check _pass/fail and diagnostic
+signal_, decoupled from building or running tests? Tests that protect that signal earn their
 keep; tests that protect implementation trivia or duplicate an already-covered guarantee do not.
 
 The product's promise (PROJECT.md, FACTS.md S2/S8) decomposes into four consumer-facing
@@ -11,7 +11,7 @@ guarantees. I grade every decision against these:
 
 - **G1 - Completeness.** EVERY relevant diagnostic surfaces: TypeScript + Angular template +
   extended (NG8xxx). The all-getter gatherer means a consumer can trust "green" to mean
-  "no diagnostic of any class was silently dropped." A missed NG8xxx is a *false green* -- the
+  "no diagnostic of any class was silently dropped." A missed NG8xxx is a _false green_ -- the
   worst failure mode for a tool whose entire value is being the trustworthy "elsewhere" the
   fast compilers skip.
 - **G2 - Correct verdict.** The exit code / `{ success }` maps faithfully to error presence
@@ -22,7 +22,7 @@ guarantees. I grade every decision against these:
   buildable-lib / publishable-lib / spec-tsconfig).
 - **G4 - Frictionless adoption.** The consumer can wire the target onto a project without
   hand-editing JSON -- the `typecheck-configuration` generator. The generator's output must be
-  *correct* (right executor id, right tsConfig) and *safe* (idempotent; never clobbers existing
+  _correct_ (right executor id, right tsConfig) and _safe_ (idempotent; never clobbers existing
   config), because a generator that silently mis-wires a target produces a typecheck that checks
   the wrong tsconfig -- a false green by a different route.
 
@@ -33,7 +33,7 @@ the highest product value are the ones closest to that observable surface (integ
 real compiler; tarball e2e), and the lowest-value tests are the ones deep in the mock-the-seam
 interior. The current suite is, encouragingly, already weighted toward the high-value end (11
 real-compiler integration specs, 7 real-tarball e2e specs, mocking confined to 2 composition
-specs -- FACTS.md S3). My recommendations push to *keep* that weighting and spend the v0.0.4
+specs -- FACTS.md S3). My recommendations push to _keep_ that weighting and spend the v0.0.4
 budget where a consumer-visible guarantee is currently unproven.
 
 ---
@@ -44,10 +44,11 @@ budget where a consumer-visible guarantee is currently unproven.
 for the generator unit/integration tier. Use the existing **Node `fs` + `execSync` real-tarball
 harness** for any executor- or generator-against-workspace fidelity. **Do NOT author the bespoke
 real-disk `createFsTree`/`flushFsTreeChanges` helpers** in this milestone. From the product lens,
-the substrate choice is almost irrelevant to the consumer *except* where it buys end-to-end
+the substrate choice is almost irrelevant to the consumer _except_ where it buys end-to-end
 fidelity -- and a virtual `FsTree` rooted at `/virtual` buys none.
 
 **Factual basis:**
+
 - The generator's entire observable behavior is a `project.json` Tree transformation
   (`readProjectConfiguration` -> mutate `targets` -> `updateProjectConfiguration` -> `formatFiles`)
   (CURRENT-AUDIT B.1; SANDBOX S1: the sandbox generator is 33 lines, no `generateFiles`). The
@@ -65,9 +66,9 @@ fidelity -- and a virtual `FsTree` rooted at `/virtual` buys none.
   (CURRENT-AUDIT A.5). There is no installed consumer of them.
 
 **Facts I am missing (orchestrator can verify):** Whether the planned generator will ever
-*generate a tsconfig file* (e.g. a `tsconfig.typecheck.json`) rather than only edit
+_generate a tsconfig file_ (e.g. a `tsconfig.typecheck.json`) rather than only edit
 `project.json`. If it writes a tsconfig the executor then consumes, proving that file is
-*on-disk correct and runnable* becomes a real consumer guarantee (G3) and tips the real-disk
+_on-disk correct and runnable_ becomes a real consumer guarantee (G3) and tips the real-disk
 question -- though even then I would buy that proof at the tarball e2e tier, not via `createFsTree`.
 
 **Fact that would change my position:** If the generator emits a file that a real `ngc`/executor
@@ -90,6 +91,7 @@ mechanism a consumer relies on to make NG8xxx fail a gate. Prefer committed fixt
 programmatic injection.
 
 **Factual basis:**
+
 - Completeness (G1) is the headline promise; a missed NG8xxx is a false green. The suite asserts
   only **2 of 16** documented extended diagnostics by exact code today (NG8101, NG8109), 14
   missing (CURRENT-AUDIT A.3). This is the single largest unguarded consumer guarantee in the repo.
@@ -105,7 +107,7 @@ programmatic injection.
   the compiler-cli `ErrorCode` enum during implementation, not trust the catalog.
 - Committed fixtures (vs jscodeshift injection) match this repo's existing substrate
   (`fixtures/` is committed, real tsconfigs -- FACTS.md S3) and Angular's own test style. From
-  the consumer lens, committed fixtures are also *more trustworthy as a regression record*: the
+  the consumer lens, committed fixtures are also _more trustworthy as a regression record_: the
   exact source that triggers NG8113 is reviewable in the diff, not synthesized at runtime.
 - Severity-promotion already proven for NG8101 (`extended.promotion.integration.spec.ts`)
   generalizes; the warning-default/promoted-error contrast is what a consumer toggles to make
@@ -113,7 +115,7 @@ programmatic injection.
 
 **Facts I am missing:** The exact NG code for each of the 18 names in
 `@angular/compiler-cli@22.0.4`'s `ErrorCode` enum (FACTS.md S4 says "to be read during work"),
-and which of the 18 are *reachable* via a public `performCompilation` run vs gated behind
+and which of the 18 are _reachable_ via a public `performCompilation` run vs gated behind
 internal-only conditions. A few may be hard or impossible to trigger through the public surface;
 those need an explicit, commented `it.skip` with the reason (the CONNECT habit -- CONNECT S6a),
 not silent omission -- because a silently-uncovered code is indistinguishable to a future reader
@@ -138,6 +140,7 @@ the `tsConfig` option to a real path and binds under its published id" are the t
 seam that is otherwise only caught minutes later in the Linux-only e2e job.
 
 **Factual basis:**
+
 - The current ladder jumps from seam-mocked unit (`executor.spec.ts` mocks the four core seams +
   logger -- FACTS.md S3) straight to full-tarball e2e, with nothing between (CURRENT-AUDIT A.2:
   "no mid-tier"). Path-resolution bugs (the wrong `tsConfig` resolved relative to the wrong root)
@@ -149,7 +152,7 @@ seam that is otherwise only caught minutes later in the Linux-only e2e job.
   Linux.
 
 **Facts I am missing:** Whether `normalizeOptions` + the `context.root`->`tsConfig` resolution
-path has any branch *not* already exercised by the pure `normalize-options.spec.ts` plus the e2e
+path has any branch _not_ already exercised by the pure `normalize-options.spec.ts` plus the e2e
 matrix. If the resolution logic is trivial and fully covered by the pure unit spec, the mid-tier
 spec's marginal product value drops toward zero and it becomes optional polish.
 
@@ -166,10 +169,11 @@ mid-tier earns its place only if it covers a real resolution branch nothing else
 Verdaccio**, and assert the consumer-meaningful end state: after `npx nx g
 angular-typechecker:typecheck-configuration <proj>` against the installed tarball, the on-disk
 `project.json` carries the right target AND `nx run <proj>:angular-typecheck` then runs. This is
-the test that proves G4 *and* G3 together: the generator a consumer actually invokes, from the
+the test that proves G4 _and_ G3 together: the generator a consumer actually invokes, from the
 package they actually install, producing a target that actually executes.
 
 **Factual basis:**
+
 - The generator is the consumer's adoption path (G4). An in-memory generator unit test proves the
   Tree transform but NOT that the generator resolves from an installed package and that its output
   is runnable (CURRENT-AUDIT B.3). The sandbox e2e proves exactly this end-to-end ("add the target
@@ -180,7 +184,7 @@ package they actually install, producing a target that actually executes.
   (CURRENT-AUDIT B.3 Windows caveat; CONNECT S7 Windows-arm64 mitigations). Reusing one e2e
   mechanism is lower-friction and keeps the gate's meaning consistent.
 - The **sentinel-token stdout assertion** (SANDBOX S6.6) is worth carrying: it proves the
-  diagnostic *text* reaches the consumer through the subprocess boundary, not merely that the
+  diagnostic _text_ reaches the consumer through the subprocess boundary, not merely that the
   exit code was non-zero -- which is the real product promise (a useful diagnostic signal, G1, not
   just a red light).
 
@@ -204,11 +208,12 @@ the "generate then run" round trip is the load-bearing consumer guarantee.
 the existing **6-cell `test` matrix automatically** (they match the glob; no `ci.yml` change). The
 generator e2e (if a new project) must be **added by name to the `e2e` job's `-p` list**. The whole
 new suite must continue to roll up under the single required **`ci`** aggregate. From the consumer
-lens, the priority is that *completeness coverage runs cross-OS* (NG8xxx behavior can differ by
+lens, the priority is that _completeness coverage runs cross-OS_ (NG8xxx behavior can differ by
 path handling / line endings on Windows vs Linux), and that the required gate stays a single,
 honest signal.
 
 **Factual basis:**
+
 - The `test` job runs `nx run-many -t typecheck-drift test -p angular-typechecker` across
   {ubuntu 22/24/26, windows 24/26, macos 24}; a new `*.integration.spec.ts` under the plugin runs
   in every cell with no workflow edit (FACTS.md S5; CURRENT-AUDIT A.4). The catalog's value (G1)
@@ -230,7 +235,7 @@ slowest cell (e.g. macOS or Windows arm-emulated). Cold-compile-per-`it` across 
 **Fact that would change my position:** If the cold-compile cost per fixture makes the 6-cell
 `test` job unacceptably slow, I would (a) consolidate fixtures so one `performCompilation` run
 yields several asserted codes where the compiler emits them together, or (b) as a last resort run
-the *full* catalog on the Linux cells and a representative subset on the OS-axis cells -- but I
+the _full_ catalog on the Linux cells and a representative subset on the OS-axis cells -- but I
 would resist cutting cross-OS coverage of the catalog wholesale, because OS-specific false greens
 are precisely a consumer-trust failure.
 
@@ -239,28 +244,29 @@ are precisely a consumer-trust failure.
 ## D6 - Scope
 
 **Position:** **Yes -- the `typecheck-configuration` generator belongs in this milestone**, and it
-should be scoped as a *first-class deliverable with its own e2e*, not a side quest. From the
+should be scoped as a _first-class deliverable with its own e2e_, not a side quest. From the
 product lens the milestone's two headline consumer wins are (1) frictionless adoption via the
 generator (G4) and (2) trustworthy completeness via the full NG8xxx catalog (G1). Scope the
 testing work to lock those two, plus close the executor mid-tier gap (D3) opportunistically. Treat
-buildable/publishable-lib and spec-tsconfig as *distinct generator/executor shapes* only to the
+buildable/publishable-lib and spec-tsconfig as _distinct generator/executor shapes_ only to the
 extent the matrix-e2e already exercises them; deeper per-shape generator branching is a documented
 gap to design, not inherit (no prior art covers it).
 
 **Factual basis:**
+
 - The milestone's named scope is exactly "a `typecheck-configuration` generator plus testing work"
   (FACTS.md S1). The generator is the missing adoption surface (no `generators` field, no generator
   today -- FACTS.md S2; CURRENT-AUDIT A.5).
-- The two biggest *unguarded consumer guarantees* are the NG8xxx completeness gap (14/16 missing --
+- The two biggest _unguarded consumer guarantees_ are the NG8xxx completeness gap (14/16 missing --
   D2) and the generator's existence/correctness (G4). Both are squarely in scope.
-- Per-project-type *generator* branching (app gets explicit `tsConfig`, lib defaults; buildable vs
+- Per-project-type _generator_ branching (app gets explicit `tsConfig`, lib defaults; buildable vs
   publishable vs spec as distinct shapes) is NOT covered by any prior art at the generator tier
   (CONNECT S3a/S3b: only app-vs-library fork existed; buildable/publishable/spec are flagged as a
   GAP to design). Over-scoping that now risks freezing a contract under low confidence.
 - Versioning is favorable: `feat` -> patch bump pre-1.0 (FACTS.md S8), so shipping the generator is
   a clean 0.0.3 -> 0.0.4, and the testing work (`test`/`ci` commits) does not itself bump.
 
-**Facts I am missing:** Whether the milestone intends the generator to *auto-detect project type*
+**Facts I am missing:** Whether the milestone intends the generator to _auto-detect project type_
 and emit different tsConfig defaults per type (app's editor tsconfig vs lib's `tsconfig.lib.json`
 vs a spec tsconfig), or to ship the sandbox's single hard-coded `tsconfig.lib.json` default with a
 `--tsConfig` override. That decision drives how much generator test surface (the `describe.each`
@@ -269,7 +275,7 @@ project-type matrix from CONNECT S2b) is in scope.
 **Fact that would change my position:** If the milestone's real intent is the broader per-project-
 type generator (apps/buildable/publishable/spec each wired correctly and idempotently), then the
 generator's own test scope expands materially (a project-type `describe.each` + idempotency per
-type) and I would argue for *narrowing* the NG8xxx catalog to the highest-traffic codes this
+type) and I would argue for _narrowing_ the NG8xxx catalog to the highest-traffic codes this
 milestone, to keep the milestone shippable -- because a half-built per-type generator is a worse
 consumer outcome (mis-wired targets = false greens) than a partial-but-honest catalog.
 

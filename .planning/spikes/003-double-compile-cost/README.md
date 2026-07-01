@@ -2,7 +2,7 @@
 spike: 003
 name: double-compile-cost
 type: benchmark
-validates: "Given a local non-buildable lib dep whose source is pulled into the lib + spec leaves, when compiled once per leaf under the reference-walk, then the double-compile wall-clock cost is measured and characterized; project-references / NgtscProgram incremental declaration-reuse recorded as DEFERRED synergy"
+validates: 'Given a local non-buildable lib dep whose source is pulled into the lib + spec leaves, when compiled once per leaf under the reference-walk, then the double-compile wall-clock cost is measured and characterized; project-references / NgtscProgram incremental declaration-reuse recorded as DEFERRED synergy'
 verdict: VALIDATED
 related: [001, 005]
 tags: [performance, cost, engine]
@@ -65,6 +65,7 @@ dep-only                     0.9911    828.79  1,181.92  1,009.00  1,181.92   ±
 combined (single program)    1.1361    757.92  1,016.70    880.23  1,016.70   ±6.76%   12
 WALK (lib + spec)            0.5536  1,519.34  1,962.81  1,806.22  1,962.81   ±4.86%   12
 ```
+
 Summary: combined (single program) is **2.05x faster than WALK (lib + spec)** -> tax ~105%. floor
 (973) ~ lib (954) ~ spec (936) ~ dep-only (1009): per-compile time is fixed-overhead-dominated;
 content barely moves it. (Absolute ms are ~2.5x the node-harness numbers below -- vite/vitest pool
@@ -72,15 +73,15 @@ instrumentation overhead -- so read the RATIO, not the ms.)
 
 **Standalone node harness (production-representative absolutes, median of 7):**
 
-| Measurement | Median ms | Note |
-|-------------|-----------|------|
-| fixed floor (1 trivial component) | ~356 | pure per-compile overhead |
-| lib leaf | ~379 | |
-| spec leaf | ~383 | |
-| dep-only | ~385 | dep MARGINAL = ~30 ms above floor |
-| combined (1 program, lib+spec) | ~390 | the single-program lower bound |
-| **WALK (lib + spec)** | **~762** | two full compiles |
-| **redundancy tax** | **~373 (95.7%)** | walk - combined |
+| Measurement                       | Median ms        | Note                              |
+| --------------------------------- | ---------------- | --------------------------------- |
+| fixed floor (1 trivial component) | ~356             | pure per-compile overhead         |
+| lib leaf                          | ~379             |                                   |
+| spec leaf                         | ~383             |                                   |
+| dep-only                          | ~385             | dep MARGINAL = ~30 ms above floor |
+| combined (1 program, lib+spec)    | ~390             | the single-program lower bound    |
+| **WALK (lib + spec)**             | **~762**         | two full compiles                 |
+| **redundancy tax**                | **~373 (95.7%)** | walk - combined                   |
 
 Both runners agree: **WALK ≈ 2x a single combined program** (vitest 2.05x / node 1.96x). All 3
 node-harness validity assertions PASS; `VERDICT: VALIDATED`.
@@ -89,9 +90,9 @@ node-harness validity assertions PASS; `VERDICT: VALIDATED`.
 
 1. Built an 8-component dep imported by a thin consumer; the spec imports the consumer, so the dep
    is pulled into both leaf Programs. Confirmed structurally: `dep source files in program: lib=4,
-   spec=4` (the dep's 4 `/dep/src/` files present in BOTH).
+spec=4` (the dep's 4 `/dep/src/` files present in BOTH).
 2. **First run surprise.** lib, spec, dep-only, and combined ALL cost ~380-390 ms -- indistinguishable.
-   Compiling *just the dep* cost the same as compiling *everything*. That means the cost is
+   Compiling _just the dep_ cost the same as compiling _everything_. That means the cost is
    fixed-overhead-dominated, and the dep's marginal cost is below the noise floor.
 3. **Added a fixed-floor baseline** (one trivial component) to recover the dep marginal by
    subtraction. Floor = ~356 ms; dep-only = ~385 ms -> dep marginal = ~30 ms. The floor is ~92% of a

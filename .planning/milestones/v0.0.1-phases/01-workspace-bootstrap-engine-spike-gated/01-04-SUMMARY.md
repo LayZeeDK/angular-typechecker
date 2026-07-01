@@ -10,36 +10,36 @@ requires:
     provides: "tracer-bullet core (loadCompilerCli memoized await import, gatherAllDiagnostics 6-getter, runTypecheck->CoreResult); thin CJS executor stub; out-of-graph TS2322+NG8109 fixture (app+lib tsconfigs); built dist (compiler-loader.js retains literal import('@angular/compiler-cli')); compiler-cli-types nodenext shim; project.json build.options.outputPath=dist/packages/angular-typechecker"
 provides:
   - "GATE A static spec (gate-a-static.spec.ts): reads BUILT dist core/compiler-loader.js + executor.js via fs.readFileSync; positive /import\\(/ on compiler-loader.js, negative /require\\([\"']@angular\\/compiler-cli/ on BOTH (comment-stripped); dist path derived from project.json outputPath"
-  - "GATE B spec (gate-b.spec.ts): describe.each([app,lib]) positive (2322 + -998109, no 500) + differential (default 2322 not -998109) + runtime resolution guard + cold-run durationMs"
-  - "GREEN full suite: nx build angular-typechecker && nx test angular-typechecker (4 files, 12 tests, all pass)"
-  - "Explicit GO verdict against all 6 go/no-go checklist items with reproduced diagnostic-code evidence"
+  - 'GATE B spec (gate-b.spec.ts): describe.each([app,lib]) positive (2322 + -998109, no 500) + differential (default 2322 not -998109) + runtime resolution guard + cold-run durationMs'
+  - 'GREEN full suite: nx build angular-typechecker && nx test angular-typechecker (4 files, 12 tests, all pass)'
+  - 'Explicit GO verdict against all 6 go/no-go checklist items with reproduced diagnostic-code evidence'
 affects: [phase-2-core-engine, phase-3-filtering, phase-4-executor, phase-6-e2e]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "GATE A static: derive dist path from project.json build.options.outputPath at runtime (no hard-coded literal); fs.readFileSync (dist is gitignored -> never git grep); strip //-comment lines before regex (a comment naming the package must not false-pass positive nor false-fail negative)"
+    - 'GATE A static: derive dist path from project.json build.options.outputPath at runtime (no hard-coded literal); fs.readFileSync (dist is gitignored -> never git grep); strip //-comment lines before regex (a comment naming the package must not false-pass positive nor false-fail negative)'
     - "GATE A core/adapter split: positive /import\\(/ asserted on core/compiler-loader.js (where the await import lives), not executor.js; negative require-call asserted on BOTH built files"
-    - "GATE B differential: drive ng.defaultGatherDiagnostics vs gatherAllDiagnostics off the SAME parsed config, spreading a FRESH { ...options, noEmit: true } per performCompilation call (no shared mutable noEmit)"
+    - 'GATE B differential: drive ng.defaultGatherDiagnostics vs gatherAllDiagnostics off the SAME parsed config, spreading a FRESH { ...options, noEmit: true } per performCompilation call (no shared mutable noEmit)'
     - "GATE B code assertions on encoded values: TS2322 raw (2322); NG8109 negative-encoded (-998109 = parseInt('-99'+8109)); recovery helper Math.abs(c)-990000===8109; NG8117 (-998117) expected companion; UNKNOWN_ERROR_CODE 500 MUST be absent"
-    - "describe.each([app,lib]) parameterizes the breadth gate (one app + one local-library tsconfig) in a single spec"
+    - 'describe.each([app,lib]) parameterizes the breadth gate (one app + one local-library tsconfig) in a single spec'
 
 key-files:
   created:
-    - "packages/angular-typechecker/src/executors/angular-typecheck/gate-a-static.spec.ts (GATE A static; reads built artifacts)"
-    - "packages/angular-typechecker/src/core/gate-b.spec.ts (GATE B positive + differential + breadth + runtime guard + timing)"
-    - ".planning/phases/01-workspace-bootstrap-engine-spike-gated/deferred-items.md (pre-existing lint findings, out-of-scope; WS-04/Phase 3)"
+    - 'packages/angular-typechecker/src/executors/angular-typecheck/gate-a-static.spec.ts (GATE A static; reads built artifacts)'
+    - 'packages/angular-typechecker/src/core/gate-b.spec.ts (GATE B positive + differential + breadth + runtime guard + timing)'
+    - '.planning/phases/01-workspace-bootstrap-engine-spike-gated/deferred-items.md (pre-existing lint findings, out-of-scope; WS-04/Phase 3)'
   modified: []
 
 key-decisions:
-  - "GATE B asserts the NEGATIVE-ENCODED NG8109 value -998109 (NOT bare 8109, which never appears on ts.Diagnostic.code), plus a self-documenting Math.abs(c)-990000===8109 recovery assertion (RESEARCH-ADDENDUM-WAVE3 Finding 3 / D-17)."
-  - "GATE A positive targets the BUILT core/compiler-loader.js (the await import lives in core per the core/adapter split, Finding 2), not executor.js; the negative require-call assertion covers BOTH built files with comment-stripping (executor.js names the package in a JSDoc comment)."
-  - "Spike GO/NO-GO = GO: all six checklist items pass against reproduced evidence (app + lib all-getter [2322,-998109,-998117]; ngc default [2322]); Phase 2 may begin."
+  - 'GATE B asserts the NEGATIVE-ENCODED NG8109 value -998109 (NOT bare 8109, which never appears on ts.Diagnostic.code), plus a self-documenting Math.abs(c)-990000===8109 recovery assertion (RESEARCH-ADDENDUM-WAVE3 Finding 3 / D-17).'
+  - 'GATE A positive targets the BUILT core/compiler-loader.js (the await import lives in core per the core/adapter split, Finding 2), not executor.js; the negative require-call assertion covers BOTH built files with comment-stripping (executor.js names the package in a JSDoc comment).'
+  - 'Spike GO/NO-GO = GO: all six checklist items pass against reproduced evidence (app + lib all-getter [2322,-998109,-998117]; ngc default [2322]); Phase 2 may begin.'
 
 patterns-established:
-  - "Gate assertions are committed Vitest tests, not throwaway probes; the build precedes the static read via the full-suite command nx build && nx test"
-  - "Out-of-scope lint findings logged to phase deferred-items.md rather than fixed (scope boundary; ESLint enforcement is WS-04/Phase 3)"
+  - 'Gate assertions are committed Vitest tests, not throwaway probes; the build precedes the static read via the full-suite command nx build && nx test'
+  - 'Out-of-scope lint findings logged to phase deferred-items.md rather than fixed (scope boundary; ESLint enforcement is WS-04/Phase 3)'
 
 requirements-completed: [WS-02, WS-03, ENG-03]
 
@@ -58,23 +58,23 @@ All six go/no-go checklist items (CONTEXT.md "Spike go/no-go checklist") PASS ag
 
 ### GO / NO-GO ledger (all six items)
 
-| # | Checklist item | Verdict | Evidence (this session) |
-|---|----------------|---------|-------------------------|
-| 1 | **[A static]** built `compiler-loader.js` matches `/import\(/`; neither built file matches `/require\(["']@angular\/compiler-cli/` | **GO** | `gate-a-static.spec.ts` 3 tests pass against the freshly-built dist; `compiler-loader.js:19` holds `yield import('@angular/compiler-cli')`, `executor.js` names the package only in a JSDoc comment (comment-stripped negative). |
-| 2 | **[A runtime]** `require()`-ing the built CJS executor + triggering the loader resolves compiler-cli (no `ERR_REQUIRE_ESM`, no `500`) | **GO** | `gate-b.spec.ts` awaits `loadCompilerCli()` -> `performCompilation` and asserts `not.toContain(500)`; both runs resolve (a failed `await import()` would reject). The Plan 03 end-to-end `require()`-load of the built executor against the fixture already ran with no `ERR_REQUIRE_ESM`. |
-| 3 | **[B positive]** all-getter returns codes incl. BOTH `2322` and NG8109 (`-998109`) | **GO** | app + lib all-getter codes = `[2322, -998109, -998117]`. `toContain(2322)`, `toContain(-998109)`, and `Math.abs(c)-990000===8109` all pass. |
-| 4 | **[B differential]** `defaultGatherDiagnostics` on the same config returns `2322` but NOT `-998109` | **GO** | app + lib ngc default codes = `[2322]`. `toContain(2322)` + `not.toContain(-998109)` pass -- the &&-chain short-circuit the all-getter overcomes is proven. |
-| 5 | **[B breadth]** items 3-4 hold for one app tsconfig AND one local-library tsconfig | **GO** | `describe.each([['app tsconfig', ...], ['local-library tsconfig', ...]])` -- identical arrays for both variants (table above). |
-| 6 | **[timing]** one cold-run wall-clock recorded | **GO** | `[GATE B timing] cold-run durationMs = 296.82` (logged once from a `runTypecheck` call on the lib fixture). |
+| #   | Checklist item                                                                                                                        | Verdict | Evidence (this session)                                                                                                                                                                                                                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **[A static]** built `compiler-loader.js` matches `/import\(/`; neither built file matches `/require\(["']@angular\/compiler-cli/`    | **GO**  | `gate-a-static.spec.ts` 3 tests pass against the freshly-built dist; `compiler-loader.js:19` holds `yield import('@angular/compiler-cli')`, `executor.js` names the package only in a JSDoc comment (comment-stripped negative).                                                           |
+| 2   | **[A runtime]** `require()`-ing the built CJS executor + triggering the loader resolves compiler-cli (no `ERR_REQUIRE_ESM`, no `500`) | **GO**  | `gate-b.spec.ts` awaits `loadCompilerCli()` -> `performCompilation` and asserts `not.toContain(500)`; both runs resolve (a failed `await import()` would reject). The Plan 03 end-to-end `require()`-load of the built executor against the fixture already ran with no `ERR_REQUIRE_ESM`. |
+| 3   | **[B positive]** all-getter returns codes incl. BOTH `2322` and NG8109 (`-998109`)                                                    | **GO**  | app + lib all-getter codes = `[2322, -998109, -998117]`. `toContain(2322)`, `toContain(-998109)`, and `Math.abs(c)-990000===8109` all pass.                                                                                                                                                |
+| 4   | **[B differential]** `defaultGatherDiagnostics` on the same config returns `2322` but NOT `-998109`                                   | **GO**  | app + lib ngc default codes = `[2322]`. `toContain(2322)` + `not.toContain(-998109)` pass -- the &&-chain short-circuit the all-getter overcomes is proven.                                                                                                                                |
+| 5   | **[B breadth]** items 3-4 hold for one app tsconfig AND one local-library tsconfig                                                    | **GO**  | `describe.each([['app tsconfig', ...], ['local-library tsconfig', ...]])` -- identical arrays for both variants (table above).                                                                                                                                                             |
+| 6   | **[timing]** one cold-run wall-clock recorded                                                                                         | **GO**  | `[GATE B timing] cold-run durationMs = 296.82` (logged once from a `runTypecheck` call on the lib fixture).                                                                                                                                                                                |
 
 **GO iff 1-6 all hold -> they do -> GO.**
 
 ### Exact diagnostic-code arrays observed
 
-| fixture tsconfig | all-getter (`gatherAllDiagnostics`) | ngc default (`defaultGatherDiagnostics`) |
-|------------------|-------------------------------------|------------------------------------------|
-| `fixtures/gate-b-error/tsconfig.app.json` | `[2322, -998109, -998117]` | `[2322]` |
-| `fixtures/gate-b-error/tsconfig.lib.json` | `[2322, -998109, -998117]` | `[2322]` |
+| fixture tsconfig                          | all-getter (`gatherAllDiagnostics`) | ngc default (`defaultGatherDiagnostics`) |
+| ----------------------------------------- | ----------------------------------- | ---------------------------------------- |
+| `fixtures/gate-b-error/tsconfig.app.json` | `[2322, -998109, -998117]`          | `[2322]`                                 |
+| `fixtures/gate-b-error/tsconfig.lib.json` | `[2322, -998109, -998117]`          | `[2322]`                                 |
 
 Encoding (confirmed at runtime): `ngErrorCode(8109) = -998109` (NG8109 INTERPOLATED_SIGNAL_NOT_INVOKED), `ngErrorCode(8117) = -998117` (NG8117 UNINVOKED_FUNCTION_IN_TEXT_INTERPOLATION, the expected `{{ status }}`-signal companion), `UNKNOWN_ERROR_CODE = 500` (absent from both sets). TS2322 is raw (not offset).
 
@@ -163,5 +163,6 @@ None. The two gate specs are complete, committed, and green. The Phase-1 deferra
 - Functional gates: `nx build angular-typechecker` succeeds; `nx test angular-typechecker` -> 4 files, 12 tests, all pass; all six go/no-go items GO; cold-run timing recorded; throwaway probe removed (clean `git status`).
 
 ---
-*Phase: 01-workspace-bootstrap-engine-spike-gated*
-*Completed: 2026-06-27*
+
+_Phase: 01-workspace-bootstrap-engine-spike-gated_
+_Completed: 2026-06-27_

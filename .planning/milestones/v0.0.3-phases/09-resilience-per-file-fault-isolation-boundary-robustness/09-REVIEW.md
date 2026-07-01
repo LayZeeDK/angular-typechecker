@@ -100,10 +100,9 @@ file path independently of this helper).
 
 **Fix:** Strip only the `.ngtypecheck` infix and keep whatever extension the shim
 carries, so the result is at least a real on-disk path the consumer can map back:
+
 ```ts
-function normalizeShimFileName(
-  fileName: string | undefined,
-): string | undefined {
+function normalizeShimFileName(fileName: string | undefined): string | undefined {
   if (fileName === undefined) {
     return undefined;
   }
@@ -116,6 +115,7 @@ function normalizeShimFileName(
   return fileName.replace(/\.ngtypecheck(\.tsx?)$/, '$1');
 }
 ```
+
 At minimum, add a code comment acknowledging the `.tsx`-source case is reported as
 `.ts`, so the limitation is explicit rather than silent.
 
@@ -142,13 +142,13 @@ be a deliberate, documented choice.
 there may be additional NG3004s ("a fatal template-compilation error (e.g. in
 ${offendingFile}) ... fix all reported NG3004 diagnostics"), or (b) collect all
 NG3004 offenders and name them (capped), e.g.:
+
 ```ts
-const offenders = reported
-  .filter((d) => d.code === TCB_GENERATION_FATAL_DIAGNOSTIC_CODE)
-  .map((d) => normalizeShimFileName(d.file?.fileName) ?? 'an unknown file');
+const offenders = reported.filter((d) => d.code === TCB_GENERATION_FATAL_DIAGNOSTIC_CODE).map((d) => normalizeShimFileName(d.file?.fileName) ?? 'an unknown file');
 // dedup + cap, then return { code, fileNames: offenders } and have the adapter
 // join them.
 ```
+
 Option (a) is the smaller change and sufficient for v0.0.x.
 
 ## Info

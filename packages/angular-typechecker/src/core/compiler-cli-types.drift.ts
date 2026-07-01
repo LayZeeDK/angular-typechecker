@@ -37,7 +37,10 @@ import type { Program as RealProgram } from '@angular/compiler-cli';
 // `UNKNOWN_ERROR_CODE` as a value and `EmitFlags` as a value-namespace
 // (`RealEmitFlags.DTS` etc.). The drift file is erased at emit (this target
 // is `noEmit`), so these bindings exist only for the type-check.
-import { EmitFlags as RealEmitFlags, UNKNOWN_ERROR_CODE as RealUnknown } from '@angular/compiler-cli';
+import {
+  EmitFlags as RealEmitFlags,
+  UNKNOWN_ERROR_CODE as RealUnknown,
+} from '@angular/compiler-cli';
 import type * as ts from 'typescript';
 
 import type { Program as ShimProgram } from './compiler-cli-types';

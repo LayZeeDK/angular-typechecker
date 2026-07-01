@@ -255,7 +255,9 @@ describe.each(CATALOG)(
         row.skipReason ? ` (skipped: ${row.skipReason})` : ''
       }`,
       async () => {
-        const result = await runTypecheck({ tsConfigPath: row.fixtureTsConfig });
+        const result = await runTypecheck({
+          tsConfigPath: row.fixtureTsConfig,
+        });
 
         const hits = result.diagnostics.filter(
           (diagnostic) => diagnostic.code === NG(row.ngCode),

@@ -19,8 +19,8 @@ affects: [06-05-ci-act-compat, phase-7-release-pr-workflow]
 tech-stack:
   added: []
   patterns:
-    - "Job-level `if:` ref gate as belt-and-suspenders over the `on: push: tags:` primary gate (publish unreachable on a non-tag ref even if a trigger is later broadened)"
-    - "Explanatory workflow comments live on standalone `#` lines (never inline trailing) and avoid banned literal tokens so the substring-based release-hygiene regression spec stays green"
+    - 'Job-level `if:` ref gate as belt-and-suspenders over the `on: push: tags:` primary gate (publish unreachable on a non-tag ref even if a trigger is later broadened)'
+    - 'Explanatory workflow comments live on standalone `#` lines (never inline trailing) and avoid banned literal tokens so the substring-based release-hygiene regression spec stays green'
 
 key-files:
   created:
@@ -30,11 +30,11 @@ key-files:
     - .github/workflows/release.yml
 
 key-decisions:
-  - "Added ONLY the publish-job `if:` ref gate + a standalone comment block; the OIDC/provenance/permissions/environment model is byte-for-byte unchanged (proven by the release-hygiene regression spec + a comment-stripped structural assertion)"
-  - "The `nx release --dry-run` version/changelog preview is blocked by a PRE-EXISTING, out-of-scope fixture build failure (06-01 buildable/publishable fixtures need ng-packagr, which is deliberately not installed per OQ-1); logged to deferred-items.md, NOT fixed in 06-04"
+  - 'Added ONLY the publish-job `if:` ref gate + a standalone comment block; the OIDC/provenance/permissions/environment model is byte-for-byte unchanged (proven by the release-hygiene regression spec + a comment-stripped structural assertion)'
+  - 'The `nx release --dry-run` version/changelog preview is blocked by a PRE-EXISTING, out-of-scope fixture build failure (06-01 buildable/publishable fixtures need ng-packagr, which is deliberately not installed per OQ-1); logged to deferred-items.md, NOT fixed in 06-04'
 
 patterns-established:
-  - "Pattern: workflow `if:` gate comments stay on their own `#` line and reword around the substring-checked banned literals (pull_request_target / contents: write / NODE_AUTH_TOKEN / @vN)"
+  - 'Pattern: workflow `if:` gate comments stay on their own `#` line and reword around the substring-checked banned literals (pull_request_target / contents: write / NODE_AUTH_TOKEN / @vN)'
 
 requirements-completed: [CI-01]
 
@@ -74,21 +74,21 @@ completed: 2026-06-29
 
 ## Re-verification Evidence (the critical_release_yml_caveats)
 
-| Invariant | Result |
-|-----------|--------|
-| `if: startsWith(github.ref, 'refs/tags/angular-typechecker@')` present at job level | YES (between `permissions:` and `steps:`) |
-| Comment is a standalone `#` line (no inline trailing comment; no banned literals) | YES |
-| Every `uses:` a 40-char SHA (`93cb6efe...`, `a0853c24...`) | YES |
-| `id-token: write` present; `contents: write` ABSENT; top-level `contents: read` | YES |
-| `environment: npm-publish` intact | YES |
-| `registry-url: https://registry.npmjs.org/` retained (OIDC detection) | YES |
-| `NODE_AUTH_TOKEN` not present as an active env declaration | YES (unset) |
-| `NPM_CONFIG_PROVENANCE: true` | YES |
-| `persist-credentials: false` | YES |
-| `pull_request_target` absent | YES |
-| `release-hygiene.int.spec` regression gate | GREEN (15/15; install-e2e suite 22/22, exit 0) |
-| `nx.json` `release.git.push:false` + `createRelease:false` + `projects:[angular-typechecker]` | UNCHANGED |
-| `git diff` is the +7 additive lines only (OIDC model byte-for-byte unchanged) | YES |
+| Invariant                                                                                     | Result                                         |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `if: startsWith(github.ref, 'refs/tags/angular-typechecker@')` present at job level           | YES (between `permissions:` and `steps:`)      |
+| Comment is a standalone `#` line (no inline trailing comment; no banned literals)             | YES                                            |
+| Every `uses:` a 40-char SHA (`93cb6efe...`, `a0853c24...`)                                    | YES                                            |
+| `id-token: write` present; `contents: write` ABSENT; top-level `contents: read`               | YES                                            |
+| `environment: npm-publish` intact                                                             | YES                                            |
+| `registry-url: https://registry.npmjs.org/` retained (OIDC detection)                         | YES                                            |
+| `NODE_AUTH_TOKEN` not present as an active env declaration                                    | YES (unset)                                    |
+| `NPM_CONFIG_PROVENANCE: true`                                                                 | YES                                            |
+| `persist-credentials: false`                                                                  | YES                                            |
+| `pull_request_target` absent                                                                  | YES                                            |
+| `release-hygiene.int.spec` regression gate                                                    | GREEN (15/15; install-e2e suite 22/22, exit 0) |
+| `nx.json` `release.git.push:false` + `createRelease:false` + `projects:[angular-typechecker]` | UNCHANGED                                      |
+| `git diff` is the +7 additive lines only (OIDC model byte-for-byte unchanged)                 | YES                                            |
 
 `nx release --dry-run` sanity: see Issues Encountered -- it published/pushed NOTHING (it halts in the pre-version build, upstream of any release write), but could not surface the version/changelog preview due to a pre-existing, out-of-scope fixture build failure (DI-06-01).
 
@@ -127,5 +127,6 @@ None - no external service configuration required.
 - FOUND commit: `dc740ab`
 
 ---
-*Phase: 06-full-e2e-matrix-ci*
-*Completed: 2026-06-29*
+
+_Phase: 06-full-e2e-matrix-ci_
+_Completed: 2026-06-29_

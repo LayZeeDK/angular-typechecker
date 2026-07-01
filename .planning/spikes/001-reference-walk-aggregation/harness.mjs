@@ -185,7 +185,9 @@ function identityKey(diagnostic) {
 }
 
 function categoryName(category) {
-  return ['Warning', 'Error', 'Suggestion', 'Message'][category] ?? String(category);
+  return (
+    ['Warning', 'Error', 'Suggestion', 'Message'][category] ?? String(category)
+  );
 }
 
 // Resolve a ProjectReference's `path` (file or directory) to a concrete config file.
@@ -284,8 +286,9 @@ const leaves = references.map((leaf) => runLeaf(leaf));
 const rawUnion = leaves.flatMap((leaf) => leaf.raw);
 const projectBasePath = dirname(solutionTsConfig);
 const caseSensitive =
-  leaves.find((leaf) => leaf.tsProgram)?.tsProgram.useCaseSensitiveFileNames() ??
-  ts.sys.useCaseSensitiveFileNames;
+  leaves
+    .find((leaf) => leaf.tsProgram)
+    ?.tsProgram.useCaseSensitiveFileNames() ?? ts.sys.useCaseSensitiveFileNames;
 
 const walk = finalizeUnion(rawUnion, projectBasePath, caseSensitive);
 const walkMs = performance.now() - walkStart;
@@ -405,7 +408,8 @@ const assertions = [
   {
     id: 'A3-spec-only-present',
     pass: specOnlyPresent,
-    detail: 'spec-only TS2322 (reachable only via the spec leaf) is in the aggregated set',
+    detail:
+      'spec-only TS2322 (reachable only via the spec leaf) is in the aggregated set',
   },
   {
     id: 'B1-dedupe-collapsed-overlap',
@@ -459,7 +463,9 @@ const forensic = {
   },
   sharedObjectEvidence,
   walkReported: walk.reported.map((d) => ({
-    file: d.file ? d.file.fileName.replace(fixtureDir.replace(/\\/g, '/'), '<fixture>') : '<file-less>',
+    file: d.file
+      ? d.file.fileName.replace(fixtureDir.replace(/\\/g, '/'), '<fixture>')
+      : '<file-less>',
     code: d.code,
     category: categoryName(d.category),
     message: ts.flattenDiagnosticMessageText(d.messageText, '\n').slice(0, 90),
@@ -476,7 +482,9 @@ writeFileSync(
 
 // Human summary.
 console.log('=== Spike 001: reference-walk aggregation ===');
-console.log(`env: node ${process.version} | ts ${ts.version} | @angular/compiler-cli 22.0.4`);
+console.log(
+  `env: node ${process.version} | ts ${ts.version} | @angular/compiler-cli 22.0.4`,
+);
 console.log(`solution: ${solutionTsConfig}`);
 console.log(`resolved leaves: ${references.length}`);
 for (const r of perLeafReports) {

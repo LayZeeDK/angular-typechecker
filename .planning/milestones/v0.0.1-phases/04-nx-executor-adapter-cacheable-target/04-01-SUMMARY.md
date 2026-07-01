@@ -7,26 +7,26 @@ tags: [nx-executor, nx-devkit, angular-compiler-cli, cjs-esm, json-schema, vites
 # Dependency graph
 requires:
   - phase: 03-filtering-modes-output-quality-gates
-    provides: "runTypecheck, evaluateResult, formatReport, filterDiagnostics, loadCompilerCli core seams + the core/** import ban"
+    provides: 'runTypecheck, evaluateResult, formatReport, filterDiagnostics, loadCompilerCli core seams + the core/** import ban'
   - phase: 02-core-type-check-engine-gatherer
-    provides: "CoreOptions/CoreResult shapes, TypecheckInfrastructureError, the private loadTypescript memo"
+    provides: 'CoreOptions/CoreResult shapes, TypecheckInfrastructureError, the private loadTypescript memo'
   - phase: 01-workspace-bootstrap-engine-spike-gated
-    provides: "GATE A module:nodenext import() survival; the executor stub + executors.json + schema.json starting points"
+    provides: 'GATE A module:nodenext import() survival; the executor stub + executors.json + schema.json starting points'
 provides:
-  - "renderReport core seam (D-02): loads ng + ts internally, delegates to formatReport, barrel-exported, never leaks loadTypescript"
-  - "Pure normalize-options mapper (D-01/D-03): rel->abs tsConfig via joinPathFragments, splits reporter knobs out of CoreOptions"
-  - "Completed sub-50-line executor adapter (D-01/D-04): composes normalize -> runTypecheck -> renderReport (raw stdout) -> evaluateResult -> { success }; catches infra errors, re-throws all others"
-  - "v0.0.1 executor public schema contract (D-06): tsConfig + includeDeps + maxWarnings (no default) + failFast + version 2, lockstep schema.d.ts + key-parity test"
-  - "executors.json outputCapture direct-nodejs (D-04)"
+  - 'renderReport core seam (D-02): loads ng + ts internally, delegates to formatReport, barrel-exported, never leaks loadTypescript'
+  - 'Pure normalize-options mapper (D-01/D-03): rel->abs tsConfig via joinPathFragments, splits reporter knobs out of CoreOptions'
+  - 'Completed sub-50-line executor adapter (D-01/D-04): composes normalize -> runTypecheck -> renderReport (raw stdout) -> evaluateResult -> { success }; catches infra errors, re-throws all others'
+  - 'v0.0.1 executor public schema contract (D-06): tsConfig + includeDeps + maxWarnings (no default) + failFast + version 2, lockstep schema.d.ts + key-parity test'
+  - 'executors.json outputCapture direct-nodejs (D-04)'
 affects: [04-02-cacheable-target, 04-03-cache-correctness, 05-packaging-publish, 06-e2e-matrix]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "renderReport core seam: the single render entry every adapter (executor now; CLI/builder later) reuses; keeps CJS->ESM module loading inside core/"
-    - "Hexagonal-lite adapter split: pure normalize-options.ts mapper + thin executor.ts composing the core; @nx/devkit confined to the adapter tier"
-    - "schema.json <-> schema.d.ts key-parity unit test (readFileSync + JSON.parse contract test) to catch silent runtime/type contract drift"
+    - 'renderReport core seam: the single render entry every adapter (executor now; CLI/builder later) reuses; keeps CJS->ESM module loading inside core/'
+    - 'Hexagonal-lite adapter split: pure normalize-options.ts mapper + thin executor.ts composing the core; @nx/devkit confined to the adapter tier'
+    - 'schema.json <-> schema.d.ts key-parity unit test (readFileSync + JSON.parse contract test) to catch silent runtime/type contract drift'
 
 key-files:
   created:
@@ -45,14 +45,14 @@ key-files:
 
 key-decisions:
   - "D-02: renderReport added as a NEW core seam (not a CoreResult.formatted field, not a loadTypescript re-export) so formatReport's injected ng/ts stay inside core"
-  - "D-03: tsConfig resolution uses joinPathFragments(context.root, ...) (workspace-root-relative, POSIX-stable), never node:path.join"
-  - "D-04: report written via process.stdout.write (raw), not logger.info; color = process.stdout.isTTY === true; outputCapture direct-nodejs"
-  - "D-01: executor catches TypecheckInfrastructureError (logger.error + success:false) and RE-THROWS every other error (a type-checker that lies is worse than none)"
-  - "D-06: maxWarnings carries NO json-schema default (a default:0 would silently fail any NG8xxx warning); maxWarnings forwarded as-is (evaluateResult treats undefined/negative/NaN as unset)"
+  - 'D-03: tsConfig resolution uses joinPathFragments(context.root, ...) (workspace-root-relative, POSIX-stable), never node:path.join'
+  - 'D-04: report written via process.stdout.write (raw), not logger.info; color = process.stdout.isTTY === true; outputCapture direct-nodejs'
+  - 'D-01: executor catches TypecheckInfrastructureError (logger.error + success:false) and RE-THROWS every other error (a type-checker that lies is worse than none)'
+  - 'D-06: maxWarnings carries NO json-schema default (a default:0 would silently fail any NG8xxx warning); maxWarnings forwarded as-is (evaluateResult treats undefined/negative/NaN as unset)'
 
 patterns-established:
-  - "renderReport seam: the reusable render entry for every present/future adapter; CJS->ESM loaders stay in core/"
-  - "Adapter-tier @nx/devkit confinement: only executor.ts + normalize-options.ts import @nx/devkit; core/render-report.ts imports none"
+  - 'renderReport seam: the reusable render entry for every present/future adapter; CJS->ESM loaders stay in core/'
+  - 'Adapter-tier @nx/devkit confinement: only executor.ts + normalize-options.ts import @nx/devkit; core/render-report.ts imports none'
 
 requirements-completed: [EXE-01, EXE-07]
 
@@ -110,6 +110,7 @@ _Note: TDD tasks were implemented test-alongside-impl in single commits (impl + 
 ## Decisions Made
 
 None beyond honoring the locked D-01/D-02/D-03/D-04/D-06 decisions. Two in-discretion choices the plan delegated to the executor were resolved as RESEARCH recommended:
+
 - `renderReport` signature is `(result, { pathBase, color, failFast })` with `color` a required param (the adapter derives it from `process.stdout.isTTY`).
 - The private `loadTypescript` memo is duplicated in `render-report.ts` (copied verbatim from `run-typecheck.ts`) rather than hoisted into a shared helper, per the D-02 note that the near-free second cache is acceptable and the simpler duplication avoids any new barrel surface.
 
@@ -140,5 +141,6 @@ None - no external service configuration required.
 All 6 created source/spec files + the SUMMARY exist on disk; all 3 task commits (`d903865`, `86b66ee`, `32368ab`) exist in git history. Verification gates re-run green: full unit suite 20 files / 99 tests passed; `nx build angular-typechecker` succeeded with `import(` retained in the built `compiler-loader.js` and `render-report.js` (GATE A); `nx lint angular-typechecker` exit 0 (only a pre-existing out-of-scope unused-var WARNING in `config-resolution.integration.spec.ts`).
 
 ---
-*Phase: 04-nx-executor-adapter-cacheable-target*
-*Completed: 2026-06-28*
+
+_Phase: 04-nx-executor-adapter-cacheable-target_
+_Completed: 2026-06-28_

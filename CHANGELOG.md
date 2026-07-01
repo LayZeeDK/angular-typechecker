@@ -5,7 +5,7 @@ All notable changes to **angular-typechecker** are documented in this file.
 ## 0.0.3 (2026-06-30)
 
 Engine-hardening release. The `angular-typecheck` engine now reports a more
-*complete* diagnostic set and survives partial failures without aborting the
+_complete_ diagnostic set and survives partial failures without aborting the
 whole run. There are no breaking changes and no change to how you wire or invoke
 the target.
 
@@ -66,7 +66,7 @@ This release verifies the tokenless OIDC steady-state publish path: 0.0.1 was fi
 
 Initial release.
 
-angular-typechecker is an Nx plugin that runs the *complete* Angular compiler type-check -- TypeScript checks plus Angular template type-checking and extended (NG8xxx) diagnostics -- with no emit, decoupled from building the application or running its tests. It gives a fast, isolated static-check feedback loop for AI coding agents and CI pipelines.
+angular-typechecker is an Nx plugin that runs the _complete_ Angular compiler type-check -- TypeScript checks plus Angular template type-checking and extended (NG8xxx) diagnostics -- with no emit, decoupled from building the application or running its tests. It gives a fast, isolated static-check feedback loop for AI coding agents and CI pipelines.
 
 ### Features
 

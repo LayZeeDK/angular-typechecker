@@ -5,22 +5,24 @@
 > **Context for the reader.** `angular-typechecker` v0.0.3 shipped and was audited
 > "passed, 16/16, zero tech debt" (`.planning/STATE.md`). This analysis confirms that:
 > there are **no** TODO/FIXME/HACK/XXX markers anywhere in `packages/`, `e2e/`, or
-> `apps/` source; the known coupling points are *deliberate, documented, and guarded*;
+> `apps/` source; the known coupling points are _deliberate, documented, and guarded_;
 > and the items most likely to be mistaken for debt are **intentionally-deferred future
-> scope**, not shortcuts. The sections below therefore lean heavily on *fragile areas*
-> (coupling that future Angular upgrades will stress) and *dependencies at risk*, and
+> scope**, not shortcuts. The sections below therefore lean heavily on _fragile areas_
+> (coupling that future Angular upgrades will stress) and _dependencies at risk_, and
 > are explicit about what is NOT debt. Treat this as a maintenance-risk map, not a
 > defect list.
 
 ## Tech Debt
 
 **No source-level tech debt markers detected.**
+
 - A repo-wide scan (`git grep -e TODO -e FIXME -e HACK -e XXX` over `packages/`,
   `e2e/`, `apps/`) returns **zero** matches. The known carried-forward items are
   tracked in `.planning/STATE.md` (Blockers/Concerns) and `.planning/PROJECT.md`
   (Out of Scope), not as in-code shortcuts.
 
 **Dev-repo `.npmrc legacy-peer-deps=true` (carried-forward, NOT consumer-facing):**
+
 - Issue: `@nx/angular@23.0.1` caps its `@angular/build` / `@angular-devkit/*` /
   `@schematics/angular` peers at `< 22.0.0`, but the locked stack is Angular 22.x.
   The dev workspace installs the Angular-22 tree against the Nx-23 plugin only with
@@ -36,6 +38,7 @@
   that admit Angular 22. Re-test a fresh `npm install` without the override at that point.
 
 **Manual executor target wiring (intentional for this milestone, low residual cost):**
+
 - Issue: consumers must hand-author the `angular-typecheck` target in their
   `project.json`; there is no `createNodesV2` inferred-target plugin and no
   `nx add` / `ng add` schematic yet.
@@ -47,6 +50,7 @@
 ## Known Bugs
 
 **None identified.**
+
 - The error-handling posture is fail-safe by construction: any non-`TypecheckInfrastructureError`
   throw is RE-THROWN by the executor rather than swallowed
   (`packages/angular-typechecker/src/executors/angular-typecheck/executor.ts:76-86`),
@@ -59,6 +63,7 @@
 ## Security Considerations
 
 **Publish pipeline (tokenless OIDC) -- hardened, low risk:**
+
 - Posture: `.github/workflows/release.yml` publishes via npm Trusted Publisher OIDC with
   **no `NODE_AUTH_TOKEN`** present (`:84-100`); `id-token: write` is the only elevated
   permission and it is granted on the publish job only (`:44-47`); top-level scope is
@@ -76,9 +81,10 @@
   the release-tag ref (`:54`).
 - Recommendations: keep the manual environment gate; keep `NODE_AUTH_TOKEN` unset; never
   re-enable `changelog.workspaceChangelog.createRelease: "github"` (the `release.git.push:
-  false` + `createRelease: false` pairing is load-bearing -- see `AGENTS.md` LANDMINE).
+false` + `createRelease: false` pairing is load-bearing -- see `AGENTS.md` LANDMINE).
 
 **`main` is PR-only with an empty bypass list -- a deliberate trade-off:**
+
 - Risk: the Default-branch ruleset has an EMPTY bypass list, so even the repo owner cannot
   push directly to `main`. The cost is a **lockout** if the required `ci` check goes red or
   stops reporting -- the merge button blocks with no bypass.
@@ -98,6 +104,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
 ## Performance Bottlenecks
 
 **Cold-start ESM load dominates a single run (inherent, mitigated):**
+
 - Problem: each `runTypecheck` cold call pays the ESM module load of
   `@angular/compiler-cli` + `typescript` plus the config parse before any compilation.
   This is the dominant cold-start cost.
@@ -112,6 +119,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
   `NgtscProgram` incremental engine (deferred) would enable warm/incremental re-checks.
 
 **Per-file template loop over all source files (bounded, deduped):**
+
 - Problem: the HYBRID gatherer iterates every non-declaration source file calling
   `getNgSemanticDiagnostics(fileName)` (`gather-diagnostics.ts:80-86`), which can produce
   duplicates of the residual whole-program call.
@@ -125,6 +133,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
 ## Fragile Areas
 
 **Vendored `@angular/compiler-cli` structural shim (the single highest-coupling point):**
+
 - Files: `packages/angular-typechecker/src/core/compiler-cli-types.ts` (the hand-declared
   structural surface), `packages/angular-typechecker/src/core/diagnostic-codes.ts`
   (the NG-code encoding + the `IMPORT_GENERATION_FAILURE = 3004` literal).
@@ -137,7 +146,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
   `@angular/compiler-cli@22.0.4`. An Angular upgrade that removes, renames,
   signature-changes, or renumbers any of these would break the engine at runtime if it
   passed the build silently.
-- Safe modification (the guardrails that make this *managed* fragility, not debt):
+- Safe modification (the guardrails that make this _managed_ fragility, not debt):
   1. **Build-time drift tripwire** -- `compiler-cli-types.drift.ts` imports the REAL named
      types from `@angular/compiler-cli` and asserts `real -> shim` assignability per getter,
      plus value-level pins on `EmitFlags` members and `UNKNOWN_ERROR_CODE`. It compiles ONLY
@@ -163,6 +172,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
   future Angular that reactivates it cannot silently under-gather.
 
 **`EmitFlags: 0` cast and the emit-neutralizing override:**
+
 - Files: `run-typecheck.ts:212-239`.
 - Why fragile: the engine passes the literal `0` as `emitFlags` (the emit-neutralizing
   value) which is NOT a declared `EmitFlags` member, so the call site uses an explicit
@@ -174,6 +184,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
   the integration specs (`no-emit-override.integration.spec.ts`, `suppress-output-path.integration.spec.ts`).
 
 **TCB-generation Fatal detection by exact code (NG3004):**
+
 - Files: `diagnostic-codes.ts:81-94` (`IMPORT_GENERATION_FAILURE_CODE = 3004`,
   `TCB_GENERATION_FATAL_DIAGNOSTIC_CODE = NG(3004) = -993004`); detection in
   `run-typecheck.ts:474-489`; notice in `executor.ts:52-63`.
@@ -188,6 +199,7 @@ network calls; the core layer is PURE (eslint bans `console`/`process` under
   bump (it is the same limit `@angular/build` has today).
 
 **`.ngtypecheck.ts` shim-name string surgery:**
+
 - Files: `run-typecheck.ts:510-518` (`normalizeShimFileName`).
 - Why fragile: maps a generated shim path back to its source by stripping the
   `.ngtypecheck` infix via regex, mirroring the compiler's
@@ -209,6 +221,7 @@ with no quadratic hot paths identified.
 ## Dependencies at Risk
 
 **`@angular/compiler-cli` (peer, ESM-only, pinned to 22.x behavior):**
+
 - Risk: the entire engine is built on internal-adjacent surfaces of this package (the
   diagnostic getters on `api.Program`, `EmitFlags`, `UNKNOWN_ERROR_CODE`,
   `defaultGatherDiagnostics`, the NG3004 TCB-abort behavior). The published peer range is
@@ -222,6 +235,7 @@ with no quadratic hot paths identified.
   verification").
 
 **`@nx/devkit` (pinned `dependency` `23.0.1`):**
+
 - Risk: pinned exact, and its own `nx` peer (`>= 22 <= 24 || ^23.0.0-0`) is WIDER than the
   Nx-23-only intent. The plugin cannot prevent installs on Nx 22/24 via the peer.
 - Impact: a consumer on Nx 22/24 could install without an npm peer warning; behavior is only
@@ -230,6 +244,7 @@ with no quadratic hot paths identified.
   unsupported Node. Re-pin in lockstep when bumping Nx.
 
 **`typescript` (peer `>=6.0.0 <6.1.0`):**
+
 - Risk: the `0 as EmitFlags` cast and several option-override behaviors are pinned to tsc
   6.0.x semantics (e.g. the TS2322 behavior on a bare enum assignment).
 - Impact: a TS 6.1+/7 bump could change option shapes or enum assignability.
@@ -255,15 +270,15 @@ not gaps in what shipped.
 > `.planning/STATE.md` (Deferred Items). They are **scope decisions, not shortcuts** --
 > listed here so a future planner does not mistake them for tech debt to "fix."
 
-| Item | What is deferred | Why it is scope, not debt |
-|------|------------------|---------------------------|
-| **REP-RES-02b** | Faithful per-file TEMPLATE/extended (NG8xxx) diagnostic recovery AFTER a TCB-generation Fatal (NG3004). Today survivors' template diagnostics are suppressed and the loud notice fires. | Needs the `NgtscProgram` / `OptimizeFor.SingleFile` incremental engine. This is the SAME limitation `@angular/build` has today; v0.0.3 ships detection + a loud notice instead of silent incompleteness. Deferred to the `NgtscProgram` milestone. |
-| **OBS-01** | A `totalFilesCount` field on `CoreResult` (`@nx/js` parity). | Deferred pending charter-fit; additive observability, no correctness impact. |
-| **Standalone CLI surface** | A `bin` entry that owns the literal OS exit code `2` (consuming the pure `toExitCode` policy already present in `exit-codes.ts`). | The Nx executor maps to Nx's `{ success }` contract (0/1); literal exit `2` belongs to the deferred CLI. PROJECT.md Out of Scope. |
-| **JSON / SARIF reporters** | Machine-readable output formats. Default output is `@angular/compiler-cli`'s `formatDiagnostics` (a `tsc` superset). | Deferred to a reporters milestone; the SARIF CI path also needs `security-events: write`, which contradicts the current `contents: read` CI posture (`ci.yml:146-150`). |
-| **Inferred targets / generators** | `createNodesV2` auto-wiring, `nx add` / `ng add` schematics, `migrations.json`. | v0.0.1/v0.0.3 ship manual target wiring deliberately (smallest valuable slice). |
-| **INF / GEN / SUR / REP / SUP families** | Broader feature families carried from v0.0.1. | Roadmap scope for later milestones. |
+| Item                                     | What is deferred                                                                                                                                                                        | Why it is scope, not debt                                                                                                                                                                                                                          |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **REP-RES-02b**                          | Faithful per-file TEMPLATE/extended (NG8xxx) diagnostic recovery AFTER a TCB-generation Fatal (NG3004). Today survivors' template diagnostics are suppressed and the loud notice fires. | Needs the `NgtscProgram` / `OptimizeFor.SingleFile` incremental engine. This is the SAME limitation `@angular/build` has today; v0.0.3 ships detection + a loud notice instead of silent incompleteness. Deferred to the `NgtscProgram` milestone. |
+| **OBS-01**                               | A `totalFilesCount` field on `CoreResult` (`@nx/js` parity).                                                                                                                            | Deferred pending charter-fit; additive observability, no correctness impact.                                                                                                                                                                       |
+| **Standalone CLI surface**               | A `bin` entry that owns the literal OS exit code `2` (consuming the pure `toExitCode` policy already present in `exit-codes.ts`).                                                       | The Nx executor maps to Nx's `{ success }` contract (0/1); literal exit `2` belongs to the deferred CLI. PROJECT.md Out of Scope.                                                                                                                  |
+| **JSON / SARIF reporters**               | Machine-readable output formats. Default output is `@angular/compiler-cli`'s `formatDiagnostics` (a `tsc` superset).                                                                    | Deferred to a reporters milestone; the SARIF CI path also needs `security-events: write`, which contradicts the current `contents: read` CI posture (`ci.yml:146-150`).                                                                            |
+| **Inferred targets / generators**        | `createNodesV2` auto-wiring, `nx add` / `ng add` schematics, `migrations.json`.                                                                                                         | v0.0.1/v0.0.3 ship manual target wiring deliberately (smallest valuable slice).                                                                                                                                                                    |
+| **INF / GEN / SUR / REP / SUP families** | Broader feature families carried from v0.0.1.                                                                                                                                           | Roadmap scope for later milestones.                                                                                                                                                                                                                |
 
 ---
 
-*Concerns audit: 2026-06-30*
+_Concerns audit: 2026-06-30_

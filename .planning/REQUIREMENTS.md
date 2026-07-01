@@ -9,15 +9,15 @@
 
 ### WALK — solution-tsconfig reference-walking (engine)
 
-*Added 2026-07-01 (spikes 001-005 GO). Prerequisite for the reshaped GEN-02/03. Supersedes the D-03a solution-style short-circuit.*
+_Added 2026-07-01 (spikes 001-005 GO). Prerequisite for the reshaped GEN-02/03. Supersedes the D-03a solution-style short-circuit._
 
-- [x] **WALK-01**: The `angular-typecheck` engine (`runTypecheck`) accepts a solution / references-only `tsconfig.json` and type-checks each IN-PROJECT referenced leaf in one call: it resolves `references[]` to leaf tsconfigs, runs `performCompilation` per leaf, UNIONs the raw per-leaf diagnostics into a single `finalize` pass (dedupe by `ts.sortAndDeduplicateDiagnostics` value identity — `file.path`+start+length+code+`messageText`; explicit post-dedupe `DiagnosticCategory` counts, never `length - errorCount`; basePath = the solution tsconfig's directory). A reference-resolution-layer **module-boundary guard** SKIPS out-of-project references (skip-with-notice, path-containment under the project dir), orthogonal to and composable with the existing `filter-diagnostics` + `includeDeps` (which continue to govern imported *source* diagnostics unchanged). The **D-03a zero-rootNames guard splits three-way**: references present + ≥1 in-project leaf → walk; references present + 0 in-project → new synthesized error (code 90001, distinct message); no references → unchanged empty-project error. `rootNames > 0` direct-leaf path untouched; no branch gates on TS18003. `rootNamesCount` = sum over walked leaves. The locked `config-resolution.integration.spec.ts:124-130` assertion is rewritten, and `fixtures/solution-style` gains a KNOWN diagnostic + a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking occurred.
-- [x] **WALK-02**: A walk target's Nx `targetDefaults` inputs use the `default` named input (the lib+spec source union), NOT `production` (which excludes `*.spec.ts` and would under-hash spec sources → stale PASS); `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default` are retained. Any leaf/dep change busts the (coarse) single-target cache. README consumer guidance updated to the walk recipe. *(DEFERRED synergy, tracked below: project references / `NgtscProgram` incremental declaration-reuse to collapse the double-compile tax — additive, not blocking.)*
+- [x] **WALK-01**: The `angular-typecheck` engine (`runTypecheck`) accepts a solution / references-only `tsconfig.json` and type-checks each IN-PROJECT referenced leaf in one call: it resolves `references[]` to leaf tsconfigs, runs `performCompilation` per leaf, UNIONs the raw per-leaf diagnostics into a single `finalize` pass (dedupe by `ts.sortAndDeduplicateDiagnostics` value identity — `file.path`+start+length+code+`messageText`; explicit post-dedupe `DiagnosticCategory` counts, never `length - errorCount`; basePath = the solution tsconfig's directory). A reference-resolution-layer **module-boundary guard** SKIPS out-of-project references (skip-with-notice, path-containment under the project dir), orthogonal to and composable with the existing `filter-diagnostics` + `includeDeps` (which continue to govern imported _source_ diagnostics unchanged). The **D-03a zero-rootNames guard splits three-way**: references present + ≥1 in-project leaf → walk; references present + 0 in-project → new synthesized error (code 90001, distinct message); no references → unchanged empty-project error. `rootNames > 0` direct-leaf path untouched; no branch gates on TS18003. `rootNamesCount` = sum over walked leaves. The locked `config-resolution.integration.spec.ts:124-130` assertion is rewritten, and `fixtures/solution-style` gains a KNOWN diagnostic + a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking occurred.
+- [x] **WALK-02**: A walk target's Nx `targetDefaults` inputs use the `default` named input (the lib+spec source union), NOT `production` (which excludes `*.spec.ts` and would under-hash spec sources → stale PASS); `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default` are retained. Any leaf/dep change busts the (coarse) single-target cache. README consumer guidance updated to the walk recipe. _(DEFERRED synergy, tracked below: project references / `NgtscProgram` incremental declaration-reuse to collapse the double-compile tax — additive, not blocking.)_
 
 ### GEN — `typecheck-configuration` generator
 
 - [ ] **GEN-01**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire a `typecheck` target (executor `angular-typechecker:angular-typecheck`) into the project's `project.json` (edits configuration only via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles`; no `generateFiles`, no file emission).
-- [ ] **GEN-02**: The generator wires ONE target pointed at the project's **solution `tsconfig.json`** (relying on WALK-01 to type-check its in-project referenced leaves), with an explicit `--tsConfig` override and a **flat-project fallback** (point at the leaf `tsconfig.app.json`/`tsconfig.lib.json` when the project has no solution tsconfig / no `references`). Per-project-type `tsConfig` detection is obviated by the walk. Configurable `targetName` (default `typecheck`). *(Nx workspaces only; Angular CLI `angular.json` layouts deferred; prod tsconfigs e.g. `tsconfig.lib.prod.json` are not referenced by the solution tsconfig and so are not walked — no-emit.)*
+- [ ] **GEN-02**: The generator wires ONE target pointed at the project's **solution `tsconfig.json`** (relying on WALK-01 to type-check its in-project referenced leaves), with an explicit `--tsConfig` override and a **flat-project fallback** (point at the leaf `tsconfig.app.json`/`tsconfig.lib.json` when the project has no solution tsconfig / no `references`). Per-project-type `tsConfig` detection is obviated by the walk. Configurable `targetName` (default `typecheck`). _(Nx workspaces only; Angular CLI `angular.json` layouts deferred; prod tsconfigs e.g. `tsconfig.lib.prod.json` are not referenced by the solution tsconfig and so are not walked — no-emit.)_
 - [ ] **GEN-03**: Spec-tsconfig (`tsconfig.spec.json`) type-checking is automatic via WALK-01 (the spec tsconfig is an in-project referenced leaf the engine walks) — no separate target or `configuration` is wired. In the flat-project fallback (no solution tsconfig), spec checking is out of the single leaf target's scope and left to the consumer.
 - [ ] **GEN-04**: Re-running the generator on an already-wired project is idempotent (no duplicate target, no clobbered config).
 - [ ] **GEN-05**: The generator ships a hand-authored `schema.json` + `schema.d.ts`, registered via `generators.json` and the published `package.json` `generators` field; the generator + schema are included in the tarball `files` set.
@@ -62,46 +62,48 @@
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Bespoke `createFsTree` real-disk test helper | Board Option A: zero value for a `project.json`-edit generator; prior-art FsTree lived only in an executor e2e; non-public deep import. Tracked as FSTREE-01. |
-| Mid-tier executor-vs-workspace test | `context.root`→`tsConfig` is already unit-covered (`normalize-options.spec.ts`); a hand-built `ExecutorContext` risks a false-green fiction. |
-| Verdaccio local-registry e2e | Second mechanism with Windows-arm64 `execFileSync` issues; the existing `npm pack` + tmp-install tarball harness suffices. |
-| jscodeshift error-injection toolkit | Committed static fixtures reproduce the diagnostics; no AST-mutation apparatus warranted. |
-| Nx cache / `dependsOn`-ordering correctness tests | Already covered by `cache-busts-on-dep-error`; no new gap. |
-| Quiet / errors-only executor mode + its tests | Mode is not in this milestone's scope. |
-| `ng add` / `nx add` install schematics; Angular CLI workspace generator | Deferred (GEN-FUT-01/02). |
-| Machine-readable reporters (JSON/SARIF), `NgtscProgram` incremental/`--watch`, `createNodesV2` inference, Jest, Storybook story type-check, standalone CLI | Carried-forward deferrals (PROJECT.md Out of Scope). |
+| Feature                                                                                                                                                    | Reason                                                                                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bespoke `createFsTree` real-disk test helper                                                                                                               | Board Option A: zero value for a `project.json`-edit generator; prior-art FsTree lived only in an executor e2e; non-public deep import. Tracked as FSTREE-01. |
+| Mid-tier executor-vs-workspace test                                                                                                                        | `context.root`→`tsConfig` is already unit-covered (`normalize-options.spec.ts`); a hand-built `ExecutorContext` risks a false-green fiction.                  |
+| Verdaccio local-registry e2e                                                                                                                               | Second mechanism with Windows-arm64 `execFileSync` issues; the existing `npm pack` + tmp-install tarball harness suffices.                                    |
+| jscodeshift error-injection toolkit                                                                                                                        | Committed static fixtures reproduce the diagnostics; no AST-mutation apparatus warranted.                                                                     |
+| Nx cache / `dependsOn`-ordering correctness tests                                                                                                          | Already covered by `cache-busts-on-dep-error`; no new gap.                                                                                                    |
+| Quiet / errors-only executor mode + its tests                                                                                                              | Mode is not in this milestone's scope.                                                                                                                        |
+| `ng add` / `nx add` install schematics; Angular CLI workspace generator                                                                                    | Deferred (GEN-FUT-01/02).                                                                                                                                     |
+| Machine-readable reporters (JSON/SARIF), `NgtscProgram` incremental/`--watch`, `createNodesV2` inference, Jest, Storybook story type-check, standalone CLI | Carried-forward deferrals (PROJECT.md Out of Scope).                                                                                                          |
 
 ## Traceability
 
 Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's last phase 11).
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| CAT-01 | Phase 12 | Complete |
-| CAT-02 | Phase 12 | Complete |
-| CAT-03 | Phase 12 | Complete |
-| CAT-04 | Phase 12 | Complete |
-| CAT-05 | Phase 12 | Complete |
-| DRIFT-01 | Phase 12 | Complete |
-| WALK-01 | Phase 13 | Complete |
-| WALK-02 | Phase 13 | Complete |
-| GEN-01 | Phase 14 | Pending |
-| GEN-02 | Phase 14 | Pending |
-| GEN-03 | Phase 14 | Pending |
-| GEN-04 | Phase 14 | Pending |
-| GEN-05 | Phase 14 | Pending |
-| GEN-06 | Phase 14 | Pending |
-| GE2E-01 | Phase 15 | Pending |
-| GE2E-02 | Phase 15 | Pending |
-| GUARD-01 | Phase 15 | Pending |
+| Requirement | Phase    | Status   |
+| ----------- | -------- | -------- |
+| CAT-01      | Phase 12 | Complete |
+| CAT-02      | Phase 12 | Complete |
+| CAT-03      | Phase 12 | Complete |
+| CAT-04      | Phase 12 | Complete |
+| CAT-05      | Phase 12 | Complete |
+| DRIFT-01    | Phase 12 | Complete |
+| WALK-01     | Phase 13 | Complete |
+| WALK-02     | Phase 13 | Complete |
+| GEN-01      | Phase 14 | Pending  |
+| GEN-02      | Phase 14 | Pending  |
+| GEN-03      | Phase 14 | Pending  |
+| GEN-04      | Phase 14 | Pending  |
+| GEN-05      | Phase 14 | Pending  |
+| GEN-06      | Phase 14 | Pending  |
+| GE2E-01     | Phase 15 | Pending  |
+| GE2E-02     | Phase 15 | Pending  |
+| GUARD-01    | Phase 15 | Pending  |
 
 **Coverage:**
+
 - v0.0.4 requirements: 17 total
 - Mapped to phases: 17 (Phase 12: 6 · Phase 13: 2 · Phase 14: 6 · Phase 15: 3)
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 — v0.0.4 re-scoped after spikes 001-005 GO: added WALK-01/02 (engine reference-walking), reshaped GEN-01/02/03 (one `typecheck` target → solution `tsconfig.json`). Now 17/17 requirements mapped across Phases 12-15 (12 shipped; 13 engine-walk; 14 generator; 15 e2e + guard).*
+
+_Requirements defined: 2026-07-01_
+_Last updated: 2026-07-01 — v0.0.4 re-scoped after spikes 001-005 GO: added WALK-01/02 (engine reference-walking), reshaped GEN-01/02/03 (one `typecheck` target → solution `tsconfig.json`). Now 17/17 requirements mapped across Phases 12-15 (12 shipped; 13 engine-walk; 14 generator; 15 e2e + guard)._

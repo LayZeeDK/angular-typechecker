@@ -10,43 +10,43 @@ files_modified:
   - packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts
   - packages/angular-typechecker/src/core/run-typecheck.ts
 autonomous: true
-requirements: []   # PR-review polish task -- no roadmap requirement IDs (expected empty)
+requirements: [] # PR-review polish task -- no roadmap requirement IDs (expected empty)
 user_setup: []
 
 must_haves:
   truths:
-    - "The S5c test FAILS under the buggy `warningCount = length - errorCount` and PASSES under the correct explicit category split (anti-tautology restored) -- CONTEXT #1"
-    - "The `isUnderDir(file, undefined base)` over-keep branch (filter-diagnostics.ts:188-190) is exercised by a test whose realpath throws for the base only -- CONTEXT #2"
-    - "The program-undefined guard (run-typecheck.ts:265-272) is exercised by a test that returns `{ diagnostics: [], program: undefined }` (no 500) and reaches the guard, not the post-compilation 500 scan -- CONTEXT #3"
-    - "No stale line pin `run-typecheck.ts:265-267` remains in compiler-cli-types.runtime.spec.ts -- CONTEXT #4"
-    - "run-typecheck.ts:260 reads `finalize CALL ARGS` (not `finalize below`) and :255 names `the optional program? field of PerformCompilationResult` (not `perform_compile.d.ts:29`) -- CONTEXT #5"
-    - "No production behavior change anywhere -- specs plus two source comments only"
+    - 'The S5c test FAILS under the buggy `warningCount = length - errorCount` and PASSES under the correct explicit category split (anti-tautology restored) -- CONTEXT #1'
+    - 'The `isUnderDir(file, undefined base)` over-keep branch (filter-diagnostics.ts:188-190) is exercised by a test whose realpath throws for the base only -- CONTEXT #2'
+    - 'The program-undefined guard (run-typecheck.ts:265-272) is exercised by a test that returns `{ diagnostics: [], program: undefined }` (no 500) and reaches the guard, not the post-compilation 500 scan -- CONTEXT #3'
+    - 'No stale line pin `run-typecheck.ts:265-267` remains in compiler-cli-types.runtime.spec.ts -- CONTEXT #4'
+    - 'run-typecheck.ts:260 reads `finalize CALL ARGS` (not `finalize below`) and :255 names `the optional program? field of PerformCompilationResult` (not `perform_compile.d.ts:29`) -- CONTEXT #5'
+    - 'No production behavior change anywhere -- specs plus two source comments only'
   artifacts:
-    - path: "packages/angular-typechecker/src/core/infra-failure.spec.ts"
-      provides: "file-less suggestionDiagnostic builder + upgraded S5c (3-element set, anti-tautology guard) + program-undefined-no-500 guard test"
-      contains: "function suggestionDiagnostic"
-    - path: "packages/angular-typechecker/src/core/filter-diagnostics.spec.ts"
-      provides: "base-throw realpath test covering the undefined-base over-keep branch"
-      contains: "isUnderDir undefined-dir branch"
-    - path: "packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts"
-      provides: "de-pinned symbol reference for the useCaseSensitiveFileNames read"
-      contains: "getTsProgram().useCaseSensitiveFileNames()"
-    - path: "packages/angular-typechecker/src/core/run-typecheck.ts"
-      provides: "two reworded/de-pinned comments (CALL ARGS precision + symbolic perform_compile field)"
-      contains: "the finalize CALL ARGS below"
+    - path: 'packages/angular-typechecker/src/core/infra-failure.spec.ts'
+      provides: 'file-less suggestionDiagnostic builder + upgraded S5c (3-element set, anti-tautology guard) + program-undefined-no-500 guard test'
+      contains: 'function suggestionDiagnostic'
+    - path: 'packages/angular-typechecker/src/core/filter-diagnostics.spec.ts'
+      provides: 'base-throw realpath test covering the undefined-base over-keep branch'
+      contains: 'isUnderDir undefined-dir branch'
+    - path: 'packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts'
+      provides: 'de-pinned symbol reference for the useCaseSensitiveFileNames read'
+      contains: 'getTsProgram().useCaseSensitiveFileNames()'
+    - path: 'packages/angular-typechecker/src/core/run-typecheck.ts'
+      provides: 'two reworded/de-pinned comments (CALL ARGS precision + symbolic perform_compile field)'
+      contains: 'the finalize CALL ARGS below'
   key_links:
-    - from: "infra-failure.spec.ts S5c test"
-      to: "run-typecheck.ts finalize category split"
-      via: "stubbed performCompilation returning a 3-element [Error, Warning, Suggestion] set"
+    - from: 'infra-failure.spec.ts S5c test'
+      to: 'run-typecheck.ts finalize category split'
+      via: 'stubbed performCompilation returning a 3-element [Error, Warning, Suggestion] set'
       pattern: "toBeLessThan\\(result\\.diagnostics\\.length\\)"
-    - from: "filter-diagnostics.spec.ts base-throw test"
-      to: "filter-diagnostics.ts isUnderDir undefined-base branch"
+    - from: 'filter-diagnostics.spec.ts base-throw test'
+      to: 'filter-diagnostics.ts isUnderDir undefined-base branch'
       via: "realpath that throws for '/ws/proj' only, identity for files"
-      pattern: "isUnderDir"
-    - from: "infra-failure.spec.ts program-undefined test"
-      to: "run-typecheck.ts:265-272 guard"
-      via: "performCompilation returning { diagnostics: [], program: undefined }"
-      pattern: "returned no Program"
+      pattern: 'isUnderDir'
+    - from: 'infra-failure.spec.ts program-undefined test'
+      to: 'run-typecheck.ts:265-272 guard'
+      via: 'performCompilation returning { diagnostics: [], program: undefined }'
+      pattern: 'returned no Program'
 ---
 
 <objective>
@@ -182,22 +182,22 @@ program-undefined test exits through).
 Style: ASCII-only; blank lines around control flow and `return` inside the injected
 `realpath`; always braces. Do NOT touch infra-failure.spec.ts:204 (claimed "same drift" is
 REFUTED -- prose, no pin). No production code edits in this task.
-  </action>
-  <verify>
-    <automated>npx nx test angular-typechecker</automated>
-    Specifically: the upgraded `S5c: counts errorCount and warningCount EXPLICITLY ... (MD-02)`
-    test passes (including the new `toBeLessThan(result.diagnostics.length)` assert); the new
-    `RES-03` base-throw test in filter-diagnostics.spec.ts passes (kept 1 / suppressed 0); and
-    the new program-undefined-no-500 test in the D-06 describe passes
-    (`rejects.toBeInstanceOf(TypecheckInfrastructureError)` + `rejects.toThrow(/returned no
+</action>
+<verify>
+<automated>npx nx test angular-typechecker</automated>
+Specifically: the upgraded `S5c: counts errorCount and warningCount EXPLICITLY ... (MD-02)`
+test passes (including the new `toBeLessThan(result.diagnostics.length)` assert); the new
+`RES-03` base-throw test in filter-diagnostics.spec.ts passes (kept 1 / suppressed 0); and
+the new program-undefined-no-500 test in the D-06 describe passes
+(`rejects.toBeInstanceOf(TypecheckInfrastructureError)` + `rejects.toThrow(/returned no
     Program/)`). All pre-existing tests still pass.
-  </verify>
-  <done>
+</verify>
+<done>
 All three test additions land and the full `nx test angular-typechecker` suite is green. The
 S5c anti-tautology guard is restored (would FAIL under the `length - errorCount` bug). No
 production source changed. Commit: `test(core): de-tautologize S5c warning count and cover
 program-undefined + undefined-base filter branches`.
-  </done>
+</done>
 </task>
 
 <task type="auto">
@@ -221,42 +221,44 @@ drift at infra-failure.spec.ts:204" is REFUTED -- do NOT change line 204.
 
 (#5) In run-typecheck.ts, two edits inside the `#3 DEFENSE-IN-DEPTH` comment block (:254-264),
 both comment text only -- leave the guard at :265-272 and the deref at :292-294 byte-unchanged:
-  - Line 260: reword "access in `finalize` below" -> "access in the `finalize` CALL ARGS below
-    (within `runTypecheck`)" -- the deref `result.program.getTsProgram()` runs in the finalize
-    CALL ARGS at :292-294, not inside the finalize body.
-  - Line 255: de-pin the external line ref "(@angular/compiler-cli perform_compile.d.ts:29)" ->
-    a symbolic reference "the optional `program?` field of `PerformCompilationResult`". SCOPE:
-    edit ONLY this run-typecheck.ts site that the finding names. Do NOT de-pin the
-    `compiler-cli-types.ts` `perform_compile.d.ts` pins (not flagged -- avoid scope creep).
+
+- Line 260: reword "access in `finalize` below" -> "access in the `finalize` CALL ARGS below
+  (within `runTypecheck`)" -- the deref `result.program.getTsProgram()` runs in the finalize
+  CALL ARGS at :292-294, not inside the finalize body.
+- Line 255: de-pin the external line ref "(@angular/compiler-cli perform_compile.d.ts:29)" ->
+  a symbolic reference "the optional `program?` field of `PerformCompilationResult`". SCOPE:
+  edit ONLY this run-typecheck.ts site that the finding names. Do NOT de-pin the
+  `compiler-cli-types.ts` `perform_compile.d.ts` pins (not flagged -- avoid scope creep).
 
 Style: ASCII-only (straight quotes, hyphens, no curly quotes / em dashes / ellipsis). These are
 the only two comment edits; touch nothing else in either file.
-  </action>
-  <verify>
-    <automated>npx nx test angular-typechecker</automated>
-    Confirm the suite stays green (comment-only edits must not change behavior). Then confirm
-    the stale pin is gone and the rewords landed via these `git grep` checks:
-    `git grep -n "run-typecheck.ts:265-267" packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts`
-    returns NO match;
-    `git grep -n "finalize CALL ARGS below" packages/angular-typechecker/src/core/run-typecheck.ts`
-    matches;
-    `git grep -n "the optional .program. field of .PerformCompilationResult." packages/angular-typechecker/src/core/run-typecheck.ts`
-    matches; and
-    `git grep -n "perform_compile.d.ts:29" packages/angular-typechecker/src/core/run-typecheck.ts`
-    returns NO match (the compiler-cli-types.ts pins, NOT searched here, remain).
-  </verify>
-  <done>
+</action>
+<verify>
+<automated>npx nx test angular-typechecker</automated>
+Confirm the suite stays green (comment-only edits must not change behavior). Then confirm
+the stale pin is gone and the rewords landed via these `git grep` checks:
+`git grep -n "run-typecheck.ts:265-267" packages/angular-typechecker/src/core/compiler-cli-types.runtime.spec.ts`
+returns NO match;
+`git grep -n "finalize CALL ARGS below" packages/angular-typechecker/src/core/run-typecheck.ts`
+matches;
+`git grep -n "the optional .program. field of .PerformCompilationResult." packages/angular-typechecker/src/core/run-typecheck.ts`
+matches; and
+`git grep -n "perform_compile.d.ts:29" packages/angular-typechecker/src/core/run-typecheck.ts`
+returns NO match (the compiler-cli-types.ts pins, NOT searched here, remain).
+</verify>
+<done>
 The stale `run-typecheck.ts:265-267` pin is replaced by a symbol reference; run-typecheck.ts:260
 reads "finalize CALL ARGS below (within `runTypecheck`)"; run-typecheck.ts:255 names "the optional
 `program?` field of `PerformCompilationResult`". No production logic, no test assertion, and no
 unflagged `compiler-cli-types.ts` pin changed. Suite green. Commit: `docs(core): de-pin stale
 useCaseSensitiveFileNames line ref and sharpen program-guard comments`.
-  </done>
+</done>
 </task>
 
 </tasks>
 
 <threat_model>
+
 ## Trust Boundaries
 
 No new trust boundary is introduced. This task edits unit/spec files and two source comments
@@ -265,11 +267,12 @@ change.
 
 ## STRIDE Threat Register
 
-| Threat ID | Category | Component | Disposition | Mitigation Plan |
-|-----------|----------|-----------|-------------|-----------------|
-| T-jnl-01 | Tampering | spec edits silently weaken an existing guard | mitigate | Task 1 KEEPS the existing `errorCount===1`/`warningCount===1` asserts and only ADDS the anti-tautology guard; full `nx test` suite must stay green and the new S5c assert is verified to FAIL under the `length - errorCount` bug by reasoning. |
-| T-jnl-02 | Tampering | comment edits accidentally alter production behavior | mitigate | Task 2 is comment-text only; verified by `git grep` pin checks AND a green `nx test` run (behavior unchanged). Guard logic/message at run-typecheck.ts:265-272 and the deref at :292-294 left byte-unchanged. |
-| T-jnl-SC | Tampering | npm/pip/cargo installs | accept | No package installs in this task -- no executor `npm`/`npx <pkg>` add/remove/upgrade; `node_modules` is the already-installed, lockfile-pinned main-tree tree. No legitimacy gate needed. |
+| Threat ID | Category  | Component                                            | Disposition | Mitigation Plan                                                                                                                                                                                                                                 |
+| --------- | --------- | ---------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-jnl-01  | Tampering | spec edits silently weaken an existing guard         | mitigate    | Task 1 KEEPS the existing `errorCount===1`/`warningCount===1` asserts and only ADDS the anti-tautology guard; full `nx test` suite must stay green and the new S5c assert is verified to FAIL under the `length - errorCount` bug by reasoning. |
+| T-jnl-02  | Tampering | comment edits accidentally alter production behavior | mitigate    | Task 2 is comment-text only; verified by `git grep` pin checks AND a green `nx test` run (behavior unchanged). Guard logic/message at run-typecheck.ts:265-272 and the deref at :292-294 left byte-unchanged.                                   |
+| T-jnl-SC  | Tampering | npm/pip/cargo installs                               | accept      | No package installs in this task -- no executor `npm`/`npx <pkg>` add/remove/upgrade; `node_modules` is the already-installed, lockfile-pinned main-tree tree. No legitimacy gate needed.                                                       |
+
 </threat_model>
 
 <verification>
@@ -289,6 +292,7 @@ Phase-level checks (run on the main tree):
 </verification>
 
 <success_criteria>
+
 - All five third-round findings addressed: #1 S5c de-tautologized, #2 undefined-base branch
   covered, #3 program-undefined guard covered, #4 stale pin de-pinned, #5 two comments sharpened.
 - `npx nx test angular-typechecker` passes (no regressions).
@@ -296,7 +300,7 @@ Phase-level checks (run on the main tree):
   clean `core` scope, no quick-id in scope, no AI attribution, ASCII-only.
 - REFUTED / out-of-scope items left untouched: infra-failure.spec.ts:204 and the
   compiler-cli-types.ts `perform_compile.d.ts` pins.
-</success_criteria>
+  </success_criteria>
 
 <output>
 Create `.planning/quick/260630-jnl-address-third-round-pr-review-findings/260630-jnl-SUMMARY.md`

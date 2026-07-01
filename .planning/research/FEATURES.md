@@ -12,15 +12,15 @@
 
 ## Comparable Tools Surveyed
 
-| Tool | Role as a comparable | Key takeaway for us |
-|------|----------------------|---------------------|
-| `tsc --noEmit` | The bare TS type-check baseline; our engine wraps the same `ts.Program` | Sets the default-behavior expectation: report-all, exit 0/1, `--pretty`, `-p <tsconfig>` |
-| `ngc` (`@angular/compiler-cli`) | The direct Angular analog; our engine is its all-getter superset | `formatDiagnostics`, `strictTemplates`+extended diagnostics, phase short-circuit we deliberately avoid |
-| `@nx/js:tsc` / `@nx/js:typecheck` | The Nx-native peer; what Nx users reach for today | Sets Nx-executor conventions: `tsConfig` option, `cache:true`, `outputs:[]`, batch mode, inferred targets |
-| `type-coverage` | Threshold-gated static analysis CLI | `--at-least <n>` threshold + `--cache` + `package.json` config; our `--max-warnings` is the analog |
-| ESLint | The canonical lint CLI; defines reporter/exit-code/threshold norms | `--max-warnings`, `--format` ecosystem, exit 0/1/2, `--output-file` |
-| `svelte-check` / `sv check` | Closest template-aware checker (TS + framework template diagnostics) | `--threshold`, `--output machine`, `--watch`, `--compiler-warnings code:behaviour`, `--tsconfig` |
-| `vue-tsc` | Thin tsc wrapper for `.vue` template type-check | Inherits the ENTIRE tsc CLI surface -- the "wrap tsc, get everything free" model |
+| Tool                              | Role as a comparable                                                    | Key takeaway for us                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `tsc --noEmit`                    | The bare TS type-check baseline; our engine wraps the same `ts.Program` | Sets the default-behavior expectation: report-all, exit 0/1, `--pretty`, `-p <tsconfig>`                  |
+| `ngc` (`@angular/compiler-cli`)   | The direct Angular analog; our engine is its all-getter superset        | `formatDiagnostics`, `strictTemplates`+extended diagnostics, phase short-circuit we deliberately avoid    |
+| `@nx/js:tsc` / `@nx/js:typecheck` | The Nx-native peer; what Nx users reach for today                       | Sets Nx-executor conventions: `tsConfig` option, `cache:true`, `outputs:[]`, batch mode, inferred targets |
+| `type-coverage`                   | Threshold-gated static analysis CLI                                     | `--at-least <n>` threshold + `--cache` + `package.json` config; our `--max-warnings` is the analog        |
+| ESLint                            | The canonical lint CLI; defines reporter/exit-code/threshold norms      | `--max-warnings`, `--format` ecosystem, exit 0/1/2, `--output-file`                                       |
+| `svelte-check` / `sv check`       | Closest template-aware checker (TS + framework template diagnostics)    | `--threshold`, `--output machine`, `--watch`, `--compiler-warnings code:behaviour`, `--tsconfig`          |
+| `vue-tsc`                         | Thin tsc wrapper for `.vue` template type-check                         | Inherits the ENTIRE tsc CLI surface -- the "wrap tsc, get everything free" model                          |
 
 ## Feature Landscape
 
@@ -28,53 +28,53 @@
 
 Features users assume exist. Missing these = the tool feels broken or surprising.
 
-| Feature | Why Expected | Complexity | Status / Notes |
-|---------|--------------|------------|----------------|
-| tsconfig selection (`tsConfig` / `-p`) | Every checker (tsc, ngc, type-coverage, svelte-check, `@nx/js`) takes an explicit project file | LOW | **[in v0.0.1]** Required `tsConfig` option, overridable per target. Matches `@nx/js:tsc`. |
-| tsconfig resolution: `extends` chain + `include`/`exclude` honored | `ts.Program` honors them; users expect their config to mean what it says | LOW | **[in v0.0.1]** Engine uses real `parseJsonConfigFileHost`; inputs hash the `extends` chain. |
-| Report-all-errors default (no fail-fast) | `tsc --noEmit` reports every error; agents/CI want the full list in one pass | LOW | **[in v0.0.1]** Full/report-all default; this is THE behavioral contract of a type-checker. |
-| Complete diagnostic set (TS + template + extended NG8xxx) | An Angular checker that misses template errors is broken vs ngc/`@angular/build` | HIGH | **[in v0.0.1]** Core value. Models `@angular/build` (no phase short-circuit), superset of `ngc --noEmit`. |
-| Exit code 0 = clean, non-zero = errors | Universal CI contract; tsc/eslint/type-coverage/svelte-check all do this | LOW | **[in v0.0.1]** Nx executor returns `{ success }` -> Nx maps to exit code. Errors fail. |
-| Human-readable diagnostic output with code frames | tsc `--pretty`, ngc `formatDiagnostics`, svelte-check human output all render frames | MEDIUM | **[in v0.0.1]** Default = `@angular/compiler-cli` `formatDiagnostics` (renders NG codes + template codeframes). |
-| Respect project-configured severities | `angularCompilerOptions.extendedDiagnostics` maps checks to error/warning/suppress; ignoring it would override user intent | MEDIUM | **[in v0.0.1]** "project-configured diagnostic categories respected" -- explicitly in scope. |
-| Dependency boundary (don't drown user in node_modules / cross-project noise) | `tsc` reports lib errors unless `skipLibCheck`; users expect project-in-isolation feedback | MEDIUM | **[in v0.0.1]** Exclude out-of-project + node_modules by default; opt-in `includeDeps`. |
-| Nx cacheable target (`cache:true`, correct inputs/outputs) | Any modern Nx executor that is not cacheable feels broken; `@nx/js` typecheck is cached | MEDIUM | **[in v0.0.1]** `cache:true`, `outputs:[]`, `@nx/js`-style per-tsconfig inputs + `externalDependencies`. |
-| Works across all real project shapes (app/lib variants/spec) | A type-checker that only handles apps is incomplete in a monorepo | MEDIUM | **[in v0.0.1]** Validated across application, local/buildable/publishable lib, spec tsconfig. |
-| Warning threshold gate (`--max-warnings`) | ESLint and type-coverage (`--at-least`) set the expectation that CI can fail on warnings | LOW | **[in v0.0.1]** `--max-warnings=<n>` (0 = fail on any warning). Only count-based prior art -- tsc/ngc have none. |
-| Fail-fast / stop-at-first-error opt-in | `ngc`/`tsc` short-circuit by default; users used to that want the fast-fail option | LOW | **[in v0.0.1]** Opt-in fail-fast mode. |
-| `run-many` / `affected` compatibility | Any Nx target is expected to compose with `nx affected -t` and `run-many` for free | LOW | **[in v0.0.1] (inherited)** Standard executor + correct inputs => works automatically. No extra code. |
-| CI annotation surface via stable text output | Users wire `setup-node`'s bundled tsc problem matcher or a custom matcher to log output | LOW | **[in v0.0.1] (via output)** `formatDiagnostics` text is matcher-parseable; see GAP-1 caveat on path format. |
+| Feature                                                                      | Why Expected                                                                                                               | Complexity | Status / Notes                                                                                                   |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| tsconfig selection (`tsConfig` / `-p`)                                       | Every checker (tsc, ngc, type-coverage, svelte-check, `@nx/js`) takes an explicit project file                             | LOW        | **[in v0.0.1]** Required `tsConfig` option, overridable per target. Matches `@nx/js:tsc`.                        |
+| tsconfig resolution: `extends` chain + `include`/`exclude` honored           | `ts.Program` honors them; users expect their config to mean what it says                                                   | LOW        | **[in v0.0.1]** Engine uses real `parseJsonConfigFileHost`; inputs hash the `extends` chain.                     |
+| Report-all-errors default (no fail-fast)                                     | `tsc --noEmit` reports every error; agents/CI want the full list in one pass                                               | LOW        | **[in v0.0.1]** Full/report-all default; this is THE behavioral contract of a type-checker.                      |
+| Complete diagnostic set (TS + template + extended NG8xxx)                    | An Angular checker that misses template errors is broken vs ngc/`@angular/build`                                           | HIGH       | **[in v0.0.1]** Core value. Models `@angular/build` (no phase short-circuit), superset of `ngc --noEmit`.        |
+| Exit code 0 = clean, non-zero = errors                                       | Universal CI contract; tsc/eslint/type-coverage/svelte-check all do this                                                   | LOW        | **[in v0.0.1]** Nx executor returns `{ success }` -> Nx maps to exit code. Errors fail.                          |
+| Human-readable diagnostic output with code frames                            | tsc `--pretty`, ngc `formatDiagnostics`, svelte-check human output all render frames                                       | MEDIUM     | **[in v0.0.1]** Default = `@angular/compiler-cli` `formatDiagnostics` (renders NG codes + template codeframes).  |
+| Respect project-configured severities                                        | `angularCompilerOptions.extendedDiagnostics` maps checks to error/warning/suppress; ignoring it would override user intent | MEDIUM     | **[in v0.0.1]** "project-configured diagnostic categories respected" -- explicitly in scope.                     |
+| Dependency boundary (don't drown user in node_modules / cross-project noise) | `tsc` reports lib errors unless `skipLibCheck`; users expect project-in-isolation feedback                                 | MEDIUM     | **[in v0.0.1]** Exclude out-of-project + node_modules by default; opt-in `includeDeps`.                          |
+| Nx cacheable target (`cache:true`, correct inputs/outputs)                   | Any modern Nx executor that is not cacheable feels broken; `@nx/js` typecheck is cached                                    | MEDIUM     | **[in v0.0.1]** `cache:true`, `outputs:[]`, `@nx/js`-style per-tsconfig inputs + `externalDependencies`.         |
+| Works across all real project shapes (app/lib variants/spec)                 | A type-checker that only handles apps is incomplete in a monorepo                                                          | MEDIUM     | **[in v0.0.1]** Validated across application, local/buildable/publishable lib, spec tsconfig.                    |
+| Warning threshold gate (`--max-warnings`)                                    | ESLint and type-coverage (`--at-least`) set the expectation that CI can fail on warnings                                   | LOW        | **[in v0.0.1]** `--max-warnings=<n>` (0 = fail on any warning). Only count-based prior art -- tsc/ngc have none. |
+| Fail-fast / stop-at-first-error opt-in                                       | `ngc`/`tsc` short-circuit by default; users used to that want the fast-fail option                                         | LOW        | **[in v0.0.1]** Opt-in fail-fast mode.                                                                           |
+| `run-many` / `affected` compatibility                                        | Any Nx target is expected to compose with `nx affected -t` and `run-many` for free                                         | LOW        | **[in v0.0.1] (inherited)** Standard executor + correct inputs => works automatically. No extra code.            |
+| CI annotation surface via stable text output                                 | Users wire `setup-node`'s bundled tsc problem matcher or a custom matcher to log output                                    | LOW        | **[in v0.0.1] (via output)** `formatDiagnostics` text is matcher-parseable; see GAP-1 caveat on path format.     |
 
 ### Differentiators (Competitive Advantage)
 
 Features that set the tool apart. Aligned with PROJECT.md Core Value.
 
-| Feature | Value Proposition | Complexity | Status / Notes |
-|---------|-------------------|------------|----------------|
-| Complete diagnostics in one pass (no `ngc` phase short-circuit) | More complete than `ngc --noEmit` (which skips template+extended when an earlier phase errors) and decoupled from build/test | HIGH | **[in v0.0.1]** THE differentiator. Models `@angular/build`, not `ngc`. |
-| Decoupled from build AND test execution | Fast static feedback for AI agents / headless CI; the "elsewhere" AnalogJS/Oxc/esbuild tell you to run | MEDIUM | **[in v0.0.1]** Core positioning -- no competitor offers this Nx-native. |
-| Nx-native, project-graph-integrated, cacheable | First cacheable replacement for AnalogJS's manual `ngc -p tsconfig.app.json --noEmit` npm script | MEDIUM | **[in v0.0.1]** Differentiates from raw `ngc`/`vue-tsc`/`svelte-check` (none are Nx graph-aware). |
-| Spec/unit-test tsconfig type-check decoupled from running tests | Type-check `tsconfig.spec.json` without a Vitest/Jest run -- nothing else does this for Angular | MEDIUM | **[in v0.0.1]** A target pointed at `tsconfig.spec.json`. Genuine differentiator. |
-| Exact-diagnostic-code test assertions across v13->v22 catalog | Confidence the complete set actually fires; improves on priors' pass/fail-only tests | HIGH | **[in v0.0.1]** A quality differentiator (internal), not a user-facing feature. |
-| `createNodesV2` inferred targets (zero-config) | `@nx/js`/`@nx/eslint` auto-infer targets; users expect not to hand-wire `project.json` | HIGH | **[deferred per PROJECT.md]** Next milestone. v0.0.1 = manual wiring documented. Strong differentiator when it lands. |
-| Machine-readable reporters (JSON / SARIF) | SARIF -> GitHub code scanning Security tab; JSON -> custom CI tooling | MEDIUM | **[deferred per PROJECT.md]** ESLint/oxlint/svelte-check (`machine`) offer this. Deferred, not a v0.0.1 table-stake (see analysis). |
-| Watch / incremental (`NgtscProgram` + `oldProgram` + affected files) | svelte-check/tsc/vue-tsc have `--watch`; faster re-checks | HIGH | **[deferred per PROJECT.md]** Editor's Angular Language Service already covers the live loop; CI/agent loop is single-shot. |
-| Standalone CLI binary (non-Nx use) | Lets non-Nx Angular/AnalogJS users adopt it | MEDIUM | **[deferred per PROJECT.md]** vue-tsc/svelte-check/type-coverage are all standalone CLIs. Deferred. |
+| Feature                                                              | Value Proposition                                                                                                            | Complexity | Status / Notes                                                                                                                      |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Complete diagnostics in one pass (no `ngc` phase short-circuit)      | More complete than `ngc --noEmit` (which skips template+extended when an earlier phase errors) and decoupled from build/test | HIGH       | **[in v0.0.1]** THE differentiator. Models `@angular/build`, not `ngc`.                                                             |
+| Decoupled from build AND test execution                              | Fast static feedback for AI agents / headless CI; the "elsewhere" AnalogJS/Oxc/esbuild tell you to run                       | MEDIUM     | **[in v0.0.1]** Core positioning -- no competitor offers this Nx-native.                                                            |
+| Nx-native, project-graph-integrated, cacheable                       | First cacheable replacement for AnalogJS's manual `ngc -p tsconfig.app.json --noEmit` npm script                             | MEDIUM     | **[in v0.0.1]** Differentiates from raw `ngc`/`vue-tsc`/`svelte-check` (none are Nx graph-aware).                                   |
+| Spec/unit-test tsconfig type-check decoupled from running tests      | Type-check `tsconfig.spec.json` without a Vitest/Jest run -- nothing else does this for Angular                              | MEDIUM     | **[in v0.0.1]** A target pointed at `tsconfig.spec.json`. Genuine differentiator.                                                   |
+| Exact-diagnostic-code test assertions across v13->v22 catalog        | Confidence the complete set actually fires; improves on priors' pass/fail-only tests                                         | HIGH       | **[in v0.0.1]** A quality differentiator (internal), not a user-facing feature.                                                     |
+| `createNodesV2` inferred targets (zero-config)                       | `@nx/js`/`@nx/eslint` auto-infer targets; users expect not to hand-wire `project.json`                                       | HIGH       | **[deferred per PROJECT.md]** Next milestone. v0.0.1 = manual wiring documented. Strong differentiator when it lands.               |
+| Machine-readable reporters (JSON / SARIF)                            | SARIF -> GitHub code scanning Security tab; JSON -> custom CI tooling                                                        | MEDIUM     | **[deferred per PROJECT.md]** ESLint/oxlint/svelte-check (`machine`) offer this. Deferred, not a v0.0.1 table-stake (see analysis). |
+| Watch / incremental (`NgtscProgram` + `oldProgram` + affected files) | svelte-check/tsc/vue-tsc have `--watch`; faster re-checks                                                                    | HIGH       | **[deferred per PROJECT.md]** Editor's Angular Language Service already covers the live loop; CI/agent loop is single-shot.         |
+| Standalone CLI binary (non-Nx use)                                   | Lets non-Nx Angular/AnalogJS users adopt it                                                                                  | MEDIUM     | **[deferred per PROJECT.md]** vue-tsc/svelte-check/type-coverage are all standalone CLIs. Deferred.                                 |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 Features that seem good but create problems for THIS tool. Documenting to prevent scope creep.
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Emit / `--declaration` / build output | "It wraps the compiler, why not build?" | Conflates type-check with build; reintroduces the exact coupling the tool exists to remove; cache `outputs` become non-empty | Keep `noEmit`, `outputs:[]`. Use `@nx/js:tsc` / `@angular/build` for emit. |
-| Auto-fix / codemods for diagnostics | ESLint `--fix` sets the expectation | Type errors and template diagnostics are not mechanically fixable safely; out of scope for a checker | Report only; pair with Angular schematics / `ng update` migrations for fixes. |
-| Built-in `--watch` in the executor (v0.0.1) | tsc/svelte-check/vue-tsc have it | The Angular Language Service owns the live editor loop; a watch executor duplicates it and complicates the single-shot cache model; needs incremental engine first | Deferred to the `NgtscProgram` incremental milestone; use the editor for live feedback. |
-| Per-rule enable/disable flags on the CLI (e.g. `--compiler-warnings code:error`) | svelte-check exposes this | Angular already owns this via `angularCompilerOptions.extendedDiagnostics` in tsconfig; a parallel CLI surface causes config drift and two sources of truth | Configure severities in tsconfig (respected by the engine); don't add CLI overrides. |
-| Type-coverage percentage / `--at-least` metric | type-coverage popularized "% typed" | Different problem domain (measuring `any` usage), not "does it type-check"; whole-program count is the wrong granularity here | `--max-warnings` count gate covers the CI-fail need; coverage % is a separate tool. |
-| Multiple tsconfigs per target invocation | "Check app + spec in one run" | Breaks the 1 target : 1 tsconfig : 1 cache-entry model; muddies inputs and per-project affected granularity | One target per tsconfig (app, lib, spec); compose with `run-many`/`affected`. |
-| Bundling many reporter formats in core | ESLint shipped 12, now regrets it (issue #17524: removing all but stylish/json) | Maintenance burden; ESLint's own survey shows almost everyone uses the default | Ship ONE great default (`formatDiagnostics`); add JSON/SARIF later as the 1-2 that matter, not a zoo. |
-| `skipLibCheck`-style global lib opt-out as a headline flag | tsc perf advice pushes it | It is a tsconfig option the user already controls; surfacing it as a tool flag invites masking real errors | Honor the user's tsconfig `skipLibCheck`; don't add a competing flag. |
+| Feature                                                                          | Why Requested                                                                   | Why Problematic                                                                                                                                                    | Alternative                                                                                           |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Emit / `--declaration` / build output                                            | "It wraps the compiler, why not build?"                                         | Conflates type-check with build; reintroduces the exact coupling the tool exists to remove; cache `outputs` become non-empty                                       | Keep `noEmit`, `outputs:[]`. Use `@nx/js:tsc` / `@angular/build` for emit.                            |
+| Auto-fix / codemods for diagnostics                                              | ESLint `--fix` sets the expectation                                             | Type errors and template diagnostics are not mechanically fixable safely; out of scope for a checker                                                               | Report only; pair with Angular schematics / `ng update` migrations for fixes.                         |
+| Built-in `--watch` in the executor (v0.0.1)                                      | tsc/svelte-check/vue-tsc have it                                                | The Angular Language Service owns the live editor loop; a watch executor duplicates it and complicates the single-shot cache model; needs incremental engine first | Deferred to the `NgtscProgram` incremental milestone; use the editor for live feedback.               |
+| Per-rule enable/disable flags on the CLI (e.g. `--compiler-warnings code:error`) | svelte-check exposes this                                                       | Angular already owns this via `angularCompilerOptions.extendedDiagnostics` in tsconfig; a parallel CLI surface causes config drift and two sources of truth        | Configure severities in tsconfig (respected by the engine); don't add CLI overrides.                  |
+| Type-coverage percentage / `--at-least` metric                                   | type-coverage popularized "% typed"                                             | Different problem domain (measuring `any` usage), not "does it type-check"; whole-program count is the wrong granularity here                                      | `--max-warnings` count gate covers the CI-fail need; coverage % is a separate tool.                   |
+| Multiple tsconfigs per target invocation                                         | "Check app + spec in one run"                                                   | Breaks the 1 target : 1 tsconfig : 1 cache-entry model; muddies inputs and per-project affected granularity                                                        | One target per tsconfig (app, lib, spec); compose with `run-many`/`affected`.                         |
+| Bundling many reporter formats in core                                           | ESLint shipped 12, now regrets it (issue #17524: removing all but stylish/json) | Maintenance burden; ESLint's own survey shows almost everyone uses the default                                                                                     | Ship ONE great default (`formatDiagnostics`); add JSON/SARIF later as the 1-2 that matter, not a zoo. |
+| `skipLibCheck`-style global lib opt-out as a headline flag                       | tsc perf advice pushes it                                                       | It is a tsconfig option the user already controls; surfacing it as a tool flag invites masking real errors                                                         | Honor the user's tsconfig `skipLibCheck`; don't add a competing flag.                                 |
 
 ## Feature Dependencies
 
@@ -141,40 +141,40 @@ Features that seem good but create problems for THIS tool. Documenting to preven
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Complete diagnostics (all-getter) | HIGH | HIGH | P1 (in v0.0.1) |
-| `tsConfig` option + resolution | HIGH | LOW | P1 (in v0.0.1) |
-| Report-all + fail-fast modes | HIGH | LOW | P1 (in v0.0.1) |
-| Dependency boundary + `includeDeps` | HIGH | MEDIUM | P1 (in v0.0.1) |
-| `--max-warnings` gate | MEDIUM | LOW | P1 (in v0.0.1) |
-| `formatDiagnostics` output + exit codes | HIGH | LOW | P1 (in v0.0.1) |
-| Nx-cacheable target | HIGH | MEDIUM | P1 (in v0.0.1) |
-| JSON reporter | MEDIUM | LOW | P2 (deferred) |
-| SARIF reporter | MEDIUM | MEDIUM | P2 (deferred) |
-| createNodesV2 inferred targets | HIGH | HIGH | P2 (next milestone) |
-| Incremental + watch | MEDIUM | HIGH | P3 (deferred) |
-| Standalone CLI | LOW-MEDIUM | MEDIUM | P3 (deferred) |
+| Feature                                 | User Value | Implementation Cost | Priority            |
+| --------------------------------------- | ---------- | ------------------- | ------------------- |
+| Complete diagnostics (all-getter)       | HIGH       | HIGH                | P1 (in v0.0.1)      |
+| `tsConfig` option + resolution          | HIGH       | LOW                 | P1 (in v0.0.1)      |
+| Report-all + fail-fast modes            | HIGH       | LOW                 | P1 (in v0.0.1)      |
+| Dependency boundary + `includeDeps`     | HIGH       | MEDIUM              | P1 (in v0.0.1)      |
+| `--max-warnings` gate                   | MEDIUM     | LOW                 | P1 (in v0.0.1)      |
+| `formatDiagnostics` output + exit codes | HIGH       | LOW                 | P1 (in v0.0.1)      |
+| Nx-cacheable target                     | HIGH       | MEDIUM              | P1 (in v0.0.1)      |
+| JSON reporter                           | MEDIUM     | LOW                 | P2 (deferred)       |
+| SARIF reporter                          | MEDIUM     | MEDIUM              | P2 (deferred)       |
+| createNodesV2 inferred targets          | HIGH       | HIGH                | P2 (next milestone) |
+| Incremental + watch                     | MEDIUM     | HIGH                | P3 (deferred)       |
+| Standalone CLI                          | LOW-MEDIUM | MEDIUM              | P3 (deferred)       |
 
 ## Competitor Feature Analysis
 
-| Feature | tsc `--noEmit` | ngc | `@nx/js:tsc`/`:typecheck` | type-coverage | ESLint | svelte-check | Our v0.0.1 |
-|---------|----------------|-----|---------------------------|---------------|--------|--------------|------------|
-| tsconfig selection | `-p` | `-p` | `tsConfig` opt | `-p` | (eslint config) | `--tsconfig` | **`tsConfig` (required)** |
-| Report-all default | yes | phase short-circuit | yes | n/a | yes | yes | **yes (no short-circuit)** |
-| Template/extended diagnostics | no | yes (gated by phase) | no | no | (angular-eslint, separate) | yes (svelte) | **yes, complete, unconditional** |
-| Exit code 0/non-zero | 0/1 | 0/1 | 0/1 | 0/1 | 0/1/2 | 0/1 | **via Nx `{success}`** |
-| Human output + codeframes | `--pretty` | `formatDiagnostics` | inherits tsc | summary table | `stylish` | human-verbose | **`formatDiagnostics`** |
-| Warning threshold gate | none | none | none | `--at-least <n>` | `--max-warnings` | `--threshold` | **`--max-warnings` (ESLint-style)** |
-| Fail-fast | (short-circuits) | (short-circuits) | n/a | n/a | n/a | n/a | **opt-in** |
-| Dependency/scope boundary | `skipLibCheck` | `skipLibCheck` | project scope | `--ignore-files` | per-config | `--no-tsconfig` | **exclude out-of-project; `includeDeps`** |
-| Caching | `.tsbuildinfo` | `.tsbuildinfo` | Nx cache + batch | `--cache` | `--cache` | none | **Nx cache (`cache:true`)** |
-| Watch | `--watch` | `--watch` | (batch) | no | no | `--watch` | **deferred** |
-| run-many/affected | n/a | n/a | yes (Nx) | n/a | yes (`@nx/eslint`) | n/a | **yes (free, inherited)** |
-| Machine reporter (JSON/SARIF) | no | no | no | json/badge | json/sarif(pkg) | `--output machine` | **deferred** |
-| Inferred/zero-config target | n/a | n/a | createNodesV2 | n/a | createNodesV2 | n/a | **deferred (next milestone)** |
-| CI annotations | problem matcher (setup-node) | (tsc matcher) | (tsc matcher) | action | matcher/sarif | machine -> CI | **via text matcher (GAP-1)** |
-| Output to file (`-o`) | redirect | redirect | redirect | `--reportSemanticError`... | `--output-file` | redirect | **stdout (redirect)** |
+| Feature                       | tsc `--noEmit`               | ngc                  | `@nx/js:tsc`/`:typecheck` | type-coverage              | ESLint                     | svelte-check       | Our v0.0.1                                |
+| ----------------------------- | ---------------------------- | -------------------- | ------------------------- | -------------------------- | -------------------------- | ------------------ | ----------------------------------------- |
+| tsconfig selection            | `-p`                         | `-p`                 | `tsConfig` opt            | `-p`                       | (eslint config)            | `--tsconfig`       | **`tsConfig` (required)**                 |
+| Report-all default            | yes                          | phase short-circuit  | yes                       | n/a                        | yes                        | yes                | **yes (no short-circuit)**                |
+| Template/extended diagnostics | no                           | yes (gated by phase) | no                        | no                         | (angular-eslint, separate) | yes (svelte)       | **yes, complete, unconditional**          |
+| Exit code 0/non-zero          | 0/1                          | 0/1                  | 0/1                       | 0/1                        | 0/1/2                      | 0/1                | **via Nx `{success}`**                    |
+| Human output + codeframes     | `--pretty`                   | `formatDiagnostics`  | inherits tsc              | summary table              | `stylish`                  | human-verbose      | **`formatDiagnostics`**                   |
+| Warning threshold gate        | none                         | none                 | none                      | `--at-least <n>`           | `--max-warnings`           | `--threshold`      | **`--max-warnings` (ESLint-style)**       |
+| Fail-fast                     | (short-circuits)             | (short-circuits)     | n/a                       | n/a                        | n/a                        | n/a                | **opt-in**                                |
+| Dependency/scope boundary     | `skipLibCheck`               | `skipLibCheck`       | project scope             | `--ignore-files`           | per-config                 | `--no-tsconfig`    | **exclude out-of-project; `includeDeps`** |
+| Caching                       | `.tsbuildinfo`               | `.tsbuildinfo`       | Nx cache + batch          | `--cache`                  | `--cache`                  | none               | **Nx cache (`cache:true`)**               |
+| Watch                         | `--watch`                    | `--watch`            | (batch)                   | no                         | no                         | `--watch`          | **deferred**                              |
+| run-many/affected             | n/a                          | n/a                  | yes (Nx)                  | n/a                        | yes (`@nx/eslint`)         | n/a                | **yes (free, inherited)**                 |
+| Machine reporter (JSON/SARIF) | no                           | no                   | no                        | json/badge                 | json/sarif(pkg)            | `--output machine` | **deferred**                              |
+| Inferred/zero-config target   | n/a                          | n/a                  | createNodesV2             | n/a                        | createNodesV2              | n/a                | **deferred (next milestone)**             |
+| CI annotations                | problem matcher (setup-node) | (tsc matcher)        | (tsc matcher)             | action                     | matcher/sarif              | machine -> CI      | **via text matcher (GAP-1)**              |
+| Output to file (`-o`)         | redirect                     | redirect             | redirect                  | `--reportSemanticError`... | `--output-file`            | redirect           | **stdout (redirect)**                     |
 
 ## Verdict: GAP List (table-stakes NOT currently in v0.0.1 scope)
 
@@ -241,5 +241,6 @@ or a deliberate deferral/anti-feature.
 - actions/setup-node tsc problem matcher PR -- https://github.com/actions/setup-node/pull/9/files (MEDIUM)
 
 ---
-*Feature research for: standalone Angular type-checking / Nx type-check executor*
-*Researched: 2026-06-27*
+
+_Feature research for: standalone Angular type-checking / Nx type-check executor_
+_Researched: 2026-06-27_

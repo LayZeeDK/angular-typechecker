@@ -41,14 +41,14 @@ status: clean
 
 The Phase 1 tracer-bullet core is correct on every axis the spike was meant to prove, and I verified each claim against live sources rather than trusting the SUMMARY:
 
-- **Memoization** (`compiler-loader.ts`): `cached ??= (await import(...))` is correct. There is no double-load *correctness* bug -- a concurrent race could issue two `import()` calls, but ESM module caching makes both resolve to the same namespace object, so the memoized value is stable. (Noted as Info IN-01.)
+- **Memoization** (`compiler-loader.ts`): `cached ??= (await import(...))` is correct. There is no double-load _correctness_ bug -- a concurrent race could issue two `import()` calls, but ESM module caching makes both resolve to the same namespace object, so the memoized value is stable. (Noted as Info IN-01.)
 - **Unconditional all-getter** (`gather-diagnostics.ts`): all six getters are called with no `&&` short-circuit, in the documented order, and `getNgSemanticDiagnostics()` is genuinely invoked last. I confirmed against the live `defaultGatherDiagnostics` in `@angular/compiler-cli@22.0.4` (`bundles/chunk-6ZBSJK4S.js:600-617`) that ngc's `&&`-chain short-circuits exactly where the SUMMARY claims -- the differential is real, not asserted on a too-broad condition.
 - **Fresh options per call** (`run-typecheck.ts:37`, `gate-b.spec.ts:58`): `{ ...parsed.options, noEmit: true }` is spread fresh on every `performCompilation` call; no shared mutable `noEmit`. The differential genuinely depends on this and it holds.
 - **`emitFlags: 0`**: correct and intentional (no emit) per D-16.
-- **ESM-load failure does NOT masquerade as a code-500 diagnostic**: I traced `performCompilation`'s try/catch (`chunk-6ZBSJK4S.js:561-598`). It wraps `createProgram` + `gatherDiagnostics`, NOT the `await import()`. Because `loadCompilerCli()` is awaited *before* `performCompilation` is called (`run-typecheck.ts:29`), an `ERR_REQUIRE_ESM` rejects the `runTypecheck` promise -- it cannot be swallowed into a code-500 diagnostic. T-01-07 is genuinely mitigated. (One residual nuance in MD-02.)
+- **ESM-load failure does NOT masquerade as a code-500 diagnostic**: I traced `performCompilation`'s try/catch (`chunk-6ZBSJK4S.js:561-598`). It wraps `createProgram` + `gatherDiagnostics`, NOT the `await import()`. Because `loadCompilerCli()` is awaited _before_ `performCompilation` is called (`run-typecheck.ts:29`), an `ERR_REQUIRE_ESM` rejects the `runTypecheck` promise -- it cannot be swallowed into a code-500 diagnostic. T-01-07 is genuinely mitigated. (One residual nuance in MD-02.)
 - **GATE specs are load-bearing**: the GATE A negative uses the specific `require(...)` call regex (not a bare substring) on both built files with comment-stripping -- robust against the JSDoc mention. The GATE B differential asserts `toContain(-998109)` positively and `not.toContain(-998109)` on the default gatherer over the same fixture -- a true differential with no false-pass path. Re-ran `nx test angular-typechecker`: 4 files, 12 tests, all green (cold-run durationMs ~286).
 - **Fixture** (`fixtures/gate-b-error/*`): genuinely triggers TS2322 + NG8109 (confirmed by the passing GATE B run), `strictTemplates: true` + `noEmit: true` present in both tsconfig variants, and `git grep` confirms nothing outside the fixture dir + specs references it (the only other hit is the deliberate `tsconfig.lib.json` exclude line).
-- **compiler-cli-types.ts shim**: type-only, erased at emit (the built `compiler-loader.js` carries no trace of it -- GATE A static re-confirms), and `skipLibCheck: true` is what keeps the deep `.d.ts` imports resolving without re-checking their internal extensionless re-exports. The accepted caveat (fragile deep relative path) is documented; I found no *additional* concrete correctness problem beyond it. See IN-04 for one masking-risk note that is within the documented caveat.
+- **compiler-cli-types.ts shim**: type-only, erased at emit (the built `compiler-loader.js` carries no trace of it -- GATE A static re-confirms), and `skipLibCheck: true` is what keeps the deep `.d.ts` imports resolving without re-checking their internal extensionless re-exports. The accepted caveat (fragile deep relative path) is documented; I found no _additional_ concrete correctness problem beyond it. See IN-04 for one masking-risk note that is within the documented caveat.
 
 The two Medium findings are forward-looking robustness gaps (not gate failures): config-parse errors are silently dropped, and `warningCount` conflates non-Error categories. Both are safe to defer but should be on the Phase 2 radar because they change real-world result correctness once the engine runs against arbitrary consumer tsconfigs.
 
@@ -65,7 +65,7 @@ None.
 ### MD-01: `readConfiguration` parse errors (`parsed.errors`) are silently dropped -> false "success" on a broken tsconfig
 
 **File:** `packages/angular-typechecker/src/core/run-typecheck.ts:32-53`
-**Issue:** `ng.readConfiguration(options.tsConfigPath)` returns a `ParsedConfiguration` whose shape (verified in `node_modules/@angular/compiler-cli/src/perform_compile.d.ts`) includes `errors: ts.Diagnostic[]`. These hold config-resolution failures: a missing/malformed tsconfig, an unresolvable `extends`, an invalid `angularCompilerOptions` key, or a glob that matches zero files. `run-typecheck.ts` reads only `parsed.rootNames` and `parsed.options` and never inspects `parsed.errors`. Consequence: a tsconfig that fails to parse can yield empty `rootNames`, `performCompilation` then finds nothing to check, and the result is `errorCount: 0` / the executor returns `success: true`. For a *type-checking* tool, a config that could not even be read reporting "clean" is a silent false pass -- the highest-impact failure mode for this product. The Phase 1 gate never exercises a broken config, so the spike does not surface it.
+**Issue:** `ng.readConfiguration(options.tsConfigPath)` returns a `ParsedConfiguration` whose shape (verified in `node_modules/@angular/compiler-cli/src/perform_compile.d.ts`) includes `errors: ts.Diagnostic[]`. These hold config-resolution failures: a missing/malformed tsconfig, an unresolvable `extends`, an invalid `angularCompilerOptions` key, or a glob that matches zero files. `run-typecheck.ts` reads only `parsed.rootNames` and `parsed.options` and never inspects `parsed.errors`. Consequence: a tsconfig that fails to parse can yield empty `rootNames`, `performCompilation` then finds nothing to check, and the result is `errorCount: 0` / the executor returns `success: true`. For a _type-checking_ tool, a config that could not even be read reporting "clean" is a silent false pass -- the highest-impact failure mode for this product. The Phase 1 gate never exercises a broken config, so the spike does not surface it.
 
 This is below High only because it is forward-looking (the gate fixtures are valid, so nothing is currently wrong) and the fix is a Phase 2 engine concern (EXE-01 territory). Flagging now because the kept core is the foundation Phase 2 grows, and the contract (`CoreResult`) is being set here.
 
@@ -77,9 +77,7 @@ const parsed = ng.readConfiguration(options.tsConfigPath);
 // ...
 const allDiagnostics = [...parsed.errors, ...result.diagnostics];
 
-const errorCount = allDiagnostics.filter(
-  (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
-).length;
+const errorCount = allDiagnostics.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error).length;
 
 return {
   diagnostics: allDiagnostics,
@@ -100,12 +98,8 @@ return {
 **Fix:** Count the warning category explicitly instead of by subtraction, and decide deliberately whether Message/Suggestion belong in the surfaced set:
 
 ```ts
-const errorCount = result.diagnostics.filter(
-  (d) => d.category === ts.DiagnosticCategory.Error,
-).length;
-const warningCount = result.diagnostics.filter(
-  (d) => d.category === ts.DiagnosticCategory.Warning,
-).length;
+const errorCount = result.diagnostics.filter((d) => d.category === ts.DiagnosticCategory.Error).length;
+const warningCount = result.diagnostics.filter((d) => d.category === ts.DiagnosticCategory.Warning).length;
 ```
 
 Consider filtering out category-`Message` diagnostics from `codes`/`diagnostics` (or never enabling `options.diagnostics`) so the reported set is purely the type-check signal. Defer the policy decision to Phase 2, but record it on the `CoreResult` contract now.
@@ -119,7 +113,7 @@ Consider filtering out category-`Message` diagnostics from `codes`/`diagnostics`
 
 **Fix:** Import `Program` from the shim for consistency: `import type { Program } from './compiler-cli-types';`.
 
-### LW-02: GATE B differential does not lock the *breadth* of the short-circuit (only NG8109)
+### LW-02: GATE B differential does not lock the _breadth_ of the short-circuit (only NG8109)
 
 **File:** `packages/angular-typechecker/src/core/gate-b.spec.ts:85-90`
 **Issue:** The differential asserts `defaultCodes` contains `2322` and not `-998109`. It does not assert that the all-getter set is strictly a superset of the default set, nor that NG8117 (`-998117`, the expected companion) is likewise absent from the default gatherer. As written, the test would still pass if a future Angular release surfaced NG8109 under ngc but the all-getter happened to also include it -- the load-bearing claim ("all-getter surfaces strictly more") is only partially pinned. Low severity because the current assertion pair is sufficient to prove the v22.0.4 behavior and the gate is GO.
@@ -129,7 +123,7 @@ Consider filtering out category-`Message` diagnostics from `codes`/`diagnostics`
 ### LW-03: `stripCommentLines` regex strips any line beginning with `*`, which could mask code in a future generated artifact
 
 **File:** `packages/angular-typechecker/src/executors/angular-typecheck/gate-a-static.spec.ts:63-68`
-**Issue:** `filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))` drops every line whose first non-space char is `*`. That is correct for JSDoc continuation lines, but it would also drop a real code line that wrapped onto a `*`-leading continuation (rare in tsc output, but not impossible). More relevantly for robustness: the positive assertion `toMatch(/import\(/)` is intentionally broad -- it matches *any* `import(`, not specifically `import('@angular/compiler-cli')`. For `compiler-loader.js` that is fine (it only imports the one package), but if Phase 2 adds another dynamic import to that file the positive test could pass for the wrong reason.
+**Issue:** `filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))` drops every line whose first non-space char is `*`. That is correct for JSDoc continuation lines, but it would also drop a real code line that wrapped onto a `*`-leading continuation (rare in tsc output, but not impossible). More relevantly for robustness: the positive assertion `toMatch(/import\(/)` is intentionally broad -- it matches _any_ `import(`, not specifically `import('@angular/compiler-cli')`. For `compiler-loader.js` that is fine (it only imports the one package), but if Phase 2 adds another dynamic import to that file the positive test could pass for the wrong reason.
 
 **Fix (optional):** tighten the positive to the specific call: `expect(code).toMatch(/import\(\s*["']@angular\/compiler-cli/)`. This makes the test assert what it actually means and removes reliance on the file containing exactly one dynamic import.
 
@@ -138,7 +132,7 @@ Consider filtering out category-`Message` diagnostics from `codes`/`diagnostics`
 ### IN-01: `loadCompilerCli` memoization has a benign concurrent-call window
 
 **File:** `packages/angular-typechecker/src/core/compiler-loader.ts:16-20`
-**Issue:** If `loadCompilerCli()` is called twice before the first `await import()` resolves, both calls issue an `import()`. This is not a correctness bug (ESM module caching makes both resolve to the same namespace, and `cached` ends up pointing at that shared object), and it is not a leak. If you ever want strict single-flight (cache the *promise*, not the resolved value), do `cached ??= import('@angular/compiler-cli') as ...` and type `cached` as `Promise<CompilerCli> | undefined`. Not needed for Phase 1.
+**Issue:** If `loadCompilerCli()` is called twice before the first `await import()` resolves, both calls issue an `import()`. This is not a correctness bug (ESM module caching makes both resolve to the same namespace, and `cached` ends up pointing at that shared object), and it is not a leak. If you ever want strict single-flight (cache the _promise_, not the resolved value), do `cached ??= import('@angular/compiler-cli') as ...` and type `cached` as `Promise<CompilerCli> | undefined`. Not needed for Phase 1.
 
 ### IN-02: Executor swallows the rich `CoreResult` and returns only `{ success }`
 
@@ -153,7 +147,7 @@ Consider filtering out category-`Message` diagnostics from `codes`/`diagnostics`
 ### IN-04: Shim `CompilerCli` surface is structural -- a future drift in the real namespace would not be caught at the call site
 
 **File:** `packages/angular-typechecker/src/core/compiler-cli-types.ts:34-39` + `compiler-loader.ts:17`
-**Issue:** The loader casts `(await import(...)) as unknown as CompilerCli`. The double cast means the *real* runtime namespace is never structurally checked against `CompilerCli` -- if a future compiler-cli renamed `performCompilation` the type system would still believe the shim. This is inherent to the `as unknown as` bridge and is within the documented Phase-2 caveat (the shim is coupled to internal layout); the `compiler-loader.spec.ts` runtime `typeof ng.performCompilation === 'function'` assertions are what actually guard this at runtime, which is the right backstop for now. No action for Phase 1; widen the shim + keep the runtime typeof guards as the engine grows.
+**Issue:** The loader casts `(await import(...)) as unknown as CompilerCli`. The double cast means the _real_ runtime namespace is never structurally checked against `CompilerCli` -- if a future compiler-cli renamed `performCompilation` the type system would still believe the shim. This is inherent to the `as unknown as` bridge and is within the documented Phase-2 caveat (the shim is coupled to internal layout); the `compiler-loader.spec.ts` runtime `typeof ng.performCompilation === 'function'` assertions are what actually guard this at runtime, which is the right backstop for now. No action for Phase 1; widen the shim + keep the runtime typeof guards as the engine grows.
 
 ---
 

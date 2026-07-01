@@ -47,6 +47,7 @@ Concrete shape (planner writes the exact diff):
     `undefined` and let the caller KEEP the diagnostic (fail-safe). Silent -- core is PURE."
 - In the loop, after :91 compute `const canonicalFile = canonicalize(diagnostic.file.fileName)` then
   add a guard BEFORE the node_modules/isUnderDir test (:93):
+
   ```ts
   if (canonicalFile === undefined) {
     kept.push(diagnostic);
@@ -54,6 +55,7 @@ Concrete shape (planner writes the exact diff):
     continue;
   }
   ```
+
   This mirrors the file-less keep idiom at :85-89 exactly (push + continue). `canonicalBase` at :73
   also calls the canonicalizer; a throw there is vanishingly unlikely (basePath is a real injected
   directory) but the planner should null-guard it too -- if `canonicalBase === undefined`, the safest
@@ -75,6 +77,7 @@ change is a return value + a loop branch.
 ## 2. T1 test inversion
 
 **Current assertions (verified, filter-diagnostics.spec.ts):**
+
 - Test name: `'RES-03: a throwing realpath is caught; an OUT-of-project diagnostic is still SUPPRESSED'` (:135)
 - Setup: `diag('/ws/sibling-lib/src/b.ts')` with `realpath: () => { throw new Error('EACCES'); }`,
   `basePath: '/ws/proj'`, `includeDeps: false` (:136-143)
@@ -83,6 +86,7 @@ change is a return value + a loop branch.
   already correct -- this is a coverage gap, not a failing-then-passing change.")
 
 **Flipped assertions (post-fix):**
+
 - :145 -> `expect(result.kept).toHaveLength(1);`
 - :146 -> `expect(result.suppressedCount).toBe(0);`
 - Test name: rename to reflect KEEP, e.g.
@@ -107,6 +111,7 @@ success test (:88-106) is untouched.
 ## 3. #3 program-undefined guard
 
 **Insertion point:** Between the post-compilation 500 scan and the FIRST `result.program` deref.
+
 - Post-compilation 500 scan: run-typecheck.ts:240-248 (`const infrastructureFailure = result.diagnostics.find(...)`
   then `if (infrastructureFailure !== undefined) throw ...`).
 - First `result.program` deref: run-typecheck.ts:268-270, inside the `finalize(...)` call:
@@ -118,11 +123,13 @@ success test (:88-106) is untouched.
 
 **Wording matched to the existing two 500-scan throw sites.** Both existing sites construct
 `TypecheckInfrastructureError` by FLATTENING a real compiler diagnostic's `messageText`:
+
 - Config scan (:167-174): `throw new TypecheckInfrastructureError(ts.flattenDiagnosticMessageText(configInfrastructureFailure.messageText, '\n'));`
 - Post-compilation scan (:244-248): `throw new TypecheckInfrastructureError(ts.flattenDiagnosticMessageText(infrastructureFailure.messageText, '\n'));`
 
 The #3 guard has NO diagnostic to flatten (it fires on a structurally-absent program), so it passes a
 LITERAL message. Recommended wording (matches the class's intent -- "the compiler failed to RUN"):
+
 ```ts
 // #3 DEFENSE-IN-DEPTH: the real PerformCompilationResult.program is OPTIONAL
 // (perform_compile.d.ts:29); the vendored shim narrows it to non-optional
@@ -133,13 +140,10 @@ LITERAL message. Recommended wording (matches the class's intent -- "the compile
 // path. DISJOINT from the post-compilation 500 scan above (which handles
 // UNKNOWN_ERROR_CODE), so no double-handling.
 if (result.program === undefined) {
-  throw new TypecheckInfrastructureError(
-    'angular-typecheck: the Angular compiler returned no Program ' +
-      '(performCompilation produced neither a Program nor an UNKNOWN_ERROR_CODE ' +
-      'diagnostic). This is an infrastructure failure, not a type error.',
-  );
+  throw new TypecheckInfrastructureError('angular-typecheck: the Angular compiler returned no Program ' + '(performCompilation produced neither a Program nor an UNKNOWN_ERROR_CODE ' + 'diagnostic). This is an infrastructure failure, not a type error.');
 }
 ```
+
 Style note: the two existing throws flatten a diagnostic; this one is a literal because there is no
 diagnostic. The `angular-typecheck:` prefix matches the executor's infra `logger.error` (executor.ts:79)
 and the synthesized zero-rootNames message (run-typecheck.ts:313). The guard's `result.program` narrowing
@@ -151,16 +155,18 @@ shim non-optional (compiler-cli-types.ts:182-185) -- the guard is a RUNTIME defe
 ## 4. S3 pinning test harness
 
 **Where:** Add to `executor.spec.ts`, NOT `evaluate-result.spec.ts`. Rationale:
+
 - The behavior under test is "`errorCount 0 + templateCheckAborted set -> { success: true }` WITH a
   `logger.warn` emitted". `logger.warn` is the EXECUTOR's responsibility (executor.ts:52-63) -- it is
   never reached from `evaluateResult` (evaluate-result.ts has no logger and no `templateCheckAborted`
   awareness; it reads only `errorCount`/`warningCount`). So the test must exercise the executor.
 - `evaluateResult` is already fully covered by evaluate-result.spec.ts:6-67 for the `errorCount 0 ->
-  success true` mapping; an evaluate-result test could not assert the warn at all.
+success true` mapping; an evaluate-result test could not assert the warn at all.
 
 **Existing harness to reuse (executor.spec.ts):** It hoist-mocks all four core seams
 (`runTypecheck`, `renderReport`, `evaluateResult`, `normalizeOptions`) plus `@nx/devkit`'s `logger`
 (:10-64), and has TWO ready-made builders:
+
 - `coreResult(errorCount)` (:66-76) -- a clean CoreResult with `errorCount`, `suppressedCount 0`.
 - `abortedCoreResult(fileName)` (:80-85) -- `{ ...coreResult(1), templateCheckAborted: { code: -993004, fileName } }`.
 
@@ -173,11 +179,13 @@ S3 pins the DISTINCT advisory-not-verdict case: abort set BUT `errorCount 0` STI
 `{ success: true }`. Add a builder variant or inline a `{ ...coreResult(0), templateCheckAborted: {
 code: -993004, fileName: '/ws/libs/x/poison.component.ts' } }`, stub `mocks.evaluateResult.mockReturnValue({ success: true })`,
 call the executor, then assert:
+
 ```ts
-expect(result).toEqual({ success: true });        // verdict NOT forced false by the abort
-expect(mocks.loggerWarn).toHaveBeenCalledOnce();   // the loud notice still fires
-expect(mocks.loggerError).not.toHaveBeenCalled();  // not an infra error
+expect(result).toEqual({ success: true }); // verdict NOT forced false by the abort
+expect(mocks.loggerWarn).toHaveBeenCalledOnce(); // the loud notice still fires
+expect(mocks.loggerError).not.toHaveBeenCalled(); // not an infra error
 ```
+
 This pins the locked 09-RES-02-DECISION.md advisory-not-verdict policy (the abort is a WARN, never a
 `success:false`). The `mockReturnValue({ success: true })` is what models `evaluateResult` seeing
 `errorCount 0` -- the executor delegates the verdict to `evaluateResult` (executor.ts:75), so stubbing
@@ -224,11 +232,13 @@ boundary filter does not suppress either; that isolates the count logic.
 through the EXPORTED `detectTemplateCheckAborted` (:449), exactly as the existing shim tests at :109-137 do.
 **Pattern:** The regex is `/\.ngtypecheck\.ts$/` (run-typecheck.ts:492) -- it is `.ts$`-anchored, so a
 `.ngtypecheck.tsx` input does NOT match and passes through UNCHANGED. Add:
+
 ```ts
 const reported = [diagnostic(TCB_GENERATION_FATAL_DIAGNOSTIC_CODE, '/ws/app/poison.component.ngtypecheck.tsx')];
 
 expect(detectTemplateCheckAborted(reported)?.fileName).toBe('/ws/app/poison.component.ngtypecheck.tsx');
 ```
+
 This pins the `$` anchor: a `.tsx` shim name is left verbatim (it would only ever appear in a
 hypothetical future `.tsx` source; documented LIMITATION at run-typecheck.ts:476-483 says `.tsx` sources
 collapse to `<name>.ngtypecheck.ts`, never `.tsx`, so this is a negative-case anchor guard). Mirrors the
@@ -241,27 +251,31 @@ existing `.ngtypecheck.ts` positive test at :109-124 and the non-shim leave-unch
 ### S1 -- de-pin compiler-cli-types.ts:98
 
 **Confirmed text (compiler-cli-types.ts:97-99):**
+
 ```
  * the literal `0` (the emit-neutralizing value, with `noEmit: true`); `0` is not
  * a declared member, so the call site uses an explicit CAST
  * (`emitFlags: 0 as EmitFlags`, run-typecheck.ts:229) -- a bare `: EmitFlags = 0`
 ```
+
 The `emitFlags: 0 as EmitFlags` statement is actually at run-typecheck.ts:232 (verified). Line 229 is
 the START of the comment block above it (`// D-05a / V-2: emitFlags: 0 AND noEmit: true are BOTH...`).
 **Fix:** Replace the line pin `run-typecheck.ts:229` with a SYMBOL reference, e.g.
-`(\`emitFlags: 0 as EmitFlags\` at the \`performCompilation\` call site in run-typecheck.ts)` -- drop the
-brittle line number. (Do NOT change it to `:232`; CONTEXT.md locks "replace the line pin with a symbol
+`(\`emitFlags: 0 as EmitFlags\` at the \`performCompilation\` call site in run-typecheck.ts)`-- drop the
+brittle line number. (Do NOT change it to`:232`; CONTEXT.md locks "replace the line pin with a symbol
 reference" precisely because line numbers drift.)
 
 ### S2 -- document, do NOT drop TemplateCheckAborted.code
 
 **Confirmed field site (run-typecheck.ts:80-83):**
+
 ```ts
 export interface TemplateCheckAborted {
   code: number;
   fileName: string | undefined;
 }
 ```
+
 `code` is at run-typecheck.ts:81. It IS asserted by infra-failure.spec.ts:219-221
 (`expect(result.templateCheckAborted?.code).toBe(TCB_GENERATION_FATAL_DIAGNOSTIC_CODE)`) and
 run-typecheck.spec.ts:94-97 (`detectTemplateCheckAborted(reported)).toEqual({ code: ..., fileName: ... })`).
@@ -278,6 +292,7 @@ it is kept despite being adapter-unused.
 ## #2 (already CONFIRMED in CONTEXT, restated for the planner) -- diagnostic-codes.ts stale "reported set"
 
 **Confirmed (`git grep "reported set"`):**
+
 - diagnostic-codes.ts:71 -- `* the reported set is the signal that drives the loud RES-02 suppression notice.`
 - diagnostic-codes.ts:86 -- `* scans the reported set for this exact value to flag the template-check abort.`
 
@@ -291,16 +306,16 @@ run-typecheck.ts's already-correct wording.
 
 ## Affected files + edit type (planner task map)
 
-| File | Edit | Specifics |
-|------|------|-----------|
-| `filter-diagnostics.ts` | code | #1: canonicalizer returns `undefined` on throw (:131-138); loop adds `canonicalFile === undefined -> keep+continue` guard after :91 |
-| `filter-diagnostics.spec.ts` | test inversion | T1 at :135-147 -> `kept 1`/`suppressed 0` + comment rewrite (:128-134) + rename |
-| `diagnostic-codes.ts` | comment | #2: lines 71, 86 "reported set" -> "PRE-filter gathered set" |
-| `run-typecheck.ts` | code + comment | #3 guard inserted after :248, before :256; S2 doc note at :81 |
-| `compiler-cli-types.ts` | comment | S1: de-pin `:229` at line 98 -> symbol reference |
-| `executor.spec.ts` | new test | S3: abort + errorCount 0 -> `success:true` + `logger.warn`, reuse `abortedCoreResult`/`coreResult(0)` |
-| `infra-failure.spec.ts` | new tests | S5(a): config-500 + non-empty rootNames; S5(c): mixed Error+Warning via stubbed `performCompilation` (add `warningDiagnostic` builder) |
-| `run-typecheck.spec.ts` | new test | S5(d): `.ngtypecheck.tsx` pass-through via `detectTemplateCheckAborted` |
+| File                         | Edit           | Specifics                                                                                                                              |
+| ---------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `filter-diagnostics.ts`      | code           | #1: canonicalizer returns `undefined` on throw (:131-138); loop adds `canonicalFile === undefined -> keep+continue` guard after :91    |
+| `filter-diagnostics.spec.ts` | test inversion | T1 at :135-147 -> `kept 1`/`suppressed 0` + comment rewrite (:128-134) + rename                                                        |
+| `diagnostic-codes.ts`        | comment        | #2: lines 71, 86 "reported set" -> "PRE-filter gathered set"                                                                           |
+| `run-typecheck.ts`           | code + comment | #3 guard inserted after :248, before :256; S2 doc note at :81                                                                          |
+| `compiler-cli-types.ts`      | comment        | S1: de-pin `:229` at line 98 -> symbol reference                                                                                       |
+| `executor.spec.ts`           | new test       | S3: abort + errorCount 0 -> `success:true` + `logger.warn`, reuse `abortedCoreResult`/`coreResult(0)`                                  |
+| `infra-failure.spec.ts`      | new tests      | S5(a): config-500 + non-empty rootNames; S5(c): mixed Error+Warning via stubbed `performCompilation` (add `warningDiagnostic` builder) |
+| `run-typecheck.spec.ts`      | new test       | S5(d): `.ngtypecheck.tsx` pass-through via `detectTemplateCheckAborted`                                                                |
 
 **No work (per CONTEXT --analyze):** S4 (REFUTED, leave drift comments), S5(b) (REFUTED duplicate),
 S6 (DECLINE). No `.planning/` behavior change. Commits land on `gsd/v0.0.3-engine-hardening` (PR #11).
@@ -308,6 +323,7 @@ S6 (DECLINE). No `.planning/` behavior change. Commits land on `gsd/v0.0.3-engin
 ## Sources
 
 All HIGH confidence -- direct reads of the working tree at HEAD 13aa9ff:
+
 - `filter-diagnostics.ts` (canonicalizer :115-149, loop :78-103, throw catch :131-138)
 - `filter-diagnostics.spec.ts` (T1 :128-147, KEEP companion :114-126, all suppression assertions via `git grep`)
 - `run-typecheck.ts` (500 scan :240-248, program deref :268-270, throw sites :167/:244, TemplateCheckAborted :80-83, finalize private :369, exports via `git grep "^export "`)

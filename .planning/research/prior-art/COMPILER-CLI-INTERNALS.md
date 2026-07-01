@@ -6,6 +6,7 @@ CORRECTNESS / COMPLETENESS / ROBUSTNESS / MAINTAINABILITY. Deferred FEATURES
 scope and NOT proposed.
 
 This doc EXTENDS, and does not re-derive, two prior passes:
+
 - `ENGINE-REFERENCE.md` -- the gatherer comparison (6 `api.Program` getters vs
   `@angular/build`'s per-file `getDiagnosticsForFile`; per-file fault isolation;
   `getGlobalDiagnostics` gap; `getNgStructuralDiagnostics` no-op; `suppressOutputPathCheck`).
@@ -14,7 +15,7 @@ This doc EXTENDS, and does not re-derive, two prior passes:
 
 Where this doc touches those topics it CONFIRMS/extends with new citations (the real
 `EmitFlags` member set; the `ErrorCode` enum as an importable source of truth; the
-`UNKNOWN_ERROR_CODE` *in `parsed.errors`* path) rather than repeating the analysis.
+`UNKNOWN_ERROR_CODE` _in `parsed.errors`_ path) rather than repeating the analysis.
 
 All citations verified at STABLE Angular **v22.0.4** via `git show v22.0.4:<path>` against
 `D:\projects\github\angular\angular` (working tree `22.1.0-next.x`). Installed-typing
@@ -33,8 +34,8 @@ Source: `compiler-cli/src/perform_compile.ts` @ v22.0.4.
   project string: if it is a directory, `projectFile = join(dir, 'tsconfig.json')`, else the
   file itself; `basePath = resolve(projectDir)`. It then injects
   `existingCompilerOptions = { genDir: basePath, basePath, ...readAngularCompilerOptions(...),
-  ...existingOptions }` (:137-142) and calls `ts.parseJsonConfigFileContent(config,
-  parseConfigHost, basePath, existingCompilerOptions, configFileName)` (:145-156), whose
+...existingOptions }` (:137-142) and calls `ts.parseJsonConfigFileContent(config,
+parseConfigHost, basePath, existingCompilerOptions, configFileName)` (:145-156), whose
   `fileNames` become `rootNames`. **So `options.basePath` is ALWAYS injected as an absolute
   path** when the config read succeeds -- our `resolveFilterBasePath` fallback
   (`run-typecheck.ts:218-227`) is the defensive belt-and-suspenders for the failure branch.
@@ -104,13 +105,11 @@ Source: `compiler-cli/src/perform_compile.ts` @ v22.0.4.
 ```ts
 const defaultFormatHost = {
   getCurrentDirectory: () => ts.sys.getCurrentDirectory(),
-  getCanonicalFileName: (fileName) => fileName,        // identity (the trap)
+  getCanonicalFileName: (fileName) => fileName, // identity (the trap)
   getNewLine: () => ts.sys.newLine,
 };
 export function formatDiagnostics(diags, host = defaultFormatHost): string {
-  return diags.map(d =>
-    replaceTsWithNgInErrors(ts.formatDiagnosticsWithColorAndContext([d], host))
-  ).join('');
+  return diags.map((d) => replaceTsWithNgInErrors(ts.formatDiagnosticsWithColorAndContext([d], host))).join('');
 }
 ```
 
@@ -158,10 +157,10 @@ private addMessageTextDetails(diagnostics) {
   full NG guide-URL fidelity, for free.
 - **`COMPILER_ERRORS_WITH_GUIDES`** (diagnostics/src/docs.ts:14-23) is a `Set` of EIGHT codes:
   `DECORATOR_ARG_NOT_LITERAL (1001)`, `IMPORT_CYCLE_DETECTED (3003)`, `PARAM_MISSING_TOKEN
-  (2003)`, `SCHEMA_INVALID_ELEMENT (8001)`, `SCHEMA_INVALID_ATTRIBUTE (8002)`,
+(2003)`, `SCHEMA_INVALID_ELEMENT (8001)`, `SCHEMA_INVALID_ATTRIBUTE (8002)`,
   `MISSING_REFERENCE_TARGET (8003)`, `COMPONENT_INVALID_SHADOW_DOM_SELECTOR (2009)`,
   `WARN_NGMODULE_ID_UNNECESSARY (6100)`. Note the membership test uses `ngErrorCode(diag.code)`
-  -- i.e. it RE-encodes the diagnostic's *already-negative* `code` and looks up the 4-digit
+  -- i.e. it RE-encodes the diagnostic's _already-negative_ `code` and looks up the 4-digit
   value... wait: the Set holds 4-digit `ErrorCode` values, but `diag.code` is already
   `-99xxxx`, so `ngErrorCode(diag.code)` = `parseInt('-99' + '-998001')` = a garbage value that
   would NEVER be in the Set. **This is an upstream subtlety we do NOT need to reproduce** (the
@@ -198,20 +197,20 @@ the public `@angular/compiler-cli` barrel** -- verified `index.d.ts:30`:
   not maintain a literal catalog that could drift. GOOD design.
 - **`ngErrorCode(code) = parseInt('-99' + code)`** (diagnostics/src/util.ts:25). Our
   `NG(code) = -990000 - code` (`diagnostic-codes.ts:39`) and `ngCodeOf(code) = Math.abs(code) -
-  990000` (:50). **Verified empirically that the two formulas AGREE for every 4-digit code:**
+990000` (:50). **Verified empirically that the two formulas AGREE for every 4-digit code:**
   `NG(8109) === parseInt('-998109') === -998109`; `NG(8024) === -998024`; round-trip
   `ngCodeOf(-998109) === 8109`. VALIDATED our encoding matches the source of truth for the
   4-digit range -- which is the only range we surface.
 - **Two encoding corner cases (confirmed by `node -e`), neither a current miss but both worth a
   note:**
-  1. `CONFLICTING_HOST_DIRECTIVE_BINDING = -8024` is stored NEGATIVE *in the enum itself*
+  1. `CONFLICTING_HOST_DIRECTIVE_BINDING = -8024` is stored NEGATIVE _in the enum itself_
      (error_code.ts). `ngErrorCode(-8024) = parseInt('-99-8024') = -99` (parseInt halts at the
      embedded `-`), whereas `NG(-8024) = -981976`. The compiler emits `-99` as that diagnostic's
      `ts.Diagnostic.code`. We never model this code, so no miss -- but our `NG()` would compute a
      wrong value if ever handed `-8024`. (This is a single pathological upstream value.)
   2. 5-digit codes `10001/10002/11001/11003` ("categories other than Error" -- LS-only /
      local-compilation, comment at error_code.ts ~ the `10XXX` reservation). `ngErrorCode(10001)
-     = -9910001` but `NG(10001) = -1000001`. Our JSDoc precondition already documents the
+= -9910001` but `NG(10001) = -1000001`. Our JSDoc precondition already documents the
      4-digit-only constraint. These codes never appear in our whole-program no-emit path, so no
      miss; our helper would mis-encode them if misused.
 - The drift-detection unit proposed in SHIM-HARDENING could ALSO pin `ngErrorCode` behavior:
@@ -337,6 +336,7 @@ filter realpath try-catch are owned by SHIM-HARDENING.md #1-#8; #5/#6 below EXTE
 the new compiler-cli citations, they do not replace them.)
 
 ### 1. Detect `UNKNOWN_ERROR_CODE` in `parsed.errors`, not only in `result.diagnostics`
+
 - **(a) Current:** we fold `parsed.errors` verbatim (`run-typecheck.ts:110`) and scan ONLY the
   `performCompilation` result for a 500 (`run-typecheck.ts:171-173`). A `readConfiguration`
   outer-catch crash returns its 500 in `parsed.errors` (`perform_compile.ts:165-181`, with
@@ -361,6 +361,7 @@ the new compiler-cli citations, they do not replace them.)
 - **(f) Effort:** S.
 
 ### 2. (VALIDATED -- no change) Extended (NG8xxx) severity gating is faithful
+
 - **(a) Current:** spread `parsed.options` verbatim; bucket by `ts.DiagnosticCategory`;
   `evaluateResult` reads counts (`run-typecheck.ts:140,322-327`; `evaluate-result.ts:44-55`).
 - **(b) Reference:** per-check `checks[name] ?? defaultCategory ?? Warning`, `Suppress -> null`
@@ -374,6 +375,7 @@ the new compiler-cli citations, they do not replace them.)
 - **(f) Effort:** none.
 
 ### 3. (VALIDATED -- no change) NG guide-URL + codeframe + related-info fidelity is intact
+
 - **(a) Current:** `format-report.ts` feeds `formatDiagnostics` (color-and-context), fixes the
   two default-host bugs, strips ANSI after the NG rewrite already ran.
 - **(b) Reference:** `formatDiagnostics` always uses `formatDiagnosticsWithColorAndContext` +
@@ -386,6 +388,7 @@ the new compiler-cli citations, they do not replace them.)
 - **(f) Effort:** none.
 
 ### 4. (VALIDATED -- no change) `NG()`/`ngCodeOf()` encoding matches the source of truth (4-digit)
+
 - **(a) Current:** `NG = -990000 - code`, `ngCodeOf = abs(code) - 990000`
   (`diagnostic-codes.ts:39,50`).
 - **(b) Reference:** `ngErrorCode = parseInt('-99' + code)` (`diagnostics/src/util.ts:25`);
@@ -399,6 +402,7 @@ the new compiler-cli citations, they do not replace them.)
 - **(f) Effort:** none.
 
 ### 5. Fold `ngErrorCode`/`ErrorCode`/`UNKNOWN_ERROR_CODE` into the SHIM-HARDENING drift unit
+
 - **(a) Current:** `diagnostic-codes.ts` re-implements the encoding; `compiler-cli-types.ts`
   hardcodes `UNKNOWN_ERROR_CODE = 500`. Both are parallel to upstream with no compile-time pin.
 - **(b) Reference:** the public barrel EXPORTS `ngErrorCode` and `ErrorCode`
@@ -414,13 +418,14 @@ the new compiler-cli citations, they do not replace them.)
 - **(f) Effort:** S (folds into the SHIM-HARDENING drift unit).
 
 ### 6. (Confirm + extend SHIM-HARDENING) Real `EmitFlags` has 7 members incl. `I18nBundle = 8`
+
 - **(a) Current:** shim declares `EmitFlags { None = 0 }` (`compiler-cli-types.ts:89-91`); engine
   passes `0 as EmitFlags` (`run-typecheck.ts:163`).
 - **(b) Reference:** real enum `DTS=1, JS=2, Metadata=4, I18nBundle=8, Codegen=16, Default=19,
-  All=31` (`api.ts:129-138` / installed `api.d.ts:74-82`). `emitFlags: 0` confirmed safe (only
+All=31` (`api.ts:129-138` / installed `api.d.ts:74-82`). `emitFlags: 0` confirmed safe (only
   used by `program.emit`, gated by `!hasErrors` + neutralized by `noEmit:true`).
 - **(c) Change:** as SHIM-HARDENING #5 -- either keep `None = 0` with a `// angular-typechecker:
-  vendored -- NOT an upstream member; 0 = no-flags bitmask` marker, or declare the real subset.
+vendored -- NOT an upstream member; 0 = no-flags bitmask` marker, or declare the real subset.
   EXTENSION: when the drift unit pins the enum, include `I18nBundle` (the member the
   SHIM-HARDENING table omitted) so the pin reflects the true 7-member set.
 - **(d) Classification:** `maintainability`.

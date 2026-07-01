@@ -49,7 +49,7 @@ My round-1 hold rested on two legs. Both fail under round-2 facts:
    existing 30000ms timeout margin; D5 reconciliation calls the budget comfortable. The cost
    objection is quantified and small. Leg gone.
 2. **"Testing Angular not the plugin" leg (a principle, not a fact).** The mandate forbids
-   holding on principle alone. And A3 actually cuts the other way for *structure*: because
+   holding on principle alone. And A3 actually cuts the other way for _structure_: because
    there is no per-code branch, the 18 members collapse into one uniform table with
    per-member fixtures-as-rows -- the marginal cost of rows 4..18 over rows 1..3 is just the
    fixture files + ~0.5s each, no new file, no new taxonomy (the single-table point, (d)).
@@ -58,7 +58,7 @@ Decisive structural fact I cannot get around: the **completeness tripwire** (cat
 === `ExtendedTemplateDiagnosticName` enum, in `test`) is UNOPPOSED in the spread and I do not
 oppose it. A tripwire asserting "catalog === 18-member enum" is self-contradictory against a
 3-row representative catalog -- it would fail on day one. Accepting the tripwire therefore
-*entails* enumerating all 18; I cannot accept the tripwire (cheap, catches a NEW 19th member
+_entails_ enumerating all 18; I cannot accept the tripwire (cheap, catches a NEW 19th member
 the day Angular adds one) and simultaneously hold representative-only. And A2 confirms the
 18 ARE the exact configurable public contract surface (the two 80xx outliers in-range-or-not
 characterized; the two non-member ErrorCodes excluded). There is no fact the reconciliation
@@ -112,11 +112,12 @@ budget is comfortable). Converge.
 Generator in scope at decision-B shape; testing scope = generator unit + schema parity + the
 18-member catalog + completeness tripwire + one folded generator e2e + the `-p` guard;
 exclude `createFsTree`, the mid-tier, Verdaccio, the jscodeshift toolkit, and cache/ordering
-+ quiet-mode tests. The only delta from my round-1 D6 is the catalog moving from
-"representative" to "all 18" -- which D2-scope above justifies. Every exclusion I pushed for
-in round 1 survives in §D. The scope is the smallest that (i) tests the one net-new code path
-(the generator), (ii) makes the diagnostic catalog self-policing via the tripwire, and (iii)
-adds the one silent-skip guard A5 exposes. No gold-plating remains to cut. Converge.
+
+- quiet-mode tests. The only delta from my round-1 D6 is the catalog moving from
+  "representative" to "all 18" -- which D2-scope above justifies. Every exclusion I pushed for
+  in round 1 survives in §D. The scope is the smallest that (i) tests the one net-new code path
+  (the generator), (ii) makes the diagnostic catalog self-policing via the tripwire, and (iii)
+  adds the one silent-skip guard A5 exposes. No gold-plating remains to cut. Converge.
 
 ---
 

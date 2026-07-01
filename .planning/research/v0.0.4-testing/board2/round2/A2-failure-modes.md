@@ -68,11 +68,12 @@ parallelized, within the 30000ms margin) confirms no `test`-target split is need
 no-split-unless-measured-regression stance is fact-backed.
 
 **D6 -- CONVERGE.** Generator in scope at shape B; testing scope = generator unit + schema parity
-+ 18-member catalog + completeness tripwire + one folded generator e2e + `-p` guard; descope
-`createFsTree`, mid-tier, Verdaccio, jscodeshift, cache/`dependsOn`-ordering, mode tests. This is
-exactly my round-1 rank-ordered scope: the two systemic self-auditing tests (enum-vs-table
-completeness; `-p` set-equality) lead, then the point coverage. Over-scoping to the prior-art
-union would import its fragility wholesale for no false-green-prevention gain.
+
+- 18-member catalog + completeness tripwire + one folded generator e2e + `-p` guard; descope
+  `createFsTree`, mid-tier, Verdaccio, jscodeshift, cache/`dependsOn`-ordering, mode tests. This is
+  exactly my round-1 rank-ordered scope: the two systemic self-auditing tests (enum-vs-table
+  completeness; `-p` set-equality) lead, then the point coverage. Over-scoping to the prior-art
+  union would import its fragility wholesale for no false-green-prevention gain.
 
 ## Why no HOLD
 

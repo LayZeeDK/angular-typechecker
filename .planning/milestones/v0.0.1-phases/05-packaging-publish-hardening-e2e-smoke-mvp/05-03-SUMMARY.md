@@ -4,22 +4,22 @@ plan: 03
 subsystem: e2e-install-smoke
 tags: [test-05, tracer-bullet, e2e, install, d-17, d-18, d-19, d-20, b-03]
 requires:
-  - "05-01: full PKG-01 manifest + self-contained shipped .d.ts (published executor id angular-typechecker:angular-typecheck)"
-  - "05-02: serialized angular-typechecker-install-e2e project (forks/singleFork/no-parallel/node env, 300000 timeouts) + the build-then-pack-from-dist beforeAll shape"
-  - "Phase 4: e2e/angular-typechecker-cache-e2e harness (run()/buildCleanEnv/NX_RUNNER_ENV_KEYS/injected-error/exit-code+ERR_REQUIRE_ESM assertion trio)"
+  - '05-01: full PKG-01 manifest + self-contained shipped .d.ts (published executor id angular-typechecker:angular-typecheck)'
+  - '05-02: serialized angular-typechecker-install-e2e project (forks/singleFork/no-parallel/node env, 300000 timeouts) + the build-then-pack-from-dist beforeAll shape'
+  - 'Phase 4: e2e/angular-typechecker-cache-e2e harness (run()/buildCleanEnv/NX_RUNNER_ENV_KEYS/injected-error/exit-code+ERR_REQUIRE_ESM assertion trio)'
 provides:
-  - "Committed self-contained consumer-app fixture wired with the PUBLISHED unscoped executor id + includeDeps:true, no source path-alias (the README recipe proven by execution)"
-  - "install-smoke.int.spec.ts: pack -> clean tmp install (no peer override) -> green run exit 0 + injected-TS2322 non-zero/no-ERR_REQUIRE_ESM"
-  - "B-03 RESOLVED finding: a clean npm install of the published peers (stable Angular 22.0.4 + Nx 23.0.1) succeeds with NO consumer peer-resolution override"
+  - 'Committed self-contained consumer-app fixture wired with the PUBLISHED unscoped executor id + includeDeps:true, no source path-alias (the README recipe proven by execution)'
+  - 'install-smoke.int.spec.ts: pack -> clean tmp install (no peer override) -> green run exit 0 + injected-TS2322 non-zero/no-ERR_REQUIRE_ESM'
+  - 'B-03 RESOLVED finding: a clean npm install of the published peers (stable Angular 22.0.4 + Nx 23.0.1) succeeds with NO consumer peer-resolution override'
 affects:
-  - "05-04 (nx release config + hardened CI: the smoke is the pre-publish artifact validation; CI may gate on this same install-e2e project)"
-  - "05-05 (live first publish: the tracer bullet proves the artifact about to be published installs-and-runs)"
+  - '05-04 (nx release config + hardened CI: the smoke is the pre-publish artifact validation; CI may gate on this same install-e2e project)'
+  - '05-05 (live first publish: the tracer bullet proves the artifact about to be published installs-and-runs)'
 tech-stack:
   added: []
   patterns:
-    - "Per-run mkdtemp tmp consumer + cpSync of the committed fixture; mutate the discarded COPY (inherently crash-safe -- no .pristine sidecar, D-18)"
-    - "Clean-install honesty: empty tmp .npmrc + npm_config_userconfig -> non-existent path + env-strip of npm_config_legacy_peer_deps so no peer override leaks (B-03)"
-    - "require()-the-installed-executors.json sanity check before the nx run (resolution FROM the install, not a dev path-alias, D-18)"
+    - 'Per-run mkdtemp tmp consumer + cpSync of the committed fixture; mutate the discarded COPY (inherently crash-safe -- no .pristine sidecar, D-18)'
+    - 'Clean-install honesty: empty tmp .npmrc + npm_config_userconfig -> non-existent path + env-strip of npm_config_legacy_peer_deps so no peer override leaks (B-03)'
+    - 'require()-the-installed-executors.json sanity check before the nx run (resolution FROM the install, not a dev path-alias, D-18)'
 key-files:
   created:
     - e2e/angular-typechecker-install-e2e/fixtures/consumer-app/project.json
@@ -33,8 +33,8 @@ key-files:
 decisions:
   - "Fixture nx.json carries the cacheable targetDefaults recipe keyed by the PUBLISHED id angular-typechecker:angular-typecheck so the installed plugin's cacheable target binds in the tmp workspace (relative paths, since the fixture is its own workspace root once copied)"
   - "Fixture package.json declares stable Angular 22.0.4 + TS 6.0.3 + nx/devkit 23.0.1; the angular-typechecker tarball is added by the spec's install step, NOT pre-declared (so the smoke installs the REAL artifact)"
-  - "B-03 RESOLVED, NOT masked: the clean install (empty .npmrc, no override flag, non-existent userconfig) succeeds -- consumers on the stable published peers do NOT need a peer-resolution override; recorded below for the human B-03 call"
-  - "Included the discretionary require()-the-installed-executor check (D-18): assert node_modules/angular-typechecker/executors.json carries the angular-typecheck executor before the green nx run"
+  - 'B-03 RESOLVED, NOT masked: the clean install (empty .npmrc, no override flag, non-existent userconfig) succeeds -- consumers on the stable published peers do NOT need a peer-resolution override; recorded below for the human B-03 call'
+  - 'Included the discretionary require()-the-installed-executor check (D-18): assert node_modules/angular-typechecker/executors.json carries the angular-typecheck executor before the green nx run'
 metrics:
   duration: ~5 min
   completed: 2026-06-28
@@ -99,6 +99,7 @@ This fixture's recipe (PUBLISHED id + `includeDeps:true`, no source alias) IS th
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Literal-grep false positives on the `legacy-peer-deps` and `no-color` acceptance criteria**
+
 - **Found during:** Task 2 (acceptance check).
 - **Issue:** The acceptance criteria require `git grep -c "legacy-peer-deps"` and `git grep -c "no-color"` to return 0 in the spec. The implementation passes NEITHER flag, but explanatory comments contained the literal hyphenated substrings (e.g. "WITHOUT --legacy-peer-deps", "NOT --no-color") -- the same comment-false-positive class 05-01/05-02 hit. The honesty env-strip code uses the npm CONFIG key form (`npm_config_legacy_peer_deps`, underscores) which does NOT match the hyphenated pattern, so it was never the trip.
 - **Fix:** Reworded the comments to "peer-resolution override" / "the color-disabling CLI flag" without the literal hyphenated substrings; no code change. Both criteria now return 0; the smoke still passes no override flag and no color flag (re-ran the full suite green after the reword).

@@ -9,7 +9,7 @@ completed: 2026-06-29
 key_files:
   created: []
   modified: []
-  note: "Live GitHub repository-ruleset config change via gh api (no repo files modified)"
+  note: 'Live GitHub repository-ruleset config change via gh api (no repo files modified)'
 commits: []
 ---
 
@@ -47,11 +47,13 @@ keeps `ci/test-` + `ci/e2e` SELECTED under `act -n` (Assumption A3 confirmed loc
 real runners).
 
 **Enable verification (step 2):**
+
 ```
 {"approvals":0,"bypass":[],"checks":["Analyze (actions)","Analyze (javascript-typescript)","ci"],"enforcement":"active","merge":["merge"],"strict":false}
 ```
 
 **Final-state verification (step 4):**
+
 ```
 {"enforcement":"active","id":18229122,"name":"Default branch","target":"branch"}
 {"enforcement":"active","id":18229053,"name":"Release tag","target":"tag"}
@@ -59,6 +61,7 @@ gh api .../rulesets/18229088 -> 404 Not Found  (v0.0.1 DELETED)
 ```
 
 All must_haves satisfied:
+
 - [x] Default-branch ruleset active; strict:false; empty bypass; merge:["merge"]; 3 checks (ci + 2 CodeQL)
 - [x] v0.0.1 ruleset deleted (404)
 - [x] Release-tag ruleset retained (active, tag)

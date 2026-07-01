@@ -12,14 +12,14 @@ affects:
 tech-stack:
   added: []
   patterns:
-    - "Existing export style of filterDiagnostics as the visibility analog"
+    - 'Existing export style of filterDiagnostics as the visibility analog'
 key-files:
   created: []
   modified:
     - packages/angular-typechecker/src/core/filter-diagnostics.ts
 decisions:
-  - "Export from filter-diagnostics.ts (smallest delta) rather than extracting a new path-canonicalize.ts module -- RESEARCH Open Question 1 / Pitfall 6"
-  - "isNodeModulesPath stays module-private (the walk does not need it; minimize public surface)"
+  - 'Export from filter-diagnostics.ts (smallest delta) rather than extracting a new path-canonicalize.ts module -- RESEARCH Open Question 1 / Pitfall 6'
+  - 'isNodeModulesPath stays module-private (the walk does not need it; minimize public surface)'
 metrics:
   duration: ~6 min
   completed: 2026-07-01
@@ -49,8 +49,8 @@ from the tested filter.
 
 ## Task Commits
 
-| Task | Name                                                          | Commit  | Files                                                        |
-| ---- | ------------------------------------------------------------- | ------- | ------------------------------------------------------------ |
+| Task | Name                                                                 | Commit  | Files                                                       |
+| ---- | -------------------------------------------------------------------- | ------- | ----------------------------------------------------------- |
 | 1    | Export createCanonicalizer and isUnderDir from filter-diagnostics.ts | fbf3573 | packages/angular-typechecker/src/core/filter-diagnostics.ts |
 
 ## Verification

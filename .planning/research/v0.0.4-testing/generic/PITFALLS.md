@@ -85,7 +85,7 @@ promotion test that asserts a category WITHOUT also asserting the diagnostic cou
 ### Pitfall 3: Coarse `success`/boolean assertions — the false-green that is indistinguishable from no test
 
 **What goes wrong:**
-A fixture meant to trigger NG8115 instead trips a *different* error (a template typo, a TS syntax
+A fixture meant to trigger NG8115 instead trips a _different_ error (a template typo, a TS syntax
 error, a tsconfig error). A `expect(result.success).toBe(false)` test passes — while NG8115 is never
 exercised. The checker could stop emitting NG8115 entirely and the suite stays green. This is the
 prior art's documented sin: the sandbox catalog asserts ONLY `success` (`SANDBOX-TECHNIQUES.md` §4;
@@ -185,6 +185,7 @@ The explicit `-p` list is an UNGUARDED human-maintenance contract; `actionlint`/
 expression syntax, not the SEMANTIC correctness of the list against the project graph (`A2` D5).
 
 **How to avoid (two layers):**
+
 1. **Do not create a new e2e project for the generator.** Fold the generator e2e into the existing
    `angular-typechecker-install-e2e`, which is ALREADY in the `-p` list — a new spec file inside it
    runs in CI with zero `ci.yml` edit (`CONSENSUS.md` D4; `A2` D4).
@@ -193,7 +194,7 @@ expression syntax, not the SEMANTIC correctness of the list against the project 
    missing/extra project named. This converts the silent-skip landmine into a loud, located failure —
    the board called it "the single highest-leverage test in the whole milestone" (`A2` D5). Prefer the
    pure `fs` + parse approach (glob project.json + parse the YAML `-p` line) over shelling `nx show
-   projects` so it is fast and cross-platform under `NX_DAEMON: false`.
+projects` so it is fast and cross-platform under `NX_DAEMON: false`.
 
 **Warning signs:**
 A `generator-e2e` Nx project; a green PR that adds an e2e project but no `ci.yml` diff; GUARD-01 absent
@@ -394,7 +395,7 @@ generator test (`A2` D1; `NX-FSTREE-INTERNALS` per board).
 
 **Why it happens:**
 The prior-art `FsTree` helper is alluring (it was a planned-but-never-delivered v0.0.1 artifact). But it
-lived ONLY in an *executor e2e* (real-workspace edits a real compiler reads back), never in a generator
+lived ONLY in an _executor e2e_ (real-workspace edits a real compiler reads back), never in a generator
 unit test. The v0.0.4 generator edits `project.json` ONLY — 100% of its behavior is a Tree
 transformation the in-memory tree captures perfectly; nothing reads its own emitted files from disk
 mid-run (`A2` D1; `CONSENSUS.md` D1; `A3` D1 would-change-mind concedes this if the generator never
@@ -417,43 +418,43 @@ generator spec writing to a temp dir.
 
 ## Technical Debt Patterns
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Assert only `result.success` per catalog row | One-line assertions; copy prior art | False green indistinguishable from no test; a dropped code goes unnoticed | **Never** — exact code + category + count is the repo idiom and non-negotiable for a completeness tool |
-| Filter the 18 codes by an `81xx` numeric pattern | Terse catalog construction | Silently drops NG8011 + NG8021 | **Never** — key on the enum |
-| Catalog organized one-file-per-Angular-major | Git-blame locality; "drop-in a new major" | False taxonomy that rots (the repo already renamed `extended.angular17` → `extended.promotion` because the version signal was a lie) | Only if the per-major files are GENERATED FROM / checked against the one enum table (`C2` D2 part 2) |
-| Skip a non-reproducible code by omitting the row | Avoids a failing/`it.skip` line | The completeness tripwire (count===18) breaks OR is loosened; the code is silently uncovered | **Never** — use `it.skip` with a written reason, keep the row |
-| New `generator-e2e` Nx project (vs. folding into `install-e2e`) | Clean separation | Silent-skip landmine via the explicit `-p` list; CI greens without it | Only with the `-p`-list addition + `implicitDependencies` + GUARD-01 in the SAME commit (`A3` D4 would-change-mind) — but folding is strictly better here |
-| Generator e2e `nx run` without `--skip-nx-cache` | Slightly faster e2e | Cached-green false pass on the injected-error case | **Never** for the generator/executor verdict run |
-| Bespoke `createFsTree` real-disk helper now | "Resolves the v0.0.1 drift" | Permanent internal-import upgrade fragility for fidelity the config-edit generator does not need | **Never** in v0.0.4 — only when a future generator emits files a compiler reads back (FSTREE-01) |
-| jscodeshift error-injection toolkit (1373 LOC prior art) | Surgical fixture mutation | New dep + Nx-scaffold-shape fragility + a large infra surface that can itself produce the wrong diagnostic | **Never** here — committed static fixtures are deterministic, reviewable, cross-platform (`A2` D2; `A3` D2) |
+| Shortcut                                                        | Immediate Benefit                         | Long-term Cost                                                                                                                       | When Acceptable                                                                                                                                           |
+| --------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Assert only `result.success` per catalog row                    | One-line assertions; copy prior art       | False green indistinguishable from no test; a dropped code goes unnoticed                                                            | **Never** — exact code + category + count is the repo idiom and non-negotiable for a completeness tool                                                    |
+| Filter the 18 codes by an `81xx` numeric pattern                | Terse catalog construction                | Silently drops NG8011 + NG8021                                                                                                       | **Never** — key on the enum                                                                                                                               |
+| Catalog organized one-file-per-Angular-major                    | Git-blame locality; "drop-in a new major" | False taxonomy that rots (the repo already renamed `extended.angular17` → `extended.promotion` because the version signal was a lie) | Only if the per-major files are GENERATED FROM / checked against the one enum table (`C2` D2 part 2)                                                      |
+| Skip a non-reproducible code by omitting the row                | Avoids a failing/`it.skip` line           | The completeness tripwire (count===18) breaks OR is loosened; the code is silently uncovered                                         | **Never** — use `it.skip` with a written reason, keep the row                                                                                             |
+| New `generator-e2e` Nx project (vs. folding into `install-e2e`) | Clean separation                          | Silent-skip landmine via the explicit `-p` list; CI greens without it                                                                | Only with the `-p`-list addition + `implicitDependencies` + GUARD-01 in the SAME commit (`A3` D4 would-change-mind) — but folding is strictly better here |
+| Generator e2e `nx run` without `--skip-nx-cache`                | Slightly faster e2e                       | Cached-green false pass on the injected-error case                                                                                   | **Never** for the generator/executor verdict run                                                                                                          |
+| Bespoke `createFsTree` real-disk helper now                     | "Resolves the v0.0.1 drift"               | Permanent internal-import upgrade fragility for fidelity the config-edit generator does not need                                     | **Never** in v0.0.4 — only when a future generator emits files a compiler reads back (FSTREE-01)                                                          |
+| jscodeshift error-injection toolkit (1373 LOC prior art)        | Surgical fixture mutation                 | New dep + Nx-scaffold-shape fragility + a large infra surface that can itself produce the wrong diagnostic                           | **Never** here — committed static fixtures are deterministic, reviewable, cross-platform (`A2` D2; `A3` D2)                                               |
 
 ## Integration Gotchas
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| `@angular/compiler-cli` enum at test time | `require()` it (it is ESM-only) | `await import('@angular/compiler-cli')` for the completeness tripwire and any real-compiler spec (`C2` D2 part 5; `TESTING.md`) |
-| `generators.json` packaging | Add the file but forget the `package.json` `generators` field and/or the build `assets` glob | Wire all four links (generators.json entry + `generators` field + assets glob mirroring `executors.json` + `files` whitelist) in one change; assert in `package-manifest`/`tarball-audit` (`SANDBOX` §1/§7) |
-| `nx g` from a tarball install | Assume the `install-e2e` harness (built for `nx run`) resolves `nx generate` | Prove it in GE2E-01 by actually running `nx g` from the installed tarball; add the un-wired target project to the consumer fixture so the add is observable |
-| Nx project-graph after generator edits | Edit `project.json` without `NX_DAEMON=false` in e2e and trust a stale daemon graph | Set `NX_DAEMON: false` (already CI-wide) and `--skip-nx-cache` for the post-generate run; strip `NX_*` via `buildCleanEnv` (`A2` D1/D4; `SANDBOX` §9.2) |
-| `formatFiles(tree)` in generator unit tests | Let Prettier run and couple assertions to formatting | Pass `skipFormat: true` (or the schema's `skipFormat`) in tests; confirm `createTreeWithEmptyWorkspace`'s seeded `.prettierrc` matches the repo's `singleQuote: true` if a format assertion is unavoidable (`CONNECT` §2b; `A2` D1) |
-| `schema.json` ↔ `schema.d.ts` | Hand-author both and let them drift | Add a schema-parity spec asserting `schema.json` keys === the `schema.d.ts` interface keys (extend the existing `schema-parity.spec.ts` idiom) (`GEN-06`; `TESTING.md`) |
+| Integration                                 | Common Mistake                                                                               | Correct Approach                                                                                                                                                                                                                    |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@angular/compiler-cli` enum at test time   | `require()` it (it is ESM-only)                                                              | `await import('@angular/compiler-cli')` for the completeness tripwire and any real-compiler spec (`C2` D2 part 5; `TESTING.md`)                                                                                                     |
+| `generators.json` packaging                 | Add the file but forget the `package.json` `generators` field and/or the build `assets` glob | Wire all four links (generators.json entry + `generators` field + assets glob mirroring `executors.json` + `files` whitelist) in one change; assert in `package-manifest`/`tarball-audit` (`SANDBOX` §1/§7)                         |
+| `nx g` from a tarball install               | Assume the `install-e2e` harness (built for `nx run`) resolves `nx generate`                 | Prove it in GE2E-01 by actually running `nx g` from the installed tarball; add the un-wired target project to the consumer fixture so the add is observable                                                                         |
+| Nx project-graph after generator edits      | Edit `project.json` without `NX_DAEMON=false` in e2e and trust a stale daemon graph          | Set `NX_DAEMON: false` (already CI-wide) and `--skip-nx-cache` for the post-generate run; strip `NX_*` via `buildCleanEnv` (`A2` D1/D4; `SANDBOX` §9.2)                                                                             |
+| `formatFiles(tree)` in generator unit tests | Let Prettier run and couple assertions to formatting                                         | Pass `skipFormat: true` (or the schema's `skipFormat`) in tests; confirm `createTreeWithEmptyWorkspace`'s seeded `.prettierrc` matches the repo's `singleQuote: true` if a format assertion is unavoidable (`CONNECT` §2b; `A2` D1) |
+| `schema.json` ↔ `schema.d.ts`              | Hand-author both and let them drift                                                          | Add a schema-parity spec asserting `schema.json` keys === the `schema.d.ts` interface keys (extend the existing `schema-parity.spec.ts` idiom) (`GEN-06`; `TESTING.md`)                                                             |
 
 ## Performance Traps
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| One cold `performCompilation` per catalog code × 6 cells | `test` matrix wall-clock climbs; timeouts on Windows-arm64 | Batch multiple codes into one fixture program; keep the tripwire compilation-free (`CONSENSUS.md` D5; `C2` D5) | When the catalog reaches ~18 unbatched fixtures across all 6 cells |
-| Verdaccio long-running registry process | Port races, zombie processes, storage-dir leaks; Windows `execFileSync(nx)` failures | Excluded by consensus — use the existing `npm pack` + tmp-install harness (one mechanism) (`A2` D4; `CONNECT` §7) | On the Windows-arm64 primary dev env immediately |
-| Parallel e2e workers racing on shared dist/`.tgz` | Flaky tarball builds, intermittent ENOENT | The e2e configs already serialize (`singleFork`, `fileParallelism: false`, `sequence.concurrent: false`, 300000ms timeout) — keep the generator scenario inside that serialized project (`TESTING.md`) | When a new e2e spec is added to a parallel pool |
+| Trap                                                     | Symptoms                                                                             | Prevention                                                                                                                                                                                             | When It Breaks                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| One cold `performCompilation` per catalog code × 6 cells | `test` matrix wall-clock climbs; timeouts on Windows-arm64                           | Batch multiple codes into one fixture program; keep the tripwire compilation-free (`CONSENSUS.md` D5; `C2` D5)                                                                                         | When the catalog reaches ~18 unbatched fixtures across all 6 cells |
+| Verdaccio long-running registry process                  | Port races, zombie processes, storage-dir leaks; Windows `execFileSync(nx)` failures | Excluded by consensus — use the existing `npm pack` + tmp-install harness (one mechanism) (`A2` D4; `CONNECT` §7)                                                                                      | On the Windows-arm64 primary dev env immediately                   |
+| Parallel e2e workers racing on shared dist/`.tgz`        | Flaky tarball builds, intermittent ENOENT                                            | The e2e configs already serialize (`singleFork`, `fileParallelism: false`, `sequence.concurrent: false`, 300000ms timeout) — keep the generator scenario inside that serialized project (`TESTING.md`) | When a new e2e spec is added to a parallel pool                    |
 
 ## Security Mistakes
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Re-enabling `changelog.workspaceChangelog.createRelease: "github"` while adding release-adjacent generator wiring | nx 23 hard-errors (`GIT_PUSH_FALSE_WITH_CREATE_RELEASE`) or silently pushes an un-curated tag to PR-only `main` | Keep `release.git.push: false` + `createRelease: false` (load-bearing — `AGENTS.md` LANDMINE; `CONCERNS.md`). v0.0.4 touches no release config — do not drift it |
-| Leaking fixture/`@fixtures` content or test files into the published tarball | Bloated/incorrect package; the `tarball-audit` no-leak gate would catch it late | Keep generator + schema in the `files` whitelist; keep `*.spec`/`*.drift`/fixtures excluded by `tsconfig.lib.json`; assert via `tarball-audit` (`CONCERNS.md`; `TESTING.md`) |
-| Auto-approving the `npm-publish` environment when the milestone publishes 0.0.4 | HARD RULE violation — environment gates are human-only | Stop at the gate and hand off (MEMORY.md "Never approve GitHub deployments") |
+| Mistake                                                                                                           | Risk                                                                                                            | Prevention                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Re-enabling `changelog.workspaceChangelog.createRelease: "github"` while adding release-adjacent generator wiring | nx 23 hard-errors (`GIT_PUSH_FALSE_WITH_CREATE_RELEASE`) or silently pushes an un-curated tag to PR-only `main` | Keep `release.git.push: false` + `createRelease: false` (load-bearing — `AGENTS.md` LANDMINE; `CONCERNS.md`). v0.0.4 touches no release config — do not drift it             |
+| Leaking fixture/`@fixtures` content or test files into the published tarball                                      | Bloated/incorrect package; the `tarball-audit` no-leak gate would catch it late                                 | Keep generator + schema in the `files` whitelist; keep `*.spec`/`*.drift`/fixtures excluded by `tsconfig.lib.json`; assert via `tarball-audit` (`CONCERNS.md`; `TESTING.md`) |
+| Auto-approving the `npm-publish` environment when the milestone publishes 0.0.4                                   | HARD RULE violation — environment gates are human-only                                                          | Stop at the gate and hand off (MEMORY.md "Never approve GitHub deployments")                                                                                                 |
 
 ## "Looks Done But Isn't" Checklist
 
@@ -469,34 +470,34 @@ generator spec writing to a temp dir.
 
 ## Recovery Strategies
 
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Numeric filter dropped NG8011/NG8021 | LOW | Re-key the catalog on the enum; the completeness tripwire would have caught it — add the tripwire if absent |
-| Coarse boolean assertions shipped | MEDIUM | Rewrite each row to exact code + category + count; mechanical but touches every catalog `it` |
-| Fixture stopped triggering its code | LOW–MEDIUM | The exact-code assertion fails loudly; fix the fixture or `it.skip` with reason; re-verify against the real compiler |
-| New e2e project invisible in CI | LOW | Fold into `install-e2e` or add to `-p` list + GUARD-01; the guard makes recurrence impossible |
-| Cached-green false pass | LOW | Add `--skip-nx-cache` to the post-generate run; re-run the injected-error case |
-| Generator not packaged | LOW | Add the `generators` field + assets glob + `files` entry; extend `tarball-audit`/`package-manifest` |
-| Bespoke FsTree authored against internal import | MEDIUM | Remove it; migrate generator specs to `createTreeWithEmptyWorkspace`; real-disk proof already exists at the tarball e2e |
-| Catalog too slow in the matrix | MEDIUM | Batch fixtures per program first; only then consider full-on-1-cell + smoke-on-5 (keep tripwire on all cells) |
+| Pitfall                                         | Recovery Cost | Recovery Steps                                                                                                          |
+| ----------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Numeric filter dropped NG8011/NG8021            | LOW           | Re-key the catalog on the enum; the completeness tripwire would have caught it — add the tripwire if absent             |
+| Coarse boolean assertions shipped               | MEDIUM        | Rewrite each row to exact code + category + count; mechanical but touches every catalog `it`                            |
+| Fixture stopped triggering its code             | LOW–MEDIUM    | The exact-code assertion fails loudly; fix the fixture or `it.skip` with reason; re-verify against the real compiler    |
+| New e2e project invisible in CI                 | LOW           | Fold into `install-e2e` or add to `-p` list + GUARD-01; the guard makes recurrence impossible                           |
+| Cached-green false pass                         | LOW           | Add `--skip-nx-cache` to the post-generate run; re-run the injected-error case                                          |
+| Generator not packaged                          | LOW           | Add the `generators` field + assets glob + `files` entry; extend `tarball-audit`/`package-manifest`                     |
+| Bespoke FsTree authored against internal import | MEDIUM        | Remove it; migrate generator specs to `createTreeWithEmptyWorkspace`; real-disk proof already exists at the tarball e2e |
+| Catalog too slow in the matrix                  | MEDIUM        | Batch fixtures per program first; only then consider full-on-1-cell + smoke-on-5 (keep tripwire on all cells)           |
 
 ## Pitfall-to-Phase Mapping
 
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| 1. `81xx` numeric filter drops NG8011/NG8021 | Phase 12 (CAT-01/04/05) | Catalog has 18 enum-keyed rows; completeness tripwire green |
-| 2. NG8011/NG8021 wrongly assumed promotable | Phase 12 (CAT-01/02) | NG8011 promotion `it.skip`'d with reason; observed category asserted |
-| 3. Coarse boolean assertions | Phase 12 (CAT-01/03) | Every row asserts code + category + count |
-| 4. Fixture fails to trigger its diagnostic | Phase 12 (CAT-01/04) | Exact-code assertion passes against the real compiler; skips carry reasons |
-| 5. Coverage drift undetected | Phase 12 (DRIFT-01) | Tripwire fails loudly when the enum/table diverge; runs in `test` |
-| 6. `-p` silent-skip landmine | Phase 14 (GE2E-01 fold + GUARD-01) | GUARD-01 set-equality green; no new e2e project |
-| 7. Cached-green | Phase 14 (GE2E-02) | Injected-error run with `--skip-nx-cache` fails as expected |
-| 8. Generator/executor contract broken | Phase 13 (GEN-02/03) + Phase 14 (GE2E-02) | Generated target RUNS and surfaces a real NG diagnostic per type |
-| 9. Generator not registered/packaged | Phase 13 (GEN-05) + Phase 14 (GE2E-01) | `nx g` resolves from the installed tarball; `tarball-audit` asserts generators.json |
-| 10. Not idempotent | Phase 13 (GEN-04/06) | Seeded-custom-target re-run asserts no clobber/duplicate |
-| 11. `/virtual` leakage / open-handle hang | Phase 13 (GEN-06) | `mock-project-graph` imported; assertions `/virtual`-rooted; suite exits cleanly |
-| 12. Cold-compile cost in the matrix | Phase 12 (CAT-01 fixture batching) | Batched programs; `test` matrix wall-clock within budget; tripwire compilation-free |
-| 13. Internal-import fragility (FsTree) | Phase 13 (locked by CONSENSUS.md D1) | No `nx/src/generators/tree` import in source; FSTREE-01 stays deferred |
+| Pitfall                                      | Prevention Phase                          | Verification                                                                        |
+| -------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1. `81xx` numeric filter drops NG8011/NG8021 | Phase 12 (CAT-01/04/05)                   | Catalog has 18 enum-keyed rows; completeness tripwire green                         |
+| 2. NG8011/NG8021 wrongly assumed promotable  | Phase 12 (CAT-01/02)                      | NG8011 promotion `it.skip`'d with reason; observed category asserted                |
+| 3. Coarse boolean assertions                 | Phase 12 (CAT-01/03)                      | Every row asserts code + category + count                                           |
+| 4. Fixture fails to trigger its diagnostic   | Phase 12 (CAT-01/04)                      | Exact-code assertion passes against the real compiler; skips carry reasons          |
+| 5. Coverage drift undetected                 | Phase 12 (DRIFT-01)                       | Tripwire fails loudly when the enum/table diverge; runs in `test`                   |
+| 6. `-p` silent-skip landmine                 | Phase 14 (GE2E-01 fold + GUARD-01)        | GUARD-01 set-equality green; no new e2e project                                     |
+| 7. Cached-green                              | Phase 14 (GE2E-02)                        | Injected-error run with `--skip-nx-cache` fails as expected                         |
+| 8. Generator/executor contract broken        | Phase 13 (GEN-02/03) + Phase 14 (GE2E-02) | Generated target RUNS and surfaces a real NG diagnostic per type                    |
+| 9. Generator not registered/packaged         | Phase 13 (GEN-05) + Phase 14 (GE2E-01)    | `nx g` resolves from the installed tarball; `tarball-audit` asserts generators.json |
+| 10. Not idempotent                           | Phase 13 (GEN-04/06)                      | Seeded-custom-target re-run asserts no clobber/duplicate                            |
+| 11. `/virtual` leakage / open-handle hang    | Phase 13 (GEN-06)                         | `mock-project-graph` imported; assertions `/virtual`-rooted; suite exits cleanly    |
+| 12. Cold-compile cost in the matrix          | Phase 12 (CAT-01 fixture batching)        | Batched programs; `test` matrix wall-clock within budget; tripwire compilation-free |
+| 13. Internal-import fragility (FsTree)       | Phase 13 (locked by CONSENSUS.md D1)      | No `nx/src/generators/tree` import in source; FSTREE-01 stays deferred              |
 
 ## Sources
 
@@ -511,5 +512,6 @@ generator spec writing to a temp dir.
 - `.planning/REQUIREMENTS.md` — v0.0.4 requirement-to-phase mapping (Phase 12/13/14) (HIGH)
 
 ---
-*Pitfalls research for: angular-typechecker v0.0.4 (generator + extended testing strategy)*
-*Researched: 2026-07-01*
+
+_Pitfalls research for: angular-typechecker v0.0.4 (generator + extended testing strategy)_
+_Researched: 2026-07-01_

@@ -37,6 +37,7 @@ LOW-CONFIDENCE trap quadrant, so auto-locking the DIRECTION is appropriate. Exac
 are handed to plan-phase research (`--research`) as the directives below.
 
 ### GA-1 -- Completeness-tripwire mechanism (DRIFT-01)
+
 - **D-01:** The tripwire is a **type-level assertion** that mirrors the EXISTING
   `packages/angular-typechecker/src/core/compiler-cli-types.drift.ts`, run by the existing
   `typecheck-drift` Nx target (NOT a runtime Vitest spec). Rationale (VERIFIED):
@@ -54,6 +55,7 @@ are handed to plan-phase research (`--research`) as the directives below.
   (a member added/renamed/removed upstream fails the assertion at its slot).
 
 ### GA-2 -- Fixture strategy for the 18-member catalog (CAT-01)
+
 - **D-03:** **Batch fixtures per program where practical** (consensus D2). Reuse the EXISTING
   `fixtures/extended-v13/` (NG8101 warning-default) and `fixtures/extended-promoted/`
   (NG8101 promoted to error). Group the remaining extended checks into a small number of new
@@ -61,11 +63,12 @@ are handed to plan-phase research (`--research`) as the directives below.
   fewer programs = cheaper CI). The exact grouping is an implementation discovery -- checks
   whose templates conflict in one component split into their own program.
 - **D-04:** Each catalog row maps `enum member -> { NG code, expected DiagnosticCategory,
-  occurrence count, introduction-version, fixture ref, optional skip-reason }`. Assertions
+occurrence count, introduction-version, fixture ref, optional skip-reason }`. Assertions
   use the existing `NG()` helper (`diagnostic.code === NG(8101)`); counting is ALWAYS by
   `ts.DiagnosticCategory`, never by code sign (L-4).
 
 ### GA-3 -- Catalog spec layout + table shape (CAT-03, CAT-04)
+
 - **D-05:** A SINGLE new data-driven spec (`extended-catalog.integration.spec.ts` or similar)
   holds the 18-row `it.each` table keyed on the enum members, with introduction-version as a
   ROW FIELD (not a per-version file split). Any member not reproducible by a static Angular
@@ -80,6 +83,7 @@ are handed to plan-phase research (`--research`) as the directives below.
   there is ONE catalog of record (no duplicate NG8101 assertions drifting independently).
 
 ### GA-4 -- Severity-promotion coverage depth (CAT-02)
+
 - **D-08:** Keep ONE promotion proof -- NG8101 via the existing `fixtures/extended-promoted/`
   tsconfig (`extendedDiagnostics.defaultCategory: "error"` flips the warning-default to an
   error) -- per CAT-02 / consensus "at least one". Per-member promotion testing is YAGNI.
@@ -95,14 +99,15 @@ are handed to plan-phase research (`--research`) as the directives below.
   `SUPPORTED_DIAGNOSTIC_NAMES` (`extended/index.ts`) lists all 18 as configurable.
   **Verification (triple):** docs (general `defaultCategory` rule + NG8113 is
   documented-yet-out-of-band) + source (`@angular/compiler-cli@22.0.4`, read at tag `v22.0.4`)
-  + an empirical `runTypecheck` probe (NG8011 = Warning by default, = Error under
-  `defaultCategory:"error"`; single diagnostic, code `-998011`). **This SUPERSEDES the board
-  CONSENSUS D2 nuance and requirement CAT-02's parenthetical ("NG8011 excepted: out-of-band /
-  not promotable") -- both are factually wrong; see D-13.** CAT-02's core ask (at least one
-  promotion proof) is still satisfied by D-08 (NG8101). A test asserting NG8011 stays a Warning
-  under `defaultCategory:"error"` would FAIL against real Angular 22.0.4.
+  - an empirical `runTypecheck` probe (NG8011 = Warning by default, = Error under
+    `defaultCategory:"error"`; single diagnostic, code `-998011`). **This SUPERSEDES the board
+    CONSENSUS D2 nuance and requirement CAT-02's parenthetical ("NG8011 excepted: out-of-band /
+    not promotable") -- both are factually wrong; see D-13.** CAT-02's core ask (at least one
+    promotion proof) is still satisfied by D-08 (NG8101). A test asserting NG8011 stays a Warning
+    under `defaultCategory:"error"` would FAIL against real Angular 22.0.4.
 
 ### GA-5 -- `DIAGNOSTIC-CATALOG.md` correction scope (CAT-05)
+
 - **D-10:** FULL rewrite of the extended-diagnostics section of
   `.planning/research/DIAGNOSTIC-CATALOG.md` to the SOURCE-VERIFIED authoritative 18-member
   `ExtendedTemplateDiagnosticName` set (name + NG code + category + introduction-version).
@@ -128,6 +133,7 @@ are handed to plan-phase research (`--research`) as the directives below.
   "not configurable".
 
 ### Claude's Discretion (research directives for plan-phase `--research`)
+
 The following are NOT user gray areas -- they are facts/choices for the researcher to PIN and
 the planner to encode. They are pre-grounded here so research is targeted, not open-ended:
 
@@ -145,20 +151,22 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
 3. **Confirm the tripwire's exact form:** the deep-import specifier for the enum under classic
    resolution (mirror how `compiler-cli-types.drift.ts` imports real types), and whether the
    set-equality assertion compares the enum's string-VALUE union (`\`${ExtendedTemplateDiagnosticName}\``)
-   or its member-NAME keys against the catalog's `as const` list.
+or its member-NAME keys against the catalog's `as const` list.
 4. **Promotability -- RESOLVED 2026-07-01 (no longer open):** ALL 18 are promotable via
    `defaultCategory` (see corrected D-09; verified by docs + source + an empirical
    `runTypecheck` probe). 16 factory checks + 2 out-of-band (NG8011, NG8113), all wired to
    `defaultCategory`. The only remaining research task is to confirm each member's DEFAULT
    `DiagnosticCategory` -- all 18 default to `Warning` under `strictTemplates` (verified).
-</decisions>
+   </decisions>
 
 <canonical_refs>
+
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Strategy / requirements (read FIRST)
+
 - `.planning/research/v0.0.4-testing/board2/CONSENSUS.md` -- the UNANIMOUS 8-lens board
   ratification of the v0.0.4 testing strategy. D2 governs this phase (18-member enum-keyed
   `it.each`, exact code+category+count, one promotion case, NG8011 out-of-band, enum-vs-table
@@ -167,12 +175,14 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
 - `.planning/ROADMAP.md` (Phase 12 "Phase Details") -- goal-backward success criteria 1-5.
 
 ### Diagnostic catalog (to be CORRECTED by this phase -- currently STALE)
+
 - `.planning/research/DIAGNOSTIC-CATALOG.md` -- the doc CAT-05 rewrites. WARNING: its current
   extended-diagnostics table is docs-derived (16 entries), wrongly EXCLUDES NG8112
   (`unusedLetDeclaration`), and its per-version-split "Test organization" guidance CONTRADICTS
   CAT-04. Treat as the BEFORE state, not as truth, until rewritten under D-10..D-12.
 
 ### Existing code patterns to mirror / extend
+
 - `packages/angular-typechecker/src/core/compiler-cli-types.drift.ts` -- the EXISTING build-time
   drift tripwire to MIRROR for DRIFT-01 (deep real-compiler-cli type import under classic node
   resolution; type-level `AssertAssignable` probes; value-level pins).
@@ -191,22 +201,26 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
   (NG8101 warning + promoted). New fixtures live under `fixtures/<scenario>/` (workspace root).
 
 ### Codebase maps
+
 - `.planning/codebase/TESTING.md` -- test tiers, naming (`*.integration.spec.ts`), fixtures
   convention, the `NG()` negative-encoding rule, 30s integration timeout, `typecheck-drift`
   target description.
 
 ### Source of truth (deep, NOT public exports -- read via the installed package)
+
 - `node_modules/@angular/compiler-cli/src/ngtsc/diagnostics/src/extended_template_diagnostic_name.d.ts`
   -- the authoritative 18-member enum.
 - `node_modules/@angular/compiler-cli/src/ngtsc/diagnostics/src/error_code.d.ts` -- the
   numeric `ErrorCode` mapping (NG8011=8011, NG8021=8021, NG8101=8101, NG8110=8110, NG8112=8112,
   ...). NOTE: not a public export; reachable only under classic resolution.
-</canonical_refs>
+  </canonical_refs>
 
 <code_context>
+
 ## Existing Code Insights
 
 ### Reusable Assets
+
 - `compiler-cli-types.drift.ts` + `tsconfig.drift.json` + the `typecheck-drift` Nx target:
   a ready-made, CI-wired home for the type-level completeness tripwire (D-01). No new CI cell.
 - `diagnostic-codes.ts` `NG()`: every extended/NG assertion already routes through it.
@@ -216,6 +230,7 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
   `extended.promotion.integration.spec.ts`: existing specs to fold into the catalog of record.
 
 ### Established Patterns
+
 - Integration specs call `runTypecheck({ tsConfigPath })` against a `fixtures/*` tsconfig and
   assert off `CoreResult` (`diagnostics`, `errorCount`, `warningCount`); find a diagnostic by
   `code === NG(xxxx)`, assert `.category`; count by `DiagnosticCategory`, never code sign.
@@ -228,13 +243,14 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
   type level, pin values; the file is `noEmit`, excluded from lib/spec tsconfigs, never ships.
 
 ### Integration Points
+
 - New catalog spec(s) land under `packages/angular-typechecker/src/core/*.integration.spec.ts`
   (auto-included by the plugin `vitest.config.mts` globs; `test` `dependsOn: ["build"]`).
 - New tripwire `.drift.ts` lands under `src/core/`, included ONLY by `tsconfig.drift.json`
   and run by `typecheck-drift` (CI already runs `run-many -t typecheck-drift test -p
-  angular-typechecker`).
+angular-typechecker`).
 - New fixtures land under `fixtures/<scenario>/` (workspace root, plugin integration tier).
-</code_context>
+  </code_context>
 
 <specifics>
 ## Specific Ideas (source-verified this session, 2026-07-01)
@@ -255,7 +271,7 @@ the planner to encode. They are pre-grounded here so research is targeted, not o
 - `ExtendedTemplateDiagnosticName` is NOT a public runtime export: `require(...)` -> undefined,
   absent from top-level `index.d.ts`, no `src/ngtsc/...` subpath in the package `exports` map.
   This is the decisive fact behind D-01 (type-level tripwire under classic resolution).
-</specifics>
+  </specifics>
 
 <deferred>
 ## Deferred Ideas
@@ -267,5 +283,5 @@ per-member promotion testing remain out of scope per REQUIREMENTS.md / board CON
 
 ---
 
-*Phase: 12-extended-diagnostic-catalog-completeness-tripwire*
-*Context gathered: 2026-07-01*
+_Phase: 12-extended-diagnostic-catalog-completeness-tripwire_
+_Context gathered: 2026-07-01_

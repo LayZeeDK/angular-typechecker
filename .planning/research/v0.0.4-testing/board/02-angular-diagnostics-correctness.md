@@ -14,26 +14,26 @@ I read the INSTALLED `@angular/compiler-cli@22.0.4` directly:
 declares `enum ExtendedTemplateDiagnosticName` with **18 entries** -- and
 `.../error_code.d.ts` maps each to a code:
 
-| # | Name | Code |
-|---|------|------|
-| 1 | invalidBananaInBox | NG8101 |
-| 2 | nullishCoalescingNotNullable | NG8102 |
-| 3 | optionalChainNotNullable | NG8107 |
-| 4 | missingControlFlowDirective | NG8103 |
-| 5 | missingStructuralDirective | NG8116 |
-| 6 | textAttributeNotBinding | NG8104 |
-| 7 | uninvokedFunctionInEventBinding | NG8111 |
-| 8 | missingNgForOfLet | NG8105 |
-| 9 | suffixNotSupported | NG8106 |
-| 10 | skipHydrationNotStatic | NG8108 |
-| 11 | interpolatedSignalNotInvoked | NG8109 |
-| 12 | **controlFlowPreventingContentProjection** | **NG8011** |
-| 13 | **unusedLetDeclaration** | **NG8112** |
-| 14 | uninvokedTrackFunction | NG8115 |
-| 15 | unusedStandaloneImports | NG8113 |
-| 16 | unparenthesizedNullishCoalescing | NG8114 |
-| 17 | uninvokedFunctionInTextInterpolation | NG8117 |
-| 18 | deferTriggerMisconfiguration | NG8021 |
+| #   | Name                                       | Code       |
+| --- | ------------------------------------------ | ---------- |
+| 1   | invalidBananaInBox                         | NG8101     |
+| 2   | nullishCoalescingNotNullable               | NG8102     |
+| 3   | optionalChainNotNullable                   | NG8107     |
+| 4   | missingControlFlowDirective                | NG8103     |
+| 5   | missingStructuralDirective                 | NG8116     |
+| 6   | textAttributeNotBinding                    | NG8104     |
+| 7   | uninvokedFunctionInEventBinding            | NG8111     |
+| 8   | missingNgForOfLet                          | NG8105     |
+| 9   | suffixNotSupported                         | NG8106     |
+| 10  | skipHydrationNotStatic                     | NG8108     |
+| 11  | interpolatedSignalNotInvoked               | NG8109     |
+| 12  | **controlFlowPreventingContentProjection** | **NG8011** |
+| 13  | **unusedLetDeclaration**                   | **NG8112** |
+| 14  | uninvokedTrackFunction                     | NG8115     |
+| 15  | unusedStandaloneImports                    | NG8113     |
+| 16  | unparenthesizedNullishCoalescing           | NG8114     |
+| 17  | uninvokedFunctionInTextInterpolation       | NG8117     |
+| 18  | deferTriggerMisconfiguration               | NG8021     |
 
 `UNSUPPORTED_INITIALIZER_API_USAGE = 8110` exists in `ErrorCode` but is NOT in the enum, so it
 is NOT a user-configurable extended diagnostic -- correctly excluded.
@@ -92,14 +92,14 @@ hand-written file.** The catalog and sandbox prescribe per-introduction-version 
 structure, while keeping the introduction-version as a DATA COLUMN.
 
 Rationale (correctness-first):
+
 - **A table makes under-assertion structurally impossible to hide.** With a single
   `EXTENDED_DIAGNOSTICS` array of `{ code, name, introduced, fixture, defaultCategory }`,
   the suite count equals the array length. If a code is missing from the array, that is a
   one-line, reviewable omission -- not a missing file nobody notices. The current state (2 of
   16 asserted, scaffold "exists but unpopulated beyond v13") is the FAILURE MODE of the
   per-file approach: the structure existed and stayed empty for an entire milestone.
-- **The introduction version is metadata, not a test-file boundary.** All 18 run on Angular
-  22. The catalog itself says the version split is "a coverage taxonomy, not a multi-version
+- **The introduction version is metadata, not a test-file boundary.** All 18 run on Angular 22. The catalog itself says the version split is "a coverage taxonomy, not a multi-version
   test matrix." A taxonomy belongs in a data column (`introduced: 'v14'`), surfaced in the
   `it.each` title (`'NG%s (%s, introduced %s)'`), not in nine sparsely-populated files where
   14 of them would have one `it` each.
@@ -137,7 +137,7 @@ it and apply it to all 18. For each extended code, assert ALL of:
    neighboring check) would otherwise pass a `.find`-only assertion while misrepresenting the
    engine. Also keep the D-01 invariant `errorCount + warningCount <= diagnostics.length`.
 4. **Promotion works** -- for the extended set, prove `extendedDiagnostics.defaultCategory:
-   "error"` flips the SAME code from Warning into `errorCount`. The existing promotion spec
+"error"` flips the SAME code from Warning into `errorCount`. The existing promotion spec
    proves this for NG8101 only and notes it is VERSION-INDEPENDENT. Generalize it: a second
    `it.each` row-set over the same fixtures with the promoted tsconfig, asserting each code
    now lands in `errorCount`. This is the load-bearing severity test -- it proves the engine
@@ -145,11 +145,13 @@ it and apply it to all 18. For each extended code, assert ALL of:
 
 ### Committed fixtures vs programmatic injection: COMMITTED fixtures, one per diagnostic
 
-**Recommendation: committed `fixtures/extended-catalog/<code>/` (a component `.ts` + `.html`
-+ leaf tsconfig per code), NOT jscodeshift/programmatic injection.** This is where I diverge
-from the sandbox's `inject*` AST-mutation toolkit.
+\*\*Recommendation: committed `fixtures/extended-catalog/<code>/` (a component `.ts` + `.html`
+
+- leaf tsconfig per code), NOT jscodeshift/programmatic injection.\*_ This is where I diverge
+  from the sandbox's `inject_` AST-mutation toolkit.
 
 Rationale (correctness-first):
+
 - The repo ALREADY uses committed fixtures (`fixtures/extended-v13/`,
   `fixtures/extended-promoted/`, `ts-baseline`, `ng-baseline`, ...) and `TESTING.md` documents
   this as the established substrate. Consistency matters; do not introduce a second fixture
@@ -257,6 +259,7 @@ execution is itself a correctness asset: it proves the diagnostic set is stable 
 platforms (the repo's recurring Windows-arm64 concerns).
 
 Two CI requirements from my lens:
+
 - **The new extended-catalog drift tripwire (D2 layer 1) MUST run in CI.** It belongs in the
   existing `typecheck-drift` target (already in the `test` job's run-many). If it lives in a
   new drift file, add that file's path to the `typecheck-drift` target `inputs` (project.json
@@ -271,19 +274,22 @@ No dissent. Single required check stays; this is the right least-surprise wiring
 ---
 
 ## D6 -- SCOPE/RISK: close the diagnostic gap first; the generator is a real deliverable but a
+
 secondary one
 
 **The generator is NOT a distraction -- but it is NOT the correctness work either, and the
 milestone framing risks inverting the priority.** PROJECT.md frames v0.0.4 as "the generator
-+ adopt the testing-technique stack," using the generator as "the vehicle for the missing
-FsTree generator-testing technique." From my lens that is backwards in EMPHASIS: the generator
-is a small, well-understood 33-line config-edit (the sandbox proves it); the
-NEVER-SILENTLY-UNDER-ASSERTING correctness gap (currently 2 of 16, truly 2 of 18 extended +
-~2 of ~11 baseline NG codes asserted against the real compiler) is the milestone's real
-defect. A "complete, faithful Angular type-check" tool that asserts only 2 of its 18
-configurable extended diagnostics is not yet proven complete.
+
+- adopt the testing-technique stack," using the generator as "the vehicle for the missing
+  FsTree generator-testing technique." From my lens that is backwards in EMPHASIS: the generator
+  is a small, well-understood 33-line config-edit (the sandbox proves it); the
+  NEVER-SILENTLY-UNDER-ASSERTING correctness gap (currently 2 of 16, truly 2 of 18 extended +
+  ~2 of ~11 baseline NG codes asserted against the real compiler) is the milestone's real
+  defect. A "complete, faithful Angular type-check" tool that asserts only 2 of its 18
+  configurable extended diagnostics is not yet proven complete.
 
 **Minimal strategy that closes the gap WITHOUT over-engineering:**
+
 1. ONE `extended-catalog.integration.spec.ts` with an `it.each` table over all 18 extended
    codes -- code + category + count, default-category rows + promoted rows. (Closes the 14/16,
    really 16/18, gap.)

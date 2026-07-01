@@ -18,6 +18,7 @@ Two prior-art research streams were run first (user-requested): the official `nx
 at tag `23.0.1` and the nx.dev docs.
 
 **Verified prior art that shaped the options:**
+
 - Nx hard-maps executor `{ success }` to `success ? 0 : 1` (`run.ts:72`); final
   `process.exit(0|1)` with explicit arg clobbers `process.exitCode` (`command-object.ts:30`);
   failed task -> exactly 1 (`run-command.ts:475`).
@@ -28,11 +29,11 @@ at tag `23.0.1` and the nx.dev docs.
 - User constraint: the codebase must support 3 surfaces (Nx executor / Angular CLI builder /
   standalone CLI). The CLI is the only process-owning surface.
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Core exit-code policy now; CLI wires literal code later (reframe SC4) | Pure `toExitCode(result\|error)->0\|1\|2` in core (single source of truth); executor surfaces infra as typed error + distinct message within `{success}` (exit 1); literal OS code delivered by the deferred standalone CLI consuming the same policy. Requires amending SC4/COR-04. | OK |
-| `process.exit(2)` in the Nx executor now (keep SC4 literal) | Literally satisfies SC4 today but breaks in-process `runExecutor` / run-many / daemon / batch, fights the documented contract, and puts exit-code logic in the wrong layer for the future builder/CLI. | |
-| Hybrid: core policy + guarded `process.exit` only when top-level | Core policy + fragile "am I top-level?" detection in the executor. Over-engineered; the CLI will own this properly anyway. | |
+| Option                                                                | Description                                                                                                                                                                                                                                                                          | Selected |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| Core exit-code policy now; CLI wires literal code later (reframe SC4) | Pure `toExitCode(result\|error)->0\|1\|2` in core (single source of truth); executor surfaces infra as typed error + distinct message within `{success}` (exit 1); literal OS code delivered by the deferred standalone CLI consuming the same policy. Requires amending SC4/COR-04. | OK       |
+| `process.exit(2)` in the Nx executor now (keep SC4 literal)           | Literally satisfies SC4 today but breaks in-process `runExecutor` / run-many / daemon / batch, fights the documented contract, and puts exit-code logic in the wrong layer for the future builder/CLI.                                                                               |          |
+| Hybrid: core policy + guarded `process.exit` only when top-level      | Core policy + fragile "am I top-level?" detection in the executor. Over-engineered; the CLI will own this properly anyway.                                                                                                                                                           |          |
 
 **User's choice:** Option A -- "Core exit-code policy now; CLI wires literal code later (reframe SC4)."
 **Notes:** Confirmed the 3-surface architecture (Nx executor, Angular CLI builder wrapping

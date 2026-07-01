@@ -51,13 +51,13 @@ NOT override it; verified in nx 23.0.1 `config.js` and in `.planning/research/FO
 While the current version is `0.x`, every bump nx computes is lowered one step:
 `major -> minor`, `minor -> patch`, `patch -> patch`. So the operative mapping right now is:
 
-| Commit type                          | Standard (post-1.0) | EFFECT NOW (0.x, this repo) | In the changelog?                  |
-| ------------------------------------ | ------------------- | --------------------------- | ---------------------------------- |
-| `feat`                               | minor               | **patch** (0.0.1 -> 0.0.2)  | Yes (Features)                     |
-| `fix`                                | patch               | patch (0.0.1 -> 0.0.2)      | Yes (Fixes)                        |
-| `feat!` / `fix!` / `BREAKING CHANGE:`| major               | **minor** (0.0.1 -> 0.1.0)  | Yes (Breaking Changes)             |
-| `perf`                               | none                | none                        | Yes (Performance) -- shown, no bump|
-| `docs`, `chore`, `refactor`, `test`, `build`, `ci`, `style`, `revert` | none | none | No (hidden by default)             |
+| Commit type                                                           | Standard (post-1.0) | EFFECT NOW (0.x, this repo) | In the changelog?                   |
+| --------------------------------------------------------------------- | ------------------- | --------------------------- | ----------------------------------- |
+| `feat`                                                                | minor               | **patch** (0.0.1 -> 0.0.2)  | Yes (Features)                      |
+| `fix`                                                                 | patch               | patch (0.0.1 -> 0.0.2)      | Yes (Fixes)                         |
+| `feat!` / `fix!` / `BREAKING CHANGE:`                                 | major               | **minor** (0.0.1 -> 0.1.0)  | Yes (Breaking Changes)              |
+| `perf`                                                                | none                | none                        | Yes (Performance) -- shown, no bump |
+| `docs`, `chore`, `refactor`, `test`, `build`, `ci`, `style`, `revert` | none                | none                        | No (hidden by default)              |
 
 Two consequences to internalize:
 
@@ -113,9 +113,11 @@ write accurate `type`s and put real changes in the package's files.
    If you must cut a release in a window that contains only `docs`/`chore` commits (for
    example, a verification or maintenance release), `conventionalCommits` will compute no
    bump. Pass the target version explicitly instead of relying on derivation:
+
    ```
    npx nx release 0.0.2 --skip-publish
    ```
+
    Confirm with `--dry-run` first. Note: a LITERAL version (`0.0.2`) bypasses
    conventional-commits derivation AND the 0.x adjustment entirely -- you get exactly what
    you typed. A keyword specifier (`patch`/`minor`/`major`) instead still goes through the

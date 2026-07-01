@@ -9,28 +9,28 @@ requires:
   - phase: 08-correctness-completeness-fixes
     provides: the createCanonicalizer boundary-filter pass (realpath-first + normalize + case-fold + per-input memoization) RES-03 hardens
 provides:
-  - "A throwing options.realpath() inside createCanonicalizer is caught and falls back to the unresolved raw path (still normalized + case-folded), so a filesystem realpath failure cannot abort the whole type-check pass (RES-03 / D-08 / SC3)"
-  - "filter-diagnostics.spec.ts RES-03 case: a throwing realpath stub proves the in-project diagnostic is still kept and no exception escapes filterDiagnostics"
+  - 'A throwing options.realpath() inside createCanonicalizer is caught and falls back to the unresolved raw path (still normalized + case-folded), so a filesystem realpath failure cannot abort the whole type-check pass (RES-03 / D-08 / SC3)'
+  - 'filter-diagnostics.spec.ts RES-03 case: a throwing realpath stub proves the in-project diagnostic is still kept and no exception escapes filterDiagnostics'
 affects: [10 HARD-01 getter-set drift assertion (boundary-filter surface unchanged)]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Silent try/catch fallback in PURE core: on a throwing injected dependency, swallow the error (NO logging, NO process) and degrade gracefully to a raw value, then re-apply the same downstream normalization so the fallback classifies identically to the happy path"
+    - 'Silent try/catch fallback in PURE core: on a throwing injected dependency, swallow the error (NO logging, NO process) and degrade gracefully to a raw value, then re-apply the same downstream normalization so the fallback classifies identically to the happy path'
 
 key-files:
   created: []
   modified:
-    - "packages/angular-typechecker/src/core/filter-diagnostics.ts"
-    - "packages/angular-typechecker/src/core/filter-diagnostics.spec.ts"
+    - 'packages/angular-typechecker/src/core/filter-diagnostics.ts'
+    - 'packages/angular-typechecker/src/core/filter-diagnostics.spec.ts'
 
 key-decisions:
   - "Fallback to the UNRESOLVED raw filePath (D-08), THEN still run .replace(/\\\\/g, '/') + the useCaseSensitiveFileNames case-fold, so a thrown realpath classifies consistently with a resolved one. The catch is SILENT -- core is PURE (eslint.config.mjs bans no-console + process.exit in **/src/core/**), so no logging / no process in the fallback."
   - "Edit confined to createCanonicalizer's single options.realpath call site (the only place realpath is invoked). The per-input memoization cache, isNodeModulesPath, isUnderDir, and the happy path are untouched -- the catch protects the contract regardless of the injected impl (production ts.sys.realpath or a test stub)."
 
 patterns-established:
-  - "TDD RED/GREEN as separate atomic commits: a test(core) commit lands the throwing-realpath case (proven to fail with Error: EACCES escaping), then a fix(core) commit lands the try/catch that makes it pass."
+  - 'TDD RED/GREEN as separate atomic commits: a test(core) commit lands the throwing-realpath case (proven to fail with Error: EACCES escaping), then a fix(core) commit lands the try/catch that makes it pass.'
 
 requirements-completed: [RES-03]
 
@@ -113,5 +113,6 @@ None - no external service configuration required.
 - All edits ASCII-only; lint 0 errors; full suite 23 files / 126 tests green; build green.
 
 ---
-*Phase: 09-resilience-per-file-fault-isolation-boundary-robustness*
-*Completed: 2026-06-29*
+
+_Phase: 09-resilience-per-file-fault-isolation-boundary-robustness_
+_Completed: 2026-06-29_

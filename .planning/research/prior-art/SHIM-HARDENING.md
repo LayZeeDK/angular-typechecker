@@ -10,12 +10,13 @@ nodenext-resolvability claims were verified EMPIRICALLY with throwaway probe fil
 through `tsc --noEmit` (probes removed after running; see "Build-time drift detection").
 
 Sources:
+
 - `node_modules/@angular/compiler-cli/index.d.ts` (the barrel), `src/transformers/api.d.ts`
   (the real `api.Program` + `EmitFlags`), `src/perform_compile.d.ts`
   (`ParsedConfiguration`, `performCompilation`, `readConfiguration`, `formatDiagnostics`,
   `defaultGatherDiagnostics`, `UNKNOWN_ERROR_CODE`).
 - `angular/angular-cli` at tag `v22.0.4`: `packages/angular/build/src/tools/angular/...`
-  + root `tsconfig.json` (how Angular's OWN build consumes these types).
+  - root `tsconfig.json` (how Angular's OWN build consumes these types).
 - `.planning/research/prior-art/PRETTIER-PARSERS.md` (prior pass; reused, not re-researched).
 
 ---
@@ -27,19 +28,20 @@ re-declares the compiler-cli surface over the `typescript` substrate (a real,
 nodenext-resolvable dependency). Re-declared members, and the verified drift delta vs
 the real `22.0.4` typings:
 
-| Shim member (file:line) | Real source | Drift risk |
-|---|---|---|
-| `interface Program` (`compiler-cli-types.ts:57-80`) -- 6 getters + `getTsProgram` | `src/transformers/api.d.ts:122` `interface Program` | **PRIMARY DRIFT POINT.** Our shim declares 7 of the real interface's 9 members. We deliberately OMIT `loadNgStructureAsync(): Promise<void>` and the obsolete `listLazyRoutes()`, and `emit<CbEmitRes>()`. Because we declare a SUBSET, a NEW getter added upstream would NOT break our build (we just would not gather it -> the silent "under-gathering" hazard the prompt names). A RENAMED/REMOVED getter we DO declare would break only at the `gather-diagnostics.ts` call site IF the runtime object stops having it (a runtime `undefined is not a function`, not a build error) -- the shim is structural over `import()`-loaded `any`, so today nothing forces our 6-getter list to match Angular's real getter set at build time. |
-| `getNgSemanticDiagnostics(fileName?: string, ...)` (`:76`) | api.d.ts:167 -- identical | Low. Note the `fileName` (not `sourceFile`) asymmetry vs the other getters is REAL (matches upstream). |
-| `TsProgram = ts.Program & { useCaseSensitiveFileNames(): boolean }` (`:45-47`) | Real `getTsProgram(): ts.Program` -- the `useCaseSensitiveFileNames()` member is on the host, not the public `ts.Program` interface, but IS on the runtime instance | Low-medium. We intersect a member the public `ts.Program` interface does not surface. If TS ever adds it to `ts.Program`, the intersection becomes redundant (harmless). If the runtime stops exposing it, `run-typecheck.ts:201` breaks at runtime, not build. |
-| `enum EmitFlags { None = 0 }` (`:89-91`) | api.d.ts:74 `enum EmitFlags { DTS=1, JS=2, Metadata=4, Codegen=16, Default=19, All=31 }` | **CONFIRMED DRIFT (cosmetic today).** The real enum has **NO `None` member**. Our `None = 0` is a FABRICATED name. The engine only ever passes `0 as EmitFlags` (`run-typecheck.ts:163`), and `0` is a valid no-flags bitmask regardless, so this works -- but the `None` name is a fiction that would mislead a future maintainer and does not track the real enum. |
-| `const UNKNOWN_ERROR_CODE = 500` (`:100`) | `src/perform_compile.d.ts` exports it; documented value `500` | Low. The literal `500` is hardcoded in two places (here + the JSDoc). If Angular ever changed it, our re-throw detection (`run-typecheck.ts:172`) would silently stop catching infra failures and count them as type errors. It has been `500` for years, so risk is low but the value is duplicated, not imported. |
-| `interface ParsedConfiguration` (`:109-116`) | `src/perform_compile.d.ts:14` | Medium. Real shape: `options: api.CompilerOptions` (NOT `ts.CompilerOptions & { basePath? }`), `rootNames: string[]` and `errors: ts.Diagnostic[]` (MUTABLE; ours are `readonly`). Our `options: ts.CompilerOptions & { basePath?: string }` is a deliberate narrowing -- `api.CompilerOptions` extends `ts.CompilerOptions` and DOES carry `basePath?: string` (verified api.d.ts:16). So our hand-modeled `basePath?` matches reality. Drift risk: if Angular moves `basePath` or adds a required field, our narrowing diverges silently. |
-| `interface PerformCompilationOptions` (`:125-130`) | The inline params object of `performCompilation` (perform_compile.d.ts:33) | Medium. The real signature has MANY more optional params (`host`, `oldProgram`, `emitCallback`, `mergeEmitResultsCallback`, `customTransformers`, `forceEmit`, `modifiedResourceFiles`). We declare only the 4 we pass. Since they are all optional upstream, omitting them is safe; risk is only if one we DO pass changes shape. `gatherDiagnostics?: (program: Program) => readonly ts.Diagnostic[]` matches. |
-| `interface PerformCompilationResult` (`:143-146`) | perform_compile.d.ts:27 | Medium. We declare `program: Program` NON-optional; upstream types it OPTIONAL (`program?`). This is a deliberate narrowing justified by the engine's guarded usage (it re-throws on infra failure before touching `result.program`). Safe under the engine's non-strict-null options, but it is a place where our type is STRICTER than reality. |
-| `interface CompilerCli` (`:154-178`) -- the loaded-namespace shape | The barrel `index.d.ts` (not directly typeable -- see below) | This is the aggregate the loader casts to. `readConfiguration`, `performCompilation`, `defaultGatherDiagnostics`, `EmitFlags`, `UNKNOWN_ERROR_CODE`, `formatDiagnostics` all verified present with matching signatures. `formatDiagnostics(diags, host?)` matches perform_compile.d.ts:11 exactly. |
+| Shim member (file:line)                                                           | Real source                                                                                                                                                         | Drift risk                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interface Program` (`compiler-cli-types.ts:57-80`) -- 6 getters + `getTsProgram` | `src/transformers/api.d.ts:122` `interface Program`                                                                                                                 | **PRIMARY DRIFT POINT.** Our shim declares 7 of the real interface's 9 members. We deliberately OMIT `loadNgStructureAsync(): Promise<void>` and the obsolete `listLazyRoutes()`, and `emit<CbEmitRes>()`. Because we declare a SUBSET, a NEW getter added upstream would NOT break our build (we just would not gather it -> the silent "under-gathering" hazard the prompt names). A RENAMED/REMOVED getter we DO declare would break only at the `gather-diagnostics.ts` call site IF the runtime object stops having it (a runtime `undefined is not a function`, not a build error) -- the shim is structural over `import()`-loaded `any`, so today nothing forces our 6-getter list to match Angular's real getter set at build time. |
+| `getNgSemanticDiagnostics(fileName?: string, ...)` (`:76`)                        | api.d.ts:167 -- identical                                                                                                                                           | Low. Note the `fileName` (not `sourceFile`) asymmetry vs the other getters is REAL (matches upstream).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `TsProgram = ts.Program & { useCaseSensitiveFileNames(): boolean }` (`:45-47`)    | Real `getTsProgram(): ts.Program` -- the `useCaseSensitiveFileNames()` member is on the host, not the public `ts.Program` interface, but IS on the runtime instance | Low-medium. We intersect a member the public `ts.Program` interface does not surface. If TS ever adds it to `ts.Program`, the intersection becomes redundant (harmless). If the runtime stops exposing it, `run-typecheck.ts:201` breaks at runtime, not build.                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `enum EmitFlags { None = 0 }` (`:89-91`)                                          | api.d.ts:74 `enum EmitFlags { DTS=1, JS=2, Metadata=4, Codegen=16, Default=19, All=31 }`                                                                            | **CONFIRMED DRIFT (cosmetic today).** The real enum has **NO `None` member**. Our `None = 0` is a FABRICATED name. The engine only ever passes `0 as EmitFlags` (`run-typecheck.ts:163`), and `0` is a valid no-flags bitmask regardless, so this works -- but the `None` name is a fiction that would mislead a future maintainer and does not track the real enum.                                                                                                                                                                                                                                                                                                                                                                         |
+| `const UNKNOWN_ERROR_CODE = 500` (`:100`)                                         | `src/perform_compile.d.ts` exports it; documented value `500`                                                                                                       | Low. The literal `500` is hardcoded in two places (here + the JSDoc). If Angular ever changed it, our re-throw detection (`run-typecheck.ts:172`) would silently stop catching infra failures and count them as type errors. It has been `500` for years, so risk is low but the value is duplicated, not imported.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `interface ParsedConfiguration` (`:109-116`)                                      | `src/perform_compile.d.ts:14`                                                                                                                                       | Medium. Real shape: `options: api.CompilerOptions` (NOT `ts.CompilerOptions & { basePath? }`), `rootNames: string[]` and `errors: ts.Diagnostic[]` (MUTABLE; ours are `readonly`). Our `options: ts.CompilerOptions & { basePath?: string }` is a deliberate narrowing -- `api.CompilerOptions` extends `ts.CompilerOptions` and DOES carry `basePath?: string` (verified api.d.ts:16). So our hand-modeled `basePath?` matches reality. Drift risk: if Angular moves `basePath` or adds a required field, our narrowing diverges silently.                                                                                                                                                                                                  |
+| `interface PerformCompilationOptions` (`:125-130`)                                | The inline params object of `performCompilation` (perform_compile.d.ts:33)                                                                                          | Medium. The real signature has MANY more optional params (`host`, `oldProgram`, `emitCallback`, `mergeEmitResultsCallback`, `customTransformers`, `forceEmit`, `modifiedResourceFiles`). We declare only the 4 we pass. Since they are all optional upstream, omitting them is safe; risk is only if one we DO pass changes shape. `gatherDiagnostics?: (program: Program) => readonly ts.Diagnostic[]` matches.                                                                                                                                                                                                                                                                                                                             |
+| `interface PerformCompilationResult` (`:143-146`)                                 | perform_compile.d.ts:27                                                                                                                                             | Medium. We declare `program: Program` NON-optional; upstream types it OPTIONAL (`program?`). This is a deliberate narrowing justified by the engine's guarded usage (it re-throws on infra failure before touching `result.program`). Safe under the engine's non-strict-null options, but it is a place where our type is STRICTER than reality.                                                                                                                                                                                                                                                                                                                                                                                            |
+| `interface CompilerCli` (`:154-178`) -- the loaded-namespace shape                | The barrel `index.d.ts` (not directly typeable -- see below)                                                                                                        | This is the aggregate the loader casts to. `readConfiguration`, `performCompilation`, `defaultGatherDiagnostics`, `EmitFlags`, `UNKNOWN_ERROR_CODE`, `formatDiagnostics` all verified present with matching signatures. `formatDiagnostics(diags, host?)` matches perform_compile.d.ts:11 exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 **Where drift is most likely / most damaging, ranked:**
+
 1. **The `Program` getter set under-gathering** (silent: build stays green, but a new Angular
    diagnostic phase would not be gathered). This is the highest-leverage hardening target.
 2. **`EmitFlags` fabricated `None`** (misleading; should be a clearly-marked divergence).
@@ -105,11 +107,7 @@ In the drift-check unit (compiled under `moduleResolution: node`):
 // (moduleResolution: node, ignoreDeprecations: "6.0"). This file's ONLY job is to
 // FAIL `tsc` when our shim drifts from the real @angular/compiler-cli surface.
 import type * as ng from '@angular/compiler-cli'; // resolves under classic `node`
-import type {
-  Program as ShimProgram,
-  ParsedConfiguration as ShimParsedConfiguration,
-  PerformCompilationResult as ShimResult,
-} from './compiler-cli-types';
+import type { Program as ShimProgram, ParsedConfiguration as ShimParsedConfiguration, PerformCompilationResult as ShimResult } from './compiler-cli-types';
 
 // Compile-time assertion helper: `Assignable<A, B>` is `true` only if A extends B.
 type Assignable<A, B> = A extends B ? true : false;
@@ -129,25 +127,12 @@ const _shimIsSubsetOfReal: Assignable<ng.Program, ShimProgram> = true;
 //     the build, forcing a maintainer decision (gather it, or add it to the
 //     explicit ignore-list with a reason). This is the prettier
 //     `Required<Omit<AstVisitor,'visit'>>` idiom applied to the getter set.
-type GatheredGetters = keyof Omit<
-  ng.Program,
-  'getTsProgram' | 'emit' | 'loadNgStructureAsync' | 'listLazyRoutes'
->;
-type KnownGetters =
-  | 'getTsOptionDiagnostics'
-  | 'getNgOptionDiagnostics'
-  | 'getTsSyntacticDiagnostics'
-  | 'getTsSemanticDiagnostics'
-  | 'getNgStructuralDiagnostics'
-  | 'getNgSemanticDiagnostics';
+type GatheredGetters = keyof Omit<ng.Program, 'getTsProgram' | 'emit' | 'loadNgStructureAsync' | 'listLazyRoutes'>;
+type KnownGetters = 'getTsOptionDiagnostics' | 'getNgOptionDiagnostics' | 'getTsSyntacticDiagnostics' | 'getTsSemanticDiagnostics' | 'getNgStructuralDiagnostics' | 'getNgSemanticDiagnostics';
 // Exact-match both directions: any NEW upstream getter -> `Exclude` is non-never
 // -> assignment to `never` fails to compile.
-const _noNewGetters: Exclude<GatheredGetters, KnownGetters> extends never
-  ? true
-  : false = true;
-const _noStaleGetters: Exclude<KnownGetters, GatheredGetters> extends never
-  ? true
-  : false = true;
+const _noNewGetters: Exclude<GatheredGetters, KnownGetters> extends never ? true : false = true;
+const _noStaleGetters: Exclude<KnownGetters, GatheredGetters> extends never ? true : false = true;
 
 // (3) ParsedConfiguration / result narrowings stay assignable.
 const _parsedOk: Assignable<ng.ParsedConfiguration, ShimParsedConfiguration> = true;
@@ -159,6 +144,7 @@ const _emitZeroIsValid: ng.EmitFlags = 0 as ng.EmitFlags; // 0 must remain assig
 ```
 
 Notes anchoring this to what is importable:
+
 - The import `import type * as ng from '@angular/compiler-cli'` is **only** valid because
   this unit compiles under `moduleResolution: node` -- the same mode Angular's build uses.
   Verified to resolve `ng.Program`, `ng.ParsedConfiguration`, `ng.PerformCompilationResult`,
@@ -204,7 +190,7 @@ this project already follows -- see PRETTIER-PARSERS.md), the directly applicabl
    enumerates the entire vendored surface in one command at every Angular bump.
 
 4. **Peer-dep + per-version support entries.** Already done (`@angular/compiler-cli:
-   ^22.0.0` peer). When widening to Angular 23+, record it as a feature and re-run the
+^22.0.0` peer). When widening to Angular 23+, record it as a feature and re-run the
    drift-check unit against the new typings -- the assertion is the regression net (the
    estree-parser "support angular NN" pattern).
 
@@ -292,7 +278,7 @@ Ordered low-risk / high-leverage first.
 
 3. **[maintainability] Add a build-time drift-detection unit** -- a dedicated
    `tsconfig.drift.json` (extends base, `moduleResolution: node`, `ignoreDeprecations:
-   "6.0"`, includes one file) + a `compiler-cli-types.drift.spec.ts` containing the
+"6.0"`, includes one file) + a `compiler-cli-types.drift.spec.ts` containing the
    assignability + getter-set tripwire assertions from "Build-time drift detection". Wire
    `tsc --noEmit -p tsconfig.drift.json` into the Nx pipeline (a `typecheck-drift` target or
    folded into `lint`/CI). This converts silent shim drift -- especially a NEW Angular
@@ -304,13 +290,12 @@ Ordered low-risk / high-leverage first.
 
 4. **[correctness] Treat a present-but-empty `diagnostic.file.fileName` like a file-less
    diagnostic** (keep it, do not suppress) in `filter-diagnostics.ts`, with a spec. Effort:
-   **S.** Risk: low (narrow guard; avoids a silent false-suppression). 
+   **S.** Risk: low (narrow guard; avoids a silent false-suppression).
 
 5. **[maintainability] Replace the fabricated `EmitFlags.None = 0`** with either (a) the
    REAL minimal subset the engine needs, or (b) keep `None = 0` but mark it explicitly as a
    non-upstream convenience alias with a `// angular-typechecker: vendored -- NOT an upstream
-   member; 0 = no-flags bitmask` comment. The drift unit's `0 as ng.EmitFlags` assertion (item
-   3) already pins that `0` stays valid. Effort: **S.** Risk: low.
+member; 0 = no-flags bitmask` comment. The drift unit's `0 as ng.EmitFlags` assertion (item 3) already pins that `0` stays valid. Effort: **S.** Risk: low.
 
 6. **[maintainability] Pin `UNKNOWN_ERROR_CODE`'s value via the drift unit** rather than
    trusting the duplicated literal. If Angular types it as a literal `500`, add

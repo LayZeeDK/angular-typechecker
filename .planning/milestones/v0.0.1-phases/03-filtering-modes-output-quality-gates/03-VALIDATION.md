@@ -19,14 +19,14 @@ validated: 2026-06-28
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Vitest 4.x via `@nx/vitest:test` |
-| **Config file** | `packages/angular-typechecker/vitest.config.mts` (`include: ['{src,tests}/**/*.{test,spec}.{...}']`) |
-| **Quick run command** | `npx nx test angular-typechecker -- <file>.spec.ts` |
-| **Full suite command** | `npx nx test angular-typechecker` |
-| **Lint gate** | `npx nx lint angular-typechecker` (+ `npx prettier --check .`) |
-| **Estimated runtime** | ~10-20 seconds (pure-function unit tier dominates; one real-compiler integration extension) |
+| Property               | Value                                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Framework**          | Vitest 4.x via `@nx/vitest:test`                                                                     |
+| **Config file**        | `packages/angular-typechecker/vitest.config.mts` (`include: ['{src,tests}/**/*.{test,spec}.{...}']`) |
+| **Quick run command**  | `npx nx test angular-typechecker -- <file>.spec.ts`                                                  |
+| **Full suite command** | `npx nx test angular-typechecker`                                                                    |
+| **Lint gate**          | `npx nx lint angular-typechecker` (+ `npx prettier --check .`)                                       |
+| **Estimated runtime**  | ~10-20 seconds (pure-function unit tier dominates; one real-compiler integration extension)          |
 
 ---
 
@@ -44,20 +44,20 @@ validated: 2026-06-28
 > Finalized during planning / validate-phase once plan task IDs exist. The requirement->test
 > contract that every task must map onto:
 
-| Req ID | Behavior | Test Type | Automated Command | Status |
-|--------|----------|-----------|-------------------|--------|
-| EXE-04 | in-project kept; out-of-project + `node_modules` suppressed; `node_modules-tools` NOT misclassified; file-less kept; `includeDeps: true` folds back | unit (pure) | `npx nx test angular-typechecker -- filter-diagnostics.spec.ts` | ✅ (7 cases) |
-| OUT-02 | realpath-first + case-fold canonicalization; segment containment; `.ngtypecheck.ts` shadow kept | unit (pure, injected realpath) | `npx nx test angular-typechecker -- filter-diagnostics.spec.ts` | ✅ |
-| EXE-03 | report-all default; fail-fast truncates REPORTED list at first Error (NOT a gather short-circuit) | unit (pure) | `npx nx test angular-typechecker -- format-report.spec.ts` | ✅ (fail-fast case L176) |
-| EXE-05 | errors always fail; `maxWarnings` threshold; `maxWarnings: 0` fails on any warning; categories respected | unit (pure) | `npx nx test angular-typechecker -- evaluate-result.spec.ts` | ✅ (9 cases) |
-| OUT-01 | output contains NG codes + codeframes via `ng.formatDiagnostics` | unit (injected `formatDiagnostics`) | `npx nx test angular-typechecker -- format-report.spec.ts` | ✅ |
-| OUT-03 | sorted alphabetical-by-file (file-less first); idempotent (byte-identical on repeat); ANSI stripped when `color: false` | unit (pure) | `npx nx test angular-typechecker -- format-report.spec.ts` | ✅ (11 cases) |
-| EXE-04 / D-02 | `runTypecheck` returns FILTERED+SORTED diagnostics + `suppressedCount`; counts POST-filter | integration (real compiler) | `npx nx test angular-typechecker -- run-typecheck.integration.spec.ts` | ✅ (sibling-import fixture) |
-| TEST-01 | the unit tier exists, covering gatherer/filter/resolution/modes/maxWarnings | meta (suite presence) | `npx nx test angular-typechecker` | ✅ (16 files / 74 tests) |
-| WS-04 | ESLint `core/**` import ban + `@nx/dependency-checks` + Prettier; lint clean | lint gate | `npx nx lint angular-typechecker` | ✅ (exit 0; ban proven live by verifier negative control) |
-| WR-01 | boundary-filter `basePath` never falls back to `''` (filter stays active when parsed basePath is missing) | unit (pure) | `npx nx test angular-typechecker -- run-typecheck.spec.ts` | ✅ (4 cases; code-review follow-up) |
+| Req ID        | Behavior                                                                                                                                            | Test Type                           | Automated Command                                                      | Status                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| EXE-04        | in-project kept; out-of-project + `node_modules` suppressed; `node_modules-tools` NOT misclassified; file-less kept; `includeDeps: true` folds back | unit (pure)                         | `npx nx test angular-typechecker -- filter-diagnostics.spec.ts`        | ✅ (7 cases)                                              |
+| OUT-02        | realpath-first + case-fold canonicalization; segment containment; `.ngtypecheck.ts` shadow kept                                                     | unit (pure, injected realpath)      | `npx nx test angular-typechecker -- filter-diagnostics.spec.ts`        | ✅                                                        |
+| EXE-03        | report-all default; fail-fast truncates REPORTED list at first Error (NOT a gather short-circuit)                                                   | unit (pure)                         | `npx nx test angular-typechecker -- format-report.spec.ts`             | ✅ (fail-fast case L176)                                  |
+| EXE-05        | errors always fail; `maxWarnings` threshold; `maxWarnings: 0` fails on any warning; categories respected                                            | unit (pure)                         | `npx nx test angular-typechecker -- evaluate-result.spec.ts`           | ✅ (9 cases)                                              |
+| OUT-01        | output contains NG codes + codeframes via `ng.formatDiagnostics`                                                                                    | unit (injected `formatDiagnostics`) | `npx nx test angular-typechecker -- format-report.spec.ts`             | ✅                                                        |
+| OUT-03        | sorted alphabetical-by-file (file-less first); idempotent (byte-identical on repeat); ANSI stripped when `color: false`                             | unit (pure)                         | `npx nx test angular-typechecker -- format-report.spec.ts`             | ✅ (11 cases)                                             |
+| EXE-04 / D-02 | `runTypecheck` returns FILTERED+SORTED diagnostics + `suppressedCount`; counts POST-filter                                                          | integration (real compiler)         | `npx nx test angular-typechecker -- run-typecheck.integration.spec.ts` | ✅ (sibling-import fixture)                               |
+| TEST-01       | the unit tier exists, covering gatherer/filter/resolution/modes/maxWarnings                                                                         | meta (suite presence)               | `npx nx test angular-typechecker`                                      | ✅ (16 files / 74 tests)                                  |
+| WS-04         | ESLint `core/**` import ban + `@nx/dependency-checks` + Prettier; lint clean                                                                        | lint gate                           | `npx nx lint angular-typechecker`                                      | ✅ (exit 0; ban proven live by verifier negative control) |
+| WR-01         | boundary-filter `basePath` never falls back to `''` (filter stays active when parsed basePath is missing)                                           | unit (pure)                         | `npx nx test angular-typechecker -- run-typecheck.spec.ts`             | ✅ (4 cases; code-review follow-up)                       |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+_Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky_
 
 ---
 
@@ -74,11 +74,11 @@ validated: 2026-06-28
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| pnpm-symlink + mixed-case path realpath/case-fold backstop | OUT-02 | Requires a pnpm workspace + case-sensitive FS matrix | DEFERRED to Phase 6 e2e (TEST-03, CI-01) — not run in Phase 3 |
+| Behavior                                                   | Requirement | Why Manual                                           | Test Instructions                                             |
+| ---------------------------------------------------------- | ----------- | ---------------------------------------------------- | ------------------------------------------------------------- |
+| pnpm-symlink + mixed-case path realpath/case-fold backstop | OUT-02      | Requires a pnpm workspace + case-sensitive FS matrix | DEFERRED to Phase 6 e2e (TEST-03, CI-01) — not run in Phase 3 |
 
-*All Phase-3-scoped behaviors have automated verification; the cross-OS path backstop is intentionally deferred to the Phase 6 e2e matrix.*
+_All Phase-3-scoped behaviors have automated verification; the cross-OS path backstop is intentionally deferred to the Phase 6 e2e matrix._
 
 ---
 
@@ -97,11 +97,11 @@ validated: 2026-06-28
 
 ## Validation Audit 2026-06-28
 
-| Metric | Count |
-|--------|-------|
-| Gaps found | 0 |
-| Resolved | 0 (no gaps to fill) |
-| Escalated | 0 |
+| Metric     | Count               |
+| ---------- | ------------------- |
+| Gaps found | 0                   |
+| Resolved   | 0 (no gaps to fill) |
+| Escalated  | 0                   |
 
 Post-execution audit (State A). Every Phase-3 requirement maps to a green
 automated test; the full suite is 16 files / 74 tests passing and the WS-04 lint

@@ -28,13 +28,9 @@ In the S5c test, feed a 3-element set and ADD the anti-tautology guard (keep the
 `errorCount === 1` / `warningCount === 1` asserts):
 
 ```ts
-diagnostics: [
-  errorDiagnostic(TS2322, 'Type string is not assignable to type number'),
-  warningDiagnostic(6133, "'unused' is declared but its value is never read."),
-  suggestionDiagnostic(6138, "'x' is declared but its value is never read."),
-],
-// ...
-expect(result.errorCount).toBe(1);
+diagnostics: ([errorDiagnostic(TS2322, 'Type string is not assignable to type number'), warningDiagnostic(6133, "'unused' is declared but its value is never read."), suggestionDiagnostic(6138, "'x' is declared but its value is never read.")],
+  // ...
+  expect(result.errorCount).toBe(1));
 expect(result.warningCount).toBe(1);
 // MD-02 anti-tautology: the Suggestion is retained but uncounted, so the explicit
 // split is STRICTLY less than length. Under the buggy `length - errorCount`,
@@ -83,13 +79,9 @@ it('#3: RE-THROWS a TypecheckInfrastructureError when performCompilation returns
 
   const { runTypecheck, TypecheckInfrastructureError } = await import('./run-typecheck');
 
-  await expect(
-    runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
-  ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+  await expect(runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' })).rejects.toBeInstanceOf(TypecheckInfrastructureError);
 
-  await expect(
-    runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
-  ).rejects.toThrow(/returned no Program/);
+  await expect(runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' })).rejects.toThrow(/returned no Program/);
 });
 ```
 

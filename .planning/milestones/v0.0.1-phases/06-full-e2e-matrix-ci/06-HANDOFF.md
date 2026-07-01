@@ -26,6 +26,7 @@ the act suite, `.actrc`, `.nxignore`, the unit/integration specs).
 ## The one action needed: validate the matrix on real runners
 
 ### Recommended (RD-10 — validate before it's blessed on `main`): throwaway draft PR
+
 ```bash
 # from the repo root, on `main` (all Phase-6 work is committed here)
 git switch -c ci/validate-ci-matrix
@@ -36,22 +37,27 @@ gh pr create --draft --base main \
 gh pr checks --watch                               # watch test (6 cells) + e2e + act-compat + lint-workflows + the `ci` gate
 gh run view --log-failed                           # if anything is red
 ```
+
 On green (the `ci` check passes): land `ci.yml` on `main` via the existing direct-push flow
 (Phase 6 still uses direct push; Phase 7 switches to PR-merge), then close the probe:
+
 ```bash
 git switch main && git push origin main            # lands all 31 commits; ci.yml re-runs on push-to-main (also green)
 gh pr close ci/validate-ci-matrix --delete-branch
 ```
 
 ### Simpler alternative (no branch protection requires `ci` yet, so this is safe): push `main`
+
 ```bash
 git push origin main                               # fires ci.yml on push-to-main -> the matrix runs on `main`
 gh run watch                                        # or: gh run list --branch main
 ```
+
 (The draft PR is the cleaner RD-10 path; push-`main` is simpler and equally valid today because
 the `ci`-requiring "Default branch" ruleset isn't enabled until Phase 7.)
 
 ### If a matrix cell is red
+
 Expected suspects (all pre-mitigated but real-runner-only): Node 26 toolcache miss (downloads
 from nodejs.org — slower, occasionally flaky); a native-prebuilt install hiccup on a specific
 OS. Fix in `ci.yml` / the spec, re-push (the PR `synchronize` re-runs). The `ci` gate is
@@ -59,17 +65,17 @@ fail-closed (`failure||cancelled||skipped`), so a red/skipped cell correctly red
 
 ## What's already proven locally (green)
 
-| Gate | Result |
-|------|--------|
+| Gate                                                              | Result                                                                                              |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | Unit + integration (`nx run-many -t test -p angular-typechecker`) | **114 passed** (incl. D-10 mixed-case + RD-04 store-dir generality + host-derived case-sensitivity) |
-| 5-type + pnpm e2e (`...-p angular-typechecker-matrix-e2e`) | **7 passed** (~82s) — all 5 project types green + injected TS2322; pnpm symlinked-store run |
-| release.yml if-gate regression (release-hygiene int spec) | **22/22** — OIDC model byte-for-byte unchanged |
-| act suite (`bash tools/act/act-compat.sh`) | **12 passed** — all triggers/conditions; tag→publish SELECTED, branch→SKIPPED |
-| actionlint (native arm64) on ci.yml + release.yml | **exit 0**, zero findings |
-| `nx run-many -t build` | **green** (DI-06-01 fixed via `.nxignore`) |
-| Verifier | `human_needed` (SC1+SC2 verified; SC3 = this draft-PR run) — **0 blockers** |
-| Security audit | **8/8 threats closed, 0 open** |
-| Code review | **0 critical, 3 warnings** (WR-02/03 fixed; WR-01 below) |
+| 5-type + pnpm e2e (`...-p angular-typechecker-matrix-e2e`)        | **7 passed** (~82s) — all 5 project types green + injected TS2322; pnpm symlinked-store run         |
+| release.yml if-gate regression (release-hygiene int spec)         | **22/22** — OIDC model byte-for-byte unchanged                                                      |
+| act suite (`bash tools/act/act-compat.sh`)                        | **12 passed** — all triggers/conditions; tag→publish SELECTED, branch→SKIPPED                       |
+| actionlint (native arm64) on ci.yml + release.yml                 | **exit 0**, zero findings                                                                           |
+| `nx run-many -t build`                                            | **green** (DI-06-01 fixed via `.nxignore`)                                                          |
+| Verifier                                                          | `human_needed` (SC1+SC2 verified; SC3 = this draft-PR run) — **0 blockers**                         |
+| Security audit                                                    | **8/8 threats closed, 0 open**                                                                      |
+| Code review                                                       | **0 critical, 3 warnings** (WR-02/03 fixed; WR-01 below)                                            |
 
 ## Open review items (your call)
 

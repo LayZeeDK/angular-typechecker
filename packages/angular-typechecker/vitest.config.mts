@@ -27,6 +27,6 @@ export default defineConfig(() => ({
     coverage: {
       reportsDirectory: '../../coverage/packages/angular-typechecker',
       provider: 'v8' as const,
-    }
+    },
   },
 }));

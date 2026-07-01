@@ -2,7 +2,7 @@
 spike: 001
 name: reference-walk-aggregation
 type: standard
-validates: "Given a solution tsconfig.json referencing tsconfig.lib.json + tsconfig.spec.json that share a source file, when the engine runs performCompilation per leaf and unions+dedupes the diagnostics by identity (file+start+length+code+message), then the aggregated set is complete and duplicate-free with correct errorCount/warningCount"
+validates: 'Given a solution tsconfig.json referencing tsconfig.lib.json + tsconfig.spec.json that share a source file, when the engine runs performCompilation per leaf and unions+dedupes the diagnostics by identity (file+start+length+code+message), then the aggregated set is complete and duplicate-free with correct errorCount/warningCount'
 verdict: VALIDATED
 related: [002, 003, 004]
 tags: [aggregation, dedupe, counts, engine]
@@ -34,16 +34,16 @@ source and the idea would be NO-GO.
 - **`ts.sortAndDeduplicateDiagnostics` semantics (typescript@6.0.3, `node_modules/typescript/lib/typescript.js`).**
   It is `sortAndDeduplicate(diagnostics, compareDiagnostics, diagnosticsEqualityComparer)`.
   The equality comparer is:
+
   ```js
-  function getDiagnosticFilePath(d) { return d.file ? d.file.path : void 0; } // a STRING
+  function getDiagnosticFilePath(d) {
+    return d.file ? d.file.path : void 0;
+  } // a STRING
   function diagnosticsEqualityComparer(d1, d2) {
-    return compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) === 0
-      && compareValues(d1.start, d2.start) === 0
-      && compareValues(d1.length, d2.length) === 0
-      && code1 === code2
-      && messageTextEqualityComparer(msg1, msg2);
+    return compareStringsCaseSensitive(getDiagnosticFilePath(d1), getDiagnosticFilePath(d2)) === 0 && compareValues(d1.start, d2.start) === 0 && compareValues(d1.length, d2.length) === 0 && code1 === code2 && messageTextEqualityComparer(msg1, msg2);
   }
   ```
+
   It keys on `diagnostic.file.path` (the canonical **Path string**), never the `SourceFile`
   **object**. So two diagnostics from two different `performCompilation` runs collapse iff their
   `(file.path, start, length, code, messageText)` tuples match. This is EXACTLY the identity the
@@ -57,10 +57,10 @@ source and the idea would be NO-GO.
 
 ### Approach
 
-| Approach | Mechanism | Pros | Cons | Status |
-|----------|-----------|------|------|--------|
-| Union raw, single finalize | union all leaves' raw gathered diagnostics, then ONE boundary-filter + `sortAndDeduplicate` + count over the union | reuses `filter-diagnostics` + counting UNCHANGED; dedupes cross-leaf overlap in one place; project-dir basePath covers all leaves (they live under `<project>/`) | pre-dedup union is larger (more to sort) -- negligible | **CHOSEN** |
-| Per-leaf finalize then merge results | finalize each leaf, then merge + re-dedupe the CoreResults | keeps per-leaf reports | re-implements a second dedupe/merge layer on top of the per-leaf ones; count reconciliation is fiddly | rejected |
+| Approach                             | Mechanism                                                                                                          | Pros                                                                                                                                                             | Cons                                                                                                  | Status     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------- |
+| Union raw, single finalize           | union all leaves' raw gathered diagnostics, then ONE boundary-filter + `sortAndDeduplicate` + count over the union | reuses `filter-diagnostics` + counting UNCHANGED; dedupes cross-leaf overlap in one place; project-dir basePath covers all leaves (they live under `<project>/`) | pre-dedup union is larger (more to sort) -- negligible                                                | **CHOSEN** |
+| Per-leaf finalize then merge results | finalize each leaf, then merge + re-dedupe the CoreResults                                                         | keeps per-leaf reports                                                                                                                                           | re-implements a second dedupe/merge layer on top of the per-leaf ones; count reconciliation is fiddly | rejected   |
 
 **Chosen:** union raw -> single `finalize`. It is the minimal delta over today's engine.
 

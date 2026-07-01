@@ -10,18 +10,18 @@
 
 ## File Classification
 
-| New/Modified File | Role | Data Flow | Closest Analog | Match Quality |
-|-------------------|------|-----------|----------------|---------------|
-| `src/core/filter-diagnostics.ts` | pure function (core) | transform | `src/core/gather-diagnostics.ts` (+ `diagnostic-codes.ts` for dep-free pure-helper style) | exact (role) |
-| `src/core/evaluate-result.ts` | pure function (core) | transform | `src/core/diagnostic-codes.ts` (dep-free pure module) + `finalize` in `run-typecheck.ts` (counts) | exact (role) |
-| `src/core/format-report.ts` | pure function (core) | transform | `src/core/gather-diagnostics.ts` (typed input over `ts.Diagnostic[]`) + `compiler-cli-types.ts` (`CompilerCli`/`ts` typing) | exact (role) |
-| `src/core/filter-diagnostics.spec.ts` | test (unit, pure) | n/a | `src/core/gather-diagnostics.spec.ts` (hand-built `ts.Diagnostic[]`) | exact |
-| `src/core/evaluate-result.spec.ts` | test (unit, pure) | n/a | `src/core/gather-diagnostics.spec.ts` | exact |
-| `src/core/format-report.spec.ts` | test (unit, pure) | n/a | `src/core/gather-diagnostics.spec.ts` | exact |
-| `src/core/run-typecheck.ts` (EDIT) | engine seam (core) | request-response | itself (`finalize` + `CoreOptions`/`CoreResult`) -- extend in place | exact (self) |
-| `packages/angular-typechecker/eslint.config.mjs` (EDIT) | config (flat ESLint) | n/a | itself + root `eslint.config.mjs` `no-restricted-imports`/`patterns` shape | exact (self) |
-| `src/core/run-typecheck.integration.spec.ts` (EXTEND) | test (integration, real compiler) | n/a | itself + `config-resolution.integration.spec.ts` (fixture-path + `describe.each` idiom) | exact (self) |
-| `fixtures/<sibling-import>/...` (OPTIONAL NEW) | fixture | n/a | `fixtures/gate-b-error/` (component + `tsconfig.app.json`) | exact |
+| New/Modified File                                       | Role                              | Data Flow        | Closest Analog                                                                                                              | Match Quality |
+| ------------------------------------------------------- | --------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `src/core/filter-diagnostics.ts`                        | pure function (core)              | transform        | `src/core/gather-diagnostics.ts` (+ `diagnostic-codes.ts` for dep-free pure-helper style)                                   | exact (role)  |
+| `src/core/evaluate-result.ts`                           | pure function (core)              | transform        | `src/core/diagnostic-codes.ts` (dep-free pure module) + `finalize` in `run-typecheck.ts` (counts)                           | exact (role)  |
+| `src/core/format-report.ts`                             | pure function (core)              | transform        | `src/core/gather-diagnostics.ts` (typed input over `ts.Diagnostic[]`) + `compiler-cli-types.ts` (`CompilerCli`/`ts` typing) | exact (role)  |
+| `src/core/filter-diagnostics.spec.ts`                   | test (unit, pure)                 | n/a              | `src/core/gather-diagnostics.spec.ts` (hand-built `ts.Diagnostic[]`)                                                        | exact         |
+| `src/core/evaluate-result.spec.ts`                      | test (unit, pure)                 | n/a              | `src/core/gather-diagnostics.spec.ts`                                                                                       | exact         |
+| `src/core/format-report.spec.ts`                        | test (unit, pure)                 | n/a              | `src/core/gather-diagnostics.spec.ts`                                                                                       | exact         |
+| `src/core/run-typecheck.ts` (EDIT)                      | engine seam (core)                | request-response | itself (`finalize` + `CoreOptions`/`CoreResult`) -- extend in place                                                         | exact (self)  |
+| `packages/angular-typechecker/eslint.config.mjs` (EDIT) | config (flat ESLint)              | n/a              | itself + root `eslint.config.mjs` `no-restricted-imports`/`patterns` shape                                                  | exact (self)  |
+| `src/core/run-typecheck.integration.spec.ts` (EXTEND)   | test (integration, real compiler) | n/a              | itself + `config-resolution.integration.spec.ts` (fixture-path + `describe.each` idiom)                                     | exact (self)  |
+| `fixtures/<sibling-import>/...` (OPTIONAL NEW)          | fixture                           | n/a              | `fixtures/gate-b-error/` (component + `tsconfig.app.json`)                                                                  | exact         |
 
 ---
 
@@ -34,11 +34,13 @@ plus `src/core/diagnostic-codes.ts` (the "production-importable, intentionally D
 
 **Import style to replicate** (`gather-diagnostics.ts:1-3`) -- type-only `ts` import, local type-only import; NO
 runtime `@angular/compiler-cli`/`typescript`/devkit import (D-11 will lint-ban devkit family here):
+
 ```typescript
 import type ts from 'typescript';
 
 import type { Program } from './compiler-cli-types';
 ```
+
 For the filter, the RESEARCH Pattern 1 shape is `import type ts from 'typescript';` only -- the function takes
 `useCaseSensitiveFileNames: boolean` and an injected `realpath: (p: string) => string` (so tests pass identity and
 never touch the FS). Keep it dep-free like `diagnostic-codes.ts`.
@@ -46,21 +48,22 @@ never touch the FS). Keep it dep-free like `diagnostic-codes.ts`.
 **Export style to replicate** (`gather-diagnostics.ts:15-28`) -- a single named `export function`, `readonly
 ts.Diagnostic[]` in, a typed value out; exported `interface` for options/result (mirror `CoreOptions`/`CoreResult`
 in `run-typecheck.ts:10-33`):
+
 ```typescript
-export function gatherAllDiagnostics(
-  program: Program,
-): readonly ts.Diagnostic[] {
+export function gatherAllDiagnostics(program: Program): readonly ts.Diagnostic[] {
   const all: ts.Diagnostic[] = [];
   all.push(...program.getTsOptionDiagnostics());
   // ...
   return all;
 }
 ```
+
 New shape (from RESEARCH Pattern 1/2): `export interface FilterOptions { basePath; includeDeps;
 useCaseSensitiveFileNames; realpath }`, `export interface FilterResult { kept: ts.Diagnostic[]; suppressedCount:
 number }`, `export function filterDiagnostics(diagnostics, options): FilterResult`.
 
 **What to replicate:**
+
 - The dep-free, `import type`-only header (this is what survives D-11's `core/**` ban with zero churn).
 - The `for...of` accumulate-into-a-local-array shape (`const all: ts.Diagnostic[] = []` -> push -> return).
 - The doc-comment-with-decision-citations style (`gather-diagnostics.ts:5-14` cites D-16; cite D-05/D-06/D-07 here).
@@ -80,27 +83,27 @@ shape; the `finalize` counting in `run-typecheck.ts:206-228` for the category-co
 
 **Import style to replicate** -- `diagnostic-codes.ts` has ZERO imports; `evaluate-result.ts` needs only a type-only
 import of the result shape it reads (mirror `run-typecheck.ts:3-6` `import type { ... } from './...'`):
+
 ```typescript
 // diagnostic-codes.ts has no imports at all -- a pure value module.
 export const NG = (code: number): number => -990000 - code;
 export const ngCodeOf = (code: number): number => Math.abs(code) - 990000;
 ```
+
 New shape (RESEARCH Pattern 3): `import type { CoreResult } from './run-typecheck';` then `export interface
 EvaluateOptions { maxWarnings?: number }` and `export function evaluateResult(result: Pick<CoreResult, 'errorCount' |
 'warningCount'>, options: EvaluateOptions = {}): { success: boolean }`.
 
 **Counting contract to honor** (`run-typecheck.ts:213-218`) -- `evaluateResult` reads the SAME explicitly-counted
 `errorCount`/`warningCount` that `finalize` produces by `ts.DiagnosticCategory` (never `length - errorCount`):
+
 ```typescript
-const errorCount = diagnostics.filter(
-  (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
-).length;
-const warningCount = diagnostics.filter(
-  (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Warning,
-).length;
+const errorCount = diagnostics.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error).length;
+const warningCount = diagnostics.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Warning).length;
 ```
 
 **What to replicate:**
+
 - The dep-free pure-module shape of `diagnostic-codes.ts` (no runtime imports beyond `import type`).
 - `Pick<CoreResult, ...>` so the verdict is decoupled from the full result shape (testable with a 2-field literal).
 - Decision-cited doc comment (cite D-03/EXE-05). CLAUDE.md control-flow spacing + braces.
@@ -117,6 +120,7 @@ for how to type the injected `ng` (compiler-cli) surface and the `ts` namespace 
 **Type-injection style to replicate** (`compiler-cli-types.ts:35-45`) -- the `CompilerCli` interface is the precedent
 for passing a typed compiler-cli surface in as a parameter rather than importing it (keeps `core/` dep-free + D-11
 clean):
+
 ```typescript
 export interface CompilerCli {
   readConfiguration: typeof readConfiguration;
@@ -124,6 +128,7 @@ export interface CompilerCli {
   // ...
 }
 ```
+
 New shape (RESEARCH Pattern 4): `formatReport(diagnostics: readonly ts.Diagnostic[], ng: Pick<CompilerCli,
 'formatDiagnostics'>, ts_: typeof import('typescript'), options: FormatOptions): string`. Inject `ng` + `ts_` so the
 function stays pure and the spec can pass a fake `formatDiagnostics` (no compiler mock -- D-13). NOTE:
@@ -132,11 +137,12 @@ function stays pure and the spec can pass a fake `formatDiagnostics` (no compile
 `Pick` needs it.
 
 **What to replicate:**
+
 - The injected-dependency pattern (pass `ng`/`ts_` in) -- mirrors how `run-typecheck.ts` receives `ts`/`ng` from the
   loader rather than importing them at module scope; here they come in as params for purity.
 - `export interface FormatOptions { pathBase?; color; failFast? }` (mirror the exported-interface convention).
 - ANSI strip via a non-literal-control-char regex (RESEARCH Pattern 4: `new RegExp(String.fromCharCode(0x1b) +
-  '\\[[0-9;]*m', 'g')`) -- this also satisfies the CLAUDE.md "no non-ASCII / no literal control chars in source" rule.
+'\\[[0-9;]*m', 'g')`) -- this also satisfies the CLAUDE.md "no non-ASCII / no literal control chars in source" rule.
 - D-09 ordering: input is ALREADY sorted+deduped by `runTypecheck` (do the `ts.sortAndDeduplicateDiagnostics` in
   `finalize`, NOT here). D-10: strip ANSI when `color === false`. D-08: `makeFormatHost(ts_, pathBase)` with
   non-identity `getCanonicalFileName`, `getNewLine: () => '\n'`, ABSOLUTE default when `pathBase` unset.
@@ -154,6 +160,7 @@ function stays pure and the spec can pass a fake `formatDiagnostics` (no compile
 idiom. This is the single most important test pattern for the phase (D-13).
 
 **Hand-built diagnostic factory + import header to replicate** (`gather-diagnostics.spec.ts:1-11`):
+
 ```typescript
 import type ts from 'typescript';
 
@@ -167,7 +174,9 @@ function diagnostic(code: number): ts.Diagnostic {
   return { code } as ts.Diagnostic;
 }
 ```
+
 RESEARCH gives the Phase-3 factory variant (Code Examples / D-13) -- replicate this exactly for the specs:
+
 ```typescript
 function diag(fileName: string | undefined, code = 2322): ts.Diagnostic {
   return {
@@ -191,6 +200,7 @@ inject a fake `formatDiagnostics` stub (`vi.fn`) and the real `ts` module for `D
 `filterDiagnostics` / `evaluateResult` assertions (lines ~458-495) -- mirror them.
 
 **What to replicate:**
+
 - One `describe(<functionName>, ...)` block per module, `it(<behavior + req-id>, ...)` cases (e.g.
   `'keeps in-project, suppresses out-of-project + node_modules (D-05/D-06)'`).
 - `import type ts from 'typescript'` (type-only) + named `{ describe, expect, it, vi }` from `'vitest'`.
@@ -204,16 +214,19 @@ inject a fake `formatDiagnostics` stub (`vi.fn`) and the real `ts` module for `D
 **Analog:** itself. Extend the existing `CoreOptions`/`CoreResult` interfaces and the `finalize` helper; do not rewrite.
 
 **`CoreOptions` extension point** (`run-typecheck.ts:10-12`):
+
 ```typescript
 export interface CoreOptions {
   tsConfigPath: string;
 }
 ```
+
 -> add `includeDeps?: boolean;` (D-07, default false) and `pathBase?: string;` (D-08; `runTypecheck` IGNORES it -- the
 adapter passes it to `formatReport`). Keep the doc-comment-with-citation convention used throughout this file.
 
 **`CoreResult` extension point** (`run-typecheck.ts:21-33`) -- add `suppressedCount: number;` (D-02), keep the
 existing field-comment style:
+
 ```typescript
 export interface CoreResult {
   tsConfigPath: string;
@@ -221,11 +234,12 @@ export interface CoreResult {
   diagnostics: readonly ts.Diagnostic[];
   errorCount: number;
   warningCount: number;
-  durationMs: number;       // <- add `suppressedCount: number;` near here (D-02)
+  durationMs: number; // <- add `suppressedCount: number;` near here (D-02)
 }
 ```
 
 **`finalize` wiring point** (`run-typecheck.ts:206-228`) -- this is where the filter + sort + count compose. Current:
+
 ```typescript
 function finalize(
   ts: typeof import('typescript'),
@@ -241,9 +255,11 @@ function finalize(
   return { tsConfigPath, rootNamesCount, diagnostics, errorCount, warningCount, durationMs: ... };
 }
 ```
+
 RESEARCH "`finalize` extension" note: insert, IN ORDER -- (1) `filterDiagnostics(diagnostics, ...)` ->
 `{ kept, suppressedCount }`; (2) `ts.sortAndDeduplicateDiagnostics(kept)`; (3) count Error/Warning on the
 SORTED+FILTERED set; (4) return with `suppressedCount`. The two call sites differ:
+
 - Normal path (`run-typecheck.ts:114-162`): holds the live `result.program.getTsProgram()` host (for
   `useCaseSensitiveFileNames()`) and `parsed.options.basePath` -- pass them to the filter.
 - Zero-rootNames guard path (`run-typecheck.ts:95-105`): NO `Program` -- there `suppressedCount = 0` and the single
@@ -266,6 +282,7 @@ explicit-category counting (NEVER `length - errorCount`). Use `parsed.options.ba
 shows the `[ "error", { ... } ]` rule-options shape + the `files`-scoped block convention).
 
 **Existing override-block shape to mirror** (`packages/angular-typechecker/eslint.config.mjs:5-23`):
+
 ```javascript
 export default [
     ...baseConfig,
@@ -284,7 +301,9 @@ export default [
     // ... add the NEW core/** override block here
 ];
 ```
+
 Add a NEW block AFTER the `...baseConfig` spread (RESEARCH D-11 block, lines ~502-530):
+
 ```javascript
 {
   files: ['**/src/core/**/*.ts'],
@@ -314,6 +333,7 @@ Add a NEW block AFTER the `...baseConfig` spread (RESEARCH D-11 block, lines ~50
 ```
 
 **What to replicate:**
+
 - The flat-config array shape: spread base, then `{ files, rules, languageOptions? }` override objects.
 - Scope to `**/src/core/**/*.ts` ONLY (do NOT hit the future Phase-4 adapter that legitimately imports `@nx/devkit`).
 - Leave the existing `@nx/dependency-checks` + `@nx/nx-plugin-checks` blocks UNTOUCHED (D-12).
@@ -329,6 +349,7 @@ Add a NEW block AFTER the `...baseConfig` spread (RESEARCH D-11 block, lines ~50
 
 **Fixture-path resolution to replicate** (`run-typecheck.integration.spec.ts:19-24` /
 `config-resolution.integration.spec.ts:32-52`):
+
 ```typescript
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const workspaceRoot = join(packageRoot, '..', '..');
@@ -339,6 +360,7 @@ const appTsConfig = join(fixtureDir, 'tsconfig.app.json');
 **Real-compiler assertion idiom to replicate** (`run-typecheck.integration.spec.ts:30-46`) -- `await
 runTypecheck({ tsConfigPath })`, assert off `CoreResult`, use the local `NG()` helper for negative codes,
 `describe.each` for multiple tsconfigs:
+
 ```typescript
 const result = await runTypecheck({ tsConfigPath });
 const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
@@ -362,6 +384,7 @@ assert TS6059 does NOT appear when a leaf tsconfig with a narrow `rootDir` inclu
 **Analog:** `fixtures/gate-b-error/` -- a component (`error.component.ts`) + a leaf `tsconfig.app.json`.
 
 **Fixture tsconfig shape to replicate** (`fixtures/gate-b-error/tsconfig.app.json:1-16`):
+
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -384,9 +407,10 @@ component, a header comment explaining it is OUT of the project graph (nothing i
 build by `tsconfig.lib.json` `include: ["src/**/*.ts"]`), NEVER `@ts-nocheck`.
 
 **What to replicate / CRITICAL constraint:**
+
 - Place the fixture under `fixtures/` (a DISCOVERED location). Nx silently does NOT discover projects under
   `tmp/`/`dist/`/`cache/`/`build/` or anything in `.gitignore` / `tsconfig.base.json` `exclude` (`["node_modules",
-  "tmp"]`) -- RESEARCH Landmine 5. Do NOT put the fixture in an excluded dir.
+"tmp"]`) -- RESEARCH Landmine 5. Do NOT put the fixture in an excluded dir.
 - For the D-02 scenario: a `main-lib` leaf project that imports a `dependency-lib` SIBLING via `paths` (lands OUTSIDE
   `basePath` -> suppressed by default; `includeDeps: true` surfaces it) -- the DIAGNOSTIC-CATALOG `main-lib` ->
   `dependency-lib` scenario the D-05 baseline must satisfy.
@@ -396,19 +420,24 @@ build by `tsconfig.lib.json` `include: ["src/**/*.ts"]`), NEVER `@ts-nocheck`.
 ## Shared Patterns
 
 ### Pure, dependency-free `core/` module (the D-11-survivable shape)
+
 **Source:** `src/core/gather-diagnostics.ts:1-3`, `src/core/diagnostic-codes.ts` (whole file, zero imports).
 **Apply to:** all three new modules (`filter-diagnostics.ts`, `evaluate-result.ts`, `format-report.ts`).
+
 ```typescript
 import type ts from 'typescript';
 
 import type { Program } from './compiler-cli-types';
 ```
+
 Type-only imports + injected runtime dependencies (`ng`/`ts_`/`realpath` passed as params). Zero `@nx/devkit`/`nx`/
 `@angular-devkit/*`/`yargs` imports, zero `console`/`process.exit` -- exactly what the new D-11 ESLint override bans.
 
 ### Exported-interface + single-named-`export function` API
+
 **Source:** `src/core/run-typecheck.ts:10-33` (`CoreOptions`/`CoreResult`), `src/core/gather-diagnostics.ts:15`.
 **Apply to:** every new module exports its `*Options`/`*Result` interface + one named function.
+
 ```typescript
 export interface CoreOptions { tsConfigPath: string; }
 export interface CoreResult { /* documented fields */ }
@@ -416,14 +445,17 @@ export function gatherAllDiagnostics(program: Program): readonly ts.Diagnostic[]
 ```
 
 ### Explicit category counting (NEVER `length - errorCount`)
+
 **Source:** `src/core/run-typecheck.ts:213-218`.
 **Apply to:** `evaluate-result.ts` consumes these counts; any new counting in `finalize` filters by
 `ts.DiagnosticCategory.Error` / `.Warning` explicitly. Invariant: `errorCount + warningCount <= diagnostics.length`.
 
 ### Hand-built `ts.Diagnostic` factory + `vi.fn` stubs (the unit-test idiom)
+
 **Source:** `src/core/gather-diagnostics.spec.ts:9-11, 16-30`.
 **Apply to:** all three new `.spec.ts` files. A `diag(...)` / `diagnostic(...)` factory casting a literal `as
 ts.Diagnostic`; structural fakes cast `as unknown as Program`; NO `@angular/compiler-cli` mock (D-13).
+
 ```typescript
 function diagnostic(code: number): ts.Diagnostic {
   return { code } as ts.Diagnostic;
@@ -431,17 +463,20 @@ function diagnostic(code: number): ts.Diagnostic {
 ```
 
 ### Decision-cited doc comments
+
 **Source:** `src/core/run-typecheck.ts:14-20, 56-67`; `src/core/gather-diagnostics.ts:5-14`;
 `src/core/diagnostic-codes.ts:1-24`.
 **Apply to:** every new file -- a block comment naming the governing decision IDs (D-02..D-11) and the WHY, matching
 the established density.
 
 ### Fixture-path resolution from spec location
+
 **Source:** `src/core/run-typecheck.integration.spec.ts:19-24`, `config-resolution.integration.spec.ts:32-52`.
 **Apply to:** the extended integration spec (and any new fixture references). `dirname(fileURLToPath(import.meta.url))`
 -> `..`/`..` to packageRoot -> `..`/`..` to workspaceRoot -> `join(workspaceRoot, 'fixtures', ...)`.
 
 ### CLAUDE.md JS/TS style (project-wide, enforced)
+
 **Source:** global user instructions + observed in every analog.
 **Apply to:** all new/edited TS -- braces on EVERY `if`/`else`/`for`/`while` body (no braceless one-liners); blank
 line before/after `if`/`for`/`return`/`try` etc. (except first/last line in a block); `singleQuote: true` (Prettier);
@@ -467,4 +502,7 @@ RESEARCH.md.
 **Pattern extraction date:** 2026-06-28
 **Repo visibility:** PUBLIC -- no private prior-art ("Connect") leaked; the external `executor.ts` is cited only as the
 documented anti-pattern.
+
+```
+
 ```

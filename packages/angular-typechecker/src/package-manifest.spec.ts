@@ -58,9 +58,7 @@ const manifest = JSON.parse(
 
 describe('plugin manifest compatibility contract (CMP-01 manifest / CMP-02 / D-14)', () => {
   it('declares the exact Angular 22 + Nx 23 Node engine intersection range (CMP-02)', () => {
-    expect(manifest.engines?.node).toBe(
-      '^22.22.3 || ^24.15.0 || ^26.0.0',
-    );
+    expect(manifest.engines?.node).toBe('^22.22.3 || ^24.15.0 || ^26.0.0');
   });
 
   it('is a CommonJS package so the Nx executor loader can require() it', () => {

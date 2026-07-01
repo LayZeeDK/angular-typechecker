@@ -70,6 +70,7 @@ observations and one minor comment imprecision.
 a valid remote-tracking ref inside the runner. `actions/checkout@v5` with
 `fetch-depth: 0` fetches full history, but whether the remote-tracking ref
 `origin/main` is materialized depends on checkout's refspec and the event:
+
 - On a `pull_request` event the base branch history is present (the merge ref's
   parent), so `origin/main` typically resolves.
 - On a `push` to `main` event, `origin/main` equals HEAD, so the diff is empty and
@@ -82,14 +83,16 @@ a proven bug -- the threat-model and act-compat suites do not exercise it.
 **Fix:** Confirm on a real draft PR that `git rev-parse origin/main` resolves in the
 `fallow` job before relying on the gate, OR make the base fetch explicit and fail
 loudly if it is missing. For example, add a guard step before the audit:
+
 ```yaml
-      - run: |
-          git rev-parse --verify origin/main >/dev/null 2>&1 \
-            || { echo "origin/main not resolvable in checkout; fallow base would silently drift"; exit 1; }
-      - run: npx fallow audit --format json --base origin/main
-        env:
-          FALLOW_AUDIT_BASE: origin/main
+- run: |
+    git rev-parse --verify origin/main >/dev/null 2>&1 \
+      || { echo "origin/main not resolvable in checkout; fallow base would silently drift"; exit 1; }
+- run: npx fallow audit --format json --base origin/main
+  env:
+    FALLOW_AUDIT_BASE: origin/main
 ```
+
 (Empirical out-of-band verification on a real PR, as the phase notes plan, also
 discharges this.)
 
@@ -101,6 +104,7 @@ discharges this.)
 **Issue:** (Verified-correct, recorded for the audit trail.) A no-suppression
 full-repo `fallow dead-code` scan was run and each suppression mapped to the exact
 finding it clears:
+
 - `entry: ["...compiler-cli-types.drift.ts"]` clears
   `unused-file:...compiler-cli-types.drift.ts`. Confirmed false positive: the file is
   reachable ONLY via `tsconfig.drift.json`'s `files: ["src/core/compiler-cli-types.drift.ts"]` (classic node10 resolution), never via the import graph, and is
@@ -144,6 +148,7 @@ right posture for a permanent config, not redundancy.
 
 **File:** `.fallowrc.jsonc:45`; `.github/workflows/ci.yml:159-175`
 **Issue:**
+
 1. The override comment says "one fixture `@Input`", but the actual suppressed
    finding is `unused-component-input:tcb-poison.component.ts:36:someInput`, where
    `someInput = input.required<string>()` is a SIGNAL input (`input()`), not a
@@ -154,8 +159,8 @@ right posture for a permanent config, not redundancy.
    benign and consistent with the design (the meaningful gate runs on the PR), but
    unlike `test`/`e2e` the post-merge `fallow` run is NOT a real "second backstop"
    for fallow findings -- worth noting so a future reader does not assume it is.
-**Fix:** Optionally reword the comment to "one fixture signal `input()`" for
-precision. No functional change required.
+   **Fix:** Optionally reword the comment to "one fixture signal `input()`" for
+   precision. No functional change required.
 
 ---
 

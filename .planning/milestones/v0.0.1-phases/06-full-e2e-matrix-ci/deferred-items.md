@@ -29,7 +29,7 @@ Out-of-scope discoveries logged during execution. NOT fixed in the discovering p
   or published -- the failure is upstream of any release write).
 - **Root cause:** 06-01 committed the matrix-e2e consumer-workspace fixtures under
   `e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/libs/{buildable-lib,
-  publishable-lib}`. By OQ-1 design these declare `@nx/angular:ng-packagr-lite` /
+publishable-lib}`. By OQ-1 design these declare `@nx/angular:ng-packagr-lite` /
   `@nx/angular:package` build targets WITHOUT adding `@nx/angular`/`ng-packagr` to the
   dev repo (the executor never RUNS those builds -- it only reads each project's
   `tsConfig`). `ng-packagr` is consequently not installed (`node_modules/ng-packagr`

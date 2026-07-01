@@ -74,6 +74,7 @@ mechanics. Listed so no downstream agent re-litigates a settled fork.
   (Spike 003; PROJECT.md.)
 
 ### GA-1 -- Module-boundary guard layer (open fork -> AUTO-LOCKED)
+
 - **D-01:** The guard lives in the **PURE CORE** engine and decides "in-project" by
   **path-containment under the solution tsconfig's directory**, canonicalized with the SAME
   `createCanonicalizer` (realpath + `\\`->`/` + case-fold) and `isUnderDir` that
@@ -89,6 +90,7 @@ mechanics. Listed so no downstream agent re-litigates a settled fork.
     ROADMAP SC2 mandates path-containment; upholds the code-verified D-04 contract). Non-trap.
 
 ### GA-2 -- Skipped-reference surfacing (open fork -> AUTO-LOCKED)
+
 - **D-02:** The engine sets a **new pure-detection OPTIONAL field on `CoreResult`**
   (working name `skippedReferences`) with NO `console`/`process` -- mirroring the shipped
   RES-02 `templateCheckAborted` pattern (`run-typecheck.ts:52-71,444-489`). The Nx executor
@@ -103,6 +105,7 @@ mechanics. Listed so no downstream agent re-litigates a settled fork.
     4-tier-tested pattern). Non-trap.
 
 ### GA-3 -- Reference-walk depth (open fork -> AUTO-LOCKED)
+
 - **D-03:** Walk the solution tsconfig's **DIRECT `references[]` only (one level)**. Do NOT
   recurse into a referenced leaf's own `references[]`. `ParsedConfiguration.projectReferences`
   is single-level by type (`readonly ts.ProjectReference[]`, `perform_compile.d.ts:18`);
@@ -124,6 +127,7 @@ mechanics. Listed so no downstream agent re-litigates a settled fork.
   under-check hazard of the direct-only walk.
 
 ### GA-4 -- Duplicate / self reference handling (open fork -> AUTO-LOCKED)
+
 - **D-04:** At reference-resolution, BEFORE the per-leaf compile loop, **canonicalize +
   dedupe the resolved leaf paths and skip a self-reference** back to the solution tsconfig
   (canonical path equals the solution's). Output-neutral (the union `finalize` already dedupes
@@ -132,6 +136,7 @@ mechanics. Listed so no downstream agent re-litigates a settled fork.
   - **Rating:** IMPACT LOW, CONFIDENCE HIGH (canonicalizer exists; output cannot change). Non-trap.
 
 ### GA-5 -- Broken / nonexistent referenced leaf tsconfig (TRAP QUADRANT -> maintainer-decided)
+
 - **D-05 (maintainer decision, 2026-07-01):** When the solution references a **NONEXISTENT**
   leaf tsconfig (typo / stale path -> ENOENT -> code-500 `UNKNOWN_ERROR_CODE` from a per-leaf
   `ng.readConfiguration`), the walk **synthesizes a COUNTED Error diagnostic** (a NEW code +
@@ -156,6 +161,7 @@ mechanics. Listed so no downstream agent re-litigates a settled fork.
     false PASS by omission if survivors are clean and the warn is missed).
 
 ### Claude's Discretion (research directives for `/gsd-plan-phase 13 --research`)
+
 Facts/choices for the researcher to PIN and the planner to encode -- pre-grounded so research
 is targeted, not open-ended:
 
@@ -179,20 +185,23 @@ is targeted, not open-ended:
    apply once to the single union `finalize` (not per-leaf), preserving current semantics.
 6. **`templateCheckAborted` across leaves.** Confirm the pre-filter Fatal scan runs over the
    UNIONED raw diagnostics so a TCB-abort in ANY leaf still fires the notice.
-</decisions>
+   </decisions>
 
 <canonical_refs>
+
 ## Canonical References
 
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Strategy / requirements (read FIRST)
+
 - `.planning/REQUIREMENTS.md` (WALK-01, WALK-02) -- the locked requirements for this phase.
 - `.planning/ROADMAP.md` (Phase 13 "Phase Details") -- goal-backward success criteria SC1-5.
 - `.planning/spikes/MANIFEST.md` -- the locked design decisions ("Requirements" section) and
   the 5-spike verdict table; the authoritative GO record for the walk.
 
 ### Spike reports (the de-risking evidence -- read the ones matching each decision)
+
 - `.planning/spikes/001-reference-walk-aggregation/README.md` -- union-raw -> single-finalize
   aggregation + cross-`Program` value-dedupe (L-1/L-2). Note the NG8117+NG8109 co-fire surprise.
 - `.planning/spikes/002-module-boundary-guard/README.md` -- core path-containment guard,
@@ -201,11 +210,12 @@ is targeted, not open-ended:
 - `.planning/spikes/003-double-compile-cost/README.md` -- ~1 extra `performCompilation` per
   leaf; WALK ~2x a single combined program; DEFERRED incremental-reuse synergy (L-7).
 - `.planning/spikes/004-d03a-surgical-split/README.md` -- the three-way `rootNames===0` split
-  + the concrete `config-resolution.integration.spec.ts:124-152` rewrite (L-3 / L-6).
+  - the concrete `config-resolution.integration.spec.ts:124-152` rewrite (L-3 / L-6).
 - `.planning/spikes/005-coarse-single-target-caching/README.md` -- `production`->`default`
   input change; `outputs:[]`; `^default` covers the non-buildable dep (L-5 / WALK-02).
 
 ### Existing engine code to extend / mirror
+
 - `packages/angular-typechecker/src/core/run-typecheck.ts` -- the engine: D-03a guard
   (185-203), `synthesizeZeroRootNamesDiagnostic` (329-356), `finalize` (394-456), the RES-02
   `templateCheckAborted` pure-detection pattern (52-71, 444-489) to MIRROR for D-02, the COR-01
@@ -220,26 +230,31 @@ is targeted, not open-ended:
   (the shape D-02 adds an optional field to).
 
 ### The spec + fixtures this phase edits
+
 - `packages/angular-typechecker/src/core/config-resolution.integration.spec.ts:124-152` -- the
   solution-style guard block REWRITTEN to assert the walk (L-6 / Spike 004).
 - `fixtures/solution-style/{tsconfig.json,tsconfig.app.json,error.component.ts}` -- upgraded
   with a KNOWN diagnostic + a real `tsconfig.spec.json` leaf (L-6 / directive 4).
 
 ### Codebase maps
+
 - `.planning/codebase/TESTING.md` -- test tiers, `*.integration.spec.ts` naming, fixtures
   convention, the `NG()` negative-encoding rule, integration timeout, `typecheck-drift` target.
 - `.planning/codebase/ARCHITECTURE.md` / `CONVENTIONS.md` -- core-vs-adapter purity boundary,
   module layout, D-nn decision vocabulary.
 
 ### Config the walk target depends on
+
 - `nx.json` (`targetDefaults["angular-typecheck"]`) -- the `production`->`default` input swap
   lands here (L-5 / WALK-02).
-</canonical_refs>
+  </canonical_refs>
 
 <code_context>
+
 ## Existing Code Insights
 
 ### Reusable Assets
+
 - `filter-diagnostics.ts` `createCanonicalizer` + `isUnderDir` + `isNodeModulesPath`: the exact
   realpath/case-fold path-containment machinery the D-01 core boundary guard and the D-04 leaf
   dedupe reuse verbatim -- no new canonicalizer.
@@ -252,6 +267,7 @@ is targeted, not open-ended:
   synthesized-Error idiom D-05 (B3) and the L-3 none-in-project branch extend (new `9000x` code).
 
 ### Established Patterns
+
 - Core is PURE and Nx-agnostic (D-04 contract; `no-console`/`no-process` ESLint gate on
   `**/src/core/**`); the executor adapter owns ALL I/O + logging + exit. Every new notice
   (D-02) is a pure field set in core + a `logger.warn` in the adapter.
@@ -260,13 +276,14 @@ is targeted, not open-ended:
   assert off `CoreResult`; codes via `NG()` / raw TS codes; `it.each` is the parameterized idiom.
 
 ### Integration Points
+
 - The walk hooks in at the D-03a `rootNames.length === 0` split in `runTypecheck`
   (`run-typecheck.ts:190`) -- the references-present + >=1-in-project branch calls the new walk;
   the other two branches keep synthesizing the guard error.
 - New/changed specs live under `packages/angular-typechecker/src/core/*.integration.spec.ts`
   (auto-routed into the existing 6-cell `test` matrix; no `ci.yml` change).
 - The `production`->`default` change is a one-line edit in `nx.json` `targetDefaults`.
-</code_context>
+  </code_context>
 
 <specifics>
 ## Specific Ideas (verified this session, 2026-07-01)
@@ -283,7 +300,7 @@ is targeted, not open-ended:
   distinct, and only the former is subject to D-05 (B3).
 - The walk adds NO compute vs the multi-target alternative (~N compiles either way); its real
   trade is coarser caching (one key), which spike 005 made sound via `production`->`default`.
-</specifics>
+  </specifics>
 
 <deferred>
 ## Deferred Ideas
@@ -304,5 +321,5 @@ None of these are in Phase 13 scope -- discussion stayed within the walk boundar
 
 ---
 
-*Phase: 13-engine-solution-tsconfig-reference-walking*
-*Context gathered: 2026-07-01*
+_Phase: 13-engine-solution-tsconfig-reference-walking_
+_Context gathered: 2026-07-01_

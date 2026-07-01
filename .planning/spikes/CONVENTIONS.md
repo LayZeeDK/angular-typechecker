@@ -59,10 +59,10 @@ question requires otherwise.
 
 ## Tools & Libraries
 
-| Tool | Version | Use |
-|------|---------|-----|
-| `@angular/compiler-cli` | 22.0.4 | `readConfiguration` + `performCompilation` (the engine under test) |
-| `typescript` | 6.0.3 | `sortAndDeduplicateDiagnostics`, `sys`, `DiagnosticCategory` |
-| `vitest` (`bench`) | 4.1.9 | benchmarking (preferred over hand-rolled timing) |
-| `minimatch` | 10.2.5 | Nx named-input glob resolution (spike 005) |
-| `nx` CLI | 23.0.1 | `nx show projects --affected` for project-graph edge checks |
+| Tool                    | Version | Use                                                                |
+| ----------------------- | ------- | ------------------------------------------------------------------ |
+| `@angular/compiler-cli` | 22.0.4  | `readConfiguration` + `performCompilation` (the engine under test) |
+| `typescript`            | 6.0.3   | `sortAndDeduplicateDiagnostics`, `sys`, `DiagnosticCategory`       |
+| `vitest` (`bench`)      | 4.1.9   | benchmarking (preferred over hand-rolled timing)                   |
+| `minimatch`             | 10.2.5  | Nx named-input glob resolution (spike 005)                         |
+| `nx` CLI                | 23.0.1  | `nx show projects --affected` for project-graph edge checks        |

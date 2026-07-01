@@ -34,20 +34,20 @@ Asserted by exact code. Raw TypeScript codes (TS2322, TS2339) assert as bare num
 codes assert through the `NG()` encoder (`NG(8001) === -998001`), never as bare positives.
 Count by `ts.DiagnosticCategory`, never by code sign.
 
-| Code | Introduced | Category | Scenario / trigger |
-|------|-----------|----------|--------------------|
-| TS2322 | TypeScript | Error | Plain type-assignment error in a component class |
-| TS2339 | TypeScript | Error | Template references a missing member (template type-check) |
-| NG2003 | v13 | Error | Missing injection token (primitive constructor param) |
-| NG2005 | v13 | Error | Undecorated class passed as a provider |
-| NG2007 | v13 | Error | Undecorated base class uses Angular features |
-| NG2009 | v13 | Error | Invalid Shadow DOM selector (ViewEncapsulation.ShadowDom, selector missing hyphen) |
-| NG1001 | v13 | Error | Component metadata argument not a literal |
-| NG3003 | v13 | Error | Import cycle detected (directive/pipe relationship forcing an un-handleable cyclic import) |
-| NG6100 | v14 | Warning | `@NgModule({ id: module.id })` anti-pattern (note the `WARN_` prefix -- counts in `warningCount`) |
-| NG8001 | v13 | Error | Unknown component/element |
-| NG8002 | v13 | Error | Invalid attribute/directive usage (e.g. `[(ngModel)]` without importing the directive) |
-| NG8004 | v13 | Error | Missing pipe declaration |
+| Code   | Introduced | Category | Scenario / trigger                                                                                |
+| ------ | ---------- | -------- | ------------------------------------------------------------------------------------------------- |
+| TS2322 | TypeScript | Error    | Plain type-assignment error in a component class                                                  |
+| TS2339 | TypeScript | Error    | Template references a missing member (template type-check)                                        |
+| NG2003 | v13        | Error    | Missing injection token (primitive constructor param)                                             |
+| NG2005 | v13        | Error    | Undecorated class passed as a provider                                                            |
+| NG2007 | v13        | Error    | Undecorated base class uses Angular features                                                      |
+| NG2009 | v13        | Error    | Invalid Shadow DOM selector (ViewEncapsulation.ShadowDom, selector missing hyphen)                |
+| NG1001 | v13        | Error    | Component metadata argument not a literal                                                         |
+| NG3003 | v13        | Error    | Import cycle detected (directive/pipe relationship forcing an un-handleable cyclic import)        |
+| NG6100 | v14        | Warning  | `@NgModule({ id: module.id })` anti-pattern (note the `WARN_` prefix -- counts in `warningCount`) |
+| NG8001 | v13        | Error    | Unknown component/element                                                                         |
+| NG8002 | v13        | Error    | Invalid attribute/directive usage (e.g. `[(ngModel)]` without importing the directive)            |
+| NG8004 | v13        | Error    | Missing pipe declaration                                                                          |
 
 Codes verified against `@angular/compiler-cli@22.0.4`
 `src/ngtsc/diagnostics/src/error_code.d.ts`. Note: the previously listed "aliases" for NG8004,
@@ -67,26 +67,26 @@ declaration index 11 but its numeric code is below NG8101). Each row carries the
 value (the key the catalog `it.each` table and the tripwire compare), the NG code, the default
 category, and the introduction version.
 
-| # | Enum member (string value) | NG code | Default category | Introduced |
-|---|----------------------------|---------|------------------|-----------|
-| 0 | invalidBananaInBox | NG8101 | Warning | v13 |
-| 1 | nullishCoalescingNotNullable | NG8102 | Warning | v13 |
-| 2 | optionalChainNotNullable | NG8107 | Warning | v14 |
-| 3 | missingControlFlowDirective | NG8103 | Warning | v14 |
-| 4 | missingStructuralDirective | NG8116 | Warning | v19 (19.2.0; docs listed it at v20) |
-| 5 | textAttributeNotBinding | NG8104 | Warning | v14 |
-| 6 | uninvokedFunctionInEventBinding | NG8111 | Warning | v18 |
-| 7 | missingNgForOfLet | NG8105 | Warning | v14 |
-| 8 | suffixNotSupported | NG8106 | Warning | v14 |
-| 9 | skipHydrationNotStatic | NG8108 | Warning | v16 |
-| 10 | interpolatedSignalNotInvoked | NG8109 | Warning | v17 |
-| 11 | controlFlowPreventingContentProjection | NG8011 | Warning (out-of-band: no `extended/checks/` factory; STILL promotable) | v17 |
-| 12 | unusedLetDeclaration | NG8112 | Warning (enum-only: angular.dev docs OMIT it) | v18 |
-| 13 | uninvokedTrackFunction | NG8115 | Warning | v20 |
-| 14 | unusedStandaloneImports | NG8113 | Warning (out-of-band: no `extended/checks/` factory; STILL promotable) | v19 |
-| 15 | unparenthesizedNullishCoalescing | NG8114 | Warning | v20 |
-| 16 | uninvokedFunctionInTextInterpolation | NG8117 | Warning | v20 |
-| 17 | deferTriggerMisconfiguration | NG8021 | Warning | v21 |
+| #   | Enum member (string value)             | NG code | Default category                                                       | Introduced                          |
+| --- | -------------------------------------- | ------- | ---------------------------------------------------------------------- | ----------------------------------- |
+| 0   | invalidBananaInBox                     | NG8101  | Warning                                                                | v13                                 |
+| 1   | nullishCoalescingNotNullable           | NG8102  | Warning                                                                | v13                                 |
+| 2   | optionalChainNotNullable               | NG8107  | Warning                                                                | v14                                 |
+| 3   | missingControlFlowDirective            | NG8103  | Warning                                                                | v14                                 |
+| 4   | missingStructuralDirective             | NG8116  | Warning                                                                | v19 (19.2.0; docs listed it at v20) |
+| 5   | textAttributeNotBinding                | NG8104  | Warning                                                                | v14                                 |
+| 6   | uninvokedFunctionInEventBinding        | NG8111  | Warning                                                                | v18                                 |
+| 7   | missingNgForOfLet                      | NG8105  | Warning                                                                | v14                                 |
+| 8   | suffixNotSupported                     | NG8106  | Warning                                                                | v14                                 |
+| 9   | skipHydrationNotStatic                 | NG8108  | Warning                                                                | v16                                 |
+| 10  | interpolatedSignalNotInvoked           | NG8109  | Warning                                                                | v17                                 |
+| 11  | controlFlowPreventingContentProjection | NG8011  | Warning (out-of-band: no `extended/checks/` factory; STILL promotable) | v17                                 |
+| 12  | unusedLetDeclaration                   | NG8112  | Warning (enum-only: angular.dev docs OMIT it)                          | v18                                 |
+| 13  | uninvokedTrackFunction                 | NG8115  | Warning                                                                | v20                                 |
+| 14  | unusedStandaloneImports                | NG8113  | Warning (out-of-band: no `extended/checks/` factory; STILL promotable) | v19                                 |
+| 15  | unparenthesizedNullishCoalescing       | NG8114  | Warning                                                                | v20                                 |
+| 16  | uninvokedFunctionInTextInterpolation   | NG8117  | Warning                                                                | v20                                 |
+| 17  | deferTriggerMisconfiguration           | NG8021  | Warning                                                                | v21                                 |
 
 Verified against `@angular/compiler-cli@22.0.4`
 `src/ngtsc/diagnostics/src/extended_template_diagnostic_name.d.ts` (enum + declaration order)
@@ -155,8 +155,8 @@ coupled pieces keep the covered set honest (D-01, D-02, D-05):
 1. **One enum-keyed `it.each` catalog spec** (`extended-catalog.integration.spec.ts`) holds an
    18-row table keyed on the enum members, with introduction-version carried as a ROW FIELD
    (not a per-version file). Each row maps `enum member -> { NG code, expected
-   DiagnosticCategory, occurrence count, introduction-version, fixture ref, optional
-   skip-reason }`. Assertions run `runTypecheck({ tsConfigPath })` against a committed
+DiagnosticCategory, occurrence count, introduction-version, fixture ref, optional
+skip-reason }`. Assertions run `runTypecheck({ tsConfigPath })` against a committed
    `fixtures/<scenario>/` tsconfig, find the diagnostic by `d.code === NG(row.ngCode)`, assert
    `d.category === row.expectedCategory`, and assert the exact occurrence count. Any member not
    reproducible by a static Angular 22.0.4 fixture is `it.skip` WITH A WRITTEN REASON and its

@@ -19,15 +19,15 @@ updated: 2026-06-29
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Vitest 4.1.x via `@nx/vitest:test` |
-| **Config file** | per-project `vitest.config.mts` (plugin unit: jsdom; e2e: cloned serialized node-env config) |
-| **Quick run** | `npx nx run-many -t test -p angular-typechecker` (unit + integration) |
-| **e2e run** | `npx nx run-many -t test -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e` (Linux-only gate; runs locally too) |
-| **act suite** | `bash tools/act/act-compat.sh` (container-free `act --validate` + `act -n` per trigger) |
-| **workflow lint** | `actionlint .github/workflows/*.yml` |
-| **Verified runtimes** | unit/int 114 ✓; matrix-e2e 7 ✓ (~82s); install-e2e 22 ✓; act-compat 12 ✓; actionlint exit 0; `nx run-many -t build` green |
+| Property              | Value                                                                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Framework**         | Vitest 4.1.x via `@nx/vitest:test`                                                                                                                            |
+| **Config file**       | per-project `vitest.config.mts` (plugin unit: jsdom; e2e: cloned serialized node-env config)                                                                  |
+| **Quick run**         | `npx nx run-many -t test -p angular-typechecker` (unit + integration)                                                                                         |
+| **e2e run**           | `npx nx run-many -t test -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e` (Linux-only gate; runs locally too) |
+| **act suite**         | `bash tools/act/act-compat.sh` (container-free `act --validate` + `act -n` per trigger)                                                                       |
+| **workflow lint**     | `actionlint .github/workflows/*.yml`                                                                                                                          |
+| **Verified runtimes** | unit/int 114 ✓; matrix-e2e 7 ✓ (~82s); install-e2e 22 ✓; act-compat 12 ✓; actionlint exit 0; `nx run-many -t build` green                                     |
 
 ---
 
@@ -41,16 +41,16 @@ updated: 2026-06-29
 
 ## Per-Plan Verification Map (final — all PASS except the push-gated SC3)
 
-| Req | Plan | Behavior | Test | Command | Status |
-|-----|------|----------|------|---------|--------|
-| TEST-03 | 06-02 | 5 project types green + injected TS2322 vs the installed tarball | e2e | `nx run angular-typechecker-matrix-e2e:test` (it.each x5) | ✅ 7/7 |
-| TEST-03/OUT-02 | 06-02 | pnpm symlinked-store run + realpath guard (Windows fallback; Linux CI = true teeth) | e2e | (same spec) | ✅ (fallback locally) |
-| OUT-02 | 06-03 | mixed-case fold (both case modes) + RD-04 `.pnpm`/`.bun`/plain store-dir generality | unit | `nx run-many -t test -p angular-typechecker` | ✅ filter-diagnostics 13 |
-| OUT-02 | 06-03 | host-derived `useCaseSensitiveFileNames` | integration | (same) | ✅ run-typecheck.integration 13 |
-| CI-01 | 06-04 | release.yml publish `if:` ref gate; OIDC model unchanged | regression | release-hygiene int spec | ✅ 22/22 |
-| CI-01 | 06-05 | lean 6-cell matrix + Linux-only e2e + act-compat + lint-workflows + aggregate `ci` gate | CI infra | actionlint + act-compat.sh | ✅ actionlint 0 / act 12 |
-| CI-01 | 06-05 | act suite: all triggers/conditions (incl tag-vs-branch publish discrimination) | act | `bash tools/act/act-compat.sh` | ✅ 12/12 |
-| CI-01 | — | **full matrix GREEN on windows-latest + macos-latest real runners** | CI matrix | the draft-PR run | ⏳ HUMAN-GATED (RD-10) |
+| Req            | Plan  | Behavior                                                                                | Test        | Command                                                   | Status                          |
+| -------------- | ----- | --------------------------------------------------------------------------------------- | ----------- | --------------------------------------------------------- | ------------------------------- |
+| TEST-03        | 06-02 | 5 project types green + injected TS2322 vs the installed tarball                        | e2e         | `nx run angular-typechecker-matrix-e2e:test` (it.each x5) | ✅ 7/7                          |
+| TEST-03/OUT-02 | 06-02 | pnpm symlinked-store run + realpath guard (Windows fallback; Linux CI = true teeth)     | e2e         | (same spec)                                               | ✅ (fallback locally)           |
+| OUT-02         | 06-03 | mixed-case fold (both case modes) + RD-04 `.pnpm`/`.bun`/plain store-dir generality     | unit        | `nx run-many -t test -p angular-typechecker`              | ✅ filter-diagnostics 13        |
+| OUT-02         | 06-03 | host-derived `useCaseSensitiveFileNames`                                                | integration | (same)                                                    | ✅ run-typecheck.integration 13 |
+| CI-01          | 06-04 | release.yml publish `if:` ref gate; OIDC model unchanged                                | regression  | release-hygiene int spec                                  | ✅ 22/22                        |
+| CI-01          | 06-05 | lean 6-cell matrix + Linux-only e2e + act-compat + lint-workflows + aggregate `ci` gate | CI infra    | actionlint + act-compat.sh                                | ✅ actionlint 0 / act 12        |
+| CI-01          | 06-05 | act suite: all triggers/conditions (incl tag-vs-branch publish discrimination)          | act         | `bash tools/act/act-compat.sh`                            | ✅ 12/12                        |
+| CI-01          | —     | **full matrix GREEN on windows-latest + macos-latest real runners**                     | CI matrix   | the draft-PR run                                          | ⏳ HUMAN-GATED (RD-10)          |
 
 ---
 
@@ -65,6 +65,7 @@ updated: 2026-06-29
 ---
 
 ## Which layer validates which requirement
+
 - **TEST-03** -> e2e (matrix-e2e: 5-type + pnpm). ✅ locally; full cross-OS ⏳ draft PR.
 - **CI-01** -> CI infra (ci.yml matrix + e2e + act-compat + lint-workflows + `ci` gate). Authored + statically/act-validated ✅; matrix-green ⏳ draft PR.
 - **OUT-02 (backstop)** -> unit + integration (mixed-case + store-dir + host-derived), all 6 cells. ✅
@@ -72,6 +73,7 @@ updated: 2026-06-29
 ---
 
 ## Wave 0 Requirements — ALL RESOLVED
+
 - [x] `.github/workflows/ci.yml` (06-05)
 - [x] `e2e/angular-typechecker-matrix-e2e/{project.json,vitest.config.mts,tsconfig*.json}` + the 5-type fixture (06-01)
 - [x] `src/matrix-5types.int.spec.ts` (06-02)
@@ -87,10 +89,10 @@ updated: 2026-06-29
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Full CI matrix GREEN on `windows-latest` + `macos-latest` real runners + the `ci` gate fires | CI-01 / SC3 | Cross-OS real runners can't be emulated locally; needs a push (gated). | Push a `ci/validate-ci-matrix` branch, open a draft PR, `gh pr checks --watch` until the `ci` check is green. See `06-HANDOFF.md`. |
-| pnpm realpath regression-guard true `.pnpm` boundary-crossing teeth | OUT-02 / B-02 | Git Bash `ln -s` copies on the Windows dev box; needs a real Linux symlink. | Validated on the Linux e2e leg of the draft-PR run (above); backstopped by the unit realpath coverage. |
+| Behavior                                                                                     | Requirement   | Why Manual                                                                  | Test Instructions                                                                                                                  |
+| -------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Full CI matrix GREEN on `windows-latest` + `macos-latest` real runners + the `ci` gate fires | CI-01 / SC3   | Cross-OS real runners can't be emulated locally; needs a push (gated).      | Push a `ci/validate-ci-matrix` branch, open a draft PR, `gh pr checks --watch` until the `ci` check is green. See `06-HANDOFF.md`. |
+| pnpm realpath regression-guard true `.pnpm` boundary-crossing teeth                          | OUT-02 / B-02 | Git Bash `ln -s` copies on the Windows dev box; needs a real Linux symlink. | Validated on the Linux e2e leg of the draft-PR run (above); backstopped by the unit realpath coverage.                             |
 
 ---
 

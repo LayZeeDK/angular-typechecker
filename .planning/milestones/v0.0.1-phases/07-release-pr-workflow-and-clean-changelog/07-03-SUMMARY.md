@@ -4,24 +4,24 @@ plan: 03
 subsystem: docs / release-mechanics
 tags: [agents-md, release-pr-flow, changelog-hygiene, branch-protection, nx-release]
 requires:
-  - "07-01 (nx.json release.git.tag:false flip + release-hygiene git.tag assertion)"
-  - "07-02 (ci.yml path-aware skip-gate; the required `ci` check the ruleset consumes)"
-  - "Phase 6 ci aggregate gate (the required-check name `ci`)"
+  - '07-01 (nx.json release.git.tag:false flip + release-hygiene git.tag assertion)'
+  - '07-02 (ci.yml path-aware skip-gate; the required `ci` check the ruleset consumes)'
+  - 'Phase 6 ci aggregate gate (the required-check name `ci`)'
 provides:
-  - "AGENTS.md release-mechanics section rewritten for the Release-PR flow (D-17)"
-  - "AGENTS.md default-branch-ruleset note: main is PR-only (empty bypass) + D-12 recovery toggle"
+  - 'AGENTS.md release-mechanics section rewritten for the Release-PR flow (D-17)'
+  - 'AGENTS.md default-branch-ruleset note: main is PR-only (empty bypass) + D-12 recovery toggle'
 affects:
-  - "How every future AI agent cuts a release in this repo (docs -> agent behavior trust boundary)"
+  - 'How every future AI agent cuts a release in this repo (docs -> agent behavior trust boundary)'
 tech-stack:
   added: []
   patterns:
-    - "Release-PR flow: cut on release/* branch -> PR (carries code + .planning/) -> merge commit -> tag the MERGE COMMIT -> push tag -> OIDC publish"
-    - "Curate-in-the-Release-PR changelog hygiene; gh release create --notes-file (never --generate-notes)"
+    - 'Release-PR flow: cut on release/* branch -> PR (carries code + .planning/) -> merge commit -> tag the MERGE COMMIT -> push tag -> OIDC publish'
+    - 'Curate-in-the-Release-PR changelog hygiene; gh release create --notes-file (never --generate-notes)'
 key-files:
   created:
-    - ".planning/phases/07-release-pr-workflow-and-clean-changelog/07-03-SUMMARY.md"
+    - '.planning/phases/07-release-pr-workflow-and-clean-changelog/07-03-SUMMARY.md'
   modified:
-    - "AGENTS.md"
+    - 'AGENTS.md'
 decisions:
   - "[07-03] Kept the LANDMINE block's closing line referencing the manual `git push origin angular-typechecker@<version>` -- still accurate (curation precedes the tag push) and consistent with the new merge-commit-tag flow; no regression of the source-verified LANDMINE."
   - "[07-03] AGENTS.md change is code-review-gated per AGENTS.md's OWN rule (lines 6-17); the phase code_review_gate (/gsd-code-review) satisfies it -- this plan does NOT claim the change is `done` without that review."
@@ -55,6 +55,7 @@ One task, one file (`AGENTS.md`), five in-place edits per the RESEARCH "AGENTS.m
 ## Verification
 
 All plan acceptance-criteria `rg` checks pass against `AGENTS.md`:
+
 - `rg 'release/'` -> the cut happens on a `release/*` branch (lines 145, 203).
 - `rg 'merge commit|MERGE COMMIT'` -> the tag targets the merge commit (lines 143, 152-154, 198, 213-214).
 - `rg 'git\.tag'` -> documents that `git.tag: false` means the cut creates no tag (line 207).

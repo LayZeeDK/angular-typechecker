@@ -169,12 +169,19 @@ describe('walkReferences', () => {
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: './tsconfig.app.json' },
-      { path: './tsconfig.spec.json' },
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.app.json' }, { path: './tsconfig.spec.json' }],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     expect(performedPaths).toEqual([appPath, specPath]);
     expect(walk.rootNamesCount).toBe(2);
@@ -185,7 +192,9 @@ describe('walkReferences', () => {
 
     expect(files).toContain(appSource);
     expect(files).toContain(specSource);
-    expect(walk.rawDiagnostics.filter((d) => d.code === TS2322)).toHaveLength(2);
+    expect(walk.rawDiagnostics.filter((d) => d.code === TS2322)).toHaveLength(
+      2,
+    );
   });
 
   it('skips an out-of-project leaf without compiling it (D-01)', async () => {
@@ -202,11 +211,19 @@ describe('walkReferences', () => {
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: '../other/tsconfig.lib.json' },
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: '../other/tsconfig.lib.json' }],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     // The out-of-project leaf was NEVER compiled (its error never enters the
     // union); it is recorded reason:'out-of-project'.
@@ -233,19 +250,24 @@ describe('walkReferences', () => {
       [missingPath]: {
         // A nonexistent PATH surfaces as a code-500 UNKNOWN_ERROR_CODE in
         // parsed.errors (ENOENT via readConfiguration's outer catch).
-        parsed: parsedConfig(missingPath, [], [
-          diagnostic(UNKNOWN_ERROR_CODE),
-        ]),
+        parsed: parsedConfig(missingPath, [], [diagnostic(UNKNOWN_ERROR_CODE)]),
         diagnostics: [],
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: './tsconfig.app.json' },
-      { path: './tsconfig.missing.json' },
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.app.json' }, { path: './tsconfig.missing.json' }],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     // Survivor walked; the missing leaf was NOT compiled (contributes 0).
     expect(performedPaths).toEqual([goodPath]);
@@ -291,11 +313,19 @@ describe('walkReferences', () => {
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: './tsconfig.missing.json' },
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.missing.json' }],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     expect(walk.rawDiagnostics.map((d) => d.code)).toContain(
       REFERENCE_NOT_FOUND,
@@ -323,11 +353,19 @@ describe('walkReferences', () => {
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: './tsconfig.bad-extends.json' },
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.bad-extends.json' }],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     expect(performedPaths).toEqual([badExtendsPath]);
     expect(walk.rootNamesCount).toBe(1);
@@ -351,11 +389,19 @@ describe('walkReferences', () => {
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: './tsconfig.empty.json' },
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.empty.json' }],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     expect(performedPaths).toEqual([]);
     expect(walk.rootNamesCount).toBe(0);
@@ -386,19 +432,31 @@ describe('walkReferences', () => {
       },
     });
 
-    const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-      { path: './tsconfig.json' }, // self-reference
-      { path: './tsconfig.app.json' },
-      { path: './tsconfig.app.json' }, // duplicate
-    ]);
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [
+        { path: './tsconfig.json' }, // self-reference
+        { path: './tsconfig.app.json' },
+        { path: './tsconfig.app.json' }, // duplicate
+      ],
+    );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     // The app leaf is compiled EXACTLY ONCE; the self-reference is never
     // compiled (output-neutral dedupe).
     expect(performedPaths).toEqual([appPath]);
     expect(walk.rootNamesCount).toBe(1);
-    expect(walk.rawDiagnostics.filter((d) => d.code === TS2322)).toHaveLength(1);
+    expect(walk.rawDiagnostics.filter((d) => d.code === TS2322)).toHaveLength(
+      1,
+    );
     expect(walk.skippedReferences).toEqual([
       { referencePath: SOLUTION_TSCONFIG, reason: 'self-reference' },
       { referencePath: appPath, reason: 'self-reference' },
@@ -412,7 +470,12 @@ describe('walkReferences', () => {
 
     const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, []);
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     expect(performedPaths).toEqual([]);
     expect(walk.rootNamesCount).toBe(0);
@@ -455,9 +518,12 @@ describe('walkReferences', () => {
         [leafPath]: { parsed: parsedFor(leafPath), diagnostics: [] },
       });
 
-      const solutionParsed = parsedConfig(SOLUTION_TSCONFIG, [], [], [
-        { path: refPath },
-      ]);
+      const solutionParsed = parsedConfig(
+        SOLUTION_TSCONFIG,
+        [],
+        [],
+        [{ path: refPath }],
+      );
 
       const walk = await walkReferences(
         ng,

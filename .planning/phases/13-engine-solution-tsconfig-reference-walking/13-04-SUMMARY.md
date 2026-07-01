@@ -23,10 +23,10 @@ affects:
 tech-stack:
   added: []
   patterns:
-    - "Three-way D-03a split: references + >=1 in-project leaf -> walk; references + 0 in-project -> 90001 none-in-project; no references -> 90001 empty-project"
-    - "Union feeds the SINGLE existing finalize (solution-dir basePath, includeDeps once); no second dedupe layer"
-    - "skippedReferences threaded non-empty-only via the templateCheckAborted conditional-spread idiom ([] -> undefined)"
-    - "Advisory adapter notice: pure detection field in core, per-reference logger.warn in the executor (verdict unchanged)"
+    - 'Three-way D-03a split: references + >=1 in-project leaf -> walk; references + 0 in-project -> 90001 none-in-project; no references -> 90001 empty-project'
+    - 'Union feeds the SINGLE existing finalize (solution-dir basePath, includeDeps once); no second dedupe layer'
+    - 'skippedReferences threaded non-empty-only via the templateCheckAborted conditional-spread idiom ([] -> undefined)'
+    - 'Advisory adapter notice: pure detection field in core, per-reference logger.warn in the executor (verdict unchanged)'
 
 key-files:
   created: []
@@ -38,12 +38,12 @@ key-files:
 
 key-decisions:
   - "The walk-branch finalize sources useCaseSensitiveFileNames + realpath from ts.sys (no per-leaf Program is available in runTypecheck; the walk owns and discards each leaf's Program) -- the same filesystem host every leaf used, matching the direct path's realpath fallback"
-  - "skippedReferences re-exported from ./core/walk-references (where the interface lives, per Plan 13-03), on its own export line alongside CoreOptions/CoreResult"
-  - "Rewrote the now-stale config-resolution solution-style block (asserted the pre-walk short-circuit) to assert the walk -- required so existing coverage does not regress against the already-upgraded fixture (Rule 3 blocking fix)"
+  - 'skippedReferences re-exported from ./core/walk-references (where the interface lives, per Plan 13-03), on its own export line alongside CoreOptions/CoreResult'
+  - 'Rewrote the now-stale config-resolution solution-style block (asserted the pre-walk short-circuit) to assert the walk -- required so existing coverage does not regress against the already-upgraded fixture (Rule 3 blocking fix)'
 
 patterns-established:
   - "Pattern: engine three-way branch classifies zero-rootNames three ways and reuses the direct path's finalize filter args verbatim for the walk union"
-  - "Pattern: optional CoreResult detection field set purely in core, gated presence-AND-non-empty in the adapter, rendered per-entry as an advisory logger.warn"
+  - 'Pattern: optional CoreResult detection field set purely in core, gated presence-AND-non-empty in the adapter, rendered per-entry as an advisory logger.warn'
 
 requirements-completed: [WALK-01]
 
@@ -101,6 +101,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Rewrote the stale solution-style integration block**
+
 - **Found during:** Task 1 (first `npx nx test` after wiring the walk)
 - **Issue:** `config-resolution.integration.spec.ts:124-152` (the `describe('...solution-style guard fires...')` block) still asserted the PRE-walk short-circuit (`rootNamesCount === 0`, `errorCount === 1`, single guard). Plan 13-02 had ALREADY upgraded `fixtures/solution-style` with app + spec leaves + two distinct planted TS2322 and the spec-leaf reference, so once Task 1 wired the walk, the fixture now walks (rootNamesCount > 0, errorCount 2) and the old block failed. The block is the one RESEARCH/PATTERNS explicitly designate for rewrite (SC4). Leaving it asserting the superseded short-circuit would have been a self-inflicted regression against the locked L-3 design.
 - **Fix:** Rewrote ONLY that `describe` block to assert the walk per RESEARCH SC4: `rootNamesCount > 0`, `errorCount === 2`, exactly two `TS2322` (`codes.filter(...).length === 2`), the two TS2322 in DISTINCT files (`error.component.ts` vs `error.component.spec.ts`), `skippedReferences` undefined, and the retained TS18003-independence assertion. Updated the file header comment's D-03a bullet to describe the walk. The COR-01 pinning block (`:100-121`) is byte-unchanged (verified: no diff hunk overlaps lines 100-121).
@@ -147,5 +148,6 @@ None - no external service configuration required; no dependencies added (reuses
 - `npx nx test angular-typechecker` - 194 tests green; `npx nx build angular-typechecker` - clean
 
 ---
-*Phase: 13-engine-solution-tsconfig-reference-walking*
-*Completed: 2026-07-01*
+
+_Phase: 13-engine-solution-tsconfig-reference-walking_
+_Completed: 2026-07-01_

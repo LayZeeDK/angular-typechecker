@@ -6,36 +6,36 @@ tags: [nx-release, oidc, provenance, security-policy, github-actions, dependabot
 requirements: [PKG-03, PKG-04]
 dependency_graph:
   requires:
-    - "05-01 (manifest correctness: version 0.0.1, repository.url, publishConfig.provenance)"
-    - "05-02 (serialized install-e2e project + audit gate harness)"
-    - "05-03 (committed consumer-app fixture + smoke harness)"
+    - '05-01 (manifest correctness: version 0.0.1, repository.url, publishConfig.provenance)'
+    - '05-02 (serialized install-e2e project + audit gate harness)'
+    - '05-03 (committed consumer-app fixture + smoke harness)'
   provides:
-    - "nx.json release block scoped to angular-typechecker (single-project versioning/publish)"
-    - "repo-root SECURITY.md (GitHub PVR primary + public-email fallback)"
-    - "hardened .github/workflows/release.yml (tag-push, OIDC, least-privilege, SHA-pinned, required-reviewer environment)"
-    - ".github/dependabot.yml (github-actions ecosystem keeps SHA pins fresh)"
-    - "release-hygiene.int.spec.ts (PKG-03/PKG-04 config regression gate)"
+    - 'nx.json release block scoped to angular-typechecker (single-project versioning/publish)'
+    - 'repo-root SECURITY.md (GitHub PVR primary + public-email fallback)'
+    - 'hardened .github/workflows/release.yml (tag-push, OIDC, least-privilege, SHA-pinned, required-reviewer environment)'
+    - '.github/dependabot.yml (github-actions ecosystem keeps SHA pins fresh)'
+    - 'release-hygiene.int.spec.ts (PKG-03/PKG-04 config regression gate)'
   affects:
-    - "05-05 (HUMAN-GATED live publish: the workflow filename release.yml + environment npm-publish are load-bearing for the npm Trusted Publisher registration)"
+    - '05-05 (HUMAN-GATED live publish: the workflow filename release.yml + environment npm-publish are load-bearing for the npm Trusted Publisher registration)'
 tech_stack:
   added: []
   patterns:
-    - "nx release single-project scoping via release.projects"
-    - "OIDC tokenless publish (NODE_AUTH_TOKEN unset, NPM_CONFIG_PROVENANCE true)"
-    - "SHA-pinned GitHub Actions with Dependabot freshness"
-    - "string/regex YAML config assertions (no parser dependency)"
+    - 'nx release single-project scoping via release.projects'
+    - 'OIDC tokenless publish (NODE_AUTH_TOKEN unset, NPM_CONFIG_PROVENANCE true)'
+    - 'SHA-pinned GitHub Actions with Dependabot freshness'
+    - 'string/regex YAML config assertions (no parser dependency)'
 key_files:
   created:
-    - "SECURITY.md"
-    - ".github/workflows/release.yml"
-    - ".github/dependabot.yml"
-    - "e2e/angular-typechecker-install-e2e/src/release-hygiene.int.spec.ts"
+    - 'SECURITY.md'
+    - '.github/workflows/release.yml'
+    - '.github/dependabot.yml'
+    - 'e2e/angular-typechecker-install-e2e/src/release-hygiene.int.spec.ts'
   modified:
-    - "nx.json"
+    - 'nx.json'
 decisions:
-  - "Passed an explicit 0.0.1 specifier to nx release --first-release --dry-run (AUTO_MODE) instead of the interactive version prompt -- conventionalCommits + no prior tags has no history to derive a bump (RESEARCH A2)."
+  - 'Passed an explicit 0.0.1 specifier to nx release --first-release --dry-run (AUTO_MODE) instead of the interactive version prompt -- conventionalCommits + no prior tags has no history to derive a bump (RESEARCH A2).'
   - "Reworded the workflow's threat-model COMMENTS to avoid the bare literal tokens (pull_request_target, contents: write, NODE_AUTH_TOKEN, @vN) so the plan's literal git grep acceptance checks return 0 while the documentation intent is preserved; the ACTIVE YAML directives carry the real security model."
-  - "Pinned actions/checkout to v5.0.1 (93cb6efe...) and actions/setup-node to v5.0.0 (a0853c24...) -- the current floating-v5 commit SHAs resolved live via the GitHub API."
+  - 'Pinned actions/checkout to v5.0.1 (93cb6efe...) and actions/setup-node to v5.0.0 (a0853c24...) -- the current floating-v5 commit SHAs resolved live via the GitHub API.'
 metrics:
   duration: ~18 min
   completed: 2026-06-28
@@ -49,12 +49,12 @@ The package reached PUBLISH-READY: an `nx release` block scoped to `angular-type
 
 ## What Was Built
 
-| Task | Name | Commit | Files |
-| ---- | ---- | ------ | ----- |
-| 1 | nx.json release block scoped to angular-typechecker (PKG-03) | 7a529f5 | nx.json |
-| 2 | SECURITY.md + hardened release.yml + dependabot.yml (PKG-04) | 60ec037 | SECURITY.md, .github/workflows/release.yml, .github/dependabot.yml |
-| 3 | release-hygiene config spec (PKG-03/PKG-04 regression gate) | 75029ce | e2e/angular-typechecker-install-e2e/src/release-hygiene.int.spec.ts |
-| 4 | Publish-ready dry-run review (checkpoint, AUTO-approved) | (no commit -- verification only) | -- |
+| Task | Name                                                         | Commit                           | Files                                                               |
+| ---- | ------------------------------------------------------------ | -------------------------------- | ------------------------------------------------------------------- |
+| 1    | nx.json release block scoped to angular-typechecker (PKG-03) | 7a529f5                          | nx.json                                                             |
+| 2    | SECURITY.md + hardened release.yml + dependabot.yml (PKG-04) | 60ec037                          | SECURITY.md, .github/workflows/release.yml, .github/dependabot.yml  |
+| 3    | release-hygiene config spec (PKG-03/PKG-04 regression gate)  | 75029ce                          | e2e/angular-typechecker-install-e2e/src/release-hygiene.int.spec.ts |
+| 4    | Publish-ready dry-run review (checkpoint, AUTO-approved)     | (no commit -- verification only) | --                                                                  |
 
 ### nx.json release block (PKG-03)
 
@@ -84,15 +84,15 @@ The package reached PUBLISH-READY: an `nx release` block scoped to `angular-type
 
 Verified against the s1ngularity / TanStack / tj-actions threat register (`<threat_model>` T-05-11..T-05-16):
 
-| Control | Implementation | Threat mitigated |
-| ------- | -------------- | ---------------- |
-| Tag-push trigger only | `on: push: tags: ['angular-typechecker@*']` + `workflow_dispatch` -- no untrusted-PR trigger | T-05-11 (command injection) |
-| Least privilege | top-level `permissions: contents: read`; publish job re-grants ONLY `id-token: write` (no repo-write -- the GitHub release is cut locally per D-13) | T-05-11 |
-| Required-reviewer gate | `environment: npm-publish` on the publish job | T-05-12 (whole-repo trust) |
-| SHA-pinned actions | `actions/checkout@93cb6efe...` (v5.0.1), `actions/setup-node@a0853c24...` (v5.0.0) -- full 40-char commit SHAs + `# vN` comments | T-05-13 (mutable tags) |
-| No persisted credential | `persist-credentials: false` on checkout | T-05-14 |
-| Tokenless OIDC | npm auth-token env left entirely UNSET; `NPM_CONFIG_PROVENANCE: true` | T-05-15 / T-05-16 |
-| OIDC floor | `npm i -g npm@latest` (>= 11.5.1) + Node 24 (>= 22.14.0) + ubuntu-latest cloud runner | T-05-15 |
+| Control                 | Implementation                                                                                                                                      | Threat mitigated            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Tag-push trigger only   | `on: push: tags: ['angular-typechecker@*']` + `workflow_dispatch` -- no untrusted-PR trigger                                                        | T-05-11 (command injection) |
+| Least privilege         | top-level `permissions: contents: read`; publish job re-grants ONLY `id-token: write` (no repo-write -- the GitHub release is cut locally per D-13) | T-05-11                     |
+| Required-reviewer gate  | `environment: npm-publish` on the publish job                                                                                                       | T-05-12 (whole-repo trust)  |
+| SHA-pinned actions      | `actions/checkout@93cb6efe...` (v5.0.1), `actions/setup-node@a0853c24...` (v5.0.0) -- full 40-char commit SHAs + `# vN` comments                    | T-05-13 (mutable tags)      |
+| No persisted credential | `persist-credentials: false` on checkout                                                                                                            | T-05-14                     |
+| Tokenless OIDC          | npm auth-token env left entirely UNSET; `NPM_CONFIG_PROVENANCE: true`                                                                               | T-05-15 / T-05-16           |
+| OIDC floor              | `npm i -g npm@latest` (>= 11.5.1) + Node 24 (>= 22.14.0) + ubuntu-latest cloud runner                                                               | T-05-15                     |
 
 Structural parse-verification (via the workspace `yaml` lib, dev-only check) confirmed: trigger on push.tags; no `pull_request_target`; top-level `permissions.contents == read`; publish job `permissions == {id-token: write}` exactly; both action refs are 40-char hex SHAs; `persist-credentials: false`; `NPM_CONFIG_PROVENANCE: true`; no `NODE_AUTH_TOKEN` env declared.
 
@@ -123,6 +123,7 @@ NOTE for the human at 05-05: the workspace-changelog dry-run header printed `v0.
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Workflow comment tokens tripped the literal git grep acceptance checks**
+
 - **Found during:** Task 2 verification.
 - **Issue:** The plan's acceptance criteria use literal `git grep -c "<token>" .github/workflows/release.yml` expecting 0 for `pull_request_target`, `contents: write`, `NODE_AUTH_TOKEN`, and no `uses:.*@v[0-9]`. The hardened workflow's threat-model COMMENTS documented those exact concepts using the bare literal tokens, so the simple greps counted comment lines.
 - **Fix:** Reworded only the affected comment lines to describe the same intent without the bare token ("untrusted-PR-code trigger", "no repo-write permission", "the npm auth-token env var", "a mutable major-version tag"). The ACTIVE YAML directives are unchanged and carry the real security model; structural parse-verification confirms every control is correct.

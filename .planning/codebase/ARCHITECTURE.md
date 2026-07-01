@@ -1,4 +1,5 @@
 <!-- refreshed: 2026-06-30 -->
+
 # Architecture
 
 **Analysis Date:** 2026-06-30
@@ -41,21 +42,21 @@
 
 ## Component Responsibilities
 
-| Component | Responsibility | File |
-|-----------|----------------|------|
-| Executor adapter | Compose core -> stdout -> verdict; map infra error; emit RES-02 abort notice | `packages/angular-typechecker/src/executors/angular-typecheck/executor.ts` |
-| Options normalizer | Pure map of Nx options + `ExecutorContext` to `CoreOptions` + reporter knobs; resolve absolute `tsConfigPath`; derive `color` from TTY | `packages/angular-typechecker/src/executors/angular-typecheck/normalize-options.ts` |
-| Core engine | Parse config once, run `performCompilation` (emit-neutralized), filter + sort + dedup, count by category, detect TCB abort | `packages/angular-typechecker/src/core/run-typecheck.ts` |
-| Diagnostic gatherer | Unconditional all-getter (HYBRID: whole-program + per-file isolation) injected into `performCompilation` | `packages/angular-typechecker/src/core/gather-diagnostics.ts` |
-| Project-boundary filter | Partition diagnostics into in-project vs suppressed (out-of-project + node_modules) | `packages/angular-typechecker/src/core/filter-diagnostics.ts` |
-| Compiler loader | Memoized CJS->ESM `await import('@angular/compiler-cli')` | `packages/angular-typechecker/src/core/compiler-loader.ts` |
-| Render seam | Load `ng`/`ts`, delegate to `formatReport` | `packages/angular-typechecker/src/core/render-report.ts` |
-| Formatter | `formatDiagnostics` -> string; ANSI strip; deterministic format host; fail-fast truncation | `packages/angular-typechecker/src/core/format-report.ts` |
-| Verdict | Pure `{ success }` from `errorCount`/`warningCount` + `maxWarnings` gate | `packages/angular-typechecker/src/core/evaluate-result.ts` |
-| Exit-code policy | Pure `toExitCode` 0/1/2 (ngc parity); for future CLI/builder | `packages/angular-typechecker/src/core/exit-codes.ts` |
-| Diagnostic-code helpers | NG negative encoding (`NG()`/`ngCodeOf`); TCB-fatal code constant | `packages/angular-typechecker/src/core/diagnostic-codes.ts` |
-| Type shim | Self-contained structural surface of `@angular/compiler-cli` consumed by core | `packages/angular-typechecker/src/core/compiler-cli-types.ts` |
-| Public barrel | Re-exports core engine + reporting + verdict for the future CLI/builder | `packages/angular-typechecker/src/index.ts` |
+| Component               | Responsibility                                                                                                                         | File                                                                                |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Executor adapter        | Compose core -> stdout -> verdict; map infra error; emit RES-02 abort notice                                                           | `packages/angular-typechecker/src/executors/angular-typecheck/executor.ts`          |
+| Options normalizer      | Pure map of Nx options + `ExecutorContext` to `CoreOptions` + reporter knobs; resolve absolute `tsConfigPath`; derive `color` from TTY | `packages/angular-typechecker/src/executors/angular-typecheck/normalize-options.ts` |
+| Core engine             | Parse config once, run `performCompilation` (emit-neutralized), filter + sort + dedup, count by category, detect TCB abort             | `packages/angular-typechecker/src/core/run-typecheck.ts`                            |
+| Diagnostic gatherer     | Unconditional all-getter (HYBRID: whole-program + per-file isolation) injected into `performCompilation`                               | `packages/angular-typechecker/src/core/gather-diagnostics.ts`                       |
+| Project-boundary filter | Partition diagnostics into in-project vs suppressed (out-of-project + node_modules)                                                    | `packages/angular-typechecker/src/core/filter-diagnostics.ts`                       |
+| Compiler loader         | Memoized CJS->ESM `await import('@angular/compiler-cli')`                                                                              | `packages/angular-typechecker/src/core/compiler-loader.ts`                          |
+| Render seam             | Load `ng`/`ts`, delegate to `formatReport`                                                                                             | `packages/angular-typechecker/src/core/render-report.ts`                            |
+| Formatter               | `formatDiagnostics` -> string; ANSI strip; deterministic format host; fail-fast truncation                                             | `packages/angular-typechecker/src/core/format-report.ts`                            |
+| Verdict                 | Pure `{ success }` from `errorCount`/`warningCount` + `maxWarnings` gate                                                               | `packages/angular-typechecker/src/core/evaluate-result.ts`                          |
+| Exit-code policy        | Pure `toExitCode` 0/1/2 (ngc parity); for future CLI/builder                                                                           | `packages/angular-typechecker/src/core/exit-codes.ts`                               |
+| Diagnostic-code helpers | NG negative encoding (`NG()`/`ngCodeOf`); TCB-fatal code constant                                                                      | `packages/angular-typechecker/src/core/diagnostic-codes.ts`                         |
+| Type shim               | Self-contained structural surface of `@angular/compiler-cli` consumed by core                                                          | `packages/angular-typechecker/src/core/compiler-cli-types.ts`                       |
+| Public barrel           | Re-exports core engine + reporting + verdict for the future CLI/builder                                                                | `packages/angular-typechecker/src/index.ts`                                         |
 
 ## Pattern Overview
 
@@ -65,6 +66,7 @@ is wrapped by a thin Nx executor adapter; the only `@nx/devkit`-aware files are
 adapters (a standalone CLI, an Angular CLI builder).
 
 **Key Characteristics:**
+
 - **CommonJS shell, ESM peer.** The shipped executor is CommonJS (`require()`d by Nx across Nx 21/22/23); it reaches the ESM-only `@angular/compiler-cli` via a literal `await import()` that survives `@nx/js:tsc` emit because the lib is compiled under `module: nodenext` (`tsconfig.json`).
 - **Pure core.** `src/core/**` performs NO `process` / `console` side effects (enforced by ESLint). All side effects (stdout, exit, logging, TTY detection) live in the adapter. `ng`/`ts` are injected into `formatReport` so it is unit-testable without a compiler mock.
 - **Unconditional all-getter gather (the differentiator).** Unlike `ngc`'s phase short-circuit, the gatherer calls every diagnostic getter unconditionally so Angular template + extended (NG8xxx) diagnostics surface even when a co-located TypeScript error exists.
@@ -74,6 +76,7 @@ adapters (a standalone CLI, an Angular CLI builder).
 ## Layers
 
 **Adapter (Nx executor) layer:**
+
 - Purpose: Bridge Nx's `(options, context) => { success }` contract to the pure core; own all side effects (stdout, logger, TTY).
 - Location: `packages/angular-typechecker/src/executors/angular-typecheck/`
 - Contains: `executor.ts` (default async fn), `normalize-options.ts`, `schema.json` + `schema.d.ts`.
@@ -81,6 +84,7 @@ adapters (a standalone CLI, an Angular CLI builder).
 - Used by: the Nx CLI (`require()` via `executors.json`).
 
 **Core engine layer:**
+
 - Purpose: Run the complete whole-program Angular type-check for one tsconfig with no emit; return a structured `CoreResult`.
 - Location: `packages/angular-typechecker/src/core/run-typecheck.ts`, `gather-diagnostics.ts`, `filter-diagnostics.ts`, `compiler-loader.ts`.
 - Contains: config resolution, the emit-neutralizing override, the all-getter gatherer, the project-boundary filter, sort/dedup/count, infra-vs-type classification, TCB-abort detection.
@@ -88,12 +92,14 @@ adapters (a standalone CLI, an Angular CLI builder).
 - Used by: the adapter and the public barrel.
 
 **Reporting layer:**
+
 - Purpose: Turn `CoreResult.diagnostics` into a human/CI string (NG codes, template codeframes), deterministically.
 - Location: `packages/angular-typechecker/src/core/render-report.ts` (seam) + `format-report.ts` (pure formatter).
 - Depends on: injected `ng.formatDiagnostics` + `typescript`.
 - Used by: the adapter (`renderReport`).
 
 **Verdict / policy layer:**
+
 - Purpose: The single source of truth for pass/fail and exit code; pure, no side effects.
 - Location: `packages/angular-typechecker/src/core/evaluate-result.ts` (`{ success }`) + `exit-codes.ts` (`toExitCode`).
 - Depends on: only `CoreResult` shape + `TypecheckInfrastructureError`.
@@ -126,26 +132,31 @@ adapters (a standalone CLI, an Angular CLI builder).
 2. The engine skips `performCompilation` and returns one synthesized Error diagnostic so agents/CI get a deterministic non-zero signal instead of a false PASS (`run-typecheck.ts:190`, `run-typecheck.ts:329`).
 
 **State Management:**
+
 - Module-level memo caches in `compiler-loader.ts` (the `@angular/compiler-cli` namespace) and a duplicated `cachedTypescript` memo in `run-typecheck.ts` and `render-report.ts`. These are process-lifetime caches of resolved ESM modules; no other mutable shared state exists.
 
 ## Key Abstractions
 
 **`CoreOptions` / `CoreResult`:**
+
 - Purpose: The framework-agnostic engine contract. `CoreOptions` = `tsConfigPath` + `includeDeps` + `pathBase`. `CoreResult` = filtered/sorted diagnostics + explicit `errorCount`/`warningCount` + `suppressedCount` + `durationMs` + optional `templateCheckAborted`.
 - Examples: `packages/angular-typechecker/src/core/run-typecheck.ts` (interfaces at lines 11 and 33).
 - Pattern: Plain interfaces; counts are computed EXPLICITLY by `ts.DiagnosticCategory`, never `length - errorCount`.
 
 **`gatherAllDiagnostics` (HYBRID gatherer):**
+
 - Purpose: The injected `gatherDiagnostics` callback that defeats ngc's phase short-circuit; whole-program getters PLUS a per-file Angular-semantic loop for fault isolation.
 - Examples: `packages/angular-typechecker/src/core/gather-diagnostics.ts:57`.
 - Pattern: Append-only accumulation; relies on downstream `sortAndDeduplicateDiagnostics` for dedup (no manual dedup).
 
 **`TypecheckInfrastructureError`:**
+
 - Purpose: Distinguish "the compiler failed to RUN" from "the code has type errors". Detected by `UNKNOWN_ERROR_CODE` (500), never by message text.
 - Examples: `packages/angular-typechecker/src/core/run-typecheck.ts:103`.
 - Pattern: Typed error class; caught in the adapter, mapped to exit 2 in `toExitCode`.
 
 **`CompilerCli` structural shim:**
+
 - Purpose: A self-contained structural type surface for the `@angular/compiler-cli` members the core calls, because the package's barrel typings do not resolve under nodenext and a deep relative import breaks in a consumer install.
 - Examples: `packages/angular-typechecker/src/core/compiler-cli-types.ts`.
 - Pattern: Hand-declared `import type` surface sourced from `typescript`'s public types; the runtime value is the real module. A drift target (`compiler-cli-types.drift.ts` + `typecheck-drift` target) guards it.
@@ -153,11 +164,13 @@ adapters (a standalone CLI, an Angular CLI builder).
 ## Entry Points
 
 **Nx executor (the only shipped entry point):**
+
 - Location: `packages/angular-typechecker/executors.json` -> `./src/executors/angular-typecheck/executor` (compiled `.js`).
 - Triggers: `nx run <project>:angular-typecheck` (or any target keyed to the published executor id `angular-typechecker:angular-typecheck`).
 - Responsibilities: normalize options, run the core, render to stdout, return `{ success }`.
 
 **Public API barrel:**
+
 - Location: `packages/angular-typechecker/src/index.ts` (`main`/`types` in the published `package.json`).
 - Triggers: programmatic `import` by the deferred CLI/builder.
 - Responsibilities: re-export the engine, reporting, verdict, and types.
@@ -202,6 +215,7 @@ adapters (a standalone CLI, an Angular CLI builder).
 **Strategy:** Three-way classification -- clean / type-error / infrastructure-failure -- with a fail-safe bias for a correctness tool.
 
 **Patterns:**
+
 - Infra failures detected by code 500 at two stages (config resolution and post-compilation) and thrown as `TypecheckInfrastructureError`; caught in the adapter and mapped to `{ success: false }` / exit 2.
 - A `{ program: undefined }` return without a 500 is defensively converted to the same infra class (`run-typecheck.ts:266`).
 - Any non-infra error is RE-THROWN unswallowed (`executor.ts:85`).
@@ -217,4 +231,4 @@ adapters (a standalone CLI, an Angular CLI builder).
 
 ---
 
-*Architecture analysis: 2026-06-30*
+_Architecture analysis: 2026-06-30_

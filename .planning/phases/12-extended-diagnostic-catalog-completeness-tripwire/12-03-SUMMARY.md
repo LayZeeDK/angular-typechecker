@@ -19,10 +19,10 @@ affects: [Phase 12 milestone audit, CAT-05 catalog doc, future Angular-version b
 tech-stack:
   added: []
   patterns:
-    - "Sibling it.each table in the same catalog spec (describe.each over BaselineRow objects) -- one catalog of record for both extended and baseline codes"
+    - 'Sibling it.each table in the same catalog spec (describe.each over BaselineRow objects) -- one catalog of record for both extended and baseline codes'
     - "Baseline PRESENCE assertion via codes.toContain(NG(code)|bareTs) -- distinct from the extended block's exact filter-count discipline"
-    - "NG3003 forced deterministically via an NgModule-wired 2-component selector cycle under compilationMode: partial (remote scoping disabled -> cycle-handling strategy Error)"
-    - "NG2005 requires the undecorated provider class to have >=1 constructor parameter (resolveProvidersRequiringFactory gate)"
+    - 'NG3003 forced deterministically via an NgModule-wired 2-component selector cycle under compilationMode: partial (remote scoping disabled -> cycle-handling strategy Error)'
+    - 'NG2005 requires the undecorated provider class to have >=1 constructor parameter (resolveProvidersRequiringFactory gate)'
 
 key-files:
   created:
@@ -35,13 +35,13 @@ key-files:
     - packages/angular-typechecker/src/core/baseline.angular13.integration.spec.ts (folded into the catalog)
 
 key-decisions:
-  - "NG3003 was staged via an NgModule (declarations) selector cycle under compilationMode: partial rather than a standalone imports cycle -- standalone imports resolve via forward references and never fire NG3003"
+  - 'NG3003 was staged via an NgModule (declarations) selector cycle under compilationMode: partial rather than a standalone imports cycle -- standalone imports resolve via forward references and never fire NG3003'
   - "NG2005 fixture's undecorated provider carries a constructor dependency so it registers as providersRequiringFactory (verified in v22.0.4 bundle)"
-  - "NG1001 (non-literal @Component metadata) lives on its OWN component -- unanalyzable metadata suppresses template diagnostics, so NG8002/NG8004 must live on separate components"
+  - 'NG1001 (non-literal @Component metadata) lives on its OWN component -- unanalyzable metadata suppresses template diagnostics, so NG8002/NG8004 must live on separate components'
 
 patterns-established:
   - "Baseline sibling table: BaselineRow { label, code, isNg, fixtureScenario, expectWarning? } driven by describe.each, reusing the extended spec's fixtureTsConfig() resolver and NG import"
-  - "WARN_-prefixed codes (NG6100) get an additional category === ts.DiagnosticCategory.Warning + warningCount >= 1 assertion"
+  - 'WARN_-prefixed codes (NG6100) get an additional category === ts.DiagnosticCategory.Warning + warningCount >= 1 assertion'
 
 requirements-completed: [CAT-03]
 
@@ -63,6 +63,7 @@ completed: 2026-07-01
 - **Files modified:** 16 (13 fixture files created, 1 spec modified, 1 spec deleted, 1 doc modified)
 
 ## Accomplishments
+
 - Authored `fixtures/ng-baseline-extra/` (8 component/module files) firing NG2003, NG2005, NG2007, NG2009, NG1001, NG6100 (Warning), NG8002, NG8004 -- every trigger verified against a real `@angular/compiler-cli@22.0.4` run before the spec was written.
 - Authored `fixtures/ng-baseline-import-cycle/` (NgModule + 2 mutually-referencing components) firing NG3003 deterministically under `compilationMode: "partial"`.
 - Appended a sibling baseline `describe.each` table (12 rows) to `extended-catalog.integration.spec.ts`; NG6100 additionally asserts Warning category + warningCount.
@@ -80,6 +81,7 @@ Each task was committed atomically:
 **Plan metadata:** (final docs commit follows this SUMMARY)
 
 ## Files Created/Modified
+
 - `fixtures/ng-baseline-extra/param-token.component.ts` - NG2003 (primitive DI param, no token)
 - `fixtures/ng-baseline-extra/undecorated-provider.component.ts` - NG2005 (undecorated provider with a constructor dependency)
 - `fixtures/ng-baseline-extra/undecorated-base.component.ts` - NG2007 (undecorated base using @Input())
@@ -97,6 +99,7 @@ Each task was committed atomically:
 - `.planning/codebase/TESTING.md` - integration-spec count 10 -> 8
 
 ## Decisions Made
+
 - **NG3003 staged via NgModule, not standalone imports.** A standalone `imports: [Other]` cross-reference cycle never fires NG3003 -- standalone imports resolve via forward references (`standaloneImportMayBeForwardDeclared`), so no cyclic import is generated. NG3003 requires Angular to GENERATE the cross-imports, which happens with NgModule `declarations` where the component files do NOT import each other. Under `compilationMode: "partial"` the cycle-handling strategy is Error (remote scoping is unavailable), which is what raises NG3003. Verified in the v22.0.4 bundle (`cycleHandlingStrategy = compilationMode === PARTIAL ? 1 : 0`).
 - **NG2005 needs a constructor dependency.** `resolveProvidersRequiringFactory` only flags an undecorated provider that has >=1 constructor parameter; the initial parameter-less service was silently filtered out. Added an `UndecoratedDependency` constructor param.
 - **NG1001 isolated on its own component.** Non-literal `@Component` metadata is unanalyzable, so the compiler emits no template diagnostics for that component -- NG8002/NG8004 therefore live on separate, fully-analyzable components in the same fixture.
@@ -106,6 +109,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] NG3003 did not fire from the planned standalone cross-reference cycle**
+
 - **Found during:** Task 1 (fixture authoring, TDD verification loop)
 - **Issue:** The plan sketched NG3003 as a "2-file directive/pipe cross-reference cycle" between standalone components. Two standalone components with explicit `imports:` of each other produced ZERO diagnostics -- standalone imports are forward-declarable, so Angular avoids the cyclic import entirely and never raises NG3003.
 - **Fix:** Restructured the fixture to an NgModule (`cycle.module.ts`) declaring both components, where the two component files do NOT import each other (only the module imports both). Set `compilationMode: "partial"` in the fixture tsconfig so the cycle-handling strategy is Error (remote scoping unavailable). This forces Angular to generate the cross-imports and raise NG3003. The fixture still consists of the required two cross-referencing component `.ts` files (plus the wiring module).
@@ -114,6 +118,7 @@ Each task was committed atomically:
 - **Committed in:** `5bee856` (Task 1 commit)
 
 **2. [Rule 1 - Bug] NG2005 fixture did not fire (parameter-less undecorated provider filtered out)**
+
 - **Found during:** Task 1 (fixture authoring, TDD verification loop)
 - **Issue:** An undecorated provider class with no constructor did not surface NG2005. The v22.0.4 `resolveProvidersRequiringFactory` only registers a provider "requiring a factory" when it has >=1 constructor parameter, so a parameter-less class is skipped.
 - **Fix:** Gave `UndecoratedService` a constructor parameter (`UndecoratedDependency`).
@@ -129,13 +134,16 @@ Each task was committed atomically:
 **Impact on plan:** Both fixes were necessary for the fixtures to actually trigger their target codes. No scope creep -- the fixture directory count and the required cross-referencing components are unchanged; only the internal file layout and the NG3003 wiring strategy differ from the sketch, which the plan explicitly permitted.
 
 ## Issues Encountered
+
 - The initial empirical probe under-reported diagnostics because it used `performCompilation`'s DEFAULT gatherer (phase short-circuit) rather than the project's `gatherAllDiagnostics`. Re-probing with the full unconditional getter set (matching `gather-diagnostics.ts`) surfaced all codes correctly, matching what `runTypecheck` sees in the real spec.
 - `human_needed`: NONE. NG3003 fires deterministically from the static fixture (no `it.skip` or human-verification carve-out needed).
 
 ## User Setup Required
+
 None - no external service configuration required.
 
 ## Next Phase Readiness
+
 - CAT-03 is fully covered inside the single catalog of record; baseline.angular13 is gone (one catalog of record, D-06/D-07).
 - Full plugin suite green: 24 test files, 183 tests (was 25/185 -- the 2 folded baseline.angular13 tests are now baseline catalog rows).
 - Ready for the Phase 12 milestone audit / VERIFICATION cross-reference.
@@ -147,5 +155,6 @@ None - no external service configuration required.
 - All 3 task commits present in git log (5bee856, e1440fd, 46e5a84).
 
 ---
-*Phase: 12-extended-diagnostic-catalog-completeness-tripwire*
-*Completed: 2026-07-01*
+
+_Phase: 12-extended-diagnostic-catalog-completeness-tripwire_
+_Completed: 2026-07-01_

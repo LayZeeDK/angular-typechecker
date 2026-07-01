@@ -7,9 +7,7 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/packages/angular-typechecker",
         "main": "packages/angular-typechecker/src/index.ts",
@@ -64,9 +62,7 @@
     "test": {
       "executor": "@nx/vitest:test",
       "dependsOn": ["build"],
-      "outputs": [
-        "{options.reportsDirectory}"
-      ],
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/packages/angular-typechecker"
       }

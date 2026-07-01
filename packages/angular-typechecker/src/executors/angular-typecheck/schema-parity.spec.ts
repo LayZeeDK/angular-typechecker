@@ -12,10 +12,7 @@ import { describe, expect, it } from 'vitest';
 // contract). This is a pure, deterministic filesystem read (no compiler load, no
 // build artifact) so it runs in the fast `nx test` loop.
 
-const schemaPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  'schema.json',
-);
+const schemaPath = join(dirname(fileURLToPath(import.meta.url)), 'schema.json');
 
 interface ExecutorSchema {
   version?: number;
@@ -25,9 +22,7 @@ interface ExecutorSchema {
   properties: Record<string, { type?: string; default?: unknown }>;
 }
 
-const schema = JSON.parse(
-  readFileSync(schemaPath, 'utf8'),
-) as ExecutorSchema;
+const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as ExecutorSchema;
 
 // The exact AngularTypecheckExecutorOptions key set (schema.d.ts), sorted.
 const EXPECTED_KEYS = ['failFast', 'includeDeps', 'maxWarnings', 'tsConfig'];

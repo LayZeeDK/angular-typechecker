@@ -50,8 +50,8 @@ export interface TreeWriteOptions {
 }
 
 export interface Tree {
-  root: string;                                              // workspace root; all paths relative to this
-  read(filePath: string): Buffer | null;                     // overload 1
+  root: string; // workspace root; all paths relative to this
+  read(filePath: string): Buffer | null; // overload 1
   read(filePath: string, encoding: BufferEncoding): string | null; // overload 2
   write(filePath: string, content: Buffer | string, options?: TreeWriteOptions): void;
   exists(filePath: string): boolean;
@@ -64,9 +64,9 @@ export interface Tree {
 }
 
 export interface FileChange {
-  path: string;                            // relative to workspace root
+  path: string; // relative to workspace root
   type: 'CREATE' | 'DELETE' | 'UPDATE';
-  content: Buffer | null;                  // null on DELETE
+  content: Buffer | null; // null on DELETE
   options?: TreeWriteOptions;
 }
 ```
@@ -83,6 +83,7 @@ A generator typed against `Tree` cannot call them; only code holding a concrete 
 matter for us because v0.0.4 may later expose an Angular schematic.
 
 ### 2a. `FsTree` -- real-disk substrate (the one we use)
+
 `packages/nx/src/generators/tree.ts@23.0.1`, `export class FsTree implements Tree`.
 
 - **Backing store:** the REAL filesystem at `root`, PLUS an in-memory overlay
@@ -116,6 +117,7 @@ matter for us because v0.0.4 may later expose an Angular schematic.
     equivalent keys (spec "should normalize paths").
 
 ### 2b. `DevkitTreeFromAngularDevkitTree` -- schematics->devkit adapter (for Angular schematics)
+
 `packages/devkit/src/utils/invoke-nx-generator.ts@23.0.1` (line ~95), `class DevkitTreeFromAngularDevkitTree implements Tree` (not exported).
 
 - **Backing store:** wraps an `@angular-devkit/schematics` `Tree` (`this.tree`); delegates every op to
@@ -131,7 +133,9 @@ matter for us because v0.0.4 may later expose an Angular schematic.
   real filesystem -- the same `/virtual` sentinel the in-memory testing utils use (section 3).
 
 ### 2c. `NxScopedHost` family -- devkit `Tree` -> schematics `virtualFs.Host` bridge
+
 `packages/nx/src/adapter/ngcli-adapter.ts@23.0.1`:
+
 - `export class NxScopedHost extends virtualFs.ScopedHost<any>` (line ~500) -- a `@angular-devkit/core`
   `virtualFs` host scoped to `root` over a `NodeJsSyncHost`; special-cases reads of `angular.json` to
   synthesize a merged workspace config from the Nx project graph.
@@ -157,7 +161,8 @@ Both live under `packages/nx/src/generators/testing-utils/` and are re-exported 
 `@nx/devkit/testing` (section 4). **Both return an `FsTree` rooted at `'/virtual'`** -- a path that
 does not exist, so every disk fall-through read misses and the tree behaves as a pure in-memory overlay.
 
-### `createTree()`  -- `create-tree.ts@23.0.1`
+### `createTree()` -- `create-tree.ts@23.0.1`
+
 ```ts
 export function createTree(): Tree {
   const tree = new FsTree('/virtual', false);
@@ -165,18 +170,19 @@ export function createTree(): Tree {
   return tree;
 }
 ```
+
 Bare in-memory tree; pre-seeds only `.prettierrc`.
 
 ### `createTreeWithEmptyWorkspace(opts?)` -- `create-tree-with-empty-workspace.ts@23.0.1`
+
 ```ts
-export function createTreeWithEmptyWorkspace(
-  opts = {} as { layout?: 'apps-libs' }
-): Tree {
+export function createTreeWithEmptyWorkspace(opts = {} as { layout?: 'apps-libs' }): Tree {
   const tree = new FsTree('/virtual', false);
   process.env.INIT_CWD = workspaceRoot; // prevents subdir path prefixing in tests
   return addCommonFiles(tree, opts.layout === 'apps-libs');
 }
 ```
+
 `addCommonFiles` pre-populates a minimal-but-real Nx workspace skeleton:
 `.prettierrc` (`{ singleQuote: true }`), `package.json` (`@proj/source`, empty deps), `nx.json`
 (`affected.defaultBase: 'main'`, `targetDefaults` build/lint cache), `tsconfig.base.json`
@@ -193,19 +199,20 @@ export function createTreeWithEmptyWorkspace(
 
 ## 4. Public re-export surface vs the internal deep import (the stable/unstable line)
 
-| Symbol | Public via `@nx/devkit` / `@nx/devkit/testing`? | Path |
-|---|---|---|
-| `Tree` (type) | YES (type only) | `nx/src/devkit-exports.ts@23.0.1`: `export type { FileChange, Tree } from './generators/tree'` |
-| `FileChange` (type) | YES (type only) | same line |
-| `TreeWriteOptions` (type) | NO public re-export found | internal `nx/src/generators/tree` |
-| `FsTree` (class) | **NO** | internal `nx/src/generators/tree` ONLY |
-| `flushChanges` (fn) | **NO** | internal `nx/src/generators/tree` ONLY |
-| `printChanges` (fn) | **NO** | internal `nx/src/generators/tree` ONLY |
-| `createTree` | YES | `@nx/devkit/testing` -> `nx/src/devkit-testing-exports.ts@23.0.1` |
-| `createTreeWithEmptyWorkspace` | YES | `@nx/devkit/testing` -> same |
-| `generateFiles` / `formatFiles` / `visitNotIgnoredFiles` | YES | `packages/devkit/public-api.ts@23.0.1` |
+| Symbol                                                   | Public via `@nx/devkit` / `@nx/devkit/testing`? | Path                                                                                           |
+| -------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Tree` (type)                                            | YES (type only)                                 | `nx/src/devkit-exports.ts@23.0.1`: `export type { FileChange, Tree } from './generators/tree'` |
+| `FileChange` (type)                                      | YES (type only)                                 | same line                                                                                      |
+| `TreeWriteOptions` (type)                                | NO public re-export found                       | internal `nx/src/generators/tree`                                                              |
+| `FsTree` (class)                                         | **NO**                                          | internal `nx/src/generators/tree` ONLY                                                         |
+| `flushChanges` (fn)                                      | **NO**                                          | internal `nx/src/generators/tree` ONLY                                                         |
+| `printChanges` (fn)                                      | **NO**                                          | internal `nx/src/generators/tree` ONLY                                                         |
+| `createTree`                                             | YES                                             | `@nx/devkit/testing` -> `nx/src/devkit-testing-exports.ts@23.0.1`                              |
+| `createTreeWithEmptyWorkspace`                           | YES                                             | `@nx/devkit/testing` -> same                                                                   |
+| `generateFiles` / `formatFiles` / `visitNotIgnoredFiles` | YES                                             | `packages/devkit/public-api.ts@23.0.1`                                                         |
 
 How the barrels chain:
+
 - `packages/devkit/index.ts@23.0.1` = `export * from 'nx/src/devkit-exports'; export * from './public-api';`
 - `packages/devkit/testing.ts@23.0.1` = `export * from 'nx/src/devkit-testing-exports';`
 - `nx/src/devkit-testing-exports.ts@23.0.1` re-exports `createTree`, `createTreeWithEmptyWorkspace`,
@@ -221,17 +228,27 @@ present on the deep-import module object.
 ## 5. Tree utilities (signatures + purpose), at tag 23.0.1
 
 ### 5a. `flushChanges(root, fileChanges)` -- the disk writer
+
 `packages/nx/src/generators/tree.ts@23.0.1`:
+
 ```ts
 export function flushChanges(root: string, fileChanges: FileChange[]): void {
   fileChanges.forEach((f) => {
     const fpath = join(root, f.path);
-    if (f.type === 'CREATE') { mkdirSync(dirname(fpath), { recursive: true }); writeFileSync(fpath, f.content); if (f.options?.mode) chmodSync(fpath, f.options.mode); }
-    else if (f.type === 'UPDATE') { writeFileSync(fpath, f.content); if (f.options?.mode) chmodSync(fpath, f.options.mode); }
-    else if (f.type === 'DELETE') { rmSync(fpath, { recursive: true, force: true }); }
+    if (f.type === 'CREATE') {
+      mkdirSync(dirname(fpath), { recursive: true });
+      writeFileSync(fpath, f.content);
+      if (f.options?.mode) chmodSync(fpath, f.options.mode);
+    } else if (f.type === 'UPDATE') {
+      writeFileSync(fpath, f.content);
+      if (f.options?.mode) chmodSync(fpath, f.options.mode);
+    } else if (f.type === 'DELETE') {
+      rmSync(fpath, { recursive: true, force: true });
+    }
   });
 }
 ```
+
 Pure, stateless, synchronous. `CREATE` makes parent dirs recursively; `DELETE` is recursive+force.
 It takes a `root` argument separately from the tree -- production code always passes `tree.root`
 (or `workspaceRoot`).
@@ -239,16 +256,22 @@ It takes a `root` argument separately from the tree -- production code always pa
 ### 5b. `printChanges(fileChanges, indent='')` -- colored CREATE/UPDATE/DELETE log (picocolors). Same file.
 
 ### 5c. The generator-to-disk lifecycle (canonical production usage)
+
 `packages/nx/src/command-line/generate/generate.ts@23.0.1` (lines ~401-425) -- the exact pattern a
 real-disk helper mirrors:
+
 ```ts
 const host = new FsTree(workspaceRoot, args.verbose, `generating (${collection}:${name})`);
 const task = await implementation(host, combinedOpts);
 host.lock();
 const changes = host.listChanges();
 if (!opts.quiet) printChanges(changes);
-if (!opts.dryRun) { flushChanges(workspaceRoot, changes); if (task) await task(); }
+if (!opts.dryRun) {
+  flushChanges(workspaceRoot, changes);
+  if (task) await task();
+}
 ```
+
 36 `new FsTree(...)` call sites exist across `packages/` (CLI generate/migrate/new/release, daemon
 sync-generators, init, AI utils, ts-solution-setup, the ngcli adapter, etc.) -- all follow
 `new FsTree(realRoot, verbose[, opId])` then `flushChanges(root, tree.listChanges())`. 13 `flushChanges`
@@ -260,7 +283,7 @@ call sites, all `flushChanges(<root>, <tree>.listChanges())`.
 
 ### 5f. `formatFiles(tree, options?)` -- `packages/devkit/src/generators/format-files.ts@23.0.1`. Reads `tree.listChanges()` (non-DELETE), runs Prettier on each, and `tree.write`s the formatted content back. Honors a `.prettierrc` recorded in the tree -- which is exactly why `createTree`/`createTreeWithEmptyWorkspace` seed `.prettierrc`. Public, async.
 
-### 5g. `glob(tree, patterns)` / `globAsync(tree, patterns)` -- `packages/nx/src/generators/utils/glob.ts@23.0.1`. Glob over the tree (combines on-disk + recorded). 
+### 5g. `glob(tree, patterns)` / `globAsync(tree, patterns)` -- `packages/nx/src/generators/utils/glob.ts@23.0.1`. Glob over the tree (combines on-disk + recorded).
 
 ### 5h. JSON + project-config tree utils -- `packages/nx/src/generators/utils/json.ts@23.0.1` (`readJson`, `writeJson`, `updateJson`) and `project-configuration.ts@23.0.1` (`addProjectConfiguration`, `updateProjectConfiguration`, `readProjectConfiguration`, `removeProjectConfiguration`, `getProjects`). These are how specs seed config into a tree and assert against it (section 6). All public via `@nx/devkit`.
 
@@ -269,40 +292,53 @@ call sites, all `flushChanges(<root>, <tree>.listChanges())`.
 ## 6. Tree-testing techniques across `@nx/*` packages (recurring idioms)
 
 ### 6a. Nx's own `FsTree` spec -- the REAL-DISK template (our primary model)
+
 `packages/nx/src/generators/tree.spec.ts@23.0.1`. Idiom:
+
 ```ts
 import { dirSync } from 'tmp';
-let dir: string; let tree: FsTree;
+let dir: string;
+let tree: FsTree;
 beforeEach(() => {
-  dir = dirSync().name;                          // real temp dir
+  dir = dirSync().name; // real temp dir
   mkdirSync(path.join(dir, 'parent/child'), { recursive: true });
   writeFileSync(path.join(dir, 'root-file.txt'), 'root content'); // seed on disk
-  tree = new FsTree(dir, true);                  // isVerbose=true in the spec
+  tree = new FsTree(dir, true); // isVerbose=true in the spec
 });
-afterEach(() => { rmSync(dir, { recursive: true, force: true }); }); // teardown
+afterEach(() => {
+  rmSync(dir, { recursive: true, force: true });
+}); // teardown
 // ... mutate via tree.write/delete/rename ...
-flushChanges(dir, tree.listChanges());            // commit
+flushChanges(dir, tree.listChanges()); // commit
 expect(readFileSync(path.join(dir, '...'), 'utf-8')).toEqual('...'); // assert ON DISK
 ```
+
 Key assertion helper `s(changes)` stringifies `FileChange.content` (Buffer) before `toEqual`.
 Permission assertions use `lstatSync(...).mode & octal(mode)`.
 
 ### 6b. The dominant idiom -- IN-MEMORY via `createTreeWithEmptyWorkspace` (452 spec files import it)
+
 Representative (`packages/js/src/generators/library/library.spec.ts@23.0.1`,
 `packages/plugin/src/generators/executor/executor.spec.ts@23.0.1`):
+
 ```ts
 import 'nx/src/internal-testing-utils/mock-project-graph'; // mock graph FIRST (side-effect import)
 import { Tree, readJson, readProjectConfiguration } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 let tree: Tree;
-beforeEach(() => { tree = createTreeWithEmptyWorkspace(); tree.write('/.gitignore', ''); });
+beforeEach(() => {
+  tree = createTreeWithEmptyWorkspace();
+  tree.write('/.gitignore', '');
+});
 it('...', async () => {
-  await someGenerator(tree, opts);                 // run generator against in-memory tree
-  expect(tree.exists('my-lib/tsconfig.lib.json')).toBeTruthy();   // assert
-  const json = readJson(tree, 'my-lib/tsconfig.lib.json');        // assert config
+  await someGenerator(tree, opts); // run generator against in-memory tree
+  expect(tree.exists('my-lib/tsconfig.lib.json')).toBeTruthy(); // assert
+  const json = readJson(tree, 'my-lib/tsconfig.lib.json'); // assert config
 });
 ```
+
 Recurring sub-idioms:
+
 - `import 'nx/src/internal-testing-utils/mock-project-graph';` as the FIRST import (side-effecting
   mock so generators that read the project graph don't hit the real workspace).
 - `setCwd('')` (`@nx/devkit/internal-testing-utils`) when the generator derives paths from CWD.
@@ -336,19 +372,16 @@ import { FsTree, flushChanges } from 'nx/src/generators/tree';
 import type { Tree } from '@nx/devkit';
 
 export interface CreateFsTreeResult {
-  tree: Tree;          // hand this to the generator (typed as the public Tree)
-  root: string;        // the real temp dir
-  cleanup(): void;     // rmSync the temp dir
+  tree: Tree; // hand this to the generator (typed as the public Tree)
+  root: string; // the real temp dir
+  cleanup(): void; // rmSync the temp dir
 }
 
 /**
  * Real-disk Tree rooted at a fresh temp dir. Seed files are written to disk so the
  * generator's reads (e.g. tsconfig.base.json) resolve from disk, exactly like a real workspace.
  */
-export function createFsTree(
-  seed: Record<string, string> = {},
-  options: { isVerbose?: boolean } = {}
-): CreateFsTreeResult {
+export function createFsTree(seed: Record<string, string> = {}, options: { isVerbose?: boolean } = {}): CreateFsTreeResult {
   const root = mkdtempSync(join(tmpdir(), 'angular-typechecker-fstree-'));
   for (const [rel, content] of Object.entries(seed)) {
     const abs = join(root, rel);
@@ -360,7 +393,9 @@ export function createFsTree(
   return {
     tree,
     root,
-    cleanup() { rmSync(root, { recursive: true, force: true }); },
+    cleanup() {
+      rmSync(root, { recursive: true, force: true });
+    },
   };
 }
 
@@ -377,6 +412,7 @@ export function flushFsTreeChanges(tree: Tree): void {
 ```
 
 Usage in a generator spec:
+
 ```ts
 const { tree, root, cleanup } = createFsTree({
   'nx.json': JSON.stringify({ ... }),
@@ -394,6 +430,7 @@ try {
 ```
 
 Notes:
+
 - `mkdtempSync` (Node built-in) avoids a `tmp` dependency; Nx's spec uses `tmp`'s `dirSync()` but the
   semantics are identical (a unique real dir). Either is fine; built-in keeps deps minimal.
 - If a generator calls `formatFiles`, seed a `.prettierrc` (Prettier config) -- same reason
@@ -413,6 +450,7 @@ Notes:
 Two defenses:
 
 ### 8a. ESLint quarantine
+
 - Confine the deep import to ONE module (e.g. `test-helpers/fs-tree.ts`). Forbid
   `nx/src/**` imports everywhere else via `no-restricted-imports` (Nx's own codebase guards these with
   `@typescript-eslint/no-restricted-imports` -- see the eslint-disable in `devkit/testing.ts`).
@@ -420,6 +458,7 @@ Two defenses:
   out of the `files` whitelist (it must never ship in the plugin tarball).
 
 ### 8b. Build-time drift assertion (fail loudly on Nx upgrade)
+
 Pin the exact contract this research verified against `nx@23.0.1`'s shipped
 `node_modules/nx/dist/src/generators/tree.d.ts`. A small `*.spec.ts` (runs in `nx test`) is the
 cheapest tripwire:
@@ -440,7 +479,7 @@ it('nx FsTree deep-import contract is unchanged (pin to 23.0.1)', () => {
   expect(flushChanges.length).toBe(2);
 
   // 4) the FsTree method set we depend on still exists
-  const methods = ['read','write','overwrite','delete','exists','rename','isFile','children','listChanges','changePermissions','lock'];
+  const methods = ['read', 'write', 'overwrite', 'delete', 'exists', 'rename', 'isFile', 'children', 'listChanges', 'changePermissions', 'lock'];
   for (const m of methods) {
     expect(typeof (FsTree.prototype as any)[m]).toBe('function');
   }
@@ -462,18 +501,19 @@ so a `.d.ts` shape change fails `tsc`/`nx build` too.) Confirmed stable across `
 
 ## 9. Real-disk (`FsTree` at temp dir) vs in-memory (`createTreeWithEmptyWorkspace`) tradeoffs
 
-| Dimension | Real-disk `createFsTree()` (our helper) | In-memory `createTreeWithEmptyWorkspace()` |
-|---|---|---|
-| Public/stable API | NO -- deep import `nx/src/generators/tree` (quarantine + tripwire) | YES -- `@nx/devkit/testing` |
-| Backing store | real temp dir + recorded overlay; reads fall through to disk | `FsTree('/virtual')` -- overlay only; disk reads always miss |
-| Setup cost | `mkdtemp` + seed writes + teardown `rmSync` (slower, real I/O) | in-process, no I/O, no teardown (faster) |
+| Dimension              | Real-disk `createFsTree()` (our helper)                                                                                           | In-memory `createTreeWithEmptyWorkspace()`                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Public/stable API      | NO -- deep import `nx/src/generators/tree` (quarantine + tripwire)                                                                | YES -- `@nx/devkit/testing`                                                                 |
+| Backing store          | real temp dir + recorded overlay; reads fall through to disk                                                                      | `FsTree('/virtual')` -- overlay only; disk reads always miss                                |
+| Setup cost             | `mkdtemp` + seed writes + teardown `rmSync` (slower, real I/O)                                                                    | in-process, no I/O, no teardown (faster)                                                    |
 | Fidelity to production | HIGH -- exercises real `flushChanges` -> real files; can run the actual Angular compiler / `ngc`-style read against flushed files | LOWER -- nothing on disk unless flushed; tools that `statSync`/read the real FS see nothing |
-| What it proves | the generator's output as it would land on a developer's disk | the generator's recorded CHANGES (config correctness) without disk |
-| Assertion style | `flush` then `readFileSync`/run a real type-check over the temp workspace | `tree.exists` / `readJson(tree, ...)` directly, no flush |
-| Cleanup hazard | must `rmSync` the temp dir (use `try/finally`) | none |
-| Concurrency | each test owns a unique `mkdtemp` dir -> safe in parallel | fully isolated per `createTree*` call |
+| What it proves         | the generator's output as it would land on a developer's disk                                                                     | the generator's recorded CHANGES (config correctness) without disk                          |
+| Assertion style        | `flush` then `readFileSync`/run a real type-check over the temp workspace                                                         | `tree.exists` / `readJson(tree, ...)` directly, no flush                                    |
+| Cleanup hazard         | must `rmSync` the temp dir (use `try/finally`)                                                                                    | none                                                                                        |
+| Concurrency            | each test owns a unique `mkdtemp` dir -> safe in parallel                                                                         | fully isolated per `createTree*` call                                                       |
 
 **Recommendation for `typecheck-configuration` generator tests:**
+
 - Use the **in-memory** `createTreeWithEmptyWorkspace()` for the bulk of unit specs that assert the
   generator records the right files/config (fast, public API, matches all 452 Nx generator specs).
 - Use the **bespoke real-disk `createFsTree()`** specifically for the tests whose VALUE is that the
@@ -503,4 +543,7 @@ so a `.d.ts` shape change fails `tsc`/`nx build` too.) Confirmed stable across `
 - `git grep -n "new FsTree(" / "flushChanges(" / "implements Tree" 23.0.1 -- packages/` -- HIGH -- 36 FsTree instantiations, 13 flushChanges call sites, exactly 2 `implements Tree` classes.
 - `git diff 23.0.1 23.1.0-beta.4 -- <tree paths>` -- HIGH -- zero drift across `tree.ts`, testing-utils, devkit-testing/exports, invoke-nx-generator in this window.
 - Installed `nx@23.0.1` in target repo: `require('nx/src/generators/tree')` -> `{ FsTree, flushChanges, printChanges }` resolving to `node_modules/nx/dist/src/generators/tree.js`; shipped `tree.d.ts` matches source. -- HIGH -- runtime + shipped-types cross-check.
+
+```
+
 ```

@@ -71,6 +71,7 @@ phase-level criterion resolved there.
 - **Resolution:** addressed by the existing [01-03 CAVEAT] follow-up (resolve the
   compiler-cli surface via a bare specifier when @angular/compiler-cli ships
   nodenext-clean typings). No action for 03-02.
+
 ## 03-03: pre-existing lint failures + `compiler-cli-types.ts` boundary errors (formatter slice)
 
 Plan 03-03 independently confirmed the same pre-existing `npx nx lint

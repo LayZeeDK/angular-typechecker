@@ -7,7 +7,7 @@
   // (The real Angular component/source entry points are auto-detected by
   // fallow's Angular plugin; do NOT re-list them here.)
   "entry": [
-    "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts"
+    "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts",
   ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
@@ -16,8 +16,8 @@
   "ignoreExports": [
     {
       "file": "**/compiler-cli-types.ts",
-      "exports": ["UNKNOWN_ERROR_CODE"]
-    }
+      "exports": ["UNKNOWN_ERROR_CODE"],
+    },
   ],
 
   "rules": {
@@ -25,7 +25,7 @@
     // attw/publint CLIs, etc.) are structurally un-traceable by import graph and
     // will always false-positive. Dev-dep hygiene is owned by @nx/dependency-checks
     // (the published package) + manual review, not fallow.
-    "unused-dev-dependencies": "off"
+    "unused-dev-dependencies": "off",
     // D-07: unused-dependencies stays at its default `error` -- catches a genuine
     // unused PROD dep. @angular/forms is RESOLVED by removal (see package.json),
     // not here.
@@ -38,8 +38,8 @@
       // graph. Scope the rule off for this file only.
       "files": ["**/compiler-cli-types.ts"],
       "rules": {
-        "unused-enum-members": "off"
-      }
+        "unused-enum-members": "off",
+      },
     },
     {
       // Intentional fault-isolation test fixtures: components rendered nowhere +
@@ -49,13 +49,13 @@
       "files": ["fixtures/fault-isolation/**"],
       "rules": {
         "unrendered-components": "off",
-        "unused-component-inputs": "off"
-      }
-    }
+        "unused-component-inputs": "off",
+      },
+    },
   ],
 
   "audit": {
     // D-02: pin the gate so the verdict is deterministic regardless of CLI flags.
-    "gate": "new-only"
-  }
+    "gate": "new-only",
+  },
 }

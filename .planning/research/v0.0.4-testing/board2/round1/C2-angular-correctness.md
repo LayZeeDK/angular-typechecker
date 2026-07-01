@@ -18,49 +18,50 @@ Verified directly against `node_modules/@angular/compiler-cli@22.0.4` this sessi
 - `src/ngtsc/diagnostics/src/error_code.d.ts` -- the `@publicApi` `ErrorCode` enum. I mapped
   every one of the 18 names to its numeric `ErrorCode`:
 
-  | # | Enum member (name string) | ErrorCode | Range |
-  |---|---|---|---|
-  | 1 | invalidBananaInBox | 8101 | extended (81xx) |
-  | 2 | nullishCoalescingNotNullable | 8102 | extended |
-  | 3 | optionalChainNotNullable | 8107 | extended |
-  | 4 | missingControlFlowDirective | 8103 | extended |
-  | 5 | missingStructuralDirective | 8116 | extended |
-  | 6 | textAttributeNotBinding | 8104 | extended |
-  | 7 | uninvokedFunctionInEventBinding | 8111 | extended |
-  | 8 | missingNgForOfLet | 8105 | extended |
-  | 9 | suffixNotSupported | 8106 | extended |
-  | 10 | skipHydrationNotStatic | 8108 | extended |
-  | 11 | interpolatedSignalNotInvoked | 8109 | extended |
-  | 12 | **controlFlowPreventingContentProjection** | **8011** | **baseline template (80xx)** |
-  | 13 | unusedLetDeclaration | 8112 | extended |
-  | 14 | uninvokedTrackFunction | 8115 | extended |
-  | 15 | unusedStandaloneImports | 8113 | extended |
-  | 16 | unparenthesizedNullishCoalescing | 8114 | extended |
-  | 17 | uninvokedFunctionInTextInterpolation | 8117 | extended |
-  | 18 | **deferTriggerMisconfiguration** | **8021** | **baseline template (80xx)** |
+  | #   | Enum member (name string)                  | ErrorCode | Range                        |
+  | --- | ------------------------------------------ | --------- | ---------------------------- |
+  | 1   | invalidBananaInBox                         | 8101      | extended (81xx)              |
+  | 2   | nullishCoalescingNotNullable               | 8102      | extended                     |
+  | 3   | optionalChainNotNullable                   | 8107      | extended                     |
+  | 4   | missingControlFlowDirective                | 8103      | extended                     |
+  | 5   | missingStructuralDirective                 | 8116      | extended                     |
+  | 6   | textAttributeNotBinding                    | 8104      | extended                     |
+  | 7   | uninvokedFunctionInEventBinding            | 8111      | extended                     |
+  | 8   | missingNgForOfLet                          | 8105      | extended                     |
+  | 9   | suffixNotSupported                         | 8106      | extended                     |
+  | 10  | skipHydrationNotStatic                     | 8108      | extended                     |
+  | 11  | interpolatedSignalNotInvoked               | 8109      | extended                     |
+  | 12  | **controlFlowPreventingContentProjection** | **8011**  | **baseline template (80xx)** |
+  | 13  | unusedLetDeclaration                       | 8112      | extended                     |
+  | 14  | uninvokedTrackFunction                     | 8115      | extended                     |
+  | 15  | unusedStandaloneImports                    | 8113      | extended                     |
+  | 16  | unparenthesizedNullishCoalescing           | 8114      | extended                     |
+  | 17  | uninvokedFunctionInTextInterpolation       | 8117      | extended                     |
+  | 18  | **deferTriggerMisconfiguration**           | **8021**  | **baseline template (80xx)** |
 
 **LENS-CRITICAL FINDING #1 -- the "18 extended diagnostics" framing is wrong; 2 of the 18
 are NOT in the extended (81xx) range.** `controlFlowPreventingContentProjection` is NG**8011**
 and `deferTriggerMisconfiguration` is NG**8021** -- both in the 8000-8099 baseline
-template-type-check range, alongside SCHEMA_INVALID_ELEMENT (8001), MISSING_PIPE (8004),
-WRITE_TO_READ_ONLY_VARIABLE (8005), etc. The enum `ExtendedTemplateDiagnosticName` *names*
+template-type-check range, alongside SCHEMA*INVALID_ELEMENT (8001), MISSING_PIPE (8004),
+WRITE_TO_READ_ONLY_VARIABLE (8005), etc. The enum `ExtendedTemplateDiagnosticName` \_names*
 them as configurable-by-name diagnostics, but their codes sit below 8100. The `DIAGNOSTIC-
 CATALOG.md` (line 47) even lists NG8021 in its "extended" table and (line 49) admits it does
 not list `controlFlowPreventingContentProjection` at all. From the correctness lens this
 matters because:
-  - the test taxonomy MUST be keyed on the **enum membership** (all 18 names), NOT on the
-    "NG81xx" numeric pattern. A grep/filter that scopes to `81\d\d` would silently drop
-    NG8011 and NG8021 -- exactly the kind of completeness gap this milestone exists to close.
-  - NG8011 and NG8021 may NOT respond to `extendedDiagnostics.defaultCategory` the same way
-    the 81xx checks do (the 81xx checks are registered as "extended template checks" with a
-    default-WARNING category; the 80xx codes are emitted by the core template type-checker and
-    several are hard errors regardless of config). This is the single biggest UNVERIFIED fact
-    blocking a faithful D2 plan (see FACTS-NEEDED).
+
+- the test taxonomy MUST be keyed on the **enum membership** (all 18 names), NOT on the
+  "NG81xx" numeric pattern. A grep/filter that scopes to `81\d\d` would silently drop
+  NG8011 and NG8021 -- exactly the kind of completeness gap this milestone exists to close.
+- NG8011 and NG8021 may NOT respond to `extendedDiagnostics.defaultCategory` the same way
+  the 81xx checks do (the 81xx checks are registered as "extended template checks" with a
+  default-WARNING category; the 80xx codes are emitted by the core template type-checker and
+  several are hard errors regardless of config). This is the single biggest UNVERIFIED fact
+  blocking a faithful D2 plan (see FACTS-NEEDED).
 
 **LENS-CRITICAL FINDING #2 -- the catalog's NG8112 note is half-right.** `unusedLetDeclaration`
 IS a member of the public `ExtendedTemplateDiagnosticName` enum AND its code NG8112 = 8112 is
 in the enum. The catalog calls 8112 "undocumented" on angular.dev/extended-diagnostics -- that
-is a *docs-page* gap, not an API gap. The enum is the authoritative public contract (it is
+is a _docs-page_ gap, not an API gap. The enum is the authoritative public contract (it is
 `@publicApi`), so NG8112 is in-scope for completeness and must be asserted; "absent from the
 docs site" is not a reason to skip it. Likewise NG8110 (`UNSUPPORTED_INITIALIZER_API_USAGE`) is
 in `ErrorCode` but is NOT a member of `ExtendedTemplateDiagnosticName`, so it is correctly
@@ -95,12 +96,13 @@ in-memory or `FsTree` real-disk) is ever used to assert a compiler diagnostic, b
 them run the Angular compiler.**
 
 Factual basis:
+
 - The 11 existing `*.integration.spec.ts` already drive the REAL compiler against committed
   `fixtures/` tsconfigs and assert exact codes (`extended.angular13.integration.spec.ts` reads
   `fixtures/extended-v13/tsconfig.app.json`, asserts `code === NG(8101)` + WARNING category +
   counts). `git ls-files fixtures/` confirms 13 committed fixture scenarios, each with a real
   `.component.ts`/`.html` + a `tsconfig.*.json`.
-- `createTreeWithEmptyWorkspace` / `FsTree` are devkit *generator* substrates: they record
+- `createTreeWithEmptyWorkspace` / `FsTree` are devkit _generator_ substrates: they record
   file CHANGES in memory (or to a temp dir), with NO Angular compiler in the loop
   (NX-FSTREE-INTERNALS sec.0, sec.9). They can prove "the generator wrote target X"; they
   CANNOT prove "the compiler emits NG8104 for this template." Diagnostic correctness lives in
@@ -109,7 +111,7 @@ Factual basis:
   generator) is consistent with my lens because the generator is a pure `project.json`
   config-edit -- nothing the compiler observes.
 
-Facts I am missing: none that bear on my lens. (Substrate fidelity for the generator's *edits*
+Facts I am missing: none that bear on my lens. (Substrate fidelity for the generator's _edits_
 is the substrate board's call.)
 
 What would change my position: if a diagnostic could only be reproduced by GENERATING a real
@@ -144,7 +146,7 @@ This position has five parts; each rests on a verified fact.
    is provenance METADATA, not a test-organizing axis: every one of the 18 runs on Angular 22
    regardless of when it debuted (DIAGNOSTIC-CATALOG line 3 says exactly this). A
    `it.each(CATALOG)` table where each row is `{ name, code, fixtureTsConfig, expectedCategory,
-   introducedIn }` gives:
+introducedIn }` gives:
    - completeness-by-construction: the table can be cross-checked against the enum (part 5);
    - the introduced-major preserved as a row FIELD (so the catalog provenance is not lost);
    - "add a future major" is still a drop-in (append rows + fixtures), the property the
@@ -152,10 +154,10 @@ This position has five parts; each rests on a verified fact.
      files. The repo ALREADY drifted off the file-per-major plan (CURRENT-AUDIT A.3: it renamed
      `extended.angular17` to `extended.promotion` because the version signal was false) --
      evidence the version-file axis is a poor fit here.
-   I am NOT dogmatic about one-file vs few-files; the load-bearing claim is **data-driven over
-   the enum**, not the file count. If the orchestrator prefers `extended.angularNN` files for
-   git-blame locality, that is fine PROVIDED the per-major files are generated from / checked
-   against the one enum-derived table.
+     I am NOT dogmatic about one-file vs few-files; the load-bearing claim is **data-driven over
+     the enum**, not the file count. If the orchestrator prefers `extended.angularNN` files for
+     git-blame locality, that is fine PROVIDED the per-major files are generated from / checked
+     against the one enum-derived table.
 
 3. **Committed fixtures, NOT programmatic AST injection.** The repo's established substrate is
    committed `fixtures/` (sec.D1). For a completeness suite, committed fixtures are SUPERIOR to
@@ -164,11 +166,11 @@ This position has five parts; each rests on a verified fact.
    - it removes a whole failure class (an AST-injection helper that silently stops triggering
      the intended check after an Angular grammar change would make the test pass for the wrong
      reason -- the worst outcome for a regression detector).
-   Programmatic injection earns its keep when you must mutate a GENERATED project (the e2e
-   tier); it is overkill for asserting a fixed compiler code. Most of the 18 are a one-line
-   template snippet (the `error_code.d.ts` doc comments give the exact trigger for each, e.g.
-   `<div ([foo])="bar" />` for 8101, `{{ foo ?? bar }}` for 8102, `@for (...; track trackByName)`
-   for 8115).
+     Programmatic injection earns its keep when you must mutate a GENERATED project (the e2e
+     tier); it is overkill for asserting a fixed compiler code. Most of the 18 are a one-line
+     template snippet (the `error_code.d.ts` doc comments give the exact trigger for each, e.g.
+     `<div ([foo])="bar" />` for 8101, `{{ foo ?? bar }}` for 8102, `@for (...; track trackByName)`
+     for 8115).
 
 4. **Assert category AND a promotion case, because severity is configurable and that IS the
    correctness surface.** The 81xx extended checks default to WARNING and only become errors
@@ -210,6 +212,7 @@ promotion mechanism already tested (`fixtures/extended-promoted` + promotion spe
 A.1, A.4).
 
 Facts I am missing (orchestrator can verify against the real compiler at implementation):
+
 - **The default `.category` and promotion behavior of NG8011 and NG8021** (the two 80xx
   members) -- are they WARNING-by-default and `defaultCategory`-promotable like the 81xx set,
   or hard errors? This determines their fixture's tsconfig and their assertion.
@@ -223,6 +226,7 @@ Facts I am missing (orchestrator can verify against the real compiler at impleme
   (NG6100 needs a real `@NgModule({id: module.id})`).
 
 What would change my position:
+
 - If the orchestrator finds that several of the 18 are NOT reliably reproducible from a static
   committed fixture under Angular 22 (e.g. one needs a generated multi-project graph), I would
   move ONLY those to the e2e tier's programmatic-injection approach and keep the data-driven
@@ -244,6 +248,7 @@ real project.json), it should NOT re-assert diagnostic codes -- diagnostic corre
 at the core `runTypecheck` integration tier where the seam is cleanest.**
 
 Factual basis:
+
 - Diagnostic detection is fully exercised at the core tier: `runTypecheck({ tsConfigPath })`
   returns the diagnostics array, and the 11 integration specs assert against it directly
   (CURRENT-AUDIT A.1). The executor is a thin CJS adapter over that core (FACTS sec.2); it does
@@ -276,6 +281,7 @@ run target -> a real NG diagnostic surfaces" smoke case, using a sentinel assert
 emitted diagnostic, rather than a new Verdaccio mechanism.**
 
 Factual basis:
+
 - The generator's value to a USER of a type-checker is that the wired target produces the
   correct diagnostics; an e2e that only asserts `project.json` shape (in-memory generator unit
   test territory) does not prove the wired tsConfig actually drives a real compiler run that
@@ -312,12 +318,13 @@ peer will see. A generator e2e, IF a new project, must be added by NAME to the `
 explicit `-p` list.**
 
 Factual basis:
+
 - CURRENT-AUDIT A.4 + the read `ci.yml`: the `test` job runs
   `npx nx run-many -t typecheck-drift test -p angular-typechecker` on
   `{ubuntu:22,24,26; windows:24,26; macos:24}`; any new in-plugin spec matching the vitest
   include glob runs there with no workflow edit. The `e2e` job runs an EXPLICIT project list
   (`-p angular-typechecker-install-e2e angular-typechecker-cache-e2e
-  angular-typechecker-matrix-e2e`), so a new e2e project is invisible until named (ci.yml lines
+angular-typechecker-matrix-e2e`), so a new e2e project is invisible until named (ci.yml lines
   141-143).
 - Running the catalog across all 6 cells is correctness-valuable: Angular's
   template-type-check is pure JS/ngtsc (no native arch dependence), but ESM-loading the
@@ -355,6 +362,7 @@ sophistication (D4) and the mid-tier executor test (D3) before shedding any of t
 catalog coverage.**
 
 Factual basis:
+
 - CURRENT-AUDIT A.3: today only **2 of the 16** documented extended diagnostics (NG8101,
   NG8109) are asserted by exact code; **14 are missing**, and 2 of the enum's 18 (NG8011,
   NG8021) are not even in the catalog's "documented" framing. For a tool whose Core Value

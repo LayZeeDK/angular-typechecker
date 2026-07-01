@@ -20,8 +20,8 @@ affects: [09-resilience, 10-drift-hardening, standalone-cli-deferred, angular-cl
 tech-stack:
   added: []
   patterns:
-    - "Pure core/ exit-code policy (toExitCode) sibling of evaluateResult: Pick<CoreResult,...> | typed-error input, no process, lint-gated purity"
-    - "File-less guard widened to cover the present-but-empty fileName synthesized-diagnostic edge"
+    - 'Pure core/ exit-code policy (toExitCode) sibling of evaluateResult: Pick<CoreResult,...> | typed-error input, no process, lint-gated purity'
+    - 'File-less guard widened to cover the present-but-empty fileName synthesized-diagnostic edge'
 
 key-files:
   created:
@@ -34,7 +34,7 @@ key-files:
 
 key-decisions:
   - "COR-03: one widened boolean (file === undefined || file.fileName === '') is the entire fix; canonicalizer / node_modules-segment test / isUnderDir untouched (D-06)"
-  - "COR-04: toExitCode is a pure leaf in core/ importing ONLY from ./run-typecheck (type CoreResult + value TypecheckInfrastructureError for the instanceof branch); run-typecheck.ts does NOT import it (no cycle)"
+  - 'COR-04: toExitCode is a pure leaf in core/ importing ONLY from ./run-typecheck (type CoreResult + value TypecheckInfrastructureError for the instanceof branch); run-typecheck.ts does NOT import it (no cycle)'
   - "COR-04 D-08: executor.ts source unchanged; toExitCode NOT wired into the executor return (Nx maps { success } to 0/1); only the existing infra-catch spec assertion was tightened to lock the distinct 'infrastructure error' message"
 
 patterns-established:
@@ -87,6 +87,7 @@ _Note: both tasks are TDD. Each followed RED (new case fails against pre-fix sou
 ## Decisions Made
 
 None beyond the plan-specified decisions (D-06, D-07, D-08). Implemented exactly as planned:
+
 - COR-04 used the recommended discriminated-union input shape (`Pick<CoreResult, 'errorCount'> | TypecheckInfrastructureError`) rather than overloads (planner discretion, union was the recommended form).
 
 ## Deviations from Plan
@@ -115,5 +116,6 @@ None. Both TDD cycles ran cleanly: each new case failed RED against the pre-fix 
 All 6 declared files exist on disk and both task commits (`3f9958a`, `6d1fbcc`) are in the git history.
 
 ---
-*Phase: 08-correctness-completeness-fixes*
-*Completed: 2026-06-29*
+
+_Phase: 08-correctness-completeness-fixes_
+_Completed: 2026-06-29_

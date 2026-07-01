@@ -121,7 +121,7 @@ already scopes compilation to `src/`.
 
 The harm is not a broken build (build stays green) but actively misleading
 documentation: at least seven fixture files assert in their header comments that
-they are "excluded from the plugin's tsconfig.lib.json (fixtures/**/*)" -- e.g.
+they are "excluded from the plugin's tsconfig.lib.json (fixtures/**/\*)" -- e.g.
 `fixtures/gate-b-error/error.component.ts:4-5`,
 `fixtures/ts-baseline/error.component.ts:4-6`,
 `fixtures/config-broken/error.component.ts:6-8`. That stated mechanism is false;
@@ -130,9 +130,10 @@ a future maintainer who relocates fixtures under the package, or who deletes the
 deliberately-broken fixtures into the published build.
 **Fix:** Either delete the two ineffective excludes (the `include` already does
 the job) and correct the fixture comments to say "kept out by tsconfig.lib.json's
-`include: src/**/*.ts` scope", or, if an explicit exclude is desired as
+`include: src/**/\*.ts` scope", or, if an explicit exclude is desired as
 defense-in-depth, point it at the real location with a workspace-root-relative
 path:
+
 ```jsonc
 // tsconfig.lib.json -- remove the non-matching entries:
 "exclude": [
@@ -162,6 +163,7 @@ correctness defect in the metric's meaning, not a test break.)
 **Fix:** Capture `start` at the top of `runTypecheck`, before the awaited loads,
 so `durationMs` reflects the full call. If a "compile-only" sub-metric is also
 wanted, add a separate field rather than redefining the labeled one:
+
 ```ts
 export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   const start = performance.now(); // move to the top: include module load + config parse
@@ -172,6 +174,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // ... remove the later `const start = performance.now();`
 }
 ```
+
 Alternatively, if the intent really is to exclude module load (e.g. because the
 loader memoizes after the first call), relabel the field and the gate-b banner to
 "compile durationMs" so the metric's name matches its semantics.
@@ -211,6 +214,7 @@ level up. All current NG codes (8001/8101/8109/8117) are 4-digit, so this is
 latent, not active.
 **Fix:** Document the 4-digit precondition on the function itself (not only in
 the file header), and consider a dev-only assertion:
+
 ```ts
 export const NG = (code: number): number => {
   // Precondition: `code` is a 4-digit Angular ErrorCode (1000-9999). The

@@ -23,6 +23,7 @@ from `@nx/devkit/testing`, used for the generator's unit specs. Do NOT author
 `testing/` project.**
 
 **Factual basis:**
+
 - The `typecheck-configuration` generator is a pure `project.json` config edit:
   `readProjectConfiguration` -> mutate `targets` -> `updateProjectConfiguration` ->
   `formatFiles` (FACTS sec.7a; CURRENT-AUDIT B.1). Its entire observable behavior is a
@@ -75,6 +76,7 @@ every baseline NG/TS code" as a blanket goal. The verified gap is the MECHANISM
 phase), not exhaustive per-code enumeration.**
 
 **Factual basis:**
+
 - The tool returns a structured `CoreResult` with per-diagnostic `code`, `errorCount`,
   `warningCount`, `suppressedCount`, `templateCheckAborted`, and `toExitCode` maps to
   0/1/2 (FACTS sec.2). Its CONTRACT is: surface the complete diagnostic set, count by
@@ -93,9 +95,9 @@ phase), not exhaustive per-code enumeration.**
   - The all-getter gatherer surfacing every phase, plus TCB fault-isolation (NG3004),
     global diagnostics (TS2318), no-emit overrides, TS99-leak suppression -- all already
     covered (CURRENT-AUDIT A.1, A.3).
-  So the WARNING/Error-promotion mechanism and the all-getter gatherer are ALREADY
-  proven. Adding NG8102..NG8117/NG8021 each re-proves the SAME two mechanisms with a
-  different trigger string.
+    So the WARNING/Error-promotion mechanism and the all-getter gatherer are ALREADY
+    proven. Adding NG8102..NG8117/NG8021 each re-proves the SAME two mechanisms with a
+    different trigger string.
 - The sandbox itself only asserted `success === false` per code -- it never asserted
   exact code/count, and it ran one fixture per code purely to prove failure
   (SANDBOX sec.4 CAVEAT). The "every NG8xxx by exact code" goal is BEYOND what any prior
@@ -107,6 +109,7 @@ phase), not exhaustive per-code enumeration.**
   Angular's job, not this plugin's.
 
 **The minimal defensible coverage delta:**
+
 1. Keep the existing exact-code assertions (NG8101 warning + promotion; NG8109).
 2. Add at MOST a small representative set that exercises a DISTINCT mechanism the current
    suite does not: pick ~2-3 extended codes whose categories/behaviors differ in a way the
@@ -130,6 +133,7 @@ phase), not exhaustive per-code enumeration.**
    the live compiler once. No AST machinery needed.
 
 **Facts missing (orchestrator can verify):**
+
 - Which of the 18 extended codes have a category/counting behavior NOT already exercised
   by the NG8101-warning and NG8101-promoted cases? If the answer is "none -- all 18 are
   warning-by-default and all promote the same way," then exactly ONE additional extended
@@ -155,6 +159,7 @@ per-code testing is testing Angular, not angular-typechecker.
 `ExecutorContext`/workspace" spec. Cut it.**
 
 **Factual basis:**
+
 - The reports flag a "gap" between the seam-mocked `executor.spec.ts` and the tarball e2e
   (CURRENT-AUDIT A.2, item (3) in recommendations). But the three things this mid-tier
   would prove are ALREADY covered:
@@ -193,14 +198,15 @@ the EXISTING `install-e2e` project, and only if D6 keeps the generator in this m
 Reject Verdaccio entirely.**
 
 **Factual basis:**
+
 - A new e2e project must be added by NAME to the `e2e` job's explicit `-p` list in
   ci.yml, needs its own `project.json` with `implicitDependencies: ["angular-typechecker"]`,
-  its own vitest config (pool:forks, singleFork, 300s timeouts, NX_* strip), and joins the
+  its own vitest config (pool:forks, singleFork, 300s timeouts, NX\_\* strip), and joins the
   serialized Linux-only run (FACTS sec.5; CURRENT-AUDIT A.4). That is real standing cost
   per project.
 - The existing `install-e2e` project ALREADY packs the tarball, installs into a temp
   consumer, and runs the executor (FACTS sec.3). Adding `execSync('npx nx g
-  angular-typechecker:typecheck-configuration <proj>')` + asserting the resulting
+angular-typechecker:typecheck-configuration <proj>')` + asserting the resulting
   on-disk `project.json` is one more `it` in a harness that already pays the pack/install
   cost in `beforeAll` (CURRENT-AUDIT B.3 route 2). Marginal cost: one spec, zero new CI
   wiring, zero new project.
@@ -234,6 +240,7 @@ include glob. Only if D4 yields a NEW e2e project (which I argue against) is a o
 `-p` addition needed.**
 
 **Factual basis:**
+
 - A new `*.spec.ts`/`*.integration.spec.ts` under `packages/angular-typechecker` runs in
   the `test` job with NO ci.yml change -- it matches `vitest.config`'s include glob and
   the existing `nx run-many -t typecheck-drift test` (FACTS sec.5; CURRENT-AUDIT A.4).
@@ -266,6 +273,7 @@ exhaustive NG catalog, no FsTree helpers, no `testing/` project, no mid-tier, no
 no jscodeshift toolkit, no per-version file split.**
 
 **Factual basis:**
+
 - FACTS sec.1: the milestone's named scope is "a `typecheck-configuration` Nx generator
   plus testing work." The generator is the deliverable; "testing work" is a means, not a
   mandate to maximize coverage. The generator does not yet exist (FACTS sec.2), so it is
@@ -290,6 +298,7 @@ no jscodeshift toolkit, no per-version file split.**
   branching only if a consumer need is proven.
 
 **Minimal defensible strategy (the smallest that protects correctness):**
+
 1. Generator: sandbox-shape 33-liner (`readProjectConfiguration` ->
    `updateProjectConfiguration` -> `formatFiles`), idempotent (overwrite-or-skip the one
    target), `generators.json` + `generators` package field + build-asset glob + `files`

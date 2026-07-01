@@ -21,7 +21,7 @@ gate** -- a test that passes while the checker is silently not checking. PROJECT
 directly ("a type-checker that lies is worse than none"). Every decision below is scored first by
 "can this rot into a false green?", then by "can this flake / break on upgrade / diverge across
 OS?". Slowness matters only insofar as a slow tier gets disabled, skipped, or flaked-past --
-slowness is a *second-order* false-green risk (a tier that times out and is marked allow-fail is a
+slowness is a _second-order_ false-green risk (a tier that times out and is marked allow-fail is a
 false green wearing a yellow hat).
 
 The single highest-severity structural hazard already baked into this repo is **the `e2e` job's
@@ -33,11 +33,12 @@ omission. This is the load-bearing fragility the mandate names, and it dominates
 
 ## D1 -- Test substrate
 
-**Position: in-memory `createTreeWithEmptyWorkspace()` (option a) for ALL generator unit/integration
+\*\*Position: in-memory `createTreeWithEmptyWorkspace()` (option a) for ALL generator unit/integration
 specs. Do NOT author `createFsTree`/`flushFsTreeChanges` (option b) in this milestone. Reserve `fs`
-+ `execSync` (option c) for the existing tarball e2e tier only. The generator's real-disk fidelity
-is already bought by the matrix-e2e tarball tier -- adding a real-disk `FsTree` substrate buys
-fidelity the generator does not need and pays for it with a permanent upgrade-fragility liability.**
+
+- `execSync` (option c) for the existing tarball e2e tier only. The generator's real-disk fidelity
+  is already bought by the matrix-e2e tarball tier -- adding a real-disk `FsTree` substrate buys
+  fidelity the generator does not need and pays for it with a permanent upgrade-fragility liability.\*\*
 
 ### Failure-mode attack on each option
 
@@ -46,14 +47,15 @@ single most upgrade-fragile thing the milestone could introduce. `FsTree`/`flush
 are NOT in any public `@nx/devkit` barrel (NX-FSTREE-INTERNALS sec 4); they are reachable only by a
 deep import `nx/src/generators/tree` with NO semver guarantee. The research itself flags it: "an Nx
 upgrade can move/rename/restructure it with no semver guarantee" (sec 8). The proposed mitigation is
-a *drift tripwire spec* + an eslint-disable quarantine. Attack that mitigation:
+a _drift tripwire spec_ + an eslint-disable quarantine. Attack that mitigation:
+
 - **The tripwire only fires on `nx test`** -- which on a planning/docs-only PR is path-skipped
   (ci.yml `changes` job). So the tripwire's protection has a hole exactly when a dependency bump PR
   also touches only lockfiles classified by `dorny/paths-filter`. (Lockfile IS code per the
   `!**/*.md` / `!.planning/**` negation, so this specific hole is narrow -- but the tripwire is only
   as good as the path filter's classification of the file that bumps Nx.)
 - **A drift tripwire is itself code that rots.** It pins constructor arity (`FsTree.length === 2`)
-  and a method-name list. Nx can change *behavior* (e.g. how `flushChanges` handles a mode bit, or
+  and a method-name list. Nx can change _behavior_ (e.g. how `flushChanges` handles a mode bit, or
   `normalize()` path semantics) while keeping arity and method names identical -- the tripwire goes
   green, the helper silently misbehaves. Arity/method-name pinning is a SHALLOW contract; it cannot
   catch a semantic regression, which is the failure that actually corrupts a real-disk generator
@@ -70,6 +72,7 @@ a *drift tripwire spec* + an eslint-disable quarantine. Attack that mitigation:
 **(a) In-memory `createTreeWithEmptyWorkspace` -- the robust default, with two real hazards to
 guard.** Public, version-stable, zero quarantine. Its failure modes are documented and cheap to
 defend:
+
 - **`/virtual` leakage (nx#32588):** a generator unit test can accidentally pick up the REAL
   workspace instead of `/virtual` and false-green. Mitigation is mechanical and must be MANDATED in
   the plan: always `import 'nx/src/internal-testing-utils/mock-project-graph'` as the first
@@ -89,20 +92,23 @@ artifact work," and it is already in use there (matrix/install e2e). Pulling it 
 testing would be a self-inflicted flake source.
 
 ### Facts this rests on
+
 - Generator is a pure config edit (CURRENT-AUDIT B.1); in-memory tree captures it fully (sec 2/289).
 - `createTreeWithEmptyWorkspace` is public + byte-stable 23.0.1->23.1.0-beta.4 (NX-FSTREE sec 0).
 - `FsTree` deep import is internal, no semver guarantee (NX-FSTREE sec 8).
 - Real-disk fidelity already exists at the tarball tier (matrix-5types runs all 5 types).
 
 ### Facts I'm missing (orchestrator can verify)
+
 - Whether ANY planned v0.0.4 generator behavior reads back its own on-disk output mid-run (e.g. a
   generator that scaffolds a tsconfig and then re-parses it). If yes for even one generator, that
   ONE spec may justify `createFsTree` -- but only that spec.
 - Whether `formatFiles` is called by the generator (it is, per the sandbox 33-line template). If so,
   the in-memory tree must seed `.prettierrc` (createTreeWithEmptyWorkspace seeds `{ singleQuote:
-  true }` already -- confirm it matches repo Prettier config so format assertions don't drift).
+true }` already -- confirm it matches repo Prettier config so format assertions don't drift).
 
 ### What would change my mind
+
 A concrete, planned generator step that consumes its own emitted file from disk DURING generation
 (not after). That is the only behavior in-memory cannot model, and it would justify `createFsTree`
 **for that one spec**, with the full quarantine + drift tripwire -- never as the default substrate.
@@ -123,7 +129,7 @@ false-green trap for THIS repo; collapse it. The mandatory assertion is exact co
 sin.** The sandbox catalog asserts ONLY `expect(result.success).toBe(false)` (SANDBOX sec 4: "It
 does NOT assert exact diagnostic CODE or COUNT... The mapping 'this fixture produces NG8115' is
 documentation, enforced only by the fact that the fixture is intentionally broken"). This is a
-LANDMINE: a fixture intended to trigger NG8115 that instead trips a *different* error (a typo in the
+LANDMINE: a fixture intended to trigger NG8115 that instead trips a _different_ error (a typo in the
 template, a TS syntax error, a config error) still returns `success: false` and the boolean test
 passes -- while NG8115 is never actually exercised. The checker could stop emitting NG8115 entirely
 and the suite stays green. For a tool whose entire value is "surface EVERY Angular diagnostic," a
@@ -137,7 +143,7 @@ silent fixture-drift signal.
 third extended file was RENAMED from `extended.angular17.integration.spec.ts` to
 `extended.promotion.integration.spec.ts` precisely because "its `angular17` signal was FALSE -- it
 carries no v17-specific code" (CURRENT-AUDIT A.3). The version-in-filename is a lie waiting to
-happen: the code a diagnostic was *introduced* in is metadata about Angular's history, not about
+happen: the code a diagnostic was _introduced_ in is metadata about Angular's history, not about
 what the running compiler-cli@22.0.4 emits. The repo runs ONE Angular version (22). A
 `baseline.angular13` file tested against compiler-cli 22 asserts nothing about Angular 13; the "13"
 is pure decoration that invites a future maintainer to believe version coverage exists that does
@@ -152,13 +158,14 @@ loudly instead of silently leaving it uncovered. That enum-vs-table parity test 
 defense against coverage drift -- the most valuable single test in D2.
 
 **Committed fixtures vs jscodeshift injection -- prefer committed, but with a drift guard.**
-- *jscodeshift injection* (sandbox/Connect 6a) is powerful but fragile: it depends on a specific AST
+
+- _jscodeshift injection_ (sandbox/Connect 6a) is powerful but fragile: it depends on a specific AST
   shape of a CLI-generated component, breaks when `@nx/angular:library` changes its scaffold output
   (an Nx-upgrade fragility), needs `jscodeshift` as a dep (a new dep with its own version surface),
   and the injection helpers are 1373 lines of test infrastructure (SANDBOX sec 5) that can itself
   harbor bugs that produce the wrong diagnostic. It also requires generating real libs via
   `execSync` -- pulling the slow/flaky e2e substrate into what should be a fast integration tier.
-- *Committed fixtures* (the repo's current `fixtures/<scenario>/` approach, FACTS sec 3) are static,
+- _Committed fixtures_ (the repo's current `fixtures/<scenario>/` approach, FACTS sec 3) are static,
   inspectable, fast (cold `performCompilation`, no `nx generate`), and cross-platform-stable. Their
   failure mode is **silent fixture rot**: a fixture edited to no longer trigger its code, or a
   compiler-cli upgrade that changes which code a fixture produces. The exact-code + category + count
@@ -174,12 +181,14 @@ does this for NG8101 via `extended.promotion.integration.spec.ts`). This warning
 the portable mechanism test; generalize it across the catalog.
 
 ### Facts this rests on
+
 - Boolean-only assertion is the sandbox's documented gap (SANDBOX sec 4).
 - The repo already renamed a falsely-version-tagged file (CURRENT-AUDIT A.3).
 - 18-member enum is verified against installed compiler-cli (FACTS sec 4); 2/16 currently asserted.
 - Repo runs ONE Angular version; exact-code + category + `NG()` idiom already present.
 
 ### Facts I'm missing
+
 - The exact NG-code for each of the 18 enum members (FACTS sec 4: "to be read during work" from the
   `ErrorCode` enum). The catalog table cannot be built until each name->code is verified against
   `error_code.d.ts` in compiler-cli@22.0.4. DIAGNOSTIC-CATALOG.md disagrees with the enum
@@ -189,6 +198,7 @@ the portable mechanism test; generalize it across the catalog.
   `skipHydrationNotStatic`, need specific component setups; confirm each is reproducible).
 
 ### What would change my mind
+
 If more than ~3 of the 18 codes CANNOT be triggered by a static committed fixture and genuinely
 require programmatic AST construction (e.g. a code that only fires on a generated-output shape), then
 a hybrid is justified: committed fixtures for the reproducible majority, narrow per-code programmatic
@@ -210,9 +220,10 @@ against a HAND-BUILT context that can drift from the real one and silently green
 The mid-tier's pitch (CURRENT-AUDIT A.2/B.3 route 1) is to cover the gap between seam-mocked unit
 specs and the full tarball e2e: prove `context.root` + `tsConfig` resolve to a real path, and the
 executor binds under its published id. Attack each:
+
 - **A hand-built `ExecutorContext` literal is a fiction the test author controls.** The sandbox and
   Connect both built context literals by hand (`{ root: '/workspace', projectsConfigurations: {...} }
-  as ExecutorContext`; SANDBOX sec 3, CONNECT 1a). The DANGER: the hand-built context can diverge
+as ExecutorContext`; SANDBOX sec 3, CONNECT 1a). The DANGER: the hand-built context can diverge
   from what Nx actually passes (missing `projectGraph`, wrong `nxJsonConfiguration`, a
   `projectsConfigurations` shape that real Nx would populate differently), and the test passes
   against the fiction while the real invocation behaves differently. That is a false green by
@@ -234,18 +245,21 @@ by EXTENDING the existing pure `normalize-options.spec.ts` with table-driven opt
 standing up a workspace substrate.
 
 ### Facts this rests on
+
 - matrix-5types runs the executor against all 5 types' real tsConfigs via the installed tarball.
 - Published-id binding is only real under install (install-smoke D-18 comment).
 - Hand-built `ExecutorContext` literals are the prior-art pattern (SANDBOX 3, CONNECT 1a) -- and
   their divergence-from-real is the documented hazard.
 
 ### Facts I'm missing
+
 - Whether the executor has untested branches that depend on `ExecutorContext` fields NOT reachable
   from the pure seams (e.g. logic keyed on `context.projectGraph` or `context.nxJsonConfiguration`).
   If such a branch exists AND is not covered by e2e, a narrow mid-tier spec for THAT branch only
   could be justified.
 
 ### What would change my mind
+
 An executor code path that (a) reads a specific `ExecutorContext` field, (b) is not exercised by any
 e2e row, and (c) is too expensive to reach via e2e. Then a single targeted mid-tier spec for that
 path -- not a general "executor against a workspace" tier.
@@ -280,6 +294,7 @@ failure. The author cannot forget to wire something they don't have to wire.
 
 **Verdaccio is a flake/maintenance liability with no offsetting benefit here.** The Nx-canonical
 generator-e2e uses Verdaccio + `createTestProject` (FACTS sec 6; CURRENT-AUDIT B.3). Attack it:
+
 - The scaffolded `start-local-registry.ts` uses `execFileSync(nx, ...)` which is "known to fail on
   Windows" (CURRENT-AUDIT B.3 Windows caveat) -- a cross-platform-divergence bug on the exact primary
   dev environment (Windows-arm64).
@@ -300,11 +315,12 @@ stale cached result and lie.
 
 **Note on partial existing coverage:** the matrix-e2e fixtures already wire the
 `angular-typecheck` target by HAND in committed `project.json` (verified: `local-lib/project.json`).
-So the *target shape* the generator must produce is already validated end-to-end. The generator e2e's
+So the _target shape_ the generator must produce is already validated end-to-end. The generator e2e's
 unique job is narrow: prove the GENERATOR writes that exact shape from a clean install. That narrow
 job fits a single spec in `install-e2e`, not a whole new project.
 
 ### Facts this rests on
+
 - ci.yml `e2e` uses an explicit `-p` list; new projects are invisible until hand-added (CURRENT-AUDIT
   A.4; ci.yml:141-143).
 - `ci` aggregate tolerates `skipped`, fails on failure/cancelled (ci.yml:226-237) -- a never-listed
@@ -314,6 +330,7 @@ job fits a single spec in `install-e2e`, not a whole new project.
   load-bearing against cached-green (matrix-5types:119-130).
 
 ### Facts I'm missing
+
 - Whether `nx g <plugin>:<gen>` resolves correctly from a tarball install inside the existing
   `install-e2e` harness's tmp workspace (the harness was built for `nx run`, not `nx generate` --
   confirm `nx generate` against an installed plugin works there; CURRENT-AUDIT B.3 route 2 asserts it
@@ -323,6 +340,7 @@ job fits a single spec in `install-e2e`, not a whole new project.
   observable, and that re-running proves idempotency).
 
 ### What would change my mind
+
 If `nx generate` provably cannot resolve from the tarball install inside `install-e2e` (e.g. a
 generators.json packaging gap that only Verdaccio's full publish surfaces), then a dedicated
 generator-e2e is forced -- but it MUST be added to the `-p` list in the SAME commit, and the plan
@@ -350,6 +368,7 @@ matrix divergence risk is low. `fail-fast: false` (ci.yml:89) means one red cell
 
 The bad news (high fragility): the `e2e` job's explicit `-p` list is an UNGUARDED human-maintenance
 contract. Three distinct false-green paths flow from it:
+
 1. **New e2e project never added** (D4) -- runs locally, invisible in CI, `ci` greens without it.
 2. **Existing e2e project removed from the list by a careless edit** -- the gate's "meaning" silently
    shrinks; nothing detects that `cache-e2e` stopped running.
@@ -375,12 +394,14 @@ fixture is, say, an `.html` template, it's code (not `*.md`), so it's fine -- bu
 ONLY a `.json` tsconfig under a path the filter could misclassify deserves a one-line check.
 
 ### Facts this rests on
+
 - In-plugin specs auto-match the `test` glob, no ci.yml edit (CURRENT-AUDIT A.4).
 - `e2e` `-p` list is explicit + hand-maintained; new projects invisible until added (ci.yml:141-143).
 - `ci` aggregate tolerates `skipped`, can't see a never-graphed project (ci.yml:226-237).
 - `lint-workflows`/`act-compat` check syntax/trigger fidelity, not `-p`-vs-graph semantics.
 
 ### Facts I'm missing
+
 - Whether `nx show projects --type app`/tag query is stable enough to drive the set-equality guard in
   every matrix cell (it shells `nx`, which loads the daemon-off graph; confirm it's fast + reliable
   with `NX_DAEMON: false`). A lighter alternative: glob `e2e/*/project.json`, read `name`, compare to
@@ -389,6 +410,7 @@ ONLY a `.json` tsconfig under a path the filter could misclassify deserves a one
   `{src,tests}/**/*.{test,spec}...`) -- confirm catalog specs under `src/core/` match it.
 
 ### What would change my mind
+
 If a maintainer convention or a pre-existing meta-test already enforces `-p`-list completeness, the
 new guard is redundant -- drop it. Absent that, the guard stands as the milestone's most important
 fragility defense.
@@ -416,6 +438,7 @@ union. Building the union maximizes surface area and thus maximizes the number o
 silently break.
 
 The descope list is chosen by failure-mode severity:
+
 - **`createFsTree`:** permanent internal-import upgrade fragility for fidelity the generator doesn't
   need (D1).
 - **Mid-tier executor-workspace:** re-covers e2e ground against a fictional context -- a false-green
@@ -429,12 +452,13 @@ The descope list is chosen by failure-mode severity:
   generator with low marginal value.
 
 The two MUST-LAND items (catalog completeness test + `-p` guard) are chosen because each closes a
-*systemic* false-green hole rather than adding a point test: the enum-vs-table test makes diagnostic
+_systemic_ false-green hole rather than adding a point test: the enum-vs-table test makes diagnostic
 coverage self-auditing as compiler-cli evolves, and the `-p` guard makes the e2e gate self-auditing
 as projects are added. Both convert silent drift into loud failure -- the single most valuable
 property a type-checker's test suite can have.
 
 ### Facts this rests on
+
 - Generator absence IS the named milestone scope (FACTS sec 1, sec 2).
 - Prior art's value is the differences, not the union (CONNECT sec 1).
 - Cache/ordering correctness deliberately not attempted in prior art (CONNECT 5c).
@@ -442,6 +466,7 @@ property a type-checker's test suite can have.
   highest-value, lowest-fragility gap to close.
 
 ### Facts I'm missing
+
 - The milestone's stated definition-of-done (does it require the generator e2e, or only generator +
   unit + catalog?). If the milestone explicitly scopes only the generator + its unit tests + the
   catalog, the generator e2e drops to optional.
@@ -451,6 +476,7 @@ property a type-checker's test suite can have.
   table-driven.
 
 ### What would change my mind
+
 If the milestone DoD mandates the full prior-art union (explicit requirement for real-disk generation
 proof, or per-version files, or Verdaccio), then those items move from descoped to in-scope -- but I
 would still insist each ships with its fragility mitigation (drift tripwire for FsTree, `-p` guard

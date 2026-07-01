@@ -23,30 +23,31 @@ AnalogJS, `@nx/js` (nrwl/nx), Prettier `angular-estree-parser`.
 
 **Our engine is already complete and faithful -- the work is targeted hardening, not a rewrite.**
 Verified at v22.0.4: our diagnostic-family coverage is identical to `@angular/build` (non-template
-+ template type-check + sourceFileValidator + templateSemantics + extended NG8xxx), we inherit NG
-guide-URL enrichment and template codeframes for free, extended-diagnostic severity gating is
-faithful to the consumer's `extendedDiagnostics` config, and our config-error handling is strictly
-better than both `@nx/js` (throws) and AnalogJS (silent). The improvements below are a small set of
-real correctness/robustness defects plus drift-hardening -- all reachable WITHOUT migrating off
-`performCompilation` to `NgtscProgram` (incremental migration stays deferred).
+
+- template type-check + sourceFileValidator + templateSemantics + extended NG8xxx), we inherit NG
+  guide-URL enrichment and template codeframes for free, extended-diagnostic severity gating is
+  faithful to the consumer's `extendedDiagnostics` config, and our config-error handling is strictly
+  better than both `@nx/js` (throws) and AnalogJS (silent). The improvements below are a small set of
+  real correctness/robustness defects plus drift-hardening -- all reachable WITHOUT migrating off
+  `performCompilation` to `NgtscProgram` (incremental migration stays deferred).
 
 ---
 
 ## Consolidated improvements (prioritized)
 
-| # | Improvement | Class | Output? | Effort | Source |
-|---|-------------|-------|:------:|:------:|--------|
-| 1 | Detect `UNKNOWN_ERROR_CODE` (500) inside `parsed.errors` (config-resolution crash), re-throw as infra | **correctness** | yes | S | COMPILER-CLI #1 |
-| 2 | Add `program.getTsProgram().getGlobalDiagnostics()` -- we currently MISS global/location-less TS errors (TS2318-class) | **completeness** | yes | S | ENGINE-REF #2 |
-| 3 | Per-file fault isolation: loop `getNgSemanticDiagnostics(sf.fileName)` so one `FatalDiagnosticError` doesn't abandon every later file's Angular diagnostics | **robustness + completeness** | yes (failure paths) | M | ENGINE-REF #1 |
-| 4 | Wrap `options.realpath()` in try/catch in the boundary filter -- a throwing realpath currently aborts the whole pass | **robustness** | no (happy path) | S | SHIM #2 |
-| 5 | Treat present-but-empty `file.fileName` as file-less (don't suppress) | **correctness** | edge | S | SHIM #4 |
-| 6 | Add `suppressOutputPathCheck: true` to the no-emit options override | **robustness** | edge | S | ENGINE-REF #4 |
-| 7 | Build-time DRIFT spec: dedicated `tsconfig.drift.json` (`moduleResolution: node`) CI-checked, asserting our shim `Program` is assignable from the real `api.Program` + a getter-set tripwire + an `ngErrorCode`/`UNKNOWN_ERROR_CODE` mirror | **maintainability** | no | M | SHIM #3 + COMPILER-CLI #5 |
-| 8 | Fix the shim's fabricated `EmitFlags.None = 0` (real enum has 7 members incl. `I18nBundle = 8`; no `None`). `emitFlags: 0` itself is safe | **maintainability** | no | S | SHIM #5 + COMPILER-CLI #6 |
-| 9 | Greppable `// angular-typechecker: vendored -- <reason>` markers on every shim divergence (Prettier `angular-estree-parser` idiom) | **maintainability** | no | S | SHIM #1 |
-| 10 | KEEP the `getNgStructuralDiagnostics()` call (vestigial View-Engine-era getter, `return []` at v22.0.4, ~free to call). Do NOT drop it -- dropping bakes in a today-only impl detail and silently under-gathers if Angular ever reactivates it. Add a comment explaining the deliberate no-op-tolerant call; have #7 assert it stays in the called-getter set | **robustness + maintainability** | no | S | ENGINE-REF #3 (RECOMMENDATION REVERSED) |
-| 11 | (DECIDE) Add `totalFilesCount` observability field alongside `rootNamesCount` (`@nx/js` parity) -- shape-only, but borders on deferred reporting | **ergonomics** | no | S | CONSUMER #1 |
+| #   | Improvement                                                                                                                                                                                                                                                                                                                                                   | Class                            |       Output?       | Effort | Source                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | :-----------------: | :----: | --------------------------------------- |
+| 1   | Detect `UNKNOWN_ERROR_CODE` (500) inside `parsed.errors` (config-resolution crash), re-throw as infra                                                                                                                                                                                                                                                         | **correctness**                  |         yes         |   S    | COMPILER-CLI #1                         |
+| 2   | Add `program.getTsProgram().getGlobalDiagnostics()` -- we currently MISS global/location-less TS errors (TS2318-class)                                                                                                                                                                                                                                        | **completeness**                 |         yes         |   S    | ENGINE-REF #2                           |
+| 3   | Per-file fault isolation: loop `getNgSemanticDiagnostics(sf.fileName)` so one `FatalDiagnosticError` doesn't abandon every later file's Angular diagnostics                                                                                                                                                                                                   | **robustness + completeness**    | yes (failure paths) |   M    | ENGINE-REF #1                           |
+| 4   | Wrap `options.realpath()` in try/catch in the boundary filter -- a throwing realpath currently aborts the whole pass                                                                                                                                                                                                                                          | **robustness**                   |   no (happy path)   |   S    | SHIM #2                                 |
+| 5   | Treat present-but-empty `file.fileName` as file-less (don't suppress)                                                                                                                                                                                                                                                                                         | **correctness**                  |        edge         |   S    | SHIM #4                                 |
+| 6   | Add `suppressOutputPathCheck: true` to the no-emit options override                                                                                                                                                                                                                                                                                           | **robustness**                   |        edge         |   S    | ENGINE-REF #4                           |
+| 7   | Build-time DRIFT spec: dedicated `tsconfig.drift.json` (`moduleResolution: node`) CI-checked, asserting our shim `Program` is assignable from the real `api.Program` + a getter-set tripwire + an `ngErrorCode`/`UNKNOWN_ERROR_CODE` mirror                                                                                                                   | **maintainability**              |         no          |   M    | SHIM #3 + COMPILER-CLI #5               |
+| 8   | Fix the shim's fabricated `EmitFlags.None = 0` (real enum has 7 members incl. `I18nBundle = 8`; no `None`). `emitFlags: 0` itself is safe                                                                                                                                                                                                                     | **maintainability**              |         no          |   S    | SHIM #5 + COMPILER-CLI #6               |
+| 9   | Greppable `// angular-typechecker: vendored -- <reason>` markers on every shim divergence (Prettier `angular-estree-parser` idiom)                                                                                                                                                                                                                            | **maintainability**              |         no          |   S    | SHIM #1                                 |
+| 10  | KEEP the `getNgStructuralDiagnostics()` call (vestigial View-Engine-era getter, `return []` at v22.0.4, ~free to call). Do NOT drop it -- dropping bakes in a today-only impl detail and silently under-gathers if Angular ever reactivates it. Add a comment explaining the deliberate no-op-tolerant call; have #7 assert it stays in the called-getter set | **robustness + maintainability** |         no          |   S    | ENGINE-REF #3 (RECOMMENDATION REVERSED) |
+| 11  | (DECIDE) Add `totalFilesCount` observability field alongside `rootNamesCount` (`@nx/js` parity) -- shape-only, but borders on deferred reporting                                                                                                                                                                                                              | **ergonomics**                   |         no          |   S    | CONSUMER #1                             |
 
 `Output?` = whether the change can alter the reported diagnostics or the pass/fail verdict.
 

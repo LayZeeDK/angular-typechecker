@@ -9,6 +9,7 @@ two clones (working trees are at `22.1.0-next.x`; every version-sensitive sectio
 re-confirmed at the v22.0.4 tree-ish and matched the working tree byte-for-byte unless noted).
 
 Clones:
+
 - `D:\projects\github\angular\angular` (`@angular/compiler-cli`, ngtsc)
 - `D:\projects\github\angular\angular-cli` (`@angular/build`)
 
@@ -20,10 +21,12 @@ Clones:
 (the underlying TS builder), through a `DiagnosticModes`-gated generator.
 
 `DiagnosticModes` (a bitmask) -- `angular-cli` `packages/angular/build/src/tools/angular/compilation/angular-compilation.ts:22-28` @ v22.0.4:
+
 ```
 None = 0, Option = 1<<0, Syntactic = 1<<1, Semantic = 1<<2, All = Option|Syntactic|Semantic
 ```
-It selects WHICH diagnostic *families* to gather (Option / Syntactic / Semantic). It does NOT
+
+It selects WHICH diagnostic _families_ to gather (Option / Syntactic / Semantic). It does NOT
 change how a given family is computed; it only includes/excludes whole families. The build
 always passes `DiagnosticModes.All` from `diagnoseFiles(modes = DiagnosticModes.All)`
 (`angular-compilation.ts:88-109`).
@@ -33,6 +36,7 @@ converts each `ts.Diagnostic` to an esbuild `PartialMessage`, and bins by `categ
 `errors` / `warnings`.
 
 `collectDiagnostics(modes)` (`aot-compilation.ts:225-296` @ v22.0.4) -- the gatherer:
+
 1. **Program-level** (`Option`): `getConfigFileParsingDiagnostics()` + `angularCompiler.getOptionDiagnostics()` + `typeScriptProgram.getOptionsDiagnostics()` (lines 239-243).
 2. **Global syntactic** (`Syntactic`): `typeScriptProgram.getGlobalDiagnostics()` (lines 244-246).
 3. **Per source file** (loop, lines 248-295), skipping `angularCompiler.ignoreForDiagnostics.has(sf)` shim/typecheck files (250-252):
@@ -46,6 +50,7 @@ converts each `ts.Diagnostic` to an esbuild `PartialMessage`, and bins by `categ
 (`aot-compilation.ts:210`). On a cold full build (>1 file) it is `WholeProgram`.
 
 `getDiagnosticsForFile(sf, optimizeFor)` -- `NgCompiler` `angular/packages/compiler-cli/src/ngtsc/core/src/compiler.ts:616-639` @ v22.0.4:
+
 ```
 const diagnostics = [...getNonTemplateDiagnostics().filter(d => d.file === file)];
 try {
@@ -53,6 +58,7 @@ try {
 } catch (err) { if (!isFatalDiagnosticError(err)) throw err; diagnostics.push(err.toDiagnostic()); }
 return addMessageTextDetails(diagnostics);
 ```
+
 So per file it runs: non-template (filtered to that file) + per-file template TTC +
 `runAdditionalChecks(file)` (sourceFileValidator + templateSemanticsChecker + extended), all
 under a PER-FILE `isFatalDiagnosticError` try/catch, then `addMessageTextDetails`.
@@ -76,13 +82,16 @@ supportJitMode:false, removeComments:false }`.
 ## How our engine gathers diagnostics
 
 `gatherAllDiagnostics(program)` -- `packages/angular-typechecker/src/core/gather-diagnostics.ts:15-28`: pushes 6 whole-program getters on the `api.Program` IN ORDER, NO short-circuit:
+
 ```
 getTsOptionDiagnostics(), getNgOptionDiagnostics(), getTsSyntacticDiagnostics(),
 getTsSemanticDiagnostics(), getNgStructuralDiagnostics(), getNgSemanticDiagnostics()
 ```
+
 Passed as `performCompilation`'s `gatherDiagnostics` callback -- `run-typecheck.ts:165`.
 
 `runTypecheck` -- `packages/angular-typechecker/src/core/run-typecheck.ts:90-206`:
+
 - loads compiler-cli (102) + typescript (103); `readConfiguration(tsConfigPath)` with NO second-arg overrides (105).
 - folds `parsed.errors` into `configDiagnostics` (110) -- not dropped (MD-01 fixed).
 - zero-rootNames guard (117-130) -> synthesized Error.
@@ -92,6 +101,7 @@ Passed as `performCompilation`'s `gatherDiagnostics` callback -- `run-typecheck.
 - `finalize` (187-206 / 292-338): boundary filter -> `ts.sortAndDeduplicateDiagnostics` -> explicit Error/Warning category counts.
 
 The `api.Program` getters our gatherer calls resolve to `NgtscProgram` (`angular/packages/compiler-cli/src/ngtsc/program.ts`):
+
 - `getTsOptionDiagnostics` -> `tsProgram.getOptionsDiagnostics()` (146-152).
 - `getTsSyntacticDiagnostics()` (no arg) -> loops `getSyntacticDiagnostics(sf)` over non-ignored files (154-178).
 - `getTsSemanticDiagnostics()` (no arg) -> loops `getSemanticDiagnostics(sf)` over non-ignored files (180-210).
@@ -100,12 +110,14 @@ The `api.Program` getters our gatherer calls resolve to `NgtscProgram` (`angular
 - `getNgSemanticDiagnostics()` (no fileName) -> `compiler.getDiagnostics()` (224-243), the whole-program path.
 
 `NgCompiler.getDiagnostics()` -- `compiler.ts:591-609` @ v22.0.4:
+
 ```
 const diagnostics = [...getNonTemplateDiagnostics()];
 try { diagnostics.push(...getTemplateDiagnostics(), ...runAdditionalChecks()); }
 catch (err) { if (!isFatalDiagnosticError(err)) throw err; diagnostics.push(err.toDiagnostic()); }
 return addMessageTextDetails(diagnostics);
 ```
+
 - `getNonTemplateDiagnostics()` (1243-1258): `traitCompiler.diagnostics` + (if entryPoint) `checkForPrivateExports`.
 - `getTemplateDiagnostics()` (1202-1222): loops ALL input source files, skipping `sf.isDeclarationFile || adapter.isShim(sf)`, calling `templateTypeChecker.getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`.
 - `runAdditionalChecks()` (1260-1291): for ALL input files -> sourceFileValidator + templateSemanticsChecker + (if `strictTemplates`) extendedTemplateChecker.
@@ -129,7 +141,7 @@ detail enrichment (RQ6). VALIDATED: no Angular family is missing or extra in our
 `[]`). It is NOT double-counting (it returns nothing), but it is dead weight in our gatherer and
 in ngtsc's own `defaultGatherDiagnostics` (which also calls it, `perform_compile.ts:354`).
 `@angular/build` correctly does not call it. NOTE: `traitCompiler.diagnostics` -- the diagnostics
-one might *expect* "structural" to carry -- are already returned by `getNonTemplateDiagnostics`
+one might _expect_ "structural" to carry -- are already returned by `getNonTemplateDiagnostics`
 inside `getNgSemanticDiagnostics`, so removing the structural call drops zero coverage. Keeping
 it is harmless (validated), but it is a no-signal call.
 
@@ -172,6 +184,7 @@ full isolation. (Note: a non-fatal throw still escapes both designs identically 
 out and, in our path, `performCompilation`'s outer catch turns it into UNKNOWN_ERROR_CODE 500.)
 
 Tradeoffs of switching our engine to a per-file Angular loop:
+
 - We CANNOT call `getDiagnosticsForFile` through the `api.Program` interface -- it is on
   `NgtscProgram`/`NgCompiler`, not `api.Program`. BUT `NgtscProgram.getNgSemanticDiagnostics(fileName?)`
   accepts an optional `fileName` and, when given one, delegates to
@@ -248,6 +261,7 @@ order regardless of push order. VALIDATED.
 Ordered highest-value first.
 
 ### 1. Switch Angular semantic gathering to a per-file, fault-isolated loop
+
 - **(a) Current:** `gather-diagnostics.ts:25` calls `program.getNgSemanticDiagnostics()` once
   (whole-program). That resolves to `NgCompiler.getDiagnostics()` whose SINGLE try/catch
   (`compiler.ts:599-606` @ v22.0.4) abandons all remaining files' template + extended diagnostics
@@ -278,6 +292,7 @@ Ordered highest-value first.
 - **(f) Effort:** M.
 
 ### 2. Surface global TypeScript semantic diagnostics (`getGlobalDiagnostics`)
+
 - **(a) Current:** `gather-diagnostics.ts:23` calls `program.getTsSemanticDiagnostics()`, which in
   ngtsc loops `getSemanticDiagnostics(sf)` PER FILE (`program.ts:201-203` @ v22.0.4). Because each
   call passes a `sourceFile` arg, TS never returns its global (location-less) semantic diagnostics
@@ -299,6 +314,7 @@ Ordered highest-value first.
 - **(f) Effort:** S.
 
 ### 3. Drop the dead `getNgStructuralDiagnostics()` call (no-op at v22.0.4)
+
 - **(a) Current:** `gather-diagnostics.ts:24` calls `program.getNgStructuralDiagnostics()`.
 - **(b) Reference:** `NgtscProgram.getNgStructuralDiagnostics()` returns `[]`
   (`program.ts:218-222` @ v22.0.4); `@angular/build` does not call it at all. The diagnostics one
@@ -315,6 +331,7 @@ Ordered highest-value first.
 - **(f) Effort:** S.
 
 ### 4. Add `suppressOutputPathCheck: true` to the no-emit options override (defensive)
+
 - **(a) Current:** `run-typecheck.ts:139-159` builds the options bag with the emit-neutralizing
   override but does NOT set `suppressOutputPathCheck`. We also call `readConfiguration` with no
   second-arg overrides (`run-typecheck.ts:105`).
@@ -333,6 +350,7 @@ Ordered highest-value first.
 - **(f) Effort:** S.
 
 ### 5. (VALIDATED -- no change) Angular family coverage is complete and correctly enriched
+
 - **(a) Current:** single `getNgSemanticDiagnostics()` -> `NgCompiler.getDiagnostics()`.
 - **(b) Reference:** `getDiagnosticsForFile` (per file) runs the SAME families
   (`compiler.ts:591-639`): non-template, template TTC, sourceFileValidator, templateSemantics,
@@ -345,6 +363,7 @@ Ordered highest-value first.
 - **(f) Effort:** none.
 
 ### 6. (VALIDATED -- no change) Options pass-through is correct; do NOT copy `@angular/build`'s emit/codegen overrides
+
 - **(a) Current:** spread `parsed.options` verbatim + emit-neutralizing override
   (`run-typecheck.ts:140-159`); `strictTemplates`/`extendedDiagnostics`/`skipLibCheck`/
   `supportTestBed`/`supportJitMode` all left as the consumer set them.
@@ -362,6 +381,7 @@ Ordered highest-value first.
 - **(f) Effort:** none.
 
 ### 7. (VALIDATED -- no change) Getter order and post-processing
+
 - **(a) Current:** 6 getters in fixed order; final `ts.sortAndDeduplicateDiagnostics`
   (`run-typecheck.ts:320`).
 - **(b) Reference:** ngc's `defaultGatherDiagnostics` (`perform_compile.ts:328-360`) uses an

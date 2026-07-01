@@ -79,7 +79,7 @@ The findings below are all robustness/clarity issues, none blocking.
 ### WR-01: Two CHANGELOG leak-shape regexes false-positive on legitimate prose (future-release brittleness)
 
 **File:** `e2e/angular-typechecker-install-e2e/src/release-hygiene.int.spec.ts:250-252`
-**Issue:** Two of the three REL-03 leak-shape regexes match plausible *legitimate* changelog
+**Issue:** Two of the three REL-03 leak-shape regexes match plausible _legitimate_ changelog
 content, so a future curated entry could fail the suite even though it contains no GSD
 plan-id scope. Empirically verified:
 
@@ -101,13 +101,15 @@ than that.
 **Fix:** Anchor the patterns to the actual leak grammar so they cannot match bare numbers in
 prose. The leak always carries a conventional-commit type prefix or a Markdown emphasis
 delimiter:
+
 ```ts
 // conventional-commit scope: a type keyword immediately before the (NN[-NN]) scope
 const conventionalCommitScope = /\b(?:feat|fix|perf|refactor|docs|chore|test|build|ci|style|revert)\([^)]*\b\d{2}(?:-\d{2})*\)/;
 // bold/bare leading scope only at the start of a list item or heading line (multiline)
-const boldHeadingScope = /\*\*\d{2}(?:-\d{2})*[:*]/;            // already specific -- keep
-const bareLeadingScope = /^[\s*#>-]*\d{2}(?:-\d{2})*:/m;        // anchor to line start, not \b mid-prose
+const boldHeadingScope = /\*\*\d{2}(?:-\d{2})*[:*]/; // already specific -- keep
+const bareLeadingScope = /^[\s*#>-]*\d{2}(?:-\d{2})*:/m; // anchor to line start, not \b mid-prose
 ```
+
 This keeps every documented leak shape caught (verified: `feat(05-01):`, `**06-02:**`,
 leading `05-01:`/`06:`) while no longer tripping on `Node (22)`, `Angular 22:`, `14:30`, or
 `16:9`. At minimum, anchor `bareLeadingScope` to a line start (`/^.../m`) and gate
@@ -120,6 +122,7 @@ leading `05-01:`/`06:`) while no longer tripping on `Node (22)`, `Angular 22:`, 
 the tag to `main`" to the Release-PR flow ("cut on a `release/*` branch -> PR -> merge ->
 tag the merge commit"). AGENTS.md was rewritten to reflect this, but the spec's surrounding
 prose was not. Three stale references remain:
+
 - Line 80: `it('keeps the local-first cut decoupled from push + GitHub release (PKG-05 / D-13)')`
   -- "local-first cut" describes the OLD flow.
 - Lines 88-92 comment: "...would push an UN-CURATED version commit + tag to a
@@ -170,7 +173,7 @@ assume single-digit ids are also guarded.
 **Fix:** Add one line to the comment, e.g. "Assumes GSD's zero-padded two-digit plan ids
 (`NN`/`NN-NN`); single-digit forms are out of scope by convention." No code change needed.
 
-### IN-03: REL-* statuses read "Pending" while REL-01's config + spec are already shipped
+### IN-03: REL-\* statuses read "Pending" while REL-01's config + spec are already shipped
 
 **File:** `.planning/REQUIREMENTS.md:67-69,147-149`
 **Issue:** REL-01/02/03 are marked `[ ]` / "Pending" in both the checklist and Traceability.

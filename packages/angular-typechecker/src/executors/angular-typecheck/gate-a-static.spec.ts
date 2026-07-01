@@ -20,7 +20,12 @@ import { describe, expect, it } from 'vitest';
 // Prerequisite: `nx build angular-typechecker` must have run first (the full
 // suite command `nx build && nx test` enforces build-before-static-read).
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const packageRoot = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+);
 const workspaceRoot = join(packageRoot, '..', '..');
 
 interface BuildTarget {
@@ -44,7 +49,12 @@ const projectJson = JSON.parse(
 const outputPath = projectJson.targets.build.options.outputPath;
 const distRoot = join(workspaceRoot, outputPath);
 
-const compilerLoaderJsPath = join(distRoot, 'src', 'core', 'compiler-loader.js');
+const compilerLoaderJsPath = join(
+  distRoot,
+  'src',
+  'core',
+  'compiler-loader.js',
+);
 const executorJsPath = join(
   distRoot,
   'src',

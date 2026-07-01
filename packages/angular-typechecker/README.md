@@ -1,6 +1,6 @@
 # angular-typechecker
 
-An Nx plugin that runs the *complete* Angular compiler type-check -- TypeScript
+An Nx plugin that runs the _complete_ Angular compiler type-check -- TypeScript
 checks plus Angular template type-checking and extended (NG8xxx) diagnostics --
 with **no emit**, decoupled from building the application or running the tests.
 It works for every Angular project type: applications, libraries (local /
@@ -9,10 +9,10 @@ non-buildable, buildable, and publishable), and unit-test (spec) tsconfigs.
 ## Why this exists
 
 As Brandon Roberts documents in "Angular Compilation, Type-Checking, and Build
-Bottlenecks" (2026), at scale the whole-program type-check is the *dominant,
-separable* cost of an Angular build (a standalone `ngc --noEmit` is a large
+Bottlenecks" (2026), at scale the whole-program type-check is the _dominant,
+separable_ cost of an Angular build (a standalone `ngc --noEmit` is a large
 fraction of a full esbuild build). Fast per-file compilers (AnalogJS
-`fastCompile`, the experimental Oxc compiler) and esbuild dev deliberately *skip*
+`fastCompile`, the experimental Oxc compiler) and esbuild dev deliberately _skip_
 the type-check for speed and expect you to "run the type-check elsewhere"; the
 editor's Angular Language Service covers the live loop.
 
@@ -71,10 +71,10 @@ the **published** executor id `angular-typechecker:angular-typecheck`:
       "executor": "angular-typechecker:angular-typecheck",
       "options": {
         "tsConfig": "apps/my-app/tsconfig.app.json",
-        "includeDeps": true
-      }
-    }
-  }
+        "includeDeps": true,
+      },
+    },
+  },
 }
 ```
 
@@ -109,14 +109,14 @@ dependency outputs via `dependentTasksOutputFiles`):
         "^default",
         {
           "dependentTasksOutputFiles": "**/*.{d.ts,d.cts,d.mts,tsbuildinfo}",
-          "transitive": true
+          "transitive": true,
         },
         {
-          "externalDependencies": ["typescript", "@angular/compiler-cli"]
-        }
-      ]
-    }
-  }
+          "externalDependencies": ["typescript", "@angular/compiler-cli"],
+        },
+      ],
+    },
+  },
 }
 ```
 
@@ -139,12 +139,12 @@ dependencies you want covered.
 
 ## Options
 
-| Option        | Type    | Default | Description                                                                                              |
-| ------------- | ------- | ------- | -------------------------------------------------------------------------------------------------------- |
-| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.        |
-| `includeDeps` | boolean | `false` | Include out-of-project and `node_modules` diagnostics. Default excludes them (project-in-isolation).     |
-| `maxWarnings` | number  | (unset) | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone. |
-| `failFast`    | boolean | `false` | Report only the first error (output brevity). NOT a speed-up -- all diagnostics are still gathered.      |
+| Option        | Type    | Default    | Description                                                                                                      |
+| ------------- | ------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                   |
+| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. Default excludes them (project-in-isolation).             |
+| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone. |
+| `failFast`    | boolean | `false`    | Report only the first error (output brevity). NOT a speed-up -- all diagnostics are still gathered.              |
 
 The default human-readable output uses the Angular compiler's `formatDiagnostics`
 (a superset of `tsc`; it renders NG codes and template codeframes). The executor

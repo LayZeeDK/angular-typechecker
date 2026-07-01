@@ -158,7 +158,9 @@ async function runExecutorSuccess(): Promise<boolean> {
 }
 
 function sortedCodes(result: CoreResult): readonly number[] {
-  return result.diagnostics.map((diagnostic) => diagnostic.code).sort((a, b) => a - b);
+  return result.diagnostics
+    .map((diagnostic) => diagnostic.code)
+    .sort((a, b) => a - b);
 }
 
 beforeAll(async () => {

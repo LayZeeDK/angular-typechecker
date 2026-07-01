@@ -4,23 +4,23 @@ plan: 02
 subsystem: test-fixtures
 tags: [fixtures, walk-references, solution-tsconfig, test-substrate]
 requires:
-  - "fixtures/solution-style (existing) + fixtures/*/tsconfig.base.json (existing base)"
+  - 'fixtures/solution-style (existing) + fixtures/*/tsconfig.base.json (existing base)'
 provides:
-  - "fixtures/solution-style upgraded: app+spec leaves, distinct-file TS2322 each"
-  - "fixtures/solution-style-overlap: lib+spec share one source (dedupe collapse substrate)"
-  - "fixtures/solution-style-oop: references an existing outside leaf (boundary-skip substrate)"
-  - "fixtures/solution-style-empty: files:[] + no references (90001 empty-project substrate)"
-  - "fixtures/solution-style-broken-ref: real leaf + nonexistent path (D-05 90002 substrate)"
-  - "fixtures/solution-style-selfref: self + duplicate leaf references (D-04 dedupe substrate)"
+  - 'fixtures/solution-style upgraded: app+spec leaves, distinct-file TS2322 each'
+  - 'fixtures/solution-style-overlap: lib+spec share one source (dedupe collapse substrate)'
+  - 'fixtures/solution-style-oop: references an existing outside leaf (boundary-skip substrate)'
+  - 'fixtures/solution-style-empty: files:[] + no references (90001 empty-project substrate)'
+  - 'fixtures/solution-style-broken-ref: real leaf + nonexistent path (D-05 90002 substrate)'
+  - 'fixtures/solution-style-selfref: self + duplicate leaf references (D-04 dedupe substrate)'
 affects:
-  - "Plan 13-05 walk-references.integration.spec.ts (consumes these fixtures)"
-  - "config-resolution.integration.spec.ts solution-style block rewrite (consumes upgraded solution-style)"
+  - 'Plan 13-05 walk-references.integration.spec.ts (consumes these fixtures)'
+  - 'config-resolution.integration.spec.ts solution-style block rewrite (consumes upgraded solution-style)'
 tech-stack:
   added: []
   patterns:
-    - "leaf tsconfig mirrors fixtures/solution-style/tsconfig.app.json compilerOptions"
-    - "spec leaf adds types [vitest/globals, node]"
-    - "plain TS2322 (string->number) with literal template; no interpolated signal (Pitfall 3)"
+    - 'leaf tsconfig mirrors fixtures/solution-style/tsconfig.app.json compilerOptions'
+    - 'spec leaf adds types [vitest/globals, node]'
+    - 'plain TS2322 (string->number) with literal template; no interpolated signal (Pitfall 3)'
 key-files:
   created:
     - fixtures/solution-style/tsconfig.spec.json
@@ -41,7 +41,7 @@ key-files:
     - fixtures/solution-style/tsconfig.json
     - fixtures/solution-style/error.component.ts
 decisions:
-  - "oop reference target = ../solution-style/tsconfig.app.json (an existing outside leaf that now carries a planted TS2322, so a no-guard baseline would leak it)"
+  - 'oop reference target = ../solution-style/tsconfig.app.json (an existing outside leaf that now carries a planted TS2322, so a no-guard baseline would leak it)'
 metrics:
   duration: ~10m
   completed: 2026-07-01

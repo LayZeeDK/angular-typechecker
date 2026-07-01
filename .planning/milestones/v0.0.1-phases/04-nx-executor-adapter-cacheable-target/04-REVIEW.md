@@ -70,11 +70,11 @@ No Critical or High findings. The Warning-tier items are robustness/false-PASS-h
 
 ## Warnings
 
-### WR-01: Cache-MISS assertion can false-PASS on a *non-cache* failure (e.g. ERR_REQUIRE_ESM, graph error, executor crash)
+### WR-01: Cache-MISS assertion can false-PASS on a _non-cache_ failure (e.g. ERR_REQUIRE_ESM, graph error, executor crash)
 
 **File:** `e2e/angular-typechecker-cache-e2e/src/cache-busts-on-dep-error.int.spec.ts:185-188`
 
-**Issue:** Run #3 (the MISS case) asserts three things: marker absent, `stdout` matches `/TS2322|2322/`, and `code !== 0`. The `/TS2322|2322/` regex is the only signal that distinguishes a genuine *cache-busted-and-reported-the-error* outcome from a *failed for an unrelated reason* outcome (compiler-cli ESM load failure, project-graph error, daemon issue, an Nx upgrade changing output). But `2322` is a bare 4-digit number -- it can appear coincidentally in a stack trace, a file offset, a hash fragment, or an unrelated TS code, so the regex is weak insurance against a false PASS where the cache "lied" but the run failed for a different reason. A truly broken cache that served the GREEN result would also be caught only by the marker-absent + exit-nonzero pair, which a crashed run satisfies for the wrong reason.
+**Issue:** Run #3 (the MISS case) asserts three things: marker absent, `stdout` matches `/TS2322|2322/`, and `code !== 0`. The `/TS2322|2322/` regex is the only signal that distinguishes a genuine _cache-busted-and-reported-the-error_ outcome from a _failed for an unrelated reason_ outcome (compiler-cli ESM load failure, project-graph error, daemon issue, an Nx upgrade changing output). But `2322` is a bare 4-digit number -- it can appear coincidentally in a stack trace, a file offset, a hash fragment, or an unrelated TS code, so the regex is weak insurance against a false PASS where the cache "lied" but the run failed for a different reason. A truly broken cache that served the GREEN result would also be caught only by the marker-absent + exit-nonzero pair, which a crashed run satisfies for the wrong reason.
 
 **Fix:** Tighten the diagnostic match to the rendered codeframe form the executor actually emits (e.g. require the `TS2322` token specifically, and ideally the message fragment), and add an explicit negative assertion that the run did NOT fail for an infrastructure reason:
 
@@ -113,10 +113,7 @@ afterAll(() => {
 ```ts
 import { joinPathFragments } from '@nx/devkit';
 
-const consumerTsConfig = joinPathFragments(
-  workspaceRoot,
-  'libs/typecheck-consumer/tsconfig.lib.json',
-);
+const consumerTsConfig = joinPathFragments(workspaceRoot, 'libs/typecheck-consumer/tsconfig.lib.json');
 ```
 
 ### WR-04: The dual-key cacheable `targetDefaults` duplicates a 7-line input recipe verbatim, with a drift risk and a Phase-5 leak hazard
@@ -173,7 +170,7 @@ const consumerTsConfig = joinPathFragments(
 
 **File:** `libs/typecheck-consumer-dep/src/lib/dep.component.ts:1-21`
 
-**Issue:** The mutation target is correctly a non-`.spec` file the Vitest `include` (`src/**/*.int.spec.ts`) ignores, and the `.pristine` sidecar + `finally` restore + CI `git diff --exit-code` backstop are solid (D-15). One residual: during the window between `writeFileSync(injected)` and the `finally` restore, the file on disk is genuinely broken; if a *parallel* watcher/LSP/another Nx target scanned `libs/typecheck-consumer-dep` it would observe the injected error. The D-14 serialization (singleFork, `fileParallelism: false`, `NX_DAEMON=false`) and main-tree run (D-17) close this in practice.
+**Issue:** The mutation target is correctly a non-`.spec` file the Vitest `include` (`src/**/*.int.spec.ts`) ignores, and the `.pristine` sidecar + `finally` restore + CI `git diff --exit-code` backstop are solid (D-15). One residual: during the window between `writeFileSync(injected)` and the `finally` restore, the file on disk is genuinely broken; if a _parallel_ watcher/LSP/another Nx target scanned `libs/typecheck-consumer-dep` it would observe the injected error. The D-14 serialization (singleFork, `fileParallelism: false`, `NX_DAEMON=false`) and main-tree run (D-17) close this in practice.
 
 **Fix:** None required given the serialization guarantees. Documented here only so the time-of-mutation window is a known, accepted property rather than an unexamined one.
 

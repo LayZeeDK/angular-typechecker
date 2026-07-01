@@ -113,9 +113,9 @@ describe('runTypecheck boundary filter (sibling-import fixture)', () => {
     const result = await runTypecheck({ tsConfigPath: siblingImportTsConfig });
 
     // The in-project main.component TS2322 is kept.
-    expect(diagnosticsOnFile(result.diagnostics, mainLibComponent)).toHaveLength(
-      1,
-    );
+    expect(
+      diagnosticsOnFile(result.diagnostics, mainLibComponent),
+    ).toHaveLength(1);
 
     // The sibling dependency-lib TS2322 is NOT in the reported set...
     expect(
@@ -133,9 +133,9 @@ describe('runTypecheck boundary filter (sibling-import fixture)', () => {
     });
 
     // Both the in-project and the sibling TS2322 are now reported.
-    expect(diagnosticsOnFile(result.diagnostics, mainLibComponent)).toHaveLength(
-      1,
-    );
+    expect(
+      diagnosticsOnFile(result.diagnostics, mainLibComponent),
+    ).toHaveLength(1);
     expect(
       diagnosticsOnFile(result.diagnostics, dependencyLibSource),
     ).toHaveLength(1);

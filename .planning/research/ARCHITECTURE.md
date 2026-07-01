@@ -52,18 +52,18 @@ A single published package whose `src/` is split into a **framework-agnostic cor
 
 ### Component Responsibilities
 
-| Component | Responsibility | Reference / Implementation |
-|-----------|----------------|----------------------------|
-| **Core: `runTypecheck`** | Single public entry to the engine. Orchestrates resolve -> gather -> filter -> report. The ONE function every adapter calls. | Mirrors `@angular/build`'s `AngularCompilation.diagnoseFiles(modes = DiagnosticModes.All)` public method. |
-| **Core: tsconfig resolution** | Load + `extends`-chain merge one tsconfig via `readConfiguration` with Angular overrides (`suppressOutputPathCheck`, `outDir: undefined`, no emit). | `AngularCompilation.loadConfiguration()` (`aot-compilation.ts` peer). |
-| **Core: gatherer** | Run option/syntactic/semantic + Angular template + extended (NG8xxx) **unconditionally** per file via `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`. Bitflag modes enum. | `collectDiagnostics(modes)` generator in `aot-compilation.ts` (the exact PROJECT.md engine). |
-| **Core: filtering** | Drop out-of-project + `node_modules` diagnostics by default (opt-in `includeDeps`); apply category gating; count warnings for `--max-warnings`. | New (no direct peer); operates on `ts.Diagnostic[]`. |
-| **Core: reporting** | Default human output via compiler-cli `formatDiagnostics`. Returns a structured `CoreResult` (counts + raw diagnostics) so adapters can re-render (JSON/SARIF later) without re-running. | `formatDiagnostics` from `@angular/compiler-cli`. |
-| **Core: compiler loader** | `await import('@angular/compiler-cli')` + `await import('typescript')`, memoized in module scope. CJS-safe ESM bridge. | `AngularCompilation.loadCompilerCli()` static-cached pattern (verbatim shape). |
-| **Adapter: Nx executor** | Read `ExecutorContext`, resolve `tsConfig` to an absolute path, build `CoreOptions`, call `runTypecheck`, map `CoreResult.success` -> `{ success: boolean }`. | nx-verdaccio `src/executors/*/executor.ts` (default export `async (options, context) => {...}`). |
-| **Adapter: createNodesV2** (deferred) | Glob `**/tsconfig*.json` (or project files), infer `angular-typecheck` targets pointing at the executor **you own**. No diagnostic logic. | nx-verdaccio `src/plugin/nx-verdaccio.plugin.ts`. |
-| **Adapter: CLI bin** (deferred) | Parse argv, resolve cwd-relative tsconfig, call `runTypecheck`, `process.exit(code)`. | New thin `src/cli/bin.ts`. |
-| **Adapter: ng builder** (deferred) | `createBuilder`, map Architect options -> `CoreOptions`, yield `{ success }`. | `@angular/build` `builders/*/index.ts` `execute` wrappers. |
+| Component                             | Responsibility                                                                                                                                                                           | Reference / Implementation                                                                                |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Core: `runTypecheck`**              | Single public entry to the engine. Orchestrates resolve -> gather -> filter -> report. The ONE function every adapter calls.                                                             | Mirrors `@angular/build`'s `AngularCompilation.diagnoseFiles(modes = DiagnosticModes.All)` public method. |
+| **Core: tsconfig resolution**         | Load + `extends`-chain merge one tsconfig via `readConfiguration` with Angular overrides (`suppressOutputPathCheck`, `outDir: undefined`, no emit).                                      | `AngularCompilation.loadConfiguration()` (`aot-compilation.ts` peer).                                     |
+| **Core: gatherer**                    | Run option/syntactic/semantic + Angular template + extended (NG8xxx) **unconditionally** per file via `getDiagnosticsForFile(sf, OptimizeFor.WholeProgram)`. Bitflag modes enum.         | `collectDiagnostics(modes)` generator in `aot-compilation.ts` (the exact PROJECT.md engine).              |
+| **Core: filtering**                   | Drop out-of-project + `node_modules` diagnostics by default (opt-in `includeDeps`); apply category gating; count warnings for `--max-warnings`.                                          | New (no direct peer); operates on `ts.Diagnostic[]`.                                                      |
+| **Core: reporting**                   | Default human output via compiler-cli `formatDiagnostics`. Returns a structured `CoreResult` (counts + raw diagnostics) so adapters can re-render (JSON/SARIF later) without re-running. | `formatDiagnostics` from `@angular/compiler-cli`.                                                         |
+| **Core: compiler loader**             | `await import('@angular/compiler-cli')` + `await import('typescript')`, memoized in module scope. CJS-safe ESM bridge.                                                                   | `AngularCompilation.loadCompilerCli()` static-cached pattern (verbatim shape).                            |
+| **Adapter: Nx executor**              | Read `ExecutorContext`, resolve `tsConfig` to an absolute path, build `CoreOptions`, call `runTypecheck`, map `CoreResult.success` -> `{ success: boolean }`.                            | nx-verdaccio `src/executors/*/executor.ts` (default export `async (options, context) => {...}`).          |
+| **Adapter: createNodesV2** (deferred) | Glob `**/tsconfig*.json` (or project files), infer `angular-typecheck` targets pointing at the executor **you own**. No diagnostic logic.                                                | nx-verdaccio `src/plugin/nx-verdaccio.plugin.ts`.                                                         |
+| **Adapter: CLI bin** (deferred)       | Parse argv, resolve cwd-relative tsconfig, call `runTypecheck`, `process.exit(code)`.                                                                                                    | New thin `src/cli/bin.ts`.                                                                                |
+| **Adapter: ng builder** (deferred)    | `createBuilder`, map Architect options -> `CoreOptions`, yield `{ success }`.                                                                                                            | `@angular/build` `builders/*/index.ts` `execute` wrappers.                                                |
 
 ---
 
@@ -193,6 +193,7 @@ angular-typechecker/                         # repo root = its own Nx workspace
 **Trade-offs:** One extra indirection (`normalize-options.ts`) per adapter; in exchange every new surface is small and the diagnostic logic is tested once. This is the central design lever for PROJECT.md's deferred-surfaces requirement.
 
 **Example:**
+
 ```typescript
 // src/executors/angular-typecheck/executor.ts  (the WHOLE adapter)
 import type { ExecutorContext } from '@nx/devkit';
@@ -200,12 +201,9 @@ import { runTypecheck } from '../../core';
 import { normalizeOptions } from './normalize-options';
 import type { AngularTypecheckExecutorSchema } from './schema';
 
-export default async function angularTypecheckExecutor(
-  options: AngularTypecheckExecutorSchema,
-  context: ExecutorContext,
-): Promise<{ success: boolean }> {
+export default async function angularTypecheckExecutor(options: AngularTypecheckExecutorSchema, context: ExecutorContext): Promise<{ success: boolean }> {
   const coreOptions = normalizeOptions(options, context); // ExecutorContext -> CoreOptions
-  const result = await runTypecheck(coreOptions);         // all logic lives here
+  const result = await runTypecheck(coreOptions); // all logic lives here
 
   return { success: result.success };
 }
@@ -218,6 +216,7 @@ export default async function angularTypecheckExecutor(
 **Trade-offs:** First call pays the dynamic-import cost; subsequent calls are free. The cache must be module-scoped (not per-call) or every file pays it.
 
 **Example:**
+
 ```typescript
 // src/core/compiler-loader.ts  (shape lifted from @angular/build AngularCompilation)
 import type * as ng from '@angular/compiler-cli';
@@ -242,13 +241,14 @@ export async function loadTypescript(): Promise<typeof ts> {
 **Trade-offs:** Slower than short-circuiting because it never bails early -- but completeness is the product. The bitflag enum future-proofs the deferred per-file/incremental (`OptimizeFor.SingleFile`) migration.
 
 **Example:**
+
 ```typescript
 // src/core/gatherer/diagnostic-modes.ts  (verbatim from @angular/build)
 export enum DiagnosticModes {
   None = 0,
   Option = 1 << 0,
   Syntactic = 1 << 1,
-  Semantic = 1 << 2,           // includes Angular template + extended (NG8xxx)
+  Semantic = 1 << 2, // includes Angular template + extended (NG8xxx)
   All = Option | Syntactic | Semantic,
 }
 ```
@@ -306,14 +306,14 @@ ng builder:     createBuilder((opts, ctx) => runTypecheck(...).then(r => ({ succ
 
 ## Build / Publish boundary
 
-| Concern | Decision | Tag |
-|---------|----------|-----|
-| **What compiles** | `tsconfig.lib.json` includes `src/**/*.ts`, excludes `**/*.test.ts`, `**/*.spec.ts`, `**/__snapshots__/**`. Built with `@nx/js:tsc` (declaration:true) to plain CJS `.js` + `.d.ts`. | [confirms] (PROJECT.md: shipped as pre-compiled `.js`) |
-| **What ships** (`package.json` `files`) | `src` (compiled output), `executors.json`, `README.md`, `LICENSE`. NOT `fixtures/`, `testing/`, `e2e/`, `*.test.ts`, vitest configs. | [adds] (mirrors nx-verdaccio `files: [docs, src, executors.json, README.md]`) |
-| **Manifest fields** | `"type": "commonjs"`, `"main": "./src/index.js"`, `"typings": "./src/index.d.ts"`, `"executors": "./executors.json"`. | [confirms] |
-| **Dependencies** | `@angular/compiler-cli`, `typescript`, `nx`/`@nx/devkit` as **peerDependencies**; `tslib` as the only runtime dep if `importHelpers` is on. | [confirms PROJECT.md] |
-| **executors.json output** | `project.json` build target copies `executors.json` and any non-`.ts` assets into the dist root so the published path `./src/executors/angular-typecheck/executor` resolves. | [adds] (verbatim nx-verdaccio build assets config) |
-| **Release** | `nx release` (semantic-version + publish). Manual `project.json` target wiring documented in README (no config generator in v0.0.1). | [confirms] |
+| Concern                                 | Decision                                                                                                                                                                             | Tag                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| **What compiles**                       | `tsconfig.lib.json` includes `src/**/*.ts`, excludes `**/*.test.ts`, `**/*.spec.ts`, `**/__snapshots__/**`. Built with `@nx/js:tsc` (declaration:true) to plain CJS `.js` + `.d.ts`. | [confirms] (PROJECT.md: shipped as pre-compiled `.js`)                        |
+| **What ships** (`package.json` `files`) | `src` (compiled output), `executors.json`, `README.md`, `LICENSE`. NOT `fixtures/`, `testing/`, `e2e/`, `*.test.ts`, vitest configs.                                                 | [adds] (mirrors nx-verdaccio `files: [docs, src, executors.json, README.md]`) |
+| **Manifest fields**                     | `"type": "commonjs"`, `"main": "./src/index.js"`, `"typings": "./src/index.d.ts"`, `"executors": "./executors.json"`.                                                                | [confirms]                                                                    |
+| **Dependencies**                        | `@angular/compiler-cli`, `typescript`, `nx`/`@nx/devkit` as **peerDependencies**; `tslib` as the only runtime dep if `importHelpers` is on.                                          | [confirms PROJECT.md]                                                         |
+| **executors.json output**               | `project.json` build target copies `executors.json` and any non-`.ts` assets into the dist root so the published path `./src/executors/angular-typecheck/executor` resolves.         | [adds] (verbatim nx-verdaccio build assets config)                            |
+| **Release**                             | `nx release` (semantic-version + publish). Manual `project.json` target wiring documented in README (no config generator in v0.0.1).                                                 | [confirms]                                                                    |
 
 **Critical publish detail:** `executors.json` references implementations by extensionless path (`./src/executors/angular-typecheck/executor`). After `@nx/js:tsc` build the dist layout must preserve `src/executors/...`, so the build target's `main` is `src/index.ts` with `outputPath` flattening to dist root -- exactly nx-verdaccio's config. Get this wrong and `nx run` fails to load the executor at install time (caught by the e2e tarball test, not by unit tests).
 
@@ -331,6 +331,7 @@ Ordered to surface the riskiest unknown first (the compiler engine) and to keep 
 6. **Full e2e matrix + CI** -- tarball install matrix across the five project types; GitHub Actions Node 22/24/26 x Linux/Windows/macOS. Late, slow, gating.
 
 **Architecture implications for phasing:**
+
 - The core-vs-adapter split means phases 1-3 produce a fully testable engine **before** any Nx code exists -- de-risks the spike independently of Nx wiring.
 - `src/plugin/`, `src/cli/`, `src/builders/` folders are reserved (empty) in v0.0.1 so the next milestone's createNodesV2/CLI/builder land without restructuring `src/`.
 - The "only create dynamic targets using executors you own" Nx migration rule (extending-nx docs) confirms the **executor-first, createNodesV2-later** order: the inferred target the future plugin creates must point at an executor that already exists and is published.
@@ -369,20 +370,20 @@ Ordered to surface the riskiest unknown first (the compiler engine) and to keep 
 
 ### External (resolved from consumer workspace -- peerDeps)
 
-| Dependency | Integration pattern | Notes |
-|------------|---------------------|-------|
-| `@angular/compiler-cli` | `await import()` in `compiler-loader.ts` | ESM-only; consumer's installed v22.x; `readConfiguration`, `formatDiagnostics`, `OptimizeFor`, `getDiagnosticsForFile`. |
-| `typescript` | `await import()` in `compiler-loader.ts` | TS 6.0.x; lazy-loaded only when diagnostics run (matches `@angular/build` comment "avoid loading typescript until needed"). |
-| `@nx/devkit` / `nx` | static `require()` (CJS) in adapters only | `ExecutorContext`, `logger`, later `createNodesV2`, `createNodesFromFiles`. Never imported by core. |
+| Dependency              | Integration pattern                       | Notes                                                                                                                       |
+| ----------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `@angular/compiler-cli` | `await import()` in `compiler-loader.ts`  | ESM-only; consumer's installed v22.x; `readConfiguration`, `formatDiagnostics`, `OptimizeFor`, `getDiagnosticsForFile`.     |
+| `typescript`            | `await import()` in `compiler-loader.ts`  | TS 6.0.x; lazy-loaded only when diagnostics run (matches `@angular/build` comment "avoid loading typescript until needed"). |
+| `@nx/devkit` / `nx`     | static `require()` (CJS) in adapters only | `ExecutorContext`, `logger`, later `createNodesV2`, `createNodesFromFiles`. Never imported by core.                         |
 
 ### Internal boundaries
 
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| adapter <-> core | one function call: `runTypecheck(CoreOptions): Promise<CoreResult>` | The single seam. Enforce with ESLint `no-restricted-imports` (core may not import `@nx/devkit`/`yargs`/architect). |
-| core <-> ESM compiler | `loadCompilerCli()` / `loadTypescript()` (memoized dynamic import) | The CJS->ESM bridge; the only place dynamic import appears. |
-| library <-> test-utils | `import from '@<scope>/test-nx-utils'` (workspace project) | FsTree quarantine; not published. |
-| build <-> publish | `tsconfig.lib.json` (compile set) + `package.json files` (ship set) | Two independent allowlists; both exclude tests/fixtures. |
+| Boundary               | Communication                                                       | Notes                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| adapter <-> core       | one function call: `runTypecheck(CoreOptions): Promise<CoreResult>` | The single seam. Enforce with ESLint `no-restricted-imports` (core may not import `@nx/devkit`/`yargs`/architect). |
+| core <-> ESM compiler  | `loadCompilerCli()` / `loadTypescript()` (memoized dynamic import)  | The CJS->ESM bridge; the only place dynamic import appears.                                                        |
+| library <-> test-utils | `import from '@<scope>/test-nx-utils'` (workspace project)          | FsTree quarantine; not published.                                                                                  |
+| build <-> publish      | `tsconfig.lib.json` (compile set) + `package.json files` (ship set) | Two independent allowlists; both exclude tests/fixtures.                                                           |
 
 ---
 
@@ -394,5 +395,6 @@ Ordered to surface the riskiest unknown first (the compiler engine) and to keep 
 - Nx extending-nx docs (createNodes compatibility, project-graph-plugins, local-executors, organization-specific-plugin) via WebSearch 2026-06-27 -- export both `createNodes`+`createNodesV2` from one impl for Nx 21+; "only create dynamic targets using executors you own"; one entry point per inferred feature (whole plugin compiles at runtime). MEDIUM (search synthesis; cross-checked against the live nx-verdaccio plugin which embodies the same rules).
 
 ---
-*Architecture research for: Nx plugin wrapping a shared Angular type-check core*
-*Researched: 2026-06-27*
+
+_Architecture research for: Nx plugin wrapping a shared Angular type-check core_
+_Researched: 2026-06-27_

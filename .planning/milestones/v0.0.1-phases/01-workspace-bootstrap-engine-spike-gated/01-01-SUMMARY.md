@@ -7,41 +7,41 @@ tags: [nx, nx-23, angular-22, typescript-6, create-nx-workspace, monorepo, boots
 # Dependency graph
 requires: []
 provides:
-  - "Nx 23 integrated Angular monorepo (--preset=apps, classic project.json layout) at the repo root over the preserved .git/"
-  - "Root workspace manifest (package.json) with nx/@nx/* 23.0.1, typescript 6.0.3, @angular/compiler-cli 22.0.4 pinned EXACT (D-15)"
-  - "nx.json (classic apps shape), .gitignore, .editorconfig, .vscode/extensions.json, package-lock.json"
-  - "Preserved .git/ (HEAD unchanged) + restored .planning/ + CLAUDE.md byte-identical"
+  - 'Nx 23 integrated Angular monorepo (--preset=apps, classic project.json layout) at the repo root over the preserved .git/'
+  - 'Root workspace manifest (package.json) with nx/@nx/* 23.0.1, typescript 6.0.3, @angular/compiler-cli 22.0.4 pinned EXACT (D-15)'
+  - 'nx.json (classic apps shape), .gitignore, .editorconfig, .vscode/extensions.json, package-lock.json'
+  - 'Preserved .git/ (HEAD unchanged) + restored .planning/ + CLAUDE.md byte-identical'
 affects: [01-02-scaffold-plugin-spike-app, 01-03-tracer-bullet-core, 01-04-gate-specs, phase-2-core-engine]
 
 # Tech tracking
 tech-stack:
   added:
-    - "nx@23.0.1, @nx/devkit@23.0.1, @nx/js@23.0.1, @nx/plugin@23.0.1, @nx/vitest@23.0.1, @nx/angular@23.0.1, @nx/workspace@23.0.1"
-    - "typescript@6.0.3, @angular/compiler-cli@22.0.4 (root devDependency, exact pin)"
+    - 'nx@23.0.1, @nx/devkit@23.0.1, @nx/js@23.0.1, @nx/plugin@23.0.1, @nx/vitest@23.0.1, @nx/angular@23.0.1, @nx/workspace@23.0.1'
+    - 'typescript@6.0.3, @angular/compiler-cli@22.0.4 (root devDependency, exact pin)'
   patterns:
-    - "Mechanism B in-place bootstrap: move-aside + create-nx-workspace-in-temp + dotfile-safe copy over preserved .git/ + restore"
-    - "Exact-dev / ranged-peer split (D-15): root installs pinned EXACT; plugin-facing peer ranges stay broad (Phase 1+ plugin manifest)"
+    - 'Mechanism B in-place bootstrap: move-aside + create-nx-workspace-in-temp + dotfile-safe copy over preserved .git/ + restore'
+    - 'Exact-dev / ranged-peer split (D-15): root installs pinned EXACT; plugin-facing peer ranges stay broad (Phase 1+ plugin manifest)'
 
 key-files:
   created:
-    - "nx.json"
-    - "package.json"
-    - "package-lock.json"
-    - ".gitignore"
-    - ".editorconfig"
-    - ".vscode/extensions.json"
-    - "README.md"
+    - 'nx.json'
+    - 'package.json'
+    - 'package-lock.json'
+    - '.gitignore'
+    - '.editorconfig'
+    - '.vscode/extensions.json'
+    - 'README.md'
   modified: []
 
 key-decisions:
-  - "Bootstrap via Mechanism B (D-01/D-02/D-03): create-nx-workspace@23.0.1 --preset=apps in temp sibling, copied dotfile-safe over the preserved root .git/; HEAD provably unchanged"
+  - 'Bootstrap via Mechanism B (D-01/D-02/D-03): create-nx-workspace@23.0.1 --preset=apps in temp sibling, copied dotfile-safe over the preserved root .git/; HEAD provably unchanged'
   - "Committed the GSD orchestrator's STATE.md execution-started bookkeeping first to restore the documented clean-tree precondition (became the canonical pre-bootstrap HEAD 4a848a4)"
-  - "Renamed CNW-seeded root package.json name @atc-temp/source -> @angular-typechecker/source (temp dir name leaked)"
-  - "--preset=apps is a minimal empty integrated workspace: CNW 23.0.1 does NOT emit tsconfig.base.json/.prettierrc/apps/.gitkeep; these materialize when the first project is generated (Plan 01-02 owns creating/validating tsconfig.base.json)"
+  - 'Renamed CNW-seeded root package.json name @atc-temp/source -> @angular-typechecker/source (temp dir name leaked)'
+  - '--preset=apps is a minimal empty integrated workspace: CNW 23.0.1 does NOT emit tsconfig.base.json/.prettierrc/apps/.gitkeep; these materialize when the first project is generated (Plan 01-02 owns creating/validating tsconfig.base.json)'
 
 patterns-established:
-  - "Mechanism B bootstrap runbook: clean-tree precondition -> capture HEAD -> mv .planning/+CLAUDE.md to mktemp scratch -> CNW --skipGit into named temp sibling -> cp -R temp/. ./ (dotfile-safe) -> rm node_modules+temp -> restore from scratch -> npm install -> exact pins -> nx report -> HEAD-unchanged + no-clobber assertions -> blocking human-verify before commit"
-  - "Stage generated files BY NAME (never git add .); single-writer STATE.md/ROADMAP.md in sequential main-tree mode"
+  - 'Mechanism B bootstrap runbook: clean-tree precondition -> capture HEAD -> mv .planning/+CLAUDE.md to mktemp scratch -> CNW --skipGit into named temp sibling -> cp -R temp/. ./ (dotfile-safe) -> rm node_modules+temp -> restore from scratch -> npm install -> exact pins -> nx report -> HEAD-unchanged + no-clobber assertions -> blocking human-verify before commit'
+  - 'Stage generated files BY NAME (never git add .); single-writer STATE.md/ROADMAP.md in sequential main-tree mode'
 
 requirements-completed: [WS-01, CMP-01]
 
@@ -81,7 +81,7 @@ completed: 2026-06-27
 ## Files Created/Modified
 
 - `nx.json` - Nx 23 integrated workspace config (classic `--preset=apps` shape)
-- `package.json` - Root workspace manifest; name `@angular-typechecker/source`; nx/@nx/* 23.0.1 + typescript 6.0.3 + @angular/compiler-cli 22.0.4 pinned EXACT (D-15)
+- `package.json` - Root workspace manifest; name `@angular-typechecker/source`; nx/@nx/\* 23.0.1 + typescript 6.0.3 + @angular/compiler-cli 22.0.4 pinned EXACT (D-15)
 - `package-lock.json` - Lockfile for the pinned root toolchain
 - `.gitignore` - CNW-generated ignore set (dotfile copy verified -- Pitfall 5)
 - `.editorconfig` - CNW-generated editor config
@@ -99,6 +99,7 @@ completed: 2026-06-27
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Tree was dirty on entry (clean-tree precondition not met)**
+
 - **Found during:** Task 1 (clean-tree precondition check)
 - **Issue:** `.planning/STATE.md` carried the GSD orchestrator's own "Phase 01 execution started" bookkeeping (timestamp + status + plan counter -- no user work-in-progress). Task 1's acceptance criterion and the orchestrator's NON-NEGOTIABLE safety note require an empty `git status --porcelain` before any move-aside.
 - **Fix:** Committed the GSD bookkeeping as `docs(01-01): mark phase 01 execution started in STATE.md` (`4a848a4`), restoring the documented precondition exactly. This became the canonical pre-bootstrap HEAD. The move-aside would have preserved the change regardless (it travels with `.planning/`), so there was never a clobber risk; committing simply made the precondition true rather than proceeding against a hard safety rule.
@@ -107,6 +108,7 @@ completed: 2026-06-27
 - **Committed in:** `4a848a4`
 
 **2. [Rule 1 - Bug] CNW seeded the root package.json `name` with the temp dir name**
+
 - **Found during:** Task 2 (post-`npm install` inspection)
 - **Issue:** `create-nx-workspace atc-temp` set the root `package.json` `name` to `@atc-temp/source` (the temp dir name leaked into the workspace identity).
 - **Fix:** Renamed to `@angular-typechecker/source` before committing.
@@ -141,5 +143,6 @@ None - no external service configuration required.
 - Commits verified present: `4a848a4` (clean-tree precondition), `ab182b2` (bootstrap)
 
 ---
-*Phase: 01-workspace-bootstrap-engine-spike-gated*
-*Completed: 2026-06-27*
+
+_Phase: 01-workspace-bootstrap-engine-spike-gated_
+_Completed: 2026-06-27_

@@ -4,36 +4,36 @@ plan: 02
 subsystem: ci-workflow
 tags: [ci, github-actions, paths-filter, required-check, skip-gate, REL-02]
 requires:
-  - "ci.yml cross-OS matrix + ci aggregate gate (Phase 6, RD-01/RD-09)"
-  - "tools/act/act-compat.sh act-compat contract (Phase 6)"
-  - "release.yml SHA-pin + persist-credentials convention (Phase 5/6, FROZEN)"
+  - 'ci.yml cross-OS matrix + ci aggregate gate (Phase 6, RD-01/RD-09)'
+  - 'tools/act/act-compat.sh act-compat contract (Phase 6)'
+  - 'release.yml SHA-pin + persist-credentials convention (Phase 5/6, FROZEN)'
 provides:
-  - "ci.yml changes filter job (dorny/paths-filter, SHA-pinned v4.0.0)"
+  - 'ci.yml changes filter job (dorny/paths-filter, SHA-pinned v4.0.0)'
   - "path-gated test + e2e jobs (negative if: needs.changes.outputs.code != 'false')"
   - "reworked skip-aware ci aggregate gate (fails only on failure/cancelled; 'skipped' dropped)"
 affects:
-  - "Branch-protection switch (Plan 04): a planning-only PR now path-skips heavy jobs yet ci reports success, so the empty-bypass required-ci ruleset does not deadlock the merge button"
-  - "Future planning-only PRs (no longer burn the full cross-OS matrix)"
+  - 'Branch-protection switch (Plan 04): a planning-only PR now path-skips heavy jobs yet ci reports success, so the empty-bypass required-ci ruleset does not deadlock the merge button'
+  - 'Future planning-only PRs (no longer burn the full cross-OS matrix)'
 tech-stack:
   added:
-    - "dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0 (GitHub Action, SHA-pinned, resolved at CI runtime; not an npm dependency)"
+    - 'dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0 (GitHub Action, SHA-pinned, resolved at CI runtime; not an npm dependency)'
   patterns:
-    - "Skip-aware aggregate gate: detect the diff INSIDE the workflow (never on:-level paths-ignore on a required check); gate heavy jobs by job-level if:; keep the single required ci job always-running and reporting"
+    - 'Skip-aware aggregate gate: detect the diff INSIDE the workflow (never on:-level paths-ignore on a required check); gate heavy jobs by job-level if:; keep the single required ci job always-running and reporting'
     - "Negative if: form (!= 'false') so an empty filter output under act keeps gated jobs in the plan (A3 / Pitfall 3)"
 key-files:
   created: []
   modified:
-    - ".github/workflows/ci.yml"
+    - '.github/workflows/ci.yml'
 decisions:
-  - "[07-02] D-08 mechanism = leading dorny/paths-filter `changes` job + job-level negative if: on test/e2e + reworked aggregate gate (chosen over step-level force-pass: cleaner, and the negative if: is the only shape that survives act-compat per Pitfall 3)"
+  - '[07-02] D-08 mechanism = leading dorny/paths-filter `changes` job + job-level negative if: on test/e2e + reworked aggregate gate (chosen over step-level force-pass: cleaner, and the negative if: is the only shape that survives act-compat per Pitfall 3)'
   - "[07-02] Filter globs: code = `!.planning/**`, `!**/*.md`, `!docs/**` (default `some` quantifier); planning/docs-only PRs set code='false' and path-skip test+e2e"
   - "[07-02] Aggregate gate drops ONLY 'skipped' (path-skip now acceptable); keeps failure AND cancelled fail-closed; cancelled + the post-merge main run are the backstops (T-07-04)"
-  - "[07-02] No paths-ignore on the on: trigger (T-07-05 deadlock anti-pattern); ci job id+name byte-stable = `ci` (required-status-check contract)"
+  - '[07-02] No paths-ignore on the on: trigger (T-07-05 deadlock anti-pattern); ci job id+name byte-stable = `ci` (required-status-check contract)'
 metrics:
-  duration: "~9 min"
+  duration: '~9 min'
   tasks: 2
   files: 1
-  completed: "2026-06-29"
+  completed: '2026-06-29'
 ---
 
 # Phase 7 Plan 02: ci.yml path-aware skip for planning-only PRs Summary
@@ -43,11 +43,13 @@ Added a path-aware skip to `ci.yml` so the ~58%-of-commits planning-only PRs nei
 ## What Was Built
 
 ### Task 1: Empirical act-compat baseline + A3 check (read-only, no commit)
+
 - Ran `bash tools/act/act-compat.sh` against the UNMODIFIED ci.yml to capture the pre-change job selection.
 - Baseline result: 10 PASS / 2 FAIL. The two FAILs were `ci/ci` ABSENT on `pull_request` and `push-main`. Root cause: **Docker is not running on this Windows arm64 dev box** (`docker info` fails; `failed to connect to the docker API at npipe:////./pipe/docker_engine`). Under `act -n` with no Docker daemon, act cannot "Set up job" for any container job, so it never schedules the dependent aggregate `ci` job (which `needs:` all upstream jobs). `ci/test-`, `ci/e2e`, `ci/act-compat`, `ci/lint-workflows` were all SELECTED at baseline; only the dependent `ci/ci` was unreachable.
 - This matches the Phase-6 recorded precedent: `act --validate` (parseability) runs container-free locally, but `act -n` per-trigger plan fidelity for DEPENDENT jobs needs a running Docker daemon to schedule them. The baseline FAILs are an environment artifact, not a ci.yml defect.
 
 ### Task 2: changes filter job + gated test/e2e + reworked ci gate (commit `4245761`)
+
 - **(A) Added the leading `changes` job** at the top of `jobs:` on `ubuntu-latest` with `outputs.code: ${{ steps.filter.outputs.code }}`, a SHA-pinned `actions/checkout@93cb6efe... # v5.0.1` (`persist-credentials: false`), then `dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0` (`id: filter`) with a `code` filter whose negated globs are `'!.planning/**'`, `'!**/*.md'`, `'!docs/**'`. Added a threat-model-voice rationale comment above the job (why path-aware skip; why detected INSIDE the workflow, not at `on:`; the SHA-pin discipline; no extra permissions needed beyond top-level `contents: read`).
 - **(B) Gated the heavy jobs.** `test`: added `needs: changes` (it had none) + `if: ${{ needs.changes.outputs.code != 'false' }}`. `e2e`: added `needs: changes` (it had no needs) + the same negative `if:`. Matrix/steps otherwise unchanged. Added a comment to each explaining the NEGATIVE-`if:` rationale (A3 / Pitfall 3). Left `act-compat` and `lint-workflows` UNGATED (cheap; always validate the YAML).
 - **(C) Reworked the `ci` aggregate gate.** `needs` is now `[changes, test, e2e, act-compat, lint-workflows]`; `runs-on: ubuntu-latest`, `if: always()`, and the job id+name stay EXACTLY `ci`. The gate `contains(...)` fail expression now fails only on `contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')` -- `'skipped'` DROPPED. Echo strings updated ("A required job failed or was cancelled" / "All required jobs succeeded or were intentionally path-skipped"). The preceding comment notes path-skip is now acceptable, `cancelled` stays the backstop, and the post-merge `main` `ci` run is the second backstop.
@@ -56,6 +58,7 @@ Added a path-aware skip to `ci.yml` so the ~58%-of-commits planning-only PRs nei
 ## Verification Evidence
 
 ### Structural acceptance criteria (all green via rg + manual review)
+
 - `rg -n 'dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0' .github/workflows/ci.yml` -> exactly 1 hit (line 54).
 - `rg -n "needs.changes.outputs.code != 'false'" .github/workflows/ci.yml` -> exactly 2 hits (test line 80, e2e line 114).
 - The `ci` job has `needs: [changes, test, e2e, act-compat, lint-workflows]` (line 183), `if: always()`, and the gate `contains(...)` expression NO LONGER references `'skipped'` (only `'failure'` and `'cancelled'`, line 189).
@@ -65,6 +68,7 @@ Added a path-aware skip to `ci.yml` so the ~58%-of-commits planning-only PRs nei
 - `git status --short .github/workflows/release.yml` -> empty (release.yml untouched / FROZEN).
 
 ### Workflow validity (local, Docker-free)
+
 - `act --validate` -> PASS ("both workflows parse"). This is act's container-free ingest check.
 - `act -g` (job dependency graph, Docker-free) renders the correct DAG: `changes`, `lint-workflows`, `act-compat` at the top; `test` + `e2e` depend on `changes`; `ci` depends on `test`/`e2e`. This proves the `needs` graph, the `outputs.code -> steps.filter.outputs.code` wiring, and the gate references are all structurally valid.
 

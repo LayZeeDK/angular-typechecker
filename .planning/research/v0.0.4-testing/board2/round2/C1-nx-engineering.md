@@ -30,7 +30,7 @@ Both halves of my trigger are met. No fact sustains a hold.
 Reconciliation: single data-driven `it.each` table keyed on the `ExtendedTemplateDiagnosticName`
 members, with introduction-version as a ROW FIELD, not a file split.
 
-Round-1 I argued for per-introduction-version *files*. The facts cut against that as a
+Round-1 I argued for per-introduction-version _files_. The facts cut against that as a
 file-split axis:
 
 - **A7 (taxonomy rot, observed):** the would-be `executor.angular17.*` file was renamed to

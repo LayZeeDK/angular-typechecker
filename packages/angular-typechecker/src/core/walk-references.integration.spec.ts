@@ -182,32 +182,29 @@ describe('walk-references: SC3 three-way D-03a split', () => {
       tsConfigPath: solutionStyleEmpty,
       expectWalk: false,
     },
-  ])(
-    'routes correctly: $label',
-    async ({ tsConfigPath, expectWalk }) => {
-      const result = await runTypecheck({ tsConfigPath });
+  ])('routes correctly: $label', async ({ tsConfigPath, expectWalk }) => {
+    const result = await runTypecheck({ tsConfigPath });
 
-      const codes = codesOf(result.diagnostics);
+    const codes = codesOf(result.diagnostics);
 
-      if (expectWalk) {
-        // Walk branch: at least one in-project leaf ran, so rootNamesCount is the
-        // summed count and the reported errors are the leaves' real diagnostics
-        // (no 90001 guard).
-        expect(result.rootNamesCount).toBeGreaterThan(0);
-        expect(result.errorCount).toBe(2);
-        expect(codes).not.toContain(ZERO_ROOT_NAMES);
+    if (expectWalk) {
+      // Walk branch: at least one in-project leaf ran, so rootNamesCount is the
+      // summed count and the reported errors are the leaves' real diagnostics
+      // (no 90001 guard).
+      expect(result.rootNamesCount).toBeGreaterThan(0);
+      expect(result.errorCount).toBe(2);
+      expect(codes).not.toContain(ZERO_ROOT_NAMES);
 
-        return;
-      }
+      return;
+    }
 
-      // Guard branch (none-in-project OR empty project): zero root names and the
-      // single synthesized 90001 Error -- a deterministic non-zero signal, never a
-      // false "0 files / 0 errors".
-      expect(result.rootNamesCount).toBe(0);
-      expect(result.errorCount).toBe(1);
-      expect(codes).toContain(ZERO_ROOT_NAMES);
-    },
-  );
+    // Guard branch (none-in-project OR empty project): zero root names and the
+    // single synthesized 90001 Error -- a deterministic non-zero signal, never a
+    // false "0 files / 0 errors".
+    expect(result.rootNamesCount).toBe(0);
+    expect(result.errorCount).toBe(1);
+    expect(codes).toContain(ZERO_ROOT_NAMES);
+  });
 });
 
 describe('walk-references: SC3/D-05 fold-and-count (solution-style-broken-ref)', () => {
@@ -221,7 +218,9 @@ describe('walk-references: SC3/D-05 fold-and-count (solution-style-broken-ref)',
     // 90002 Error (never a rethrow), so the broken reference is a deterministic
     // non-zero verdict rather than a silent PASS by omission.
     expect(codes).toContain(REFERENCE_NOT_FOUND);
-    expect(codes.filter((code) => code === REFERENCE_NOT_FOUND)).toHaveLength(1);
+    expect(codes.filter((code) => code === REFERENCE_NOT_FOUND)).toHaveLength(
+      1,
+    );
 
     // The survivor leaf (error.component.ts) is STILL walked despite the sibling
     // broken reference -- its planted TS2322 is also reported.

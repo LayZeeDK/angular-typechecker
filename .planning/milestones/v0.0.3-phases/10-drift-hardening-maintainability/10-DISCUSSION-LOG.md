@@ -20,11 +20,11 @@ an npm dev-dependency survey, and a 5-member Opus advisory board, then user-conf
 
 ### Sub-decision 1 -- Scope / additions blind-spot
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Runtime getter-set spec | ProbeOnly type-gate + a ~15-line Vitest spec asserting the REAL imported api.Program getter set + pinning the encoding (NG/UNKNOWN_ERROR_CODE/ngErrorCode). Closes additions blind-spot + runtime-semantic drift. No new dep. | X |
-| ProbeOnly type-gate alone | Just the assignability probe; accept the low-probability silent additions risk; rely on human upgrade review. | |
-| api-extractor report diff | Committed .api.md snapshot, CI-gated, human-reviewed each bump. Board majority (3/5) called it disproportionate / scope-creep for v0.0.1. | |
+| Option                    | Description                                                                                                                                                                                                                   | Selected |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Runtime getter-set spec   | ProbeOnly type-gate + a ~15-line Vitest spec asserting the REAL imported api.Program getter set + pinning the encoding (NG/UNKNOWN_ERROR_CODE/ngErrorCode). Closes additions blind-spot + runtime-semantic drift. No new dep. | X        |
+| ProbeOnly type-gate alone | Just the assignability probe; accept the low-probability silent additions risk; rely on human upgrade review.                                                                                                                 |          |
+| api-extractor report diff | Committed .api.md snapshot, CI-gated, human-reviewed each bump. Board majority (3/5) called it disproportionate / scope-creep for v0.0.1.                                                                                     |          |
 
 **User's choice:** Runtime getter-set spec (the board synthesis recommendation).
 **Notes:** All 5 board members rejected AlsoAdditions/exhaustiveness for the type-gate
@@ -35,10 +35,10 @@ no type check can (runtime-semantic / ngErrorCode-arithmetic drift).
 
 ### Sub-decision 2 -- Tooling
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| PlainTS AssertAssignable | One-line `type AssertAssignable<From, To extends From> = true` + tuple of pairs + call-site probes. Zero new dep, clean under @nx/dependency-checks. | X |
-| expect-type devDep | Add expect-type (already transitive via Vitest 4.1.9 -> 1.4.0); expectTypeOf().toExtend(); nicer failure messages. Board's closest call (2/5). | |
+| Option                   | Description                                                                                                                                          | Selected |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| PlainTS AssertAssignable | One-line `type AssertAssignable<From, To extends From> = true` + tuple of pairs + call-site probes. Zero new dep, clean under @nx/dependency-checks. | X        |
+| expect-type devDep       | Add expect-type (already transitive via Vitest 4.1.9 -> 1.4.0); expectTypeOf().toExtend(); nicer failure messages. Board's closest call (2/5).       |          |
 
 **User's choice:** PlainTS AssertAssignable.
 **Notes:** At ~7 one-shot assertions a library earns nothing; declaring expect-type adds a
@@ -47,10 +47,10 @@ TS 5.9, breaks fidelity vs our TS 6.0.3).
 
 ### Construction (board near-unanimous; presented as locked, not separately re-asked)
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Hand-written shim + per-member probe | Keep compiler-cli-types.ts as source of truth; assert per-member (tuple of pairs) + call-site probes. | X |
-| Pick-derived shim | Re-derive shim via Pick<api.Program,...>. | |
+| Option                               | Description                                                                                           | Selected |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- | -------- |
+| Hand-written shim + per-member probe | Keep compiler-cli-types.ts as source of truth; assert per-member (tuple of pairs) + call-site probes. | X        |
+| Pick-derived shim                    | Re-derive shim via Pick<api.Program,...>.                                                             |          |
 
 **Rationale:** Pick auto-tracks upstream (a removed getter silently resolves to fewer keys
 instead of breaking -- a follower, not a tripwire) AND is mechanically unavailable (Pick needs
@@ -60,10 +60,10 @@ the real type, which only resolves under classic-node, not the production nodene
 
 ## typecheck-drift CI target (HARD-01 wiring) -- auto-locked
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| nx:run-commands `tsc --noEmit -p tsconfig.drift.json` | Pure type-check, no emit; classic-node resolution; consistent CI wiring. | X |
-| @nx/js:tsc target | Build-oriented; would emit. | |
+| Option                                                | Description                                                              | Selected |
+| ----------------------------------------------------- | ------------------------------------------------------------------------ | -------- |
+| nx:run-commands `tsc --noEmit -p tsconfig.drift.json` | Pure type-check, no emit; classic-node resolution; consistent CI wiring. | X        |
+| @nx/js:tsc target                                     | Build-oriented; would emit.                                              |          |
 
 **Notes:** Drift file co-located at `src/core/compiler-cli-types.drift.ts`; `tsconfig.drift.json`
 extends `tsconfig.base.json` (classic node), `noEmit`, includes only the drift file; excluded
@@ -71,30 +71,31 @@ from `tsconfig.lib.json` so it never ships. OS-independent -- single CI invocati
 
 ## EmitFlags correction (HARD-02) -- auto-locked
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Mirror real members, drop fake None | DTS=1..All=31 per real enum; keep `emitFlags: 0` as documented literal. | X |
-| Empty enum / keep None documented | Less faithful. | |
+| Option                              | Description                                                             | Selected |
+| ----------------------------------- | ----------------------------------------------------------------------- | -------- |
+| Mirror real members, drop fake None | DTS=1..All=31 per real enum; keep `emitFlags: 0` as documented literal. | X        |
+| Empty enum / keep None documented   | Less faithful.                                                          |          |
 
 **Notes:** Verified the real `@angular/compiler-cli@22.0.4` EmitFlags has NO `None` member.
 
 ## Vendor markers (HARD-03) -- auto-locked
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Marker per distinct divergence | `// angular-typechecker: vendored -- <reason>` on each narrowed/fabricated construct; one git grep finds all. | X |
-| Single file-level marker | Less greppable per-divergence. | |
+| Option                         | Description                                                                                                   | Selected |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- | -------- |
+| Marker per distinct divergence | `// angular-typechecker: vendored -- <reason>` on each narrowed/fabricated construct; one git grep finds all. | X        |
+| Single file-level marker       | Less greppable per-divergence.                                                                                |          |
 
 ## TS-99 regression spec (HARD-05) -- auto-locked
 
-| Option | Description | Selected |
-|--------|-------------|----------|
-| Integration-tier, real formatDiagnostics | Real NG8xxx fixture through `formatReport(..., {color:false})`; assert NG#### present, no `TS-99`. | X |
-| Unit-tier with fake | Would not exercise Angular's real `replaceTsWithNgInErrors` rewrite. | |
+| Option                                   | Description                                                                                        | Selected |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- | -------- |
+| Integration-tier, real formatDiagnostics | Real NG8xxx fixture through `formatReport(..., {color:false})`; assert NG#### present, no `TS-99`. | X        |
+| Unit-tier with fake                      | Would not exercise Angular's real `replaceTsWithNgInErrors` rewrite.                               |          |
 
 ---
 
 ## Claude's Discretion
+
 - Exact tuple/helper structure in the drift file; call-site probe placement; frozen getter-set
   representation in the runtime spec.
 - HARD-05 NG8xxx fixture mechanics; HARD-02 EmitFlags assertion mechanics.
@@ -102,6 +103,7 @@ from `tsconfig.lib.json` so it never ships. OS-independent -- single CI invocati
 - Exact marker-comment wording (must contain the literal `angular-typechecker: vendored` token).
 
 ## Deferred Ideas
+
 - AlsoAdditions/exhaustiveness in the type-gate (rejected -- unanimous board).
 - api-extractor `.api.md` report-diff additions-review (backlog; disproportionate for v0.0.1).
 - `expect-type` as a type-testing dep (revisit if assertions grow past dozens).

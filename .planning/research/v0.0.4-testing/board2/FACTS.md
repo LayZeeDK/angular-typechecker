@@ -98,7 +98,7 @@ projects: `angular-typechecker-install-e2e`, `angular-typechecker-cache-e2e`,
   `packages/angular-typechecker` runs in this job with no `ci.yml` change.
 - `e2e` job: `ubuntu-latest`, Node 24, `NX_DAEMON:false`, runs
   `npx nx run-many -t test -p angular-typechecker-install-e2e angular-typechecker-cache-e2e
-  angular-typechecker-matrix-e2e` — an explicit project list. A new e2e project runs only if added
+angular-typechecker-matrix-e2e` — an explicit project list. A new e2e project runs only if added
   to this list by name.
 - `fallow`, `act-compat`, `lint-workflows` jobs also exist.
 - `ci` aggregate `needs: [changes, test, e2e, fallow, act-compat, lint-workflows]`,
@@ -132,6 +132,7 @@ projects: `angular-typechecker-install-e2e`, `angular-typechecker-cache-e2e`,
 ## 7. Prior-art facts
 
 ### 7a. Sandbox (Nx 19.8 / Angular 18.2; personal prototype)
+
 - Generator `typecheck-configuration`: 33 lines; `readProjectConfiguration` +
   `updateProjectConfiguration` + `formatFiles`; writes a `typecheck` target defaulting `tsConfig`
   to `<root>/tsconfig.lib.json`; no `generateFiles`, no project-type detection. Its spec uses
@@ -150,6 +151,7 @@ projects: `angular-typechecker-install-e2e`, `angular-typechecker-cache-e2e`,
 - No GitHub Actions CI.
 
 ### 7b. Connect (3 branches; private; de-identified; older Nx)
+
 - Branch roles: Impl-A (performCompilation + unconditional all-getter); Impl-C (adds a
   quiet/errors-only mode, per-project-type target wiring, and a generator); Impl-B (a gather
   short-circuit + dependency build ordering).

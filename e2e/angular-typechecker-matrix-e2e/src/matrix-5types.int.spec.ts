@@ -35,7 +35,12 @@ const INJECTED_TS_CODE = 'TS2322';
 // Resolve the workspace root from this spec's location
 // (e2e/angular-typechecker-matrix-e2e/src/<file>) -- 3 dirs up -- so every path
 // is cwd-independent (D-17 main tree), mirroring install-smoke.
-const workspaceRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const workspaceRoot = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+);
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');
 const fixtureDir = join(
@@ -257,8 +262,7 @@ const MATRIX_ROWS: readonly MatrixRow[] = [
     label: 'application',
     target: 'app:angular-typecheck',
     injectionFile: join('apps', 'app', 'src', 'app.component.ts'),
-    originalLabel:
-      "readonly label: string = 'angular-typechecker matrix app';",
+    originalLabel: "readonly label: string = 'angular-typechecker matrix app';",
     injectedLine: BROKEN_FIELD,
   },
   {

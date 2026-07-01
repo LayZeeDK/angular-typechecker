@@ -49,7 +49,12 @@ const INJECTED_TS_CODE = 'TS2322';
 // in the npm matrix spec (D-09 rejects a second full install for no new signal).
 const TARGET = 'app:angular-typecheck';
 
-const workspaceRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const workspaceRoot = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+);
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');
 const fixtureDir = join(
@@ -236,8 +241,7 @@ function probePnpmSymlink(): {
 
   // A boundary-crossing pnpm symlink resolves THROUGH a `.pnpm` path segment
   // (node_modules/.pnpm/angular-typechecker@.../node_modules/angular-typechecker).
-  const crossesPnpmStore =
-    isSymlink && realPath.split('/').includes('.pnpm');
+  const crossesPnpmStore = isSymlink && realPath.split('/').includes('.pnpm');
 
   return { isSymlink, crossesPnpmStore, linkPath, realPath };
 }

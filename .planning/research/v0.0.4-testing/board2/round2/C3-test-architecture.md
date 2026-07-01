@@ -51,9 +51,10 @@ My round-1 mid-tier was conditioned on an UNCOVERED `context.root`->`tsConfig` b
 mind-change trigger said: if that coverage is reachable as a pure unit test, push it down instead of
 adding a tier. Fact A4 settles it: `normalize-options.ts` resolution is a pure two-branch function with
 `normalize-options.spec.ts` present, and NO executor-only resolution branch unreached by the unit spec
-+ e2e was found. The gap I hypothesized does not exist, so a mid-tier has no economic justification.
-§D (add the missing case to `normalize-options.spec.ts` if any, no new tier) IS my own pushed-down
-fallback. CONVERGE.
+
+- e2e was found. The gap I hypothesized does not exist, so a mid-tier has no economic justification.
+  §D (add the missing case to `normalize-options.spec.ts` if any, no new tier) IS my own pushed-down
+  fallback. CONVERGE.
 
 ## D4 - generator e2e: CONVERGE
 

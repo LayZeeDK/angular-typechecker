@@ -8,27 +8,27 @@ tags: [angular-compiler-cli, typescript, vitest, nx-plugin, diagnostics, integra
 requires:
   - phase: 02-core-type-check-engine-gatherer
     plan: 01
-    provides: "Locked CoreResult contract (tsConfigPath, rootNamesCount, diagnostics, errorCount, warningCount, durationMs); explicit category counting; D-05 emit-neutralizing override + D-02 diagnostics:false; *.integration.spec.ts naming convention; fixtures/**/* excluded from tsconfig.lib.json"
+    provides: 'Locked CoreResult contract (tsConfigPath, rootNamesCount, diagnostics, errorCount, warningCount, durationMs); explicit category counting; D-05 emit-neutralizing override + D-02 diagnostics:false; *.integration.spec.ts naming convention; fixtures/**/* excluded from tsconfig.lib.json'
 provides:
-  - "REAL-compiler integration tier asserting EXACT diagnostic codes/counts (TEST-02)"
-  - "Differentiator fixture set: ts-baseline (TS2339), ng-baseline (NG8001), extended-v13 (NG8101 default Warning), extended-promoted (NG8101 promoted Error), composite-triangle (D-05/L-1), no-emit-message (D-02)"
-  - "diagnostic-codes.ts: dependency-free NG()/ngCodeOf() encoding helpers (D-07d)"
-  - "Per-Angular-introduction-version spec organization (*.angularNN.integration.spec.ts) for additive catalog growth"
-  - "Proof that ENG-04 category promotion (defaultCategory: error) moves an extended NG code from warningCount into errorCount"
-  - "Proof that the D-05 override neutralizes the composite/emitDeclarationOnly TS5053/6304/6379 triangle on this classic-base workspace (ROADMAP criterion 1)"
-  - "Proof that D-02 suppresses the Time-for-diagnostics category-Message"
+  - 'REAL-compiler integration tier asserting EXACT diagnostic codes/counts (TEST-02)'
+  - 'Differentiator fixture set: ts-baseline (TS2339), ng-baseline (NG8001), extended-v13 (NG8101 default Warning), extended-promoted (NG8101 promoted Error), composite-triangle (D-05/L-1), no-emit-message (D-02)'
+  - 'diagnostic-codes.ts: dependency-free NG()/ngCodeOf() encoding helpers (D-07d)'
+  - 'Per-Angular-introduction-version spec organization (*.angularNN.integration.spec.ts) for additive catalog growth'
+  - 'Proof that ENG-04 category promotion (defaultCategory: error) moves an extended NG code from warningCount into errorCount'
+  - 'Proof that the D-05 override neutralizes the composite/emitDeclarationOnly TS5053/6304/6379 triangle on this classic-base workspace (ROADMAP criterion 1)'
+  - 'Proof that D-02 suppresses the Time-for-diagnostics category-Message'
 affects: [phase-03-filtering-modes-output, phase-04-executor-adapter, phase-06-project-type-matrix]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Integration specs call runTypecheck directly, one performCompilation per fixture (D-07c)"
-    - "EXACT-code assertions: TS codes raw (2322/2339/5053/6304/6379), NG codes via NG() helper (L-4 / Pitfall E)"
+    - 'Integration specs call runTypecheck directly, one performCompilation per fixture (D-07c)'
+    - 'EXACT-code assertions: TS codes raw (2322/2339/5053/6304/6379), NG codes via NG() helper (L-4 / Pitfall E)'
     - "Category assertions via runtime `import ts from 'typescript'` -> ts.DiagnosticCategory.Warning/Error/Message"
-    - "Default-Warning vs promoted-Error twin fixtures prove count-by-.category (never code sign)"
-    - "Per-introduction-version filename split (*.angularNN.integration.spec.ts) for drop-in additive growth (D-07a)"
-    - "D-02 absence assertion: no category-Message Time-for-diagnostics entry (A2 fallback holds regardless of fixture diagnostics:true)"
+    - 'Default-Warning vs promoted-Error twin fixtures prove count-by-.category (never code sign)'
+    - 'Per-introduction-version filename split (*.angularNN.integration.spec.ts) for drop-in additive growth (D-07a)'
+    - 'D-02 absence assertion: no category-Message Time-for-diagnostics entry (A2 fallback holds regardless of fixture diagnostics:true)'
 
 key-files:
   created:
@@ -58,17 +58,17 @@ key-files:
   modified: []
 
 key-decisions:
-  - "ng-baseline chose NG8001 (SCHEMA_INVALID_ELEMENT, unknown element) over NG2003 -- deterministic to author with strictTemplates and a hard Error by default, so it lands in errorCount without promotion"
-  - "extended-promoted reuses the portable NG8101 shape (not NG8109/NG8021) for the promotion proof: the defaultCategory mechanism is version-independent, and reusing the same code makes the Warning->Error contrast unambiguous"
+  - 'ng-baseline chose NG8001 (SCHEMA_INVALID_ELEMENT, unknown element) over NG2003 -- deterministic to author with strictTemplates and a hard Error by default, so it lands in errorCount without promotion'
+  - 'extended-promoted reuses the portable NG8101 shape (not NG8109/NG8021) for the promotion proof: the defaultCategory mechanism is version-independent, and reusing the same code makes the Warning->Error contrast unambiguous'
   - "no-emit-message component is clean and its tsconfig sets compilerOptions.diagnostics:true; the engine's forced diagnostics:false override means the Time-for-diagnostics Message is absent -- the assertion proves the suppression (A2 fallback also covers it)"
   - "composite-triangle component is intentionally clean so the absence-of-5053/6304/6379 assertion is unambiguous (the fixture's job is its tsconfig's triangle, not a planted error)"
   - "Category assertions use a runtime default import `import ts from 'typescript'` (vite/esbuild interop) to read ts.DiagnosticCategory symbolically rather than the raw numeric enum values"
-  - "tsconfig.lib.json was NOT touched: 02-01 already added a broad fixtures/**/* exclude, so the new fixtures are covered with no re-touch (Wave-2 disjoint-files invariant honored)"
+  - 'tsconfig.lib.json was NOT touched: 02-01 already added a broad fixtures/**/* exclude, so the new fixtures are covered with no re-touch (Wave-2 disjoint-files invariant honored)'
 
 patterns-established:
-  - "Per-introduction-version integration spec naming (baseline/extended.angularNN.integration.spec.ts) so future v18-v22 codes are drop-in additive"
-  - "Twin default/promoted extended fixtures as the canonical ENG-04 category-promotion proof"
-  - "Dependency-free diagnostic-codes.ts module (no compiler-cli import) reusable by future output/executor layers"
+  - 'Per-introduction-version integration spec naming (baseline/extended.angularNN.integration.spec.ts) so future v18-v22 codes are drop-in additive'
+  - 'Twin default/promoted extended fixtures as the canonical ENG-04 category-promotion proof'
+  - 'Dependency-free diagnostic-codes.ts module (no compiler-cli import) reusable by future output/executor layers'
 
 requirements-completed: [TEST-02, ENG-04, ENG-02]
 
@@ -161,5 +161,6 @@ None - no external service configuration required.
 All 23 claimed created files exist on disk; both task commits (`83978bc`, `1c9a9e5`) are present in git history. Full verification re-run green: `npx nx build angular-typechecker` succeeds; `npx nx test angular-typechecker` is 34/34 across 11 test files (the four new integration specs pass against the real Angular 22 compiler); the quick-run exclude filter drops to 19/19 across 6 files.
 
 ---
-*Phase: 02-core-type-check-engine-gatherer*
-*Completed: 2026-06-27*
+
+_Phase: 02-core-type-check-engine-gatherer_
+_Completed: 2026-06-27_

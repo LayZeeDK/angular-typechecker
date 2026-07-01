@@ -11,7 +11,7 @@ This is the single most important prior-art datapoint for angular-typechecker's 
 
 ## What it is & scope
 
-The Oxc Angular Compiler is a **Rust port of Angular's *template/decorator* compiler** built on the Oxc toolchain (the same Rust stack that powers Vite 8+). It parses Angular component templates and decorator metadata and emits Ivy JavaScript (`ɵɵdefineComponent`, `ɵɵngDeclare*`, etc.) -- the equivalent of `@angular/compiler-cli`'s code-generation step, reimplemented natively. It supports `@Component`, `@Directive`, `@NgModule`, `@Injectable`, `@Pipe` (and `@Service`), templates, HMR, style encapsulation (Emulated / None / ShadowDom), i18n extraction, partial vs full compilation modes, and Ivy `.d.ts` member generation.
+The Oxc Angular Compiler is a **Rust port of Angular's _template/decorator_ compiler** built on the Oxc toolchain (the same Rust stack that powers Vite 8+). It parses Angular component templates and decorator metadata and emits Ivy JavaScript (`ɵɵdefineComponent`, `ɵɵngDeclare*`, etc.) -- the equivalent of `@angular/compiler-cli`'s code-generation step, reimplemented natively. It supports `@Component`, `@Directive`, `@NgModule`, `@Injectable`, `@Pipe` (and `@Service`), templates, HMR, style encapsulation (Emulated / None / ShadowDom), i18n extraction, partial vs full compilation modes, and Ivy `.d.ts` member generation.
 
 ### Explicit type-check stance (the headline)
 
@@ -23,7 +23,7 @@ And a WARNING (article line 7-9):
 
 > "The Oxc Angular Compiler is an experiment for research purposes."
 
-The article explains *why* type-checking is the separable cost it deliberately drops (article line 45-47, verbatim):
+The article explains _why_ type-checking is the separable cost it deliberately drops (article line 45-47, verbatim):
 
 > "Angular's existing compiler compiles HTML templates into TypeScript code and then runs TypeScript Compiler to generate the JavaScript output. While generating the JavaScript output, Angular compiler uses TypeScript Compiler's semantic information for optimizations. Therefore, Angular compiler is unable to skip the type check, which otherwise accelerates build. Meaning it effectively performs deep, whole-program type analysis on template-generated TypeScript code. This becomes exponentially more expensive as applications grow."
 
@@ -54,7 +54,7 @@ The README also flags it: "This project is in an experimental stage and is activ
 
 ### Compiler architecture (per-file / single-file, NOT whole-program)
 
-The compiler is **single-file by design**. The article's closing line calls it "a reference on how to implement Angular's *single-file compilation* completely in Rust", and the DANGER box says it "does not implement Angular's cross-file optimizations". This is the architectural inverse of angular-typechecker, which is deliberately *whole-program* (`performCompilation` over the full `tsconfig`).
+The compiler is **single-file by design**. The article's closing line calls it "a reference on how to implement Angular's _single-file compilation_ completely in Rust", and the DANGER box says it "does not implement Angular's cross-file optimizations". This is the architectural inverse of angular-typechecker, which is deliberately _whole-program_ (`performCompilation` over the full `tsconfig`).
 
 6-stage pipeline (README + core crate `lib.rs` doc):
 
@@ -82,16 +82,16 @@ Core NAPI functions (`napi/angular-compiler/src/lib.rs`), all async via `AsyncTa
 - HMR helpers: `compileForHmr*`, `generateHmrModule`, `generateStyleModule`, component-id encode/decode/parse.
 - Metadata extractors: `extractComponentUrls`, `extractComponentMetadata`, `extractTopLevelDeclarations`, `extractPipeMetadata`, `compilePipe`, `encapsulateStyle`.
 
-`TransformOptions` notable fields: `angularVersion {major,minor,patch}` (version-conditional emit), `hmr`, `jit`, `sourcemap`, `compilationMode: 'full' | 'partial'`, `emitClassMetadata` (default true, mirrors `ngc`), `minifyComponentStyles`, `encapsulation`, `changeDetection`, `crossFileElision` (compare-tests only). `errors`/`warnings` are returned as `OxcError` diagnostics (template *compile* errors, NOT type errors).
+`TransformOptions` notable fields: `angularVersion {major,minor,patch}` (version-conditional emit), `hmr`, `jit`, `sourcemap`, `compilationMode: 'full' | 'partial'`, `emitClassMetadata` (default true, mirrors `ngc`), `minifyComponentStyles`, `encapsulation`, `changeDetection`, `crossFileElision` (compare-tests only). `errors`/`warnings` are returned as `OxcError` diagnostics (template _compile_ errors, NOT type errors).
 
 How a bundler calls it (from `vite-plugin/index.ts`): the plugin's `transform` hook matches `*.ts(x)`, does a cheap substring check for an Angular decorator, resolves `templateUrl`/`styleUrls` from disk (running Vite's `preprocessCSS` for SCSS/LESS), then calls `transformAngularFile(code, id, options, resources)` and returns `{ code, map }`. HMR is driven through `handleHotUpdate` + a `@ng/component` HTTP middleware endpoint.
 
 ### The `.d.ts` / tsconfig seam (the interop hook -- important)
 
-Two explicit statements show the compiler *expects an external type-checker* and even feeds it:
+Two explicit statements show the compiler _expects an external type-checker_ and even feeds it:
 
 - Vite plugin option (`vite-plugin/index.ts:52-53`): `tsconfig?: string` -- "Path to tsconfig.json **(used for file discovery, not TypeScript compilation)**." The plugin never type-checks; tsconfig is only for resolving the file set / path aliases.
-- `TransformResult.dtsDeclarations` (`napi/.../src/lib.rs:364-375`): the compiler emits Ivy static member declarations (`ɵfac`/`ɵcmp`/...) for injection into a library's `.d.ts`, and the doc says this "enables library builds to include proper Ivy type declarations **for template type-checking by consumers**." The `dts.rs` module header (`crates/.../src/dts.rs:5`): these declarations "enable Angular's template type-checking system to work with pre-compiled libraries." So Oxc's own design assumes the *consumer* runs the type-check; it just produces the Ivy `.d.ts` surface that a real Angular type-checker needs.
+- `TransformResult.dtsDeclarations` (`napi/.../src/lib.rs:364-375`): the compiler emits Ivy static member declarations (`ɵfac`/`ɵcmp`/...) for injection into a library's `.d.ts`, and the doc says this "enables library builds to include proper Ivy type declarations **for template type-checking by consumers**." The `dts.rs` module header (`crates/.../src/dts.rs:5`): these declarations "enable Angular's template type-checking system to work with pre-compiled libraries." So Oxc's own design assumes the _consumer_ runs the type-check; it just produces the Ivy `.d.ts` surface that a real Angular type-checker needs.
 
 ---
 
@@ -105,7 +105,7 @@ Two explicit statements show the compiler *expects an external type-checker* and
 
 ### What cost is eliminated by skipping type-check (reinforces our core value)
 
-The article's central technical thesis is that **the whole-program type analysis is the separable, dominant build cost**: Angular's compiler cannot skip the TS type check because it reuses the checker's semantic info during emit, and that "deep, whole-program type analysis ... becomes exponentially more expensive as applications grow." Oxc gets its speed by *not doing that analysis at all*. This is independent third-party corroboration of angular-typechecker's PROJECT.md premise (Brandon Roberts' ~15s `ngc --noEmit` vs ~36s build separation): the type-check is both the expensive part AND cleanly separable from code generation.
+The article's central technical thesis is that **the whole-program type analysis is the separable, dominant build cost**: Angular's compiler cannot skip the TS type check because it reuses the checker's semantic info during emit, and that "deep, whole-program type analysis ... becomes exponentially more expensive as applications grow." Oxc gets its speed by _not doing that analysis at all_. This is independent third-party corroboration of angular-typechecker's PROJECT.md premise (Brandon Roberts' ~15s `ngc --noEmit` vs ~36s build separation): the type-check is both the expensive part AND cleanly separable from code generation.
 
 ---
 
@@ -113,9 +113,9 @@ The article's central technical thesis is that **the whole-program type analysis
 
 1. **The market gap is real and now explicitly named by a major vendor.** A VoidZero/Oxc compiler shipping a literal "does not support template type-checking" DANGER box, plus esbuild dev and AnalogJS `fastCompile` doing the same, means the "fast compile that skips type-check -> run the type-check elsewhere" pattern is now the mainstream fast-build architecture. angular-typechecker IS that "elsewhere," and can cite this verbatim.
 
-2. **angular-typechecker is architecturally complementary, not competitive.** Oxc = per-file/single-file *emit*, no type-check, dev/build speed. angular-typechecker = whole-program *no-emit* type-check (TS + template + NG8xxx), decoupled from build. They occupy opposite halves of what `ngc` does today. There is no overlap to defend -- the pitch is "pair them," not "pick one."
+2. **angular-typechecker is architecturally complementary, not competitive.** Oxc = per-file/single-file _emit_, no type-check, dev/build speed. angular-typechecker = whole-program _no-emit_ type-check (TS + template + NG8xxx), decoupled from build. They occupy opposite halves of what `ngc` does today. There is no overlap to defend -- the pitch is "pair them," not "pick one."
 
-3. **The threat is bounded and points the other way.** Oxc "will not be maintained" as a standalone product; its stated future is being absorbed into Angular's *official* compiler stack (Angular team already experimenting with Oxc for TS parsing while keeping Angular's own template compiler). Even in that future, the type-check stays in Angular's compiler -- nobody is proposing a fast Rust *type-checker*. A faster Angular build that still skips/needs the separable type-check only *increases* demand for a fast decoupled type-check.
+3. **The threat is bounded and points the other way.** Oxc "will not be maintained" as a standalone product; its stated future is being absorbed into Angular's _official_ compiler stack (Angular team already experimenting with Oxc for TS parsing while keeping Angular's own template compiler). Even in that future, the type-check stays in Angular's compiler -- nobody is proposing a fast Rust _type-checker_. A faster Angular build that still skips/needs the separable type-check only _increases_ demand for a fast decoupled type-check.
 
 4. **Use it as the canonical "why decoupled?" citation in README/docs.** The quote "Angular compiler is unable to skip the type check ... deep, whole-program type analysis ... exponentially more expensive as applications grow" is a clean, attributable justification for why a standalone whole-program type-check tool exists and why it is the slow-but-necessary half worth caching per project.
 
@@ -130,10 +130,10 @@ A realistic two-tool workflow that we can document as the recommended setup:
 
 Concrete seams that make this clean:
 
-- **Shared tsconfig, different consumer.** Oxc treats `tsconfig` as "file discovery, not TypeScript compilation"; angular-typechecker consumes the *same* tsconfig as a real whole-program type-check input. The project's file set is the shared contract -- no special integration needed.
+- **Shared tsconfig, different consumer.** Oxc treats `tsconfig` as "file discovery, not TypeScript compilation"; angular-typechecker consumes the _same_ tsconfig as a real whole-program type-check input. The project's file set is the shared contract -- no special integration needed.
 - **The editor covers the live loop, we cover headless.** Article and our PROJECT.md agree the Angular Language Service handles in-editor template checking; the gap is headless/CI/agent runs -- precisely our target.
-- **Library `.d.ts` interop.** Oxc emits Ivy `.d.ts` member declarations (`partial` mode) so that downstream apps' template type-checking works against pre-compiled libs. angular-typechecker, run on a consuming app, would be the tool that actually *exercises* those declarations during a whole-program template type-check. The two halves literally fit: Oxc produces the typed library surface, we verify usage against it.
-- **No plugin/hook coupling required.** Because Oxc exposes only a Vite plugin + a stateless programmatic NAPI API (no type-check hook, no diagnostic-provider seam), the cleanest interop is *orchestration-level* (two Nx targets / two pipeline steps over one project), not in-process. There is no API on Oxc's side to hang a type-checker off of, and we should not try to.
+- **Library `.d.ts` interop.** Oxc emits Ivy `.d.ts` member declarations (`partial` mode) so that downstream apps' template type-checking works against pre-compiled libs. angular-typechecker, run on a consuming app, would be the tool that actually _exercises_ those declarations during a whole-program template type-check. The two halves literally fit: Oxc produces the typed library surface, we verify usage against it.
+- **No plugin/hook coupling required.** Because Oxc exposes only a Vite plugin + a stateless programmatic NAPI API (no type-check hook, no diagnostic-provider seam), the cleanest interop is _orchestration-level_ (two Nx targets / two pipeline steps over one project), not in-process. There is no API on Oxc's side to hang a type-checker off of, and we should not try to.
 
 ---
 
@@ -145,7 +145,7 @@ Concrete seams that make this clean:
 
 3. **[strategy]** Frame Oxc as **complementary** (per-file emit, no type-check) vs angular-typechecker (whole-program no-emit type-check). Opposite halves of `ngc`; there is no competitive overlap to defend. Avoid any "vs Oxc" framing -- it's "Oxc for build speed, angular-typechecker for the decoupled correctness gate."
 
-4. **[roadmap-signal -- threat is low]** Oxc Angular Compiler "will not be maintained"; its stated trajectory is absorption into Angular's *official* compiler for TS *parsing*, not type-checking. No party is building a fast Rust type-checker. A faster Angular build that still needs a separable type-check raises demand for our tool, not lowers it. (Source: article line 124-128.)
+4. **[roadmap-signal -- threat is low]** Oxc Angular Compiler "will not be maintained"; its stated trajectory is absorption into Angular's _official_ compiler for TS _parsing_, not type-checking. No party is building a fast Rust type-checker. A faster Angular build that still needs a separable type-check raises demand for our tool, not lowers it. (Source: article line 124-128.)
 
 5. **[interop]** The recommended companion workflow is orchestration-level, not in-process: Oxc/esbuild/fastCompile for dev+build (skips type-check) + a separate cacheable `angular-typecheck` Nx target over the same tsconfig for CI/agents. Document this explicitly as the "complete loop." No code coupling needed -- Oxc exposes no type-check/diagnostic hook.
 
@@ -161,7 +161,7 @@ Concrete seams that make this clean:
 
 ## Open questions / threats
 
-- **Will Angular fold Oxc's speed into the official compiler AND keep the type-check coupled?** If Angular's official build gets dramatically faster via Oxc TS parsing but the type-check stays coupled-and-slow, our value holds. If Angular ever ships a *fast, decoupled, cacheable* whole-program type-check target itself, that would be the real threat -- but nothing in this prior art suggests that; the Oxc work is about parsing/emit speed, not a faster checker.
+- **Will Angular fold Oxc's speed into the official compiler AND keep the type-check coupled?** If Angular's official build gets dramatically faster via Oxc TS parsing but the type-check stays coupled-and-slow, our value holds. If Angular ever ships a _fast, decoupled, cacheable_ whole-program type-check target itself, that would be the real threat -- but nothing in this prior art suggests that; the Oxc work is about parsing/emit speed, not a faster checker.
 - **Does any consumer actually run a separate type-check today when using Oxc?** The repo provides the `.d.ts` seam but ships no companion type-check tool and is unmaintained -- so the "run the type-check elsewhere" step is currently an unfilled gap in their story. That gap is our opportunity, but also means there's no established pattern users already follow; we may need to evangelize the two-step workflow.
-- **Tarball/peer reality check:** Oxc's plugin pins Angular as a *devDependency* at `^22.0.0-rc.2` (`napi/angular-compiler/package.json`) and uses TS 6.0.3 / Vitest 4.1.9 -- same locked window as ours -- which de-risks our Angular 22 / TS 6 target assumptions but is not itself prior art for our packaging (they ship ESM + a Vite plugin, we ship a CJS Nx executor).
+- **Tarball/peer reality check:** Oxc's plugin pins Angular as a _devDependency_ at `^22.0.0-rc.2` (`napi/angular-compiler/package.json`) and uses TS 6.0.3 / Vitest 4.1.9 -- same locked window as ours -- which de-risks our Angular 22 / TS 6 target assumptions but is not itself prior art for our packaging (they ship ESM + a Vite plugin, we ship a CJS Nx executor).
 - **AI-assisted compiler dev angle:** out of scope for us; noted only that the entire compiler was built in ~2 months via Claude Code + Codex orchestrator/subagent loops against a strict 1:1 conformance/compare test harness -- irrelevant to our type-checker design.

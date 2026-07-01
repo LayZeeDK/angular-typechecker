@@ -7,14 +7,14 @@ tags: [typescript, angular-compiler-cli, formatDiagnostics, diagnostics, output,
 # Dependency graph
 requires:
   - phase: 02-core-type-check-engine-gatherer
-    provides: "compiler-cli-types.ts nodenext-safe type shim (CompilerCli interface, deep perform_compile import-type precedent); gather-diagnostics.spec.ts pure-function-with-hand-built-ts.Diagnostic[] test idiom; finalize explicit category counting; diagnostic-codes.ts dependency-free pure-module shape"
+    provides: 'compiler-cli-types.ts nodenext-safe type shim (CompilerCli interface, deep perform_compile import-type precedent); gather-diagnostics.spec.ts pure-function-with-hand-built-ts.Diagnostic[] test idiom; finalize explicit category counting; diagnostic-codes.ts dependency-free pure-module shape'
 provides:
-  - "Pure formatReport(diagnostics, ng, ts_, { pathBase, color, failFast }) -> string exported from core/ (OUT-01 human renderer)"
-  - "FormatOptions interface (pathBase?/color/failFast?)"
+  - 'Pure formatReport(diagnostics, ng, ts_, { pathBase, color, failFast }) -> string exported from core/ (OUT-01 human renderer)'
+  - 'FormatOptions interface (pathBase?/color/failFast?)'
   - "Deterministic FormatDiagnosticsHost: ABSOLUTE paths by default via the /__atc_absolute__ sentinel; workspace-root-relative '/'-normalized paths when pathBase set; non-identity getCanonicalFileName; getNewLine forced to '\\n' (OUT-02/OUT-03/D-08)"
-  - "TTY-gated ANSI strip via String.fromCharCode(0x1b) linear pattern (D-10)"
-  - "Reporter-layer fail-fast: truncate REPORTED list at first Error, never a gather short-circuit (EXE-03/D-04)"
-  - "CompilerCli widened with formatDiagnostics (type-only) for the Pick injection"
+  - 'TTY-gated ANSI strip via String.fromCharCode(0x1b) linear pattern (D-10)'
+  - 'Reporter-layer fail-fast: truncate REPORTED list at first Error, never a gather short-circuit (EXE-03/D-04)'
+  - 'CompilerCli widened with formatDiagnostics (type-only) for the Pick injection'
 affects: [phase-03-plan-04-quality-gates, phase-04-executor-adapter]
 
 # Tech tracking
@@ -22,9 +22,9 @@ tech-stack:
   added: []
   patterns:
     - "Injected-dependency rendering: ng (Pick<CompilerCli, 'formatDiagnostics'>) + ts_ passed as params so the formatter is pure and unit-testable with a vi.fn fake OR the real ts.formatDiagnostics (no @angular/compiler-cli mock, D-13)"
-    - "Absolute-path emission via a non-prefixing getCurrentDirectory() sentinel (verified against real ts.formatDiagnostics by probe -- A1)"
-    - "Two-mode FormatDiagnosticsHost (pathBase set => relative; unset => absolute) as the single OUT-02/OUT-03 determinism seam"
-    - "ANSI escape constructed via String.fromCharCode(0x1b) (no literal control char in source, CLAUDE.md ASCII rule)"
+    - 'Absolute-path emission via a non-prefixing getCurrentDirectory() sentinel (verified against real ts.formatDiagnostics by probe -- A1)'
+    - 'Two-mode FormatDiagnosticsHost (pathBase set => relative; unset => absolute) as the single OUT-02/OUT-03 determinism seam'
+    - 'ANSI escape constructed via String.fromCharCode(0x1b) (no literal control char in source, CLAUDE.md ASCII rule)'
 
 key-files:
   created:
@@ -35,13 +35,13 @@ key-files:
 
 key-decisions:
   - "ABSOLUTE_PATH_SENTINEL = '/__atc_absolute__' for the pathBase-unset case: a getCurrentDirectory() value that never prefixes a real diagnostic path, so formatDiagnostics's internal path.relative leaves file names absolute (probe-verified against the real ts.formatDiagnostics: D:/ws/proj/src/a.component.ts rendered intact)"
-  - "formatReport does NOT re-sort: the input is already sorted+deduped by runTypecheck (D-09); the formatter only truncates (fail-fast), renders, and ANSI-gates"
-  - "fail-fast is a slice(0, firstError + 1) over the already-sorted list -- inclusive of the first Error, never a getter gate (D-04)"
-  - "compiler-cli-types.ts widened type-only: formatDiagnostics added to the EXISTING deep perform_compile import block + the CompilerCli interface; zero runtime/emit effect, preserving the nodenext GATE A shim invariant"
+  - 'formatReport does NOT re-sort: the input is already sorted+deduped by runTypecheck (D-09); the formatter only truncates (fail-fast), renders, and ANSI-gates'
+  - 'fail-fast is a slice(0, firstError + 1) over the already-sorted list -- inclusive of the first Error, never a getter gate (D-04)'
+  - 'compiler-cli-types.ts widened type-only: formatDiagnostics added to the EXISTING deep perform_compile import block + the CompilerCli interface; zero runtime/emit effect, preserving the nodenext GATE A shim invariant'
 
 patterns-established:
-  - "Pure dep-free core/ formatter (import type ts + import type CompilerCli only; no console/process.exit/module-scope compiler import) -- D-11-survivable"
-  - "Injected ng/ts_ rendering surface enabling fake-or-real formatDiagnostics in unit tests (the D-13 hybrid-split payoff for the output tier)"
+  - 'Pure dep-free core/ formatter (import type ts + import type CompilerCli only; no console/process.exit/module-scope compiler import) -- D-11-survivable'
+  - 'Injected ng/ts_ rendering surface enabling fake-or-real formatDiagnostics in unit tests (the D-13 hybrid-split payoff for the output tier)'
 
 requirements-completed: [EXE-03, OUT-01, OUT-02, OUT-03]
 
@@ -100,6 +100,7 @@ _Note: Tasks 2 + 3 are the TDD RED -> GREEN cycle (test commit precedes the feat
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Corrected a logically-impossible negative assertion in the spec**
+
 - **Found during:** Task 3 (implement formatReport; first GREEN run)
 - **Issue:** The pathBase-unset case asserted `out.not.toContain('src/a.component.ts(1,1): error')` to prove the path was rendered absolute. That substring is necessarily CONTAINED in the absolute render `D:/ws/proj/src/a.component.ts(1,1): error ...`, so the negative assertion could never hold even with correct absolute output -- a faulty test, not an implementation defect.
 - **Fix:** Replaced it with sound assertions that the rendered line STARTS with the absolute path (`out.startsWith(absolute) === true`) and does NOT start with the bare basename (`out.startsWith('a.component.ts') === false`), which actually distinguishes absolute from directory-relativized output.
@@ -127,6 +128,7 @@ None. `format-report.ts` is a complete pure function; no hardcoded empty values 
 ## Out-of-Scope Discoveries (logged, NOT fixed)
 
 `npx nx lint angular-typechecker` is RED on the Phase-3 base commit (`7faa425`), independent of this plan:
+
 - `@nx/enforce-module-boundaries` x2 in `compiler-cli-types.ts` lines 15 + 20 ("External resources cannot be imported using a relative or absolute path") -- fires on the deep-relative nodenext shim imports. Line 15 (`transformers/api`, UNTOUCHED by this plan) errors identically, proving the violation pre-exists this plan's one-line `formatDiagnostics` addition.
 - `@typescript-eslint/no-unused-vars` warnings x2 (`config-resolution.integration.spec.ts:30` `NG`, `executor.ts:16` `_context`) -- unrelated pre-existing files.
 
@@ -143,5 +145,6 @@ This plan's own new files (`format-report.ts`, `format-report.spec.ts`) are lint
 (See appended self-check verification below.)
 
 ---
-*Phase: 03-filtering-modes-output-quality-gates*
-*Completed: 2026-06-28*
+
+_Phase: 03-filtering-modes-output-quality-gates_
+_Completed: 2026-06-28_

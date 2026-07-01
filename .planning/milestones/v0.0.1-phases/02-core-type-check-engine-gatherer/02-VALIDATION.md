@@ -17,13 +17,13 @@ validated: 2026-06-27
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Framework** | Vitest 4.1.9 via `@nx/vitest:test` (already configured — WS-03 complete) |
-| **Config file** | `packages/angular-typechecker/vitest.config.mts` |
-| **Quick run command** | `npx nx test angular-typechecker -- --exclude '**/*.integration.spec.ts'` |
+| Property               | Value                                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Framework**          | Vitest 4.1.9 via `@nx/vitest:test` (already configured — WS-03 complete)                                                             |
+| **Config file**        | `packages/angular-typechecker/vitest.config.mts`                                                                                     |
+| **Quick run command**  | `npx nx test angular-typechecker -- --exclude '**/*.integration.spec.ts'`                                                            |
 | **Full suite command** | `npx nx build angular-typechecker && npx nx test angular-typechecker` (build precedes so the GATE A static spec reads fresh `dist/`) |
-| **Estimated runtime** | quick ~sub-second; full suite ~tens of seconds (REAL-compiler integration tier per fixture) |
+| **Estimated runtime**  | quick ~sub-second; full suite ~tens of seconds (REAL-compiler integration tier per fixture)                                          |
 
 ---
 
@@ -40,22 +40,22 @@ validated: 2026-06-27
 
 > Populated during planning / `/gsd:validate-phase`. Rows are bound to their concrete plan/task IDs and asserting spec files. Audited 2026-06-27 against the committed tests (see Validation Audit below) -- every row independently confirmed against the real test source/assertions, not the SUMMARY claims, and re-run green (build + full suite 39/39 across 12 files).
 
-| Req / Decision | Plan/Task | Behavior | Test Type | Asserting Spec (file:lines) / Assertion | File Exists | Status |
-|----------------|-----------|----------|-----------|-----------------------------------------|-------------|--------|
-| ENG-01 | 02-01-T2 / 02-02-T2 | `runTypecheck` loads ESM compiler-cli, resolves tsconfig, whole-program no-emit, structured result | integration | `run-typecheck.integration.spec.ts:30-37` -- asserts `tsConfigPath`, `rootNamesCount > 0`, `Array.isArray(diagnostics)`, `durationMs > 0` over app+lib | ✅ | ✅ COVERED |
-| ENG-02 | 02-01-T1/T2 / 02-03-T2 | Gatherer surfaces TS + template + extended in ONE pass, no short-circuit | unit + integration | Unit: `gather-diagnostics.spec.ts:14-66` (6 getters in order + no-short-circuit, LW-01 import fixed). Integration: `run-typecheck.integration.spec.ts:39-46` (`2322` AND `NG(8109)`). Differential: `gate-b.spec.ts:85-90` (`defaultGatherDiagnostics` has `2322` not `NG8109`) | ✅ | ✅ COVERED |
-| ENG-04 | 02-01-T2 / 02-03-T2 | Counts by category; `strictTemplates` honored; extended categories respected | integration | `extended.angular13.integration.spec.ts:33-44` (NG8101 Warning -> `warningCount >= 1`, `errorCount === 0`); `extended.promotion.integration.spec.ts:34-56` (promoted same code -> `errorCount >= 1` + invariant `errorCount + warningCount <= diagnostics.length`) | ✅ | ✅ COVERED |
-| EXE-02 | 02-02-T2 | Required single `tsConfig`; spec tsconfig checked | integration | `config-resolution.integration.spec.ts:58-71` -- `tsconfig.spec.json` fixture -> planted spec-file `TS2322` in `codes`, `rootNamesCount > 0`, `errorCount >= 1` | ✅ | ✅ COVERED |
-| TEST-02 | 02-03-T2 | REAL compiler, exact codes/counts, per-introduction-version organization | integration | `baseline.angular13` / `extended.angular13` `.integration.spec.ts` (per-introduction-version filenames) + `extended.promotion.integration.spec.ts` (version-independent category-promotion proof) -- exact codes (TS raw 2322/2339/5053/6304/6379; NG via `NG()` 8001/8101/8109) + exact `errorCount`/`warningCount` | ✅ | ✅ COVERED |
-| D-01 | 02-01-T2 | Explicit counts; no public `codes`; invariant | integration | `run-typecheck.integration.spec.ts:58-62` (`'codes' in result === false`) + `:48-56` (invariant); category-count source `run-typecheck.ts:206-211` (filter by `DiagnosticCategory.Error`/`.Warning`) | ✅ | ✅ COVERED |
-| D-02 | 02-03-T1/T2 | `diagnostics:false` suppresses "Time for diagnostics" Message | integration | `no-emit-override.integration.spec.ts:59-70` -- `no-emit-message` fixture tsconfig sets `diagnostics:true`; result has NO category-Message "Time for diagnostics" entry | ✅ | ✅ COVERED |
-| D-03 / MD-01 | 02-01-T1 / 02-02-T2 | Config errors prepended; malformed tsconfig not silently clean | integration | `config-resolution.integration.spec.ts:73-98` -- `tsconfig.malformed.json` (`extends` nonexistent) -> `errorCount >= 1`, prepended config error present (names the unresolvable file), `runTypecheck` does NOT throw | ✅ | ✅ COVERED |
-| D-03 / D-03a | 02-01-T1 / 02-02-T2 | Zero-rootNames guard fires on solution-style | integration | `config-resolution.integration.spec.ts:100-127` -- `{files:[],references:[...]}` -> `rootNamesCount === 0` AND `errorCount === 1` AND guard message matches `/tsconfig\.(app\|lib\|spec)\.json/`; asserts NOT gated on `18003` | ✅ | ✅ COVERED |
-| D-05 / L-1 | 02-01-T1 / 02-03-T2 | Override neutralizes composite-triangle (TS5053/6304/6379) | integration | `no-emit-override.integration.spec.ts:47-57` -- `composite-triangle` fixture (`composite/declarationMap/emitDeclarationOnly:true`) -> `codes` excludes `5053`, `6304`, `6379` | ✅ | ✅ COVERED |
-| D-06 / L-3 | 02-01-T1/T2 | Infra crash re-thrown (gate on `code === 500`), not counted | unit (focused stub) | `infra-failure.spec.ts:65-100` -- stubbed `performCompilation` returns code-500 -> `runTypecheck` rejects with `TypecheckInfrastructureError`; a returned `TS2322` does NOT throw and IS counted (`errorCount === 1`) | ✅ | ✅ COVERED |
-| LW-01 | 02-01-T2 | gatherer spec imports from the shim, not the barrel | static | `gather-diagnostics.spec.ts:3` imports `Program` from `./compiler-cli-types`; `git grep "from '@angular/compiler-cli'" .../gather-diagnostics.spec.ts` returns nothing (verified, exit 1) | ✅ | ✅ COVERED |
+| Req / Decision | Plan/Task              | Behavior                                                                                           | Test Type           | Asserting Spec (file:lines) / Assertion                                                                                                                                                                                                                                                                              | File Exists | Status     |
+| -------------- | ---------------------- | -------------------------------------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| ENG-01         | 02-01-T2 / 02-02-T2    | `runTypecheck` loads ESM compiler-cli, resolves tsconfig, whole-program no-emit, structured result | integration         | `run-typecheck.integration.spec.ts:30-37` -- asserts `tsConfigPath`, `rootNamesCount > 0`, `Array.isArray(diagnostics)`, `durationMs > 0` over app+lib                                                                                                                                                               | ✅          | ✅ COVERED |
+| ENG-02         | 02-01-T1/T2 / 02-03-T2 | Gatherer surfaces TS + template + extended in ONE pass, no short-circuit                           | unit + integration  | Unit: `gather-diagnostics.spec.ts:14-66` (6 getters in order + no-short-circuit, LW-01 import fixed). Integration: `run-typecheck.integration.spec.ts:39-46` (`2322` AND `NG(8109)`). Differential: `gate-b.spec.ts:85-90` (`defaultGatherDiagnostics` has `2322` not `NG8109`)                                      | ✅          | ✅ COVERED |
+| ENG-04         | 02-01-T2 / 02-03-T2    | Counts by category; `strictTemplates` honored; extended categories respected                       | integration         | `extended.angular13.integration.spec.ts:33-44` (NG8101 Warning -> `warningCount >= 1`, `errorCount === 0`); `extended.promotion.integration.spec.ts:34-56` (promoted same code -> `errorCount >= 1` + invariant `errorCount + warningCount <= diagnostics.length`)                                                   | ✅          | ✅ COVERED |
+| EXE-02         | 02-02-T2               | Required single `tsConfig`; spec tsconfig checked                                                  | integration         | `config-resolution.integration.spec.ts:58-71` -- `tsconfig.spec.json` fixture -> planted spec-file `TS2322` in `codes`, `rootNamesCount > 0`, `errorCount >= 1`                                                                                                                                                      | ✅          | ✅ COVERED |
+| TEST-02        | 02-03-T2               | REAL compiler, exact codes/counts, per-introduction-version organization                           | integration         | `baseline.angular13` / `extended.angular13` `.integration.spec.ts` (per-introduction-version filenames) + `extended.promotion.integration.spec.ts` (version-independent category-promotion proof) -- exact codes (TS raw 2322/2339/5053/6304/6379; NG via `NG()` 8001/8101/8109) + exact `errorCount`/`warningCount` | ✅          | ✅ COVERED |
+| D-01           | 02-01-T2               | Explicit counts; no public `codes`; invariant                                                      | integration         | `run-typecheck.integration.spec.ts:58-62` (`'codes' in result === false`) + `:48-56` (invariant); category-count source `run-typecheck.ts:206-211` (filter by `DiagnosticCategory.Error`/`.Warning`)                                                                                                                 | ✅          | ✅ COVERED |
+| D-02           | 02-03-T1/T2            | `diagnostics:false` suppresses "Time for diagnostics" Message                                      | integration         | `no-emit-override.integration.spec.ts:59-70` -- `no-emit-message` fixture tsconfig sets `diagnostics:true`; result has NO category-Message "Time for diagnostics" entry                                                                                                                                              | ✅          | ✅ COVERED |
+| D-03 / MD-01   | 02-01-T1 / 02-02-T2    | Config errors prepended; malformed tsconfig not silently clean                                     | integration         | `config-resolution.integration.spec.ts:73-98` -- `tsconfig.malformed.json` (`extends` nonexistent) -> `errorCount >= 1`, prepended config error present (names the unresolvable file), `runTypecheck` does NOT throw                                                                                                 | ✅          | ✅ COVERED |
+| D-03 / D-03a   | 02-01-T1 / 02-02-T2    | Zero-rootNames guard fires on solution-style                                                       | integration         | `config-resolution.integration.spec.ts:100-127` -- `{files:[],references:[...]}` -> `rootNamesCount === 0` AND `errorCount === 1` AND guard message matches `/tsconfig\.(app\|lib\|spec)\.json/`; asserts NOT gated on `18003`                                                                                       | ✅          | ✅ COVERED |
+| D-05 / L-1     | 02-01-T1 / 02-03-T2    | Override neutralizes composite-triangle (TS5053/6304/6379)                                         | integration         | `no-emit-override.integration.spec.ts:47-57` -- `composite-triangle` fixture (`composite/declarationMap/emitDeclarationOnly:true`) -> `codes` excludes `5053`, `6304`, `6379`                                                                                                                                        | ✅          | ✅ COVERED |
+| D-06 / L-3     | 02-01-T1/T2            | Infra crash re-thrown (gate on `code === 500`), not counted                                        | unit (focused stub) | `infra-failure.spec.ts:65-100` -- stubbed `performCompilation` returns code-500 -> `runTypecheck` rejects with `TypecheckInfrastructureError`; a returned `TS2322` does NOT throw and IS counted (`errorCount === 1`)                                                                                                | ✅          | ✅ COVERED |
+| LW-01          | 02-01-T2               | gatherer spec imports from the shim, not the barrel                                                | static              | `gather-diagnostics.spec.ts:3` imports `Program` from `./compiler-cli-types`; `git grep "from '@angular/compiler-cli'" .../gather-diagnostics.spec.ts` returns nothing (verified, exit 1)                                                                                                                            | ✅          | ✅ COVERED |
 
-*Status: ⬜ pending · ✅ COVERED (asserting test exists + green) · ⚠️ PARTIAL · ❌ MISSING*
+_Status: ⬜ pending · ✅ COVERED (asserting test exists + green) · ⚠️ PARTIAL · ❌ MISSING_
 
 ---
 
@@ -69,17 +69,17 @@ validated: 2026-06-27
 - [x] LW-01 one-line import fix in `gather-diagnostics.spec.ts` (barrel -> `./compiler-cli-types`) -- verified
 - [x] `gate-b.spec.ts` reconcile `result.codes` -> `result.diagnostics.map(d => d.code)` (D-01 drops public `codes`) -- verified at `gate-b.spec.ts:105`
 
-*Framework install: NONE — Vitest + `@nx/vitest:test` already configured (WS-03 complete).*
+_Framework install: NONE — Vitest + `@nx/vitest:test` already configured (WS-03 complete)._
 
 ---
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| (none expected) | — | All Phase-2 behaviors have automated real-compiler verification | — |
+| Behavior        | Requirement | Why Manual                                                      | Test Instructions |
+| --------------- | ----------- | --------------------------------------------------------------- | ----------------- |
+| (none expected) | —           | All Phase-2 behaviors have automated real-compiler verification | —                 |
 
-*If none confirmed at plan time: "All phase behaviors have automated verification."*
+_If none confirmed at plan time: "All phase behaviors have automated verification."_
 
 ---
 
@@ -108,11 +108,11 @@ validated: 2026-06-27
 
 ### Independent re-run (this audit, not the SUMMARY)
 
-| Command | Result |
-|---------|--------|
-| `npx nx test angular-typechecker -- --exclude "**/*.integration.spec.ts"` | 19 passed across 6 files (3.26s) |
-| `npx nx build angular-typechecker` | Successfully ran target build |
-| `npx nx test angular-typechecker` | 39 passed across 12 files (full tier incl. REAL-compiler integration + focused D-06 stub) |
+| Command                                                                   | Result                                                                                    |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `npx nx test angular-typechecker -- --exclude "**/*.integration.spec.ts"` | 19 passed across 6 files (3.26s)                                                          |
+| `npx nx build angular-typechecker`                                        | Successfully ran target build                                                             |
+| `npx nx test angular-typechecker`                                         | 39 passed across 12 files (full tier incl. REAL-compiler integration + focused D-06 stub) |
 
 Matches the orchestrator's expected state (39 passed across 12 files).
 
