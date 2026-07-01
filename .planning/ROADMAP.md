@@ -4,7 +4,7 @@
 
 - [SHIPPED] **v0.0.1** -- Phases 1-7 (incl. inserted 5.1) -- shipped 2026-06-29. Complete Angular type-check (TS + template + extended NG8xxx), no-emit, decoupled from build/test, as a cacheable Nx executor published to npm. Full detail: `.planning/milestones/v0.0.1-ROADMAP.md`.
 - [SHIPPED] **v0.0.3** -- Phases 8-11 -- shipped 2026-06-30. Engine hardening: closed correctness/completeness holes, made diagnostic gathering resilient instead of all-or-nothing, made Angular-version drift fail loudly, and adopted `fallow` as a green-on-adoption CI quality gate. Verified against stable Angular 22.0.4; NO `NgtscProgram` migration, NO new feature surfaces. Full detail: `.planning/milestones/v0.0.3-ROADMAP.md`.
-- [ACTIVE] **v0.0.4** -- Phases 12-15 -- solution-tsconfig reference-walking engine, typecheck-configuration generator, and extended testing strategy. Ships (1) the spike-validated reference-walking engine mode (WALK) -- point one target at a project's solution `tsconfig.json` and type-check its in-project referenced leaves (lib/app + spec) in one `runTypecheck` call (union + dedupe, module-boundary-guarded, coarse-cached) -- (2) the deferred `typecheck-configuration` Nx generator, now trivially wiring ONE `typecheck` target at the solution `tsconfig.json` (the version-bumping `feat` for 0.0.3 -> 0.0.4), and (3) the board-ratified testing-technique stack: the complete 18-member extended-diagnostic catalog with an enum-completeness tripwire (shipped), in-memory generator unit tests, a folded generator e2e, and a CI `-p` set-equality guard. Reference-walking GO-gated by spikes 001-005 (`.planning/spikes/MANIFEST.md`). Testing strategy: `.planning/research/v0.0.4-testing/board2/CONSENSUS.md`.
+- [ACTIVE] **v0.1.0** -- Phases 12-15 (incl. inserted 13.1) -- reference-walking engine, the typecheck executor rename, and the configuration + init generator suite. Ships (1) the spike-validated reference-walking engine mode (WALK, Phase 13, shipped) and the complete 18-member extended-diagnostic catalog + enum-completeness tripwire (Phase 12, shipped); (2) the BREAKING executor rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` (Phase 13.1) that drives the 0.0.3 -> 0.1.0 minor bump; (3) the `configuration` generator (renamed from `typecheck-configuration`) wiring ONE minimal `typecheck` target at the solution `tsconfig.json`, a standalone `init` generator that seeds `nx.json` targetDefaults, and `nx add angular-typechecker` support (Phase 14); and (4) the folded generator + `nx add` e2e and a CI `-p` set-equality guard (Phase 15). Reference-walking GO-gated by spikes 001-005 (`.planning/spikes/MANIFEST.md`). Testing strategy: `.planning/research/v0.0.4-testing/board2/CONSENSUS.md`.
 
 ## Phases
 
@@ -36,12 +36,13 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 </details>
 
-### v0.0.4 -- solution-tsconfig reference-walking engine, typecheck-configuration generator, and extended testing strategy (Phases 12-15)
+### v0.1.0 -- reference-walking engine, typecheck executor rename, and the configuration + init generator suite (Phases 12-15, incl. inserted 13.1)
 
 - [x] **Phase 12: Extended-diagnostic catalog + completeness tripwire** - Assert all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes by exact code/category/count/promotion in one enum-keyed `it.each` table, with an enum-vs-table tripwire that fails CI loudly on Angular drift. (completed 2026-07-01)
 - [x] **Phase 13: Engine -- solution-tsconfig reference-walking** - Teach the `angular-typecheck` engine to type-check a solution / references-only `tsconfig.json` by walking its in-project referenced leaves (lib/app + spec) in ONE `runTypecheck` call (union + dedupe by value identity, module-boundary-guarded, coarse-cached), superseding the D-03a solution-style short-circuit so a single target yields the complete, duplicate-free diagnostic set for the whole project. (completed 2026-07-01)
-- [x] **Phase 14: typecheck-configuration generator** - Ship the `nx g angular-typechecker:typecheck-configuration <project>` generator that wires ONE `typecheck` target pointed at the project's solution `tsconfig.json` into `project.json` (config-edit only, idempotent), with a hand-authored/registered schema and in-memory generator tests -- relying on the Phase 13 walk, so no per-project-type detection and no separate spec target. (completed 2026-07-01)
-- [ ] **Phase 15: Generator e2e + CI self-audit guard** - Prove the generator end-to-end against the installed tarball (install -> `nx g` on a previously un-wired project -> assert `project.json` -> run the single `typecheck` target to a multi-leaf walk verdict) and add a `-p` set-equality guard that turns a forgotten e2e project into a loud failure.
+- [ ] **Phase 13.1: Rename angular-typecheck executor to typecheck (INSERTED)** - Rename the shipped executor `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` across `executors.json`, `nx.json` targetDefaults, all fixtures, specs, and the README -- a BREAKING change that drives the 0.0.3 -> 0.1.0 minor bump (EXEC-01).
+- [ ] **Phase 14: configuration + init generators, nx add** - Ship the `nx g angular-typechecker:configuration <project>` generator (renamed from `typecheck-configuration`) that wires ONE minimal `typecheck` target (executor `angular-typechecker:typecheck`) at the solution `tsconfig.json` and delegates caching to a standalone `init` generator (seeds `nx.json` targetDefaults), plus `nx add angular-typechecker` support -- `project.json`/`nx.json` config-edit only, idempotent, relying on the Phase 13 walk.
+- [ ] **Phase 15: Generator e2e + CI self-audit guard** - Prove the generators end-to-end against the installed tarball (install -> `nx g angular-typechecker:configuration` on a previously un-wired project -> assert `project.json` + the `init`-seeded `targetDefaults` -> run the `typecheck` target to a multi-leaf walk verdict; plus an `nx add angular-typechecker` scenario), and add a `-p` set-equality guard that turns a forgotten e2e project into a loud failure.
 
 ## Phase Details
 
@@ -82,26 +83,39 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] 13-05-PLAN.md -- Integration walk proofs + config-resolution rewrite + cross-leaf TCB unit + executor unit (WALK-01)
 - [x] 13-06-PLAN.md -- nx.json production->default input + cache-e2e stale-PASS proof + README walk recipe (WALK-02)
 
-### Phase 14: typecheck-configuration generator
-**Goal**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire ONE `typecheck` target (executor `angular-typechecker:angular-typecheck`) pointed at the project's solution `tsconfig.json` into `project.json` (config-edit only, idempotent), with a hand-authored + registered schema and in-memory generator tests -- relying on the Phase 13 walk, so no per-project-type detection and no separate spec target are needed.
-**Depends on**: Phase 13 (the reference-walk the single target relies on)
-**Requirements**: GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06
+### Phase 13.1: Rename angular-typecheck executor to typecheck (INSERTED)
+**Goal**: The published Nx executor is renamed `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` everywhere -- `executors.json` key + implementation/schema paths + schema `$id`, `nx.json` `targetDefaults` keys (local + scoped), all fixture `project.json` executor refs (and target names), `nx-target-defaults.spec.ts`, the integration/unit specs that name the id, and the README recipe -- with behavior unchanged. This is the BREAKING change that carries the 0.0.3 -> 0.1.0 minor bump; it lands before the generator (Phase 14) so the generator targets the new id from the start.
+**Depends on**: Phase 13
+**Requirements**: EXEC-01
 **Success Criteria** (what must be TRUE):
-  1. Running the generator adds a working `typecheck` target pointed at the project's solution `tsconfig.json`, edited via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles` with NO file emission (no `generateFiles`).
-  2. An explicit `--tsConfig` override is honored; a flat-project fallback points the target at the leaf (`tsconfig.app.json`/`tsconfig.lib.json`) when the project has no solution tsconfig / no `references`; `targetName` is configurable (default `typecheck`); and an existing non-ours target of the same name is not clobbered (collision handling).
-  3. Re-running the generator on an already-wired project is idempotent (no duplicate target, no clobbered config).
-  4. The generator ships a hand-authored `schema.json` + `schema.d.ts`, registered via `generators.json` and the published `package.json` `generators` field, with the generator + schema included in the tarball `files` set.
-  5. Generator unit tests on the public in-memory `createTreeWithEmptyWorkspace` substrate assert the written target for the solution-tsconfig case AND the flat-project fallback case plus idempotency; a schema-parity spec asserts `schema.json` keys === the `schema.d.ts` interface.
+  1. `executors.json` exposes the executor under the key `typecheck` (id `angular-typechecker:typecheck`); the implementation directory + `implementation`/`schema` paths + schema `$id` are renamed accordingly; `nx build` and the full test suite pass.
+  2. `nx.json` `targetDefaults` are re-keyed to `angular-typechecker:typecheck` and `@angular-typechecker/angular-typechecker:typecheck`; `nx-target-defaults.spec.ts` asserts the new keys; the WALK-02 caching contract (`default` input, `outputs:[]`, `{projectRoot}/tsconfig*.json`, `^default`) is preserved.
+  3. Every fixture/consumer `project.json` referencing the old id (and any `angular-typecheck` target name) is updated to `angular-typechecker:typecheck`; all integration/unit/e2e specs referencing the old id pass.
+  4. The README consumer recipe and any docs use the new id `angular-typechecker:typecheck`; no stale `angular-typecheck` executor reference remains in shipped source, config, or docs.
+  5. The change is committed as a breaking `feat!` / `BREAKING CHANGE:` touching the package so `nx release` computes the 0.1.0 minor bump.
+**Plans**: TBD
+
+### Phase 14: configuration + init generators, nx add
+**Goal**: A developer can run `nx g angular-typechecker:configuration <project>` (renamed from `typecheck-configuration`) to wire ONE minimal `typecheck` target (executor `angular-typechecker:typecheck`) at the project's solution `tsconfig.json` into `project.json`, with caching seeded into `nx.json` `targetDefaults` by a standalone `init` generator that `configuration` calls; `nx add angular-typechecker` runs `init` on install. Config-edit only (`project.json` + `nx.json`; no `generateFiles`), idempotent, relying on the Phase 13 walk -- no per-project-type detection, no separate spec target.
+**Depends on**: Phase 13 (the reference-walk the single target relies on), Phase 13.1 (the renamed executor id the target + targetDefaults use)
+**Requirements**: GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GEN-07, GEN-08, GEN-09
+**Success Criteria** (what must be TRUE):
+  1. `nx g angular-typechecker:configuration <project>` adds a minimal `typecheck` target (executor `angular-typechecker:typecheck`, `options.tsConfig`) pointed at the solution `tsconfig.json`, edited via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles` with NO file emission (no `generateFiles`).
+  2. A standalone `nx g angular-typechecker:init` generator idempotently seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` with the WALK-02 cacheable block (`cache:true`, `outputs:[]`, `default`-based inputs, never `production`), keyed by the unscoped published id, never clobbering a customized entry; `configuration` invokes `init`, so one command wires the target AND seeds caching.
+  3. An explicit `--tsConfig` override is honored; a flat-project fallback points the target at the leaf (`tsconfig.app.json`/`tsconfig.lib.json` by `projectType` + existence probe) when there is no solution tsconfig / no `references`; `targetName` is configurable (default `typecheck`); re-runs are idempotent and an existing non-ours target of the same name is not clobbered (errors clearly).
+  4. `nx add angular-typechecker` auto-runs the `init` generator on install (Nx invokes the package's registered `init`), seeding `targetDefaults`.
+  5. Both generators ship hand-authored `schema.json` + `schema.d.ts`, registered via `generators.json` (each entry keyed `factory`) and the published `package.json` `generators` field, included in the tarball `files` set (root `generators.json` globbed like `executors.json`); unit tests on `createTreeWithEmptyWorkspace` assert the `configuration` target write (solution + flat-fallback) + idempotency + collision, the `init` seed (idempotent + don't-clobber + `default`-not-`production`), and a schema-parity spec per generator.
 **Plans**: TBD
 
 ### Phase 15: Generator e2e + CI self-audit guard
 **Goal**: The generator is proven end-to-end against the installed tarball -- a real consumer installs the package, generates the single `typecheck` target on a previously un-wired project, and runs it to a correct multi-leaf walk verdict -- and the CI e2e job can no longer silently skip a project via a forgotten `-p` entry.
-**Depends on**: Phase 14 (needs the shipped generator + `generators.json` + the registered `generators` field)
-**Requirements**: GE2E-01, GE2E-02, GUARD-01
+**Depends on**: Phase 14 (needs the shipped `configuration`/`init` generators + `generators.json` + the registered `generators` field)
+**Requirements**: GE2E-01, GE2E-02, GE2E-03, GUARD-01
 **Success Criteria** (what must be TRUE):
-  1. The `angular-typechecker-install-e2e` consumer fixture gains a project WITHOUT a pre-wired target, and an e2e scenario installs the tarball, runs `nx g angular-typechecker:typecheck-configuration` on that project, and asserts the resulting `project.json` (one `typecheck` target pointed at the solution `tsconfig.json`) -- with no Verdaccio and no new e2e project.
+  1. The `angular-typechecker-install-e2e` consumer fixture gains a project WITHOUT a pre-wired target, and an e2e scenario installs the tarball, runs `nx g angular-typechecker:configuration` on that project, and asserts the resulting `project.json` (one `typecheck` target, executor `angular-typechecker:typecheck`, pointed at the solution `tsconfig.json`) AND the `init`-seeded `nx.json` `targetDefaults["angular-typechecker:typecheck"]` -- with no Verdaccio and no new e2e project.
   2. The same scenario runs `nx run <proj>:typecheck --skip-nx-cache` and asserts the walk verdict end-to-end: a clean project yields success, and errors injected into BOTH the lib leaf AND the spec leaf yield a failure with the diagnostic codes visible in the output (proving both leaves were walked).
-  3. A guard test asserts the `e2e` CI job's explicit `-p` project list EQUALS the set of `e2e/*` projects in the workspace graph (predicate quantifier `every`), so a forgotten `-p` entry becomes a loud, located CI failure instead of a silent skip; the single required `ci` gate is unchanged.
+  3. An e2e scenario proves `nx add angular-typechecker` runs the `init` generator and seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` on install (GE2E-03).
+  4. A guard test asserts the `e2e` CI job's explicit `-p` project list EQUALS the set of `e2e/*` projects in the workspace graph (predicate quantifier `every`), so a forgotten `-p` entry becomes a loud, located CI failure instead of a silent skip; the single required `ci` gate is unchanged.
 **Plans**: TBD
 
 ## Progress
@@ -120,7 +134,8 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 9. Resilience (per-file fault isolation + boundary robustness) | v0.0.3 | 5/5 | Complete | 2026-06-29 |
 | 10. Drift-hardening & Maintainability | v0.0.3 | 4/4 | Complete | 2026-06-29 |
 | 11. Fallow code-quality CI gate | v0.0.3 | 2/2 | Complete | 2026-06-30 |
-| 12. Extended-diagnostic catalog + completeness tripwire | v0.0.4 | 4/4 | Complete | 2026-07-01 |
-| 13. Engine -- solution-tsconfig reference-walking | v0.0.4 | 6/6 | Complete    | 2026-07-01 |
-| 14. typecheck-configuration generator | v0.0.4 | 0/? | Not started | - |
-| 15. Generator e2e + CI self-audit guard | v0.0.4 | 0/? | Not started | - |
+| 12. Extended-diagnostic catalog + completeness tripwire | v0.1.0 | 4/4 | Complete | 2026-07-01 |
+| 13. Engine -- solution-tsconfig reference-walking | v0.1.0 | 6/6 | Complete | 2026-07-01 |
+| 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 0/? | Not started | - |
+| 14. configuration + init generators, nx add | v0.1.0 | 0/? | Not started | - |
+| 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/? | Not started | - |

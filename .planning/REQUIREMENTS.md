@@ -1,11 +1,12 @@
-# Requirements: angular-typechecker — v0.0.4 (typecheck-configuration generator and extended testing strategy)
+# Requirements: angular-typechecker — v0.1.0 (configuration + init generators, nx add support, and the typecheck executor rename)
 
 **Defined:** 2026-07-01
 **Core Value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests — faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
 **Strategy basis:** Unanimous 8-lens Opus board (5 constructive + 3 adversarial), fact-only, 2 rounds to consensus — `.planning/research/v0.0.4-testing/board2/CONSENSUS.md`.
-**Re-scoped 2026-07-01:** spikes 001-005 (`.planning/spikes/`, all VALIDATED — see `MANIFEST.md`) proved runtime solution-tsconfig reference-walking feasible on the existing `performCompilation` engine. Added **WALK-01/02** (engine) and reshaped **GEN-01/02/03** (the generator now wires ONE `typecheck` target at the solution `tsconfig.json`). This supersedes the D-03a solution-style short-circuit and the board's decision-B "no executor change" assumption (D1 in-memory generator tests unchanged; the executor changes, not the generator).
+**Re-scoped 2026-07-01 (spikes):** spikes 001-005 (`.planning/spikes/`, all VALIDATED — see `MANIFEST.md`) proved runtime solution-tsconfig reference-walking feasible on the existing `performCompilation` engine. Added **WALK-01/02** (engine) and reshaped **GEN-01/02/03** (the generator now wires ONE `typecheck` target at the solution `tsconfig.json`). This supersedes the D-03a solution-style short-circuit and the board's decision-B "no executor change" assumption (D1 in-memory generator tests unchanged; the executor changes, not the generator).
+**Re-scoped 2026-07-01 (v0.1.0):** milestone re-versioned **v0.0.4 → v0.1.0** — the shipped executor is renamed `angular-typechecker:angular-typecheck` → **`angular-typechecker:typecheck`** (EXEC-01, a breaking change that drives the 0.x minor bump). Scope expanded from a single config generator to a generator SUITE: `typecheck-configuration` is renamed **`configuration`**; a standalone **`init`** generator seeds `nx.json` `targetDefaults` (GEN-07) and is invoked by `configuration` (GEN-08); and **`nx add angular-typechecker`** runs `init` on install (GEN-09). Nx's `nx add` is promoted out of the deferred set; `ng add` (Angular CLI) stays deferred (GEN-FUT-02). Milestone re-scope confirmed against first-party Nx 23 conventions (`@nx/eslint:lint-project` → `lintInitGenerator`; `@nx/vitest:configuration` → `init`).
 
-## Milestone v0.0.4 Requirements
+## Milestone v0.1.0 Requirements
 
 ### WALK — solution-tsconfig reference-walking (engine)
 
@@ -14,14 +15,23 @@
 - [x] **WALK-01**: The `angular-typecheck` engine (`runTypecheck`) accepts a solution / references-only `tsconfig.json` and type-checks each IN-PROJECT referenced leaf in one call: it resolves `references[]` to leaf tsconfigs, runs `performCompilation` per leaf, UNIONs the raw per-leaf diagnostics into a single `finalize` pass (dedupe by `ts.sortAndDeduplicateDiagnostics` value identity — `file.path`+start+length+code+`messageText`; explicit post-dedupe `DiagnosticCategory` counts, never `length - errorCount`; basePath = the solution tsconfig's directory). A reference-resolution-layer **module-boundary guard** SKIPS out-of-project references (skip-with-notice, path-containment under the project dir), orthogonal to and composable with the existing `filter-diagnostics` + `includeDeps` (which continue to govern imported *source* diagnostics unchanged). The **D-03a zero-rootNames guard splits three-way**: references present + ≥1 in-project leaf → walk; references present + 0 in-project → new synthesized error (code 90001, distinct message); no references → unchanged empty-project error. `rootNames > 0` direct-leaf path untouched; no branch gates on TS18003. `rootNamesCount` = sum over walked leaves. The locked `config-resolution.integration.spec.ts:124-130` assertion is rewritten, and `fixtures/solution-style` gains a KNOWN diagnostic + a real `tsconfig.spec.json` leaf so the walk assertion proves type-checking occurred.
 - [x] **WALK-02**: A walk target's Nx `targetDefaults` inputs use the `default` named input (the lib+spec source union), NOT `production` (which excludes `*.spec.ts` and would under-hash spec sources → stale PASS); `outputs: []`, the `{projectRoot}/tsconfig*.json` glob, and `^default` are retained. Any leaf/dep change busts the (coarse) single-target cache. README consumer guidance updated to the walk recipe. *(DEFERRED synergy, tracked below: project references / `NgtscProgram` incremental declaration-reuse to collapse the double-compile tax — additive, not blocking.)*
 
-### GEN — `typecheck-configuration` generator
+### EXEC — executor rename (breaking; drives 0.1.0)
 
-- [ ] **GEN-01**: A developer can run `nx g angular-typechecker:typecheck-configuration <project>` to wire a `typecheck` target (executor `angular-typechecker:angular-typecheck`) into the project's `project.json` (edits configuration only via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles`; no `generateFiles`, no file emission).
-- [ ] **GEN-02**: The generator wires ONE target pointed at the project's **solution `tsconfig.json`** (relying on WALK-01 to type-check its in-project referenced leaves), with an explicit `--tsConfig` override and a **flat-project fallback** (point at the leaf `tsconfig.app.json`/`tsconfig.lib.json` when the project has no solution tsconfig / no `references`). Per-project-type `tsConfig` detection is obviated by the walk. Configurable `targetName` (default `typecheck`). *(Nx workspaces only; Angular CLI `angular.json` layouts deferred; prod tsconfigs e.g. `tsconfig.lib.prod.json` are not referenced by the solution tsconfig and so are not walked — no-emit.)*
+*Added 2026-07-01 (v0.1.0 re-scope). The breaking change that carries the 0.x minor bump.*
+
+- [ ] **EXEC-01**: The published Nx executor is renamed from `angular-typecheck` (id `angular-typechecker:angular-typecheck`) to **`typecheck`** (id **`angular-typechecker:typecheck`**): the `executors.json` key, the executor implementation directory + `implementation`/`schema` paths, and the schema `$id` are renamed, and EVERY internal reference is updated consistently — `nx.json` `targetDefaults` keys (both the local `angular-typechecker:typecheck` and the scoped `@angular-typechecker/angular-typechecker:typecheck`), all fixture `project.json` executor refs (and their target names), `nx-target-defaults.spec.ts` keys, the integration/unit specs that name the executor id, and the README consumer recipe. Executor BEHAVIOR is unchanged — only the id/name moves. This is a BREAKING change for consumers, so it drives the milestone's 0.x minor bump to **0.1.0** (a `feat!` / `BREAKING CHANGE:` commit touching the package).
+
+### GEN — `configuration` + `init` generators, nx add
+
+- [ ] **GEN-01**: A developer can run `nx g angular-typechecker:configuration <project>` to wire a `typecheck` target (executor `angular-typechecker:typecheck`) into the project's `project.json` (edits configuration via `readProjectConfiguration`/`updateProjectConfiguration`/`formatFiles`; no `generateFiles`, no file emission). Caching config is NOT inlined on the target — it is seeded into `nx.json` `targetDefaults` by the `init` generator (GEN-07/08), so the generator additionally reads/writes `nx.json` (`readNxJson`/`updateNxJson`, through `init`); still no file emission.
+- [ ] **GEN-02**: The generator wires ONE target pointed at the project's **solution `tsconfig.json`** (relying on WALK-01 to type-check its in-project referenced leaves), with an explicit `--tsConfig` override and a **flat-project fallback** (point at the leaf `tsconfig.app.json`/`tsconfig.lib.json` when the project has no solution tsconfig / no `references`; select the leaf by Nx `projectType` with an existence probe, error clearly when none resolves). Per-project-type `tsConfig` detection is obviated by the walk. Configurable `targetName` (default `typecheck`). *(Nx workspaces only; Angular CLI `angular.json` layouts deferred; prod tsconfigs e.g. `tsconfig.lib.prod.json` are not referenced by the solution tsconfig and so are not walked — no-emit.)*
 - [ ] **GEN-03**: Spec-tsconfig (`tsconfig.spec.json`) type-checking is automatic via WALK-01 (the spec tsconfig is an in-project referenced leaf the engine walks) — no separate target or `configuration` is wired. In the flat-project fallback (no solution tsconfig), spec checking is out of the single leaf target's scope and left to the consumer.
-- [ ] **GEN-04**: Re-running the generator on an already-wired project is idempotent (no duplicate target, no clobbered config).
-- [ ] **GEN-05**: The generator ships a hand-authored `schema.json` + `schema.d.ts`, registered via `generators.json` and the published `package.json` `generators` field; the generator + schema are included in the tarball `files` set.
-- [ ] **GEN-06**: Generator unit tests run on the public in-memory `createTreeWithEmptyWorkspace` substrate and assert the written target configuration for each project type plus idempotency; a schema-parity spec asserts `schema.json` keys === the `schema.d.ts` interface.
+- [ ] **GEN-04**: Re-running the `configuration` generator on an already-wired project is idempotent (no duplicate target, no clobbered config); an existing NON-ours target of the same name (executor ≠ `angular-typechecker:typecheck`) is not clobbered — the generator errors with a clear, located message instead.
+- [ ] **GEN-05**: The plugin ships hand-authored `schema.json` + `schema.d.ts` for BOTH the `configuration` and `init` generators, registered via `generators.json` (each entry keyed with `factory`) and the published `package.json` `generators` field; the generators + schemas are included in the tarball `files` set (the root `generators.json` is globbed into the build output alongside `executors.json`; the `schema.json` files under `src/generators/**` are copied by the existing non-`.ts` asset glob).
+- [ ] **GEN-06**: Generator unit tests run on the public in-memory `createTreeWithEmptyWorkspace` substrate and assert the `configuration` generator's written target for the solution-tsconfig case AND the flat-project fallback case plus idempotency; a schema-parity spec asserts each generator's `schema.json` property keys === its `schema.d.ts` interface.
+- [ ] **GEN-07**: A standalone `nx g angular-typechecker:init` generator idempotently seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` with the WALK-02 cacheable block (`cache: true`, `outputs: []`, the `default`-based input set — never `production`, which would under-hash `*.spec.ts` → stale PASS), keyed by the **unscoped published** executor id, and never clobbers an existing / user-customized entry (per-key `??=` merge). In-memory `createTreeWithEmptyWorkspace` unit tests assert the seeded shape, an idempotent re-run, don't-clobber, and `default`-not-`production`.
+- [ ] **GEN-08**: The `configuration` generator invokes `init` as part of its run, so a single `nx g angular-typechecker:configuration <project>` both seeds the workspace `targetDefaults` (via `init`) and wires the project's minimal `typecheck` target — the idiomatic first-party pattern (`@nx/eslint:lint-project` → `lintInitGenerator`, `@nx/vitest:configuration` → `init`).
+- [ ] **GEN-09**: `nx add angular-typechecker` auto-runs the `init` generator on install (Nx invokes the package's registered `init` generator), seeding `targetDefaults` so a freshly-added plugin is cacheable without a manual edit. `ng add` (Angular CLI) remains deferred (GEN-FUT-02).
 
 ### CAT — extended-diagnostic catalog
 
@@ -37,8 +47,9 @@
 
 ### GE2E — generator end-to-end (folded into `angular-typechecker-install-e2e`)
 
-- [ ] **GE2E-01**: The plugin ships `generators.json`; the `install-e2e` consumer fixture gains a project WITHOUT a pre-wired target; an e2e scenario installs the tarball, runs `nx g angular-typechecker:typecheck-configuration` on that project, and asserts the resulting `project.json` target.
-- [ ] **GE2E-02**: The same scenario then runs `nx run <proj>:angular-typecheck --skip-nx-cache` and asserts the verdict end-to-end (clean → success; an injected template/type error → failure with the diagnostic code visible). No Verdaccio; no new e2e project.
+- [ ] **GE2E-01**: The plugin ships `generators.json`; the `install-e2e` consumer fixture gains a project WITHOUT a pre-wired target; an e2e scenario installs the tarball, runs `nx g angular-typechecker:configuration` on that project, and asserts the resulting `project.json` target (executor `angular-typechecker:typecheck`) AND the `init`-seeded `nx.json` `targetDefaults["angular-typechecker:typecheck"]`.
+- [ ] **GE2E-02**: The same scenario then runs `nx run <proj>:typecheck --skip-nx-cache` and asserts the verdict end-to-end (clean → success; an injected template/type error → failure with the diagnostic code visible). No Verdaccio; no new e2e project.
+- [ ] **GE2E-03**: An e2e proves `nx add angular-typechecker` runs the `init` generator and seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` on install (proves GEN-09). No Verdaccio; no new e2e project.
 
 ### GUARD — CI self-audit
 
@@ -52,8 +63,8 @@
 
 ### Generator surface expansion
 
-- **GEN-FUT-01**: Angular CLI (`angular.json`) workspace support for the generator (via `convertNxGenerator`).
-- **GEN-FUT-02**: `ng add` / `nx add` install schematics.
+- **GEN-FUT-01**: Angular CLI (`angular.json`) workspace support for the generators (via `convertNxGenerator`).
+- **GEN-FUT-02**: `ng add` (Angular CLI) install schematic. *(Nx's `nx add` is now in scope — GEN-09; only the Angular CLI `ng add` path remains deferred.)*
 
 ### Engine / performance (WALK follow-ups)
 
@@ -70,12 +81,12 @@
 | jscodeshift error-injection toolkit | Committed static fixtures reproduce the diagnostics; no AST-mutation apparatus warranted. |
 | Nx cache / `dependsOn`-ordering correctness tests | Already covered by `cache-busts-on-dep-error`; no new gap. |
 | Quiet / errors-only executor mode + its tests | Mode is not in this milestone's scope. |
-| `ng add` / `nx add` install schematics; Angular CLI workspace generator | Deferred (GEN-FUT-01/02). |
+| `ng add` (Angular CLI) install schematic; Angular CLI workspace generator | Deferred (GEN-FUT-01/02). Nx's `nx add` IS in scope (GEN-09). |
 | Machine-readable reporters (JSON/SARIF), `NgtscProgram` incremental/`--watch`, `createNodesV2` inference, Jest, Storybook story type-check, standalone CLI | Carried-forward deferrals (PROJECT.md Out of Scope). |
 
 ## Traceability
 
-Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's last phase 11).
+Each requirement maps to exactly one phase (v0.1.0 phases continue from v0.0.3's last phase 11; Phase 13.1 is the inserted breaking-rename phase).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -87,21 +98,26 @@ Each requirement maps to exactly one phase (v0.0.4 phases continue from v0.0.3's
 | DRIFT-01 | Phase 12 | Complete |
 | WALK-01 | Phase 13 | Complete |
 | WALK-02 | Phase 13 | Complete |
+| EXEC-01 | Phase 13.1 | Pending |
 | GEN-01 | Phase 14 | Pending |
 | GEN-02 | Phase 14 | Pending |
 | GEN-03 | Phase 14 | Pending |
 | GEN-04 | Phase 14 | Pending |
 | GEN-05 | Phase 14 | Pending |
 | GEN-06 | Phase 14 | Pending |
+| GEN-07 | Phase 14 | Pending |
+| GEN-08 | Phase 14 | Pending |
+| GEN-09 | Phase 14 | Pending |
 | GE2E-01 | Phase 15 | Pending |
 | GE2E-02 | Phase 15 | Pending |
+| GE2E-03 | Phase 15 | Pending |
 | GUARD-01 | Phase 15 | Pending |
 
 **Coverage:**
-- v0.0.4 requirements: 17 total
-- Mapped to phases: 17 (Phase 12: 6 · Phase 13: 2 · Phase 14: 6 · Phase 15: 3)
+- v0.1.0 requirements: 22 total
+- Mapped to phases: 22 (Phase 12: 6 · Phase 13: 2 · Phase 13.1: 1 · Phase 14: 9 · Phase 15: 4)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-01*
-*Last updated: 2026-07-01 — v0.0.4 re-scoped after spikes 001-005 GO: added WALK-01/02 (engine reference-walking), reshaped GEN-01/02/03 (one `typecheck` target → solution `tsconfig.json`). Now 17/17 requirements mapped across Phases 12-15 (12 shipped; 13 engine-walk; 14 generator; 15 e2e + guard).*
+*Last updated: 2026-07-01 — v0.1.0 re-scope: re-versioned v0.0.4 → v0.1.0 (breaking executor rename EXEC-01); renamed the generator to `configuration`; added the standalone `init` generator (GEN-07), `configuration`-calls-`init` (GEN-08), and `nx add` support (GEN-09); reshaped GE2E-01/02 + added GE2E-03 (nx add e2e). Now 22 requirements across Phases 12-15 (incl. inserted 13.1). Prior update 2026-07-01: v0.0.4 re-scoped after spikes 001-005 GO (added WALK-01/02; reshaped GEN-01/02/03).*

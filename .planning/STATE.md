@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.0.4
-milestone_name: typecheck-configuration generator and extended testing strategy
+milestone: v0.1.0
+milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: planning
 stopped_at: Phase 13 context gathered
-last_updated: "2026-07-01T17:38:18.460Z"
-last_activity: 2026-07-01
+last_updated: "2026-07-01T21:02:02.014Z"
+last_activity: "2026-07-01 - Completed quick task 260701-shh: CI format:check + lint gates, whole-repo Prettier format, action bumps"
 progress:
-  total_phases: 4
-  completed_phases: 1
+  total_phases: 5
+  completed_phases: 2
   total_plans: 10
   completed_plans: 10
-  percent: 25
+  percent: 40
 ---
 
 # Project State
@@ -32,7 +32,7 @@ Last activity: 2026-07-01 - Completed quick task 260701-shh: CI format:check + l
 
 Progress: [████████░░] 80%
 
-## v0.0.4 Phase Map
+## v0.1.0 Phase Map
 
 | Phase | Name | Requirements | Depends on |
 |-------|------|--------------|------------|
@@ -44,6 +44,10 @@ Progress: [████████░░] 80%
 Sequencing note: engine-walk (13) → generator (14) → e2e (15). Phase 12 (catalog + tripwire) already shipped. Phase 13 teaches the engine to walk a solution `tsconfig.json`'s in-project referenced leaves (union + dedupe, module-boundary-guarded, coarse-cached) — the prerequisite that makes Phase 14's generator thin (ONE `typecheck` target → solution `tsconfig.json`; no per-project-type `tsConfig` detection, no separate spec target). Phase 15 folds the generator e2e into `angular-typechecker-install-e2e` and adds the `-p` set-equality guard. The previously-OPEN GEN-02/03 shape blocker (single-target vs. multiple targets vs. `configurations`, and per-project-type detection) is now RESOLVED by reference-walking: spikes 001-005 all VALIDATED (GO), so the generator wires ONE target and the engine walks the references.
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 13.1 inserted after Phase 13: v0.1.0 re-scope: executor rename EXEC-01 + configuration/init generators + nx add; re-versioned v0.0.4 -> v0.1.0
 
 ### Decisions
 
