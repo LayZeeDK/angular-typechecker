@@ -125,7 +125,7 @@ export function filterDiagnostics(
  * path so a hot run over thousands of components does not re-resolve the same
  * directory repeatedly (a cache, not a `realpath()` syscall per diagnostic).
  */
-function createCanonicalizer(
+export function createCanonicalizer(
   options: Pick<FilterOptions, 'useCaseSensitiveFileNames' | 'realpath'>,
 ): (filePath: string) => string | undefined {
   const cache = new Map<string, string>();
@@ -181,7 +181,7 @@ function isNodeModulesPath(canonicalFile: string): boolean {
  * so treat the file as in-project (over-keep-safe) -- a non-node_modules file is
  * then KEPT rather than silently suppressed against an unprovable baseline.
  */
-function isUnderDir(
+export function isUnderDir(
   canonicalFile: string,
   canonicalDir: string | undefined,
 ): boolean {
