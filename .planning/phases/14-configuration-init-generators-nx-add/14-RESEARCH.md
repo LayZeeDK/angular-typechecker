@@ -593,17 +593,23 @@ No `postinstall`/lifecycle script is added (the tarball audit already forbids in
 
 **All other claims are `[VERIFIED]` against `node_modules/` Nx 23.0.1 source or the shipped codebase, or `[CITED]` from the locked CONTEXT/REQUIREMENTS.**
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **OQ-1: `--tsConfig` override path semantics (A1).**
+> Both LOW-risk "planner encodes" questions were resolved during Phase 14 planning
+> (plans 14-01/14-02, committed `6ee0a80`; confirmed by the plan-checker). Recorded
+> here for traceability.
+
+1. **OQ-1: `--tsConfig` override path semantics (A1). RESOLVED -> (b).**
    - What we know: D-07 says "honored verbatim, project-root-relative." The executor resolves a relative `options.tsConfig` WORKSPACE-root-relative. The default (non-override) path is workspace-root-relative (`joinPathFragments(root, 'tsconfig.json')`).
    - What's unclear: whether "verbatim" means (a) write the user's string unchanged into `options.tsConfig` (user must supply a workspace-root-relative or absolute path), or (b) interpret it project-root-relative and `joinPathFragments(root, override)` before writing.
    - Recommendation: choose (b) -- interpret the override project-root-relative and join with the project root, because the user is naming a project and thinks in project-relative terms, and (b) yields a path the executor resolves correctly. Pin the chosen semantics in a `configuration.spec.ts` case. Honor an ABSOLUTE override verbatim. LOW risk; planner decides.
+   - **RESOLVED:** Plan 14-02 Task 2 adopts (b) -- a relative `--tsConfig` override is joined project-root-relative via `joinPathFragments(projectConfig.root, schema.tsConfig)`, an absolute override is honored verbatim, and the semantics are pinned in a `configuration.spec.ts` case.
 
-2. **OQ-2: `init` schema surface (D-11).**
+2. **OQ-2: `init` schema surface (D-11). RESOLVED -> `skipFormat` only.**
    - What we know: first-party `init`s carry internal flags (`keepExistingVersions`, `updatePackageScripts`, `skipPackageJson`) that `nx add` probes for. Our `init` adds NO dependencies and needs none of them.
    - What's unclear: whether to expose `skipFormat` only, or an empty options object.
    - Recommendation: expose `skipFormat` (boolean, default false) so `configuration` can call `init(tree, { skipFormat: true })` and format once. Keep everything else out. Do NOT add `keepExistingVersions`/`updatePackageScripts` -- their presence would make `nx add` append flags for no benefit.
+   - **RESOLVED:** Plan 14-01 Task 1 exposes `skipFormat` only (boolean, default false) and omits `keepExistingVersions`/`updatePackageScripts`; the `init` schema-parity spec enforces the exact key set.
 
 ## State of the Art
 
