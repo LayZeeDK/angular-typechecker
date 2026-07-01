@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "InitGeneratorSchema",
+  "title": "angular-typechecker init generator",
+  "description": "Seed nx.json targetDefaults so the angular-typechecker:typecheck target is cacheable.",
+  "cli": "nx",
+  "type": "object",
+  "properties": {
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting files with Prettier after seeding nx.json."
+    }
+  },
+  "additionalProperties": false
+}
