@@ -98,6 +98,56 @@
 
 ---
 
+## Milestone: v0.1.0 -- Reference-walking engine, typecheck executor rename, and the configuration + init generator suite
+
+**Shipped:** 2026-07-02
+**Phases:** 5 (12-15 + inserted 13.1) | **Plans:** 16 | **Commits:** ~198 | **Timeline:** 3 days
+
+### What Was Built
+
+- A reference-walking engine mode: `runTypecheck` on a solution `tsconfig.json` walks its in-project referenced leaves (lib/app + spec) in one call, unions + dedupes by value identity, and applies a module-boundary guard -- GO-gated by spikes 001-005 before any production code was written.
+- A BREAKING executor rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` across the full surface (executors.json, `nx.json`, fixtures, specs, README), driving the 0.0.3 -> 0.1.0 minor bump.
+- A `configuration` + `init` generator suite (config-edit only, no file emission) that wires ONE minimal `typecheck` target and seeds `nx.json` caching, plus `nx add angular-typechecker` support.
+- Generator e2e against the real installed tarball through both entry points, and a CI self-audit guard that turns a forgotten e2e project `-p` entry into a loud failure.
+- A complete 18-member extended-diagnostic catalog + enum-completeness tripwire that fails CI loudly on future Angular drift.
+
+### What Worked
+
+- **The gated-spike pattern paid off a third time.** Spikes 001-005 proved runtime solution-tsconfig reference-walking feasible on the existing `performCompilation` engine BEFORE the milestone's shape was finalized, resolving an open generator-design question (per-project-type `tsConfig` vs. multiple targets vs. walking) with evidence instead of a guess -- the same pattern that worked in v0.0.1 (Phase 1) and v0.0.3 (RES-01).
+- **A mid-milestone re-scope, taken decisively on new evidence.** When the spikes proved walking feasible, the milestone was re-versioned v0.0.4 -> v0.1.0 same-day, adding the breaking executor rename and expanding the generator into a suite (`configuration` + `init` + `nx add`) rather than shipping the originally-scoped narrower generator and deferring the improvement.
+- **A multi-lens Opus board ratified the testing strategy before building it.** The 8-lens (5 constructive + 3 adversarial) board on the v0.0.4 testing strategy rejected speculative test infrastructure (bespoke `createFsTree`, a mid-tier executor-vs-workspace test, Verdaccio) up front, keeping the generator tests on the public in-memory substrate.
+- **Review rounds converged to a verifiable zero.** Four PR-review rounds ran against PR #15 (two review-triage rounds + a `/simplify` complexity pass + a `/thermos:thermos` audit); the FOURTH round produced zero code changes because every finding was already satisfied, deliberately decided, or correctly deferred -- a clean signal that the earlier rounds had been thorough rather than a sign of churn.
+- **Breaking changes taken cleanly pre-1.0.** Both the executor rename (EXEC-01) and a mid-milestone public-barrel trim (a PR-review finding, not originally planned) were shipped as `feat!`/`refactor!` commits rather than deferred or shimmed, keeping the 0.x public surface honest.
+
+### What Was Inefficient
+
+- **The requirement-status-lag lesson recurred a THIRD time.** v0.0.1 and v0.0.3 both logged "close statuses at phase verification, not at milestone audit" as a lesson to enforce -- it recurred again in v0.1.0 (CAT-05/WALK-02/GEN-06 missing from SUMMARY `requirements-completed` frontmatter, caught and backfilled by a dedicated quick task, commit `642d08d`). Three milestones in a row logging the same fix means the lesson is not actually enforced by process; it needs a mechanical check (e.g., a phase-verification step that fails if `requirements-completed` is empty), not another retrospective note.
+- **The `audit-open` bare-`SUMMARY.md` bug recurred a SECOND time.** v0.0.3's retrospective already named this GSD scanner bug (reads `<dir>/SUMMARY.md`, but `/gsd-quick` writes `<id>-SUMMARY.md`) and predicted it "will recur at any future close" -- it did, flagging 3 completed quick tasks as missing at this v0.1.0 close. The workaround (bare marker files) is now applied a second time; the actual fix belongs upstream in the GSD scanner, not in this repo's workaround.
+- **A CI gate flagged an accumulated diff, not a regression.** The `fallow` CI gate failed on PR #15 because it evaluates the CUMULATIVE diff vs. `origin/main`, and enough legitimate test-scaffolding/fixture code had accumulated across the branch's life to cross its thresholds -- required a dedicated quick task to tune `.fallowrc.jsonc` rather than being caught incrementally per-phase.
+- **A shared-fixture race in e2e wasn't caught until CI.** All three e2e projects packed and installed the SAME dist tarball; running them concurrently in CI produced an intermittent `ENOENT` race that only manifested under CI's parallel scheduling, not locally -- required serializing the e2e job to `--parallel=1`.
+
+### Patterns Established
+
+- **Spike-gate any open engine-shape question before finalizing generator/executor design**, and be willing to re-scope the milestone version when the spike changes what's buildable.
+- **Multi-lens (constructive + adversarial) board review for a testing strategy**, run to convergence across rounds, before writing test infrastructure.
+- **Idiomatic first-party Nx `init`-seeds-`targetDefaults` pattern** (mirroring `@nx/eslint:lint-project` / `@nx/vitest:configuration`) for generator-suite caching, instead of inlining cache config on every generated target.
+- **A dedicated CI self-audit guard** (set-equality between a CI job's explicit project list and the actual project graph) to convert a class of silent-skip landmine into a loud, located failure.
+- **Stop review-fix rounds when a round produces zero changes**, treating that as the convergence signal rather than a reason to keep iterating.
+
+### Key Lessons
+
+1. **A lesson logged twice without a mechanical enforcement will recur a third time.** The requirements-completed-frontmatter gap and the audit-open bare-`SUMMARY.md` bug are the same category of failure: a documented process fix without a check that fails loudly when skipped. Convert both into an automated gate (a phase-verification lint, an upstream GSD scanner fix) rather than a fourth retrospective note.
+2. **A path-gated CI quality tool needs periodic re-tuning as the branch accumulates diff, not just at adoption.** `fallow`'s new-only gate is evaluated against the cumulative branch diff, so a long-lived feature branch can cross a threshold the tool was originally green against.
+3. **Fixtures shared across parallel CI jobs are a race waiting to happen.** Any e2e design that packs/installs a shared artifact (the dist tarball) across projects needs either isolation (per-project temp dirs, already used) or explicit serialization -- verify the concurrency model before, not after, a flaky CI failure.
+4. **Deciding a breaking change on a review finding, not just the original plan, is fine pre-1.0.** The public-barrel trim wasn't in the original phase plan -- it surfaced from PR review -- and shipping it as a breaking `refactor!` was cheaper than deferring or shimming a public surface nobody outside the plugin actually used.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for all GSD planning/execution/verification agents (per `config.json model_overrides`).
+- Notable: the mid-milestone re-scope (v0.0.4 -> v0.1.0) and the four PR-review rounds were the two biggest cost concentrations; both paid for themselves -- the re-scope avoided shipping a narrower generator that would have needed a follow-up breaking change, and the review rounds converged to a verified-clean PR rather than merging with latent findings.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -105,14 +155,21 @@
 | Milestone | Phases | Plans | Key Change |
 |-----------|--------|-------|------------|
 | v0.0.1 | 8 | 29 | Baseline: gated spike, engine-before-Nx, vertical MVP, Release-PR flow with PR-only `main` |
+| v0.0.3 | 4 | 14 | Evidence-backed deferral (Future Requirements with a multi-lens trail); build-time drift tripwire pattern; requirement-status-lag lesson RECURRED (logged, not yet enforced) |
+| v0.1.0 | 5 (incl. 13.1) | 16 | Spike-gated mid-milestone re-scope (v0.0.4 -> v0.1.0); multi-lens Opus board for testing strategy before writing tests; requirement-status-lag lesson recurred a 3rd time; audit-open quick-task bug recurred a 2nd time |
 
 ### Cumulative Quality
 
 | Milestone | Package source LOC | Project types validated | Live npm publishes |
 |-----------|--------------------|-------------------------|--------------------|
 | v0.0.1 | ~1,162 (33 `.ts` files) | 5/5 | 2 (0.0.1, 0.0.2) |
+| v0.0.3 | ~1,777 prod / ~5,263 incl. tests (15 / 41 `.ts` files) | 5/5 (carried) | 1 (0.0.3) |
+| v0.1.0 | ~2,709 prod / ~8,552 incl. tests (22 / 56 `.ts` files) | 5/5 (carried) | 1 (0.1.0) |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. *(established this milestone)* Assert built/packed artifacts, not source.
-2. *(established this milestone)* Close requirement statuses at phase verification, not at milestone audit.
+1. **Gated spike before committing to an approach** -- confirmed 3x: v0.0.1 Phase 1 (engine viability), v0.0.3 RES-01 (resilience shape), v0.1.0 spikes 001-005 (reference-walking feasibility, drove a mid-milestone re-scope).
+2. **Close requirement statuses at phase verification, not at milestone audit** -- logged in v0.0.1, RECURRED in v0.0.3, RECURRED AGAIN in v0.1.0 (`642d08d`). Three occurrences without enforcement means this needs a mechanical gate, not another note.
+3. **`audit-open`'s bare-`SUMMARY.md` scan is a real, repeatable GSD bug** -- hit at v0.0.3 close, predicted to recur, and did recur at v0.1.0 close. Fix belongs in the GSD scanner (read `<id>-SUMMARY.md`, not a bare `SUMMARY.md`), not in a per-repo workaround.
+4. **Assert built/packed artifacts, not source** -- established v0.0.1, held throughout (tarball-first audits, GATE A byte assertions).
+5. **Evidence-backed deferral over a forced feature** -- established v0.0.3 (REP-RES-02b), reused implicitly in v0.1.0's Future Requirements (FSTREE-01, WALK-FUT-01/02).
