@@ -32,18 +32,23 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const LIB_LEAF_CODE = 'TS2322';
 const SPEC_LEAF_CODE = 'TS2345';
 
-// The clean committed label line each injection is inserted AHEAD of.
-const COMPONENT_LABEL_LINE =
-  "readonly label: string = 'angular-typechecker generator e2e';";
+// The clean committed anchor lines each injection targets. The lib anchor lives in
+// a lib-ONLY source (consumer-generator.util.ts) that NO spec imports, so a TS2322
+// injected there can ONLY come from the lib leaf's own program (tsconfig.lib.json's
+// src/**/*.ts rootNames) -- it cannot leak in via the spec leaf's import graph the
+// way an injection into the imported component would (WR-01). The spec anchor lives
+// in the *.spec.ts that only tsconfig.spec.json includes.
+const UTIL_ANCHOR_LINE =
+  "export const consumerGeneratorLibOnly: string = 'ok';";
 const SPEC_ANCHOR_LINE = 'const label: string = component.label;';
 
 // The injected lines, built via JSON.stringify (ASCII-only, no quote/apostrophe
-// escaping hazard -- D-05). The lib injection is a class FIELD (valid in a class
-// body) whose `number` type rejects the string literal -> TS2322. The spec
-// injection is a STATEMENT (valid inside the `it()` function body -- a `readonly`
-// field would be a syntax error there) passing a string where `padStart` requires
-// a number -> TS2345.
-const BROKEN_FIELD = `readonly broken: number = ${JSON.stringify('str')};`;
+// escaping hazard -- D-05). The lib injection FLIPS the util const's declared type
+// to `number` while keeping its string value -> TS2322 (Type 'string' is not
+// assignable to type 'number'). The spec injection is a STATEMENT (valid inside the
+// `it()` function body -- a `readonly` field would be a syntax error there) passing
+// a string where `padStart` requires a number -> TS2345.
+const BROKEN_LIB_CONST = `export const consumerGeneratorLibOnly: number = ${JSON.stringify('str')};`;
 const BROKEN_STATEMENT = `('x').padStart(${JSON.stringify('str')});`;
 
 // Resolve the workspace root from this spec's location
@@ -225,6 +230,21 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
         encoding: 'utf8',
       });
 
+      // GE2E-01(b) seeded-from-ABSENT baseline: the tmp fixture nx.json must NOT
+      // already carry an `angular-typechecker:typecheck` targetDefaults key BEFORE
+      // `nx g configuration` runs init. Without this guard the post-generation
+      // "init seeded it" assertion below is vacuous -- if the fixture ever gained
+      // the key, init's whole-entry ??= would skip seeding and the later assertion
+      // would pass for the wrong reason (Pitfall 5). Mirrors nx-add-e2e's
+      // before-absent guard so this spec's "from ABSENT" claim stands on its own
+      // and does not depend on a sibling spec (WR-02).
+      const before = JSON.parse(readFileSync(join(tmp, 'nx.json'), 'utf8')) as {
+        targetDefaults?: Record<string, unknown>;
+      };
+      expect(
+        before.targetDefaults?.['angular-typechecker:typecheck'],
+      ).toBeUndefined();
+
       // Generate the typecheck target. --skipFormat so formatFiles (Prettier) is a
       // no-op (the fixture installs no Prettier). Do NOT pass --output-style=static
       // to `nx g` -- that is a run flag, not a generate flag (Finding 4 / A2).
@@ -281,15 +301,21 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       expect(green.code).toBe(0);
 
       // GE2E-02 two-leaf injection (DISTINCT codes -> proves BOTH leaves walked).
-      // Lib leaf: a class FIELD in the component -> TS2322.
-      const componentPath = join(tmp, 'src', 'consumer-generator.component.ts');
-      const componentOriginal = readFileSync(componentPath, 'utf8');
-      const componentInjected = componentOriginal.replace(
-        COMPONENT_LABEL_LINE,
-        `${BROKEN_FIELD}\n  ${COMPONENT_LABEL_LINE}`,
+      // Lib leaf: flip the declared type of a const in consumer-generator.util.ts --
+      // a lib-ONLY file that NO spec imports -- from `string` to `number` while
+      // keeping its string value -> TS2322. Because no *.spec.ts imports this file,
+      // the spec-leaf program never compiles it, so a TS2322 here can ONLY come from
+      // the lib reference being independently walked (WR-01: the previous injection
+      // into the imported component also surfaced via the spec's import graph, so it
+      // did NOT uniquely attribute to the lib leaf).
+      const utilPath = join(tmp, 'src', 'consumer-generator.util.ts');
+      const utilOriginal = readFileSync(utilPath, 'utf8');
+      const utilInjected = utilOriginal.replace(
+        UTIL_ANCHOR_LINE,
+        BROKEN_LIB_CONST,
       );
-      expect(componentInjected).not.toBe(componentOriginal);
-      writeFileSync(componentPath, componentInjected);
+      expect(utilInjected).not.toBe(utilOriginal);
+      writeFileSync(utilPath, utilInjected);
 
       // Spec leaf: a STATEMENT inside the it() body -> TS2345. This code can only
       // originate from the spec file (which only the spec leaf includes), so its
