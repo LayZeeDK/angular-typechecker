@@ -76,10 +76,9 @@ export default async function typecheckExecutor(
     ) {
       for (const skipped of result.skippedReferences) {
         logger.warn(
-          `angular-typechecker: referenced tsconfig '${skipped.referencePath}' was ` +
-            `${skipped.reason} and was skipped or reclassified during the ` +
-            `solution-tsconfig reference walk. This notice is advisory only -- the ` +
-            `type-check verdict is unchanged.`,
+          `angular-typechecker: referenced tsconfig '${skipped.referencePath}' was skipped ` +
+            `or reclassified during the solution-tsconfig reference walk (reason: ${skipped.reason}). ` +
+            `This notice is advisory only -- the type-check verdict is unchanged.`,
         );
       }
     }
