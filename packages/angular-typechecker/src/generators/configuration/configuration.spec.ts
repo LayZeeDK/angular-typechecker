@@ -156,6 +156,80 @@ describe('configuration generator', () => {
     expect(targets?.typecheck).toBeUndefined();
   });
 
+  it('falls back to a flat reference-less tsconfig.json when no app/lib leaf exists (C3)', async () => {
+    addProjectConfiguration(tree, 'flat-single', {
+      root: 'libs/flat-single',
+      projectType: 'library',
+      targets: {},
+    });
+    // The ONLY tsconfig is a flat tsconfig.json that lists files directly: no
+    // references[] (branch 2 falls through) and no tsconfig.lib.json leaf. It is
+    // still validly checkable, so the target must point at it, not throw.
+    writeJson(tree, 'libs/flat-single/tsconfig.json', {
+      compilerOptions: {},
+      files: ['src/index.ts'],
+    });
+
+    await configurationGenerator(tree, { project: 'flat-single' });
+
+    expect(
+      readProjectConfiguration(tree, 'flat-single').targets?.typecheck?.options,
+    ).toEqual({ tsConfig: 'libs/flat-single/tsconfig.json' });
+  });
+
+  it('falls through an empty references[] tsconfig.json to the leaf (S-2 branch-2 false path)', async () => {
+    addProjectConfiguration(tree, 'empty-refs', {
+      root: 'libs/empty-refs',
+      projectType: 'library',
+      targets: {},
+    });
+    // tsconfig.json exists but its references[] is EMPTY -> branch 2 must fall
+    // through to the tsconfig.lib.json leaf, not point the target at the solution.
+    writeJson(tree, 'libs/empty-refs/tsconfig.json', { references: [] });
+    writeJson(tree, 'libs/empty-refs/tsconfig.lib.json', {
+      compilerOptions: {},
+    });
+
+    await configurationGenerator(tree, { project: 'empty-refs' });
+
+    expect(
+      readProjectConfiguration(tree, 'empty-refs').targets?.typecheck?.options,
+    ).toEqual({ tsConfig: 'libs/empty-refs/tsconfig.lib.json' });
+  });
+
+  it('writes an absolute --tsConfig override verbatim (S-2 passthrough)', async () => {
+    addProjectConfiguration(tree, 'my-lib', {
+      root: 'libs/my-lib',
+      projectType: 'library',
+      targets: {},
+    });
+    // An absolute override cannot be probed against the workspace-relative tree, so
+    // it is honored verbatim (OQ-1). A leading-slash path is absolute on both POSIX
+    // and win32 (path.isAbsolute('/x') === true on Windows).
+    const absolute = '/abs/ws/libs/my-lib/tsconfig.app.json';
+
+    await configurationGenerator(tree, { project: 'my-lib', tsConfig: absolute });
+
+    expect(
+      readProjectConfiguration(tree, 'my-lib').targets?.typecheck?.options,
+    ).toEqual({ tsConfig: absolute });
+  });
+
+  it('throws when --targetName is an explicit empty string (C13)', async () => {
+    addProjectConfiguration(tree, 'my-lib', {
+      root: 'libs/my-lib',
+      projectType: 'library',
+      targets: {},
+    });
+    writeJson(tree, 'libs/my-lib/tsconfig.json', {
+      references: [{ path: './tsconfig.lib.json' }],
+    });
+
+    await expect(
+      configurationGenerator(tree, { project: 'my-lib', targetName: '' }),
+    ).rejects.toThrow(/must be a non-empty target name/);
+  });
+
   it('throws a located error when no tsconfig resolves (GEN-02)', async () => {
     addProjectConfiguration(tree, 'my-lib', {
       root: 'libs/my-lib',

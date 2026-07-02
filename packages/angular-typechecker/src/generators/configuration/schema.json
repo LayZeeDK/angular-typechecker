@@ -16,7 +16,7 @@
     },
     "tsConfig": {
       "type": "string",
-      "description": "Explicit tsconfig path (project-root-relative, or absolute). Overrides solution/flat resolution."
+      "description": "Explicit tsconfig path, interpreted project-root-relative (or absolute), overriding solution/flat resolution. The generator resolves it and writes a WORKSPACE-root-relative path into the target's options.tsConfig (the base the executor uses); an absolute path is written verbatim and is machine-specific -- prefer a project-root-relative path for portability across machines and CI."
     },
     "targetName": {
       "type": "string",

@@ -34,7 +34,11 @@ const TYPECHECK_EXECUTOR = 'angular-typechecker:typecheck';
  *   3. flat-project fallback: the leaf tsconfig by `projectType`
  *      (`application` -> `tsconfig.app.json`, else `tsconfig.lib.json`), gated by
  *      a `tree.exists` probe.
- *   4. else throw a clear, located error.
+ *   4. flat single-tsconfig fallback: a project whose ONLY tsconfig is a flat,
+ *      reference-less `tsconfig.json` that lists files directly (no app/lib leaf,
+ *      no `references[]` to walk). Point the ONE target at it -- runTypecheck reads
+ *      its rootNames and type-checks it via the direct leaf path.
+ *   5. else throw a clear, located error.
  *
  * The returned path is WORKSPACE-root-relative because `projectConfig.root`
  * already is (e.g. `libs/foo` -> `libs/foo/tsconfig.json`). The executor resolves
@@ -93,11 +97,21 @@ function resolveTsConfig(
     return leafPath;
   }
 
-  // 4. nothing resolved.
+  // 4. flat single-tsconfig fallback: the project's ONLY tsconfig is a flat,
+  // reference-less `tsconfig.json` that lists files directly (branch 2 fell through
+  // because it has no non-empty references[], and there is no app/lib leaf). It is
+  // still a validly-checkable leaf, so point the ONE target at it -- the executor's
+  // runTypecheck reads its rootNames and type-checks it via the direct leaf path
+  // (the walk never engages without references). Without this a validly-checkable
+  // single-tsconfig project would be un-configurable (C3).
+  if (tree.exists(solution)) {
+    return solution;
+  }
+
+  // 5. nothing resolved.
   throw new Error(
     `Could not resolve a tsconfig for project "${schema.project}": no ` +
-      `"${solution}" with a non-empty references[] array and no "${leafPath}". ` +
-      `Pass --tsConfig explicitly.`,
+      `"${solution}" and no "${leafPath}". Pass --tsConfig explicitly.`,
   );
 }
 
@@ -118,8 +132,6 @@ export default async function configurationGenerator(
   tree: Tree,
   schema: ConfigurationGeneratorSchema,
 ): Promise<GeneratorCallback> {
-  const tasks: GeneratorCallback[] = [];
-
   // GEN-08 / D-10: seed workspace caching FIRST via init. `skipFormat: true` so
   // the nested init does not format -- we format ONCE at the end (first-party
   // `@nx/eslint:lint-project` / `@nx/vitest:configuration` composition).
@@ -127,6 +139,18 @@ export default async function configurationGenerator(
 
   const projectConfig = readProjectConfiguration(tree, schema.project);
   const targetName = schema.targetName ?? 'typecheck';
+
+  // GEN-04: `??` above only substitutes the default for a MISSING targetName, not
+  // an explicit empty string (`'' ?? x === ''`). An empty / whitespace-only name
+  // would write an unrunnable target keyed by `''`, so reject it with a located
+  // error rather than silently producing a broken target.
+  if (targetName.trim() === '') {
+    throw new Error(
+      `--targetName for project "${schema.project}" must be a non-empty target ` +
+        `name. Omit it to use the default "typecheck".`,
+    );
+  }
+
   const tsConfig = resolveTsConfig(tree, projectConfig, schema);
 
   // GEN-04 / D-09: collision by EXECUTOR (compare the UNSCOPED id). A same-named
@@ -160,5 +184,8 @@ export default async function configurationGenerator(
     await formatFiles(tree);
   }
 
-  return runTasksInSerial(...tasks);
+  // No deferred post-generation tasks (the nested init is awaited above, and its
+  // formatting is folded into the single formatFiles here). Return the no-op
+  // GeneratorCallback so the return type stays a GeneratorCallback (Nx contract).
+  return runTasksInSerial();
 }
