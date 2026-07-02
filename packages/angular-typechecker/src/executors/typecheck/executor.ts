@@ -69,11 +69,8 @@ export default async function typecheckExecutor(
     // ONLY -- the verdict is unchanged: a boundary-skipped leaf's diagnostics
     // simply never entered the union, and a not-found leaf is already a counted
     // 90002 in the report. Core sets skippedReferences only when non-empty (never
-    // []), so the presence check plus the length guard are belt-and-suspenders.
-    if (
-      result.skippedReferences !== undefined &&
-      result.skippedReferences.length > 0
-    ) {
+    // []), so the optional-chained length check alone is sufficient.
+    if (result.skippedReferences?.length) {
       for (const skipped of result.skippedReferences) {
         // A `not-found` reference is folded into the report as a COUNTED 90002
         // Error that FAILS the verdict, so its notice must NOT claim to be
