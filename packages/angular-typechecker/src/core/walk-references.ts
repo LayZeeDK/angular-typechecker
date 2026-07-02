@@ -137,7 +137,10 @@ export async function walkReferences(
     // a solution referencing ITSELF is `self-reference`; a leaf listed twice is
     // `duplicate`. Folding a genuine duplicate under `self-reference` would print a
     // false "self-referential" advisory for a config that is not self-referential.
-    if (canonicalLeaf !== undefined && canonicalLeaf === canonicalSolutionPath) {
+    if (
+      canonicalLeaf !== undefined &&
+      canonicalLeaf === canonicalSolutionPath
+    ) {
       skippedReferences.push({
         referencePath: leafPath,
         reason: 'self-reference',
@@ -220,8 +223,22 @@ export async function walkReferences(
       continue;
     }
 
-    // D-03b: a resolved leaf with no input files cannot become a silent
-    // zero-diagnostic PASS. Record the skip-with-notice and contribute 0.
+    // D-03b (DECISION, I-5): a resolved leaf with no input files contributes 0 and
+    // is recorded as an ADVISORY skip -- on its own it does NOT fail the verdict.
+    // This is DELIBERATELY asymmetric with the direct single-leaf path (where a
+    // zero-rootNames config is a hard 90001): inside a walk a leaf may legitimately
+    // match no files yet (e.g. a spec leaf before any *.spec.ts exists), and failing
+    // the WHOLE solution for that would be a false negative. Mitigations keep it
+    // honest -- the loud per-reference logger.warn (executor) surfaces the skip, a
+    // SIBLING leaf's real errors still fail the verdict, and if EVERY leaf is
+    // skipped the none-in-project 90001 guard fires (run-typecheck.ts), so an
+    // all-empty solution is never a silent PASS.
+    //
+    // LIMITATION (C7): the walk is single-level (D-03). A referenced leaf that is
+    // ITSELF a solution/references-only tsconfig has zero root names of its own, so
+    // it lands HERE (reason 'zero-root-names') and its INNER projects are NOT
+    // walked. Nested-solution recursion is out of scope for v0.1.0; point the target
+    // at the inner leaves (or their own solution) to type-check them today.
     if (parsed.rootNames.length === 0) {
       skippedReferences.push({
         referencePath: leafPath,
