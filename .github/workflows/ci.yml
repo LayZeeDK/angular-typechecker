@@ -140,9 +140,21 @@ jobs:
         with:
           version: 11.9.0
       - run: npm ci
+      # Cross-project serialization (extends the intra-project D-21 serialization).
+      # All three e2e projects `npm pack` the SAME dist artifact
+      # (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in their
+      # beforeAll and `rmSync` it in afterAll. Vitest already serializes specs
+      # WITHIN each project (singleFork + fileParallelism:false), but `nx run-many`
+      # defaults to parallel, so the projects race on the shared tarball path: a
+      # sibling project's afterAll `rmSync` deletes the tarball mid-`pnpm add`
+      # (ENOENT). pnpm 11's supply-chain-policy verification widened the window so
+      # the latent race now trips deterministically. `--parallel=1` runs the three
+      # projects one at a time; the `-p` list line stays unchanged so the GUARD-01
+      # set-equality test still parses it.
       - run: >
           npx nx run-many -t test
           -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e
+          --parallel=1
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
