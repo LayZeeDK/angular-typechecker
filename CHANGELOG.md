@@ -1,3 +1,7 @@
+# Changelog
+
+All notable changes to **angular-typechecker** are documented in this file.
+
 ## 0.1.0 (2026-07-02)
 
 Reference-walking engine, a configuration/init generator suite, and `nx add`
@@ -47,10 +51,6 @@ despite the 0.x series.
 
 - Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
 - Node `^22.22.3 || ^24.15.0 || ^26.0.0`
-
-# Changelog
-
-All notable changes to **angular-typechecker** are documented in this file.
 
 ## 0.0.3 (2026-06-30)
 
