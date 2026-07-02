@@ -1,0 +1,5 @@
+<!-- NG8103: `*ngIf` (a known control-flow directive) used without CommonModule. -->
+<div *ngIf="flag">shown</div>
+
+<!-- NG8116: an unknown structural directive used but not imported/declared. -->
+<div *appMissing="flag">structural</div>

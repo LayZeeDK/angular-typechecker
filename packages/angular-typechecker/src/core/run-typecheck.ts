@@ -2,11 +2,17 @@ import { dirname } from 'node:path';
 
 import type ts from 'typescript';
 
-import type { EmitFlags, ParsedConfiguration } from './compiler-cli-types';
+import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
-import { TCB_GENERATION_FATAL_DIAGNOSTIC_CODE } from './diagnostic-codes';
+import {
+  synthesizeFilelessError,
+  TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+  ZERO_ROOT_NAMES_DIAGNOSTIC_CODE,
+} from './diagnostic-codes';
 import { filterDiagnostics } from './filter-diagnostics';
-import { gatherAllDiagnostics } from './gather-diagnostics';
+import { runNoEmitCompilation } from './gather-diagnostics';
+import type { SkippedReference } from './walk-references';
+import { walkReferences } from './walk-references';
 
 export interface CoreOptions {
   tsConfigPath: string;
@@ -68,6 +74,17 @@ export interface CoreResult {
   // UNKNOWN_ERROR_CODE 500 -> TypecheckInfrastructureError; the notice is a
   // warning, NOT a reclassification of the verdict.
   templateCheckAborted?: TemplateCheckAborted;
+  // D-02 (Phase 13): references skipped or reclassified during a solution-tsconfig
+  // walk. Present (and NON-EMPTY) ONLY when at least one reference was skipped
+  // (out-of-project / zero-root-names / self-reference) or reclassified
+  // (not-found -> 90002) during the walk. `undefined` on the direct single-leaf
+  // path AND on any walk where every reference walked cleanly -- core maps the
+  // walk's empty array `[]` -> `undefined` so consumers branch on presence. Like
+  // `templateCheckAborted`, this is PURE detection (set by the pure walk in
+  // walk-references.ts, no `console`/`process`); the executor adapter renders the
+  // loud, path-named `logger.warn` advisory. ADVISORY only -- recording a skip
+  // NEVER changes the verdict. Additive/non-breaking (0.x semver).
+  skippedReferences?: readonly SkippedReference[];
 }
 
 /**
@@ -86,12 +103,6 @@ export interface TemplateCheckAborted {
   fileName: string | undefined;
 }
 
-// Private synthesized-diagnostic code for the D-03 zero-rootNames guard. Chosen
-// OUTSIDE the TypeScript code range and OUTSIDE the Angular negative `-99xxxx`
-// encoding and the `500` UNKNOWN_ERROR_CODE space, so it can never collide with
-// a genuine TS or NG diagnostic (Claude's discretion per CONTEXT/RESEARCH).
-const ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001;
-
 /**
  * Thrown when `performCompilation` reports a returned `UNKNOWN_ERROR_CODE` (500)
  * diagnostic -- an infrastructure failure (an internal crash in `createProgram`,
@@ -105,6 +116,68 @@ export class TypecheckInfrastructureError extends Error {
     super(message);
     this.name = 'TypecheckInfrastructureError';
   }
+}
+
+/**
+ * Re-throws a returned `UNKNOWN_ERROR_CODE` (500) as a
+ * `TypecheckInfrastructureError` -- the load-bearing infra-vs-type invariant of
+ * this tool, applied at THREE stages (config parse, walk union, post-compile) so
+ * `errorCount` never counts a compiler crash as a type error. Detects BY CODE only
+ * (never `source`/message text). The synthesized guard / not-found codes are
+ * 90001/90002 (NOT 500), so they are never mistaken for infrastructure.
+ */
+function throwIfInfrastructureFailure(
+  ng: CompilerCli,
+  ts: typeof import('typescript'),
+  diagnostics: readonly ts.Diagnostic[],
+): void {
+  const failure = diagnostics.find(
+    (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
+  );
+
+  if (failure !== undefined) {
+    throw new TypecheckInfrastructureError(
+      ts.flattenDiagnosticMessageText(failure.messageText, '\n'),
+    );
+  }
+}
+
+/**
+ * A resolved config is solution-style / references-only iff it declares at least
+ * one project reference. Computed in ONE place so the walk-branch predicate and the
+ * zero-rootNames guard's message branch -- which the code requires to AGREE -- can
+ * never drift.
+ */
+function hasProjectReferences(parsed: ParsedConfiguration): boolean {
+  return (
+    parsed.projectReferences !== undefined &&
+    parsed.projectReferences.length > 0
+  );
+}
+
+/**
+ * Builds the project-boundary `FinalizeFilter` shared by the walk (>=1 in-project
+ * leaf) path and the direct single-leaf path. Only `useCaseSensitiveFileNames`
+ * differs between the two callers (the walk reuses `ts.sys`; the direct path reads
+ * it off the live Program host), so it is the one parameter; `basePath`,
+ * `includeDeps`, and `realpath` are identical.
+ */
+function buildFinalizeFilter(
+  ts: typeof import('typescript'),
+  parsed: ParsedConfiguration,
+  options: CoreOptions,
+  useCaseSensitiveFileNames: boolean,
+): FinalizeFilter {
+  return {
+    basePath: resolveFilterBasePath(
+      parsed.options.basePath,
+      options.tsConfigPath,
+    ),
+    includeDeps: options.includeDeps ?? false,
+    useCaseSensitiveFileNames,
+    realpath: (filePath: string): string =>
+      ts.sys.realpath?.(filePath) ?? filePath,
+  };
 }
 
 /**
@@ -164,35 +237,111 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // scans coexist (D-02 defense-in-depth at two distinct stages). Only code 500
   // is infrastructure: every OTHER `parsed.errors` entry (e.g. a 5012 missing
   // `extends` target) stays folded into `configDiagnostics` below (D-03).
-  const configInfrastructureFailure = parsed.errors.find(
-    (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
-  );
-
-  if (configInfrastructureFailure !== undefined) {
-    throw new TypecheckInfrastructureError(
-      ts.flattenDiagnosticMessageText(
-        configInfrastructureFailure.messageText,
-        '\n',
-      ),
-    );
-  }
+  throwIfInfrastructureFailure(ng, ts, parsed.errors);
 
   // D-03 part 1 (fixes MD-01): NEVER drop `parsed.errors`. A malformed,
   // unreadable, or nonexistent tsconfig surfaces here and is prepended to the
   // final diagnostics so it is counted -- never a silent "clean".
   const configDiagnostics = [...parsed.errors];
 
-  // D-03 part 2 / D-03a: gate on `rootNames.length === 0` (NEVER TS18003, which
-  // TypeScript suppresses when a config has a `references` array). A
-  // solution-style / references-only or empty config short-circuits here so
-  // `performCompilation` is skipped, and one synthesized Error is returned --
-  // giving agents/CI a deterministic non-zero signal instead of a false PASS.
+  // D-03 part 2 / D-03a (Phase 13 three-way split; L-3 / Spike 004): gate on
+  // `rootNames.length === 0` (NEVER TS18003, which TypeScript suppresses when a
+  // config has a `references` array). A solution-style / references-only or empty
+  // config skips the direct `performCompilation` and splits three ways:
+  //   1. references present + >=1 in-project leaf -> WALK the leaves and feed the
+  //      raw union into the SAME single `finalize` as the direct path.
+  //   2. references present + 0 in-project leaves (all skipped/reclassified) ->
+  //      finalize the walk's counted union (the not-found 90002s) when non-empty,
+  //      else synthesize the none-in-project 90001 guard; attach skippedReferences.
+  //   3. no references (empty project) -> synthesize the empty-project 90001 guard
+  //      (UNCHANGED).
+  // Every path returns at least one synthesized/counted Error or a walked union so
+  // agents/CI get a deterministic non-zero signal instead of a false PASS.
   if (parsed.rootNames.length === 0) {
+    // `hasProjectReferences` is the SAME predicate `synthesizeZeroRootNamesDiagnostic`
+    // uses (below), so the branch classification and the guard message agree.
+    if (hasProjectReferences(parsed)) {
+      const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
+
+      // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
+      // union -- whether returned by a surviving leaf's performCompilation OR
+      // raised by an EXISTING leaf's config resolution (walk-references.ts) -- is
+      // an INFRASTRUCTURE failure, never a type error. Re-throw it here exactly as
+      // the direct single-leaf path does below (the walk stays pure and free of the
+      // run-typecheck import cycle), so `errorCount` never counts a compiler crash
+      // and the leaf-vs-solution entry points stay consistent. The synthesized
+      // not-found code is 90002 (NOT 500), so a genuine missing reference is not
+      // caught here -- it stays a counted 90002 and the run resolves.
+      throwIfInfrastructureFailure(ng, ts, walk.rawDiagnostics);
+
+      // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
+      // adapter's presence check is sufficient; mirror the templateCheckAborted
+      // conditional-spread idiom in `finalize`.
+      const skipped =
+        walk.skippedReferences.length > 0
+          ? { skippedReferences: walk.skippedReferences }
+          : {};
+
+      if (walk.rootNamesCount > 0) {
+        // >=1 in-project leaf walked: feed the RAW union into the SAME single
+        // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
+        // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
+        // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
+        // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
+        // available here (the walk owns and discards each leaf's Program), so the
+        // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
+        // Program used -- matching the direct path's `realpath` fallback.
+        const result = finalize(
+          ts,
+          options.tsConfigPath,
+          walk.rootNamesCount,
+          [...configDiagnostics, ...walk.rawDiagnostics],
+          start,
+          buildFinalizeFilter(
+            ts,
+            parsed,
+            options,
+            ts.sys.useCaseSensitiveFileNames,
+          ),
+        );
+
+        return { ...result, ...skipped };
+      }
+
+      // References present but 0 in-project leaves (every reference skipped /
+      // reclassified). If the walk produced counted diagnostics -- the actionable
+      // 90002 "referenced tsconfig not found" Errors, one per not-found leaf --
+      // finalize the UNION so those SPECIFIC, path-named diagnostics are reported
+      // (I-1). Collapsing N broken references into one generic 90001, whose message
+      // ("references are not consulted ... point the tsConfig at a leaf that lists
+      // files") is simply WRONG for the all-not-found case, would misdescribe the
+      // cause. Only when the union is EMPTY -- every reference was boundary-skipped
+      // / zero-root-names / self-reference / duplicate, so nothing was counted --
+      // do we synthesize the none-in-project 90001 guard, keeping the verdict a
+      // deterministic non-zero signal. Every diagnostic here is file-less (no
+      // surviving leaf ran, and the infra-500 case already re-threw above), so no
+      // boundary filter is needed.
+      const guardDiagnostics =
+        walk.rawDiagnostics.length > 0
+          ? walk.rawDiagnostics
+          : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
+      const result = finalize(
+        ts,
+        options.tsConfigPath,
+        0,
+        [...configDiagnostics, ...guardDiagnostics],
+        start,
+      );
+
+      return { ...result, ...skipped };
+    }
+
+    // No references (empty project): UNCHANGED. No Program on this path: nothing
+    // to filter (the single guard diagnostic is file-less and would never be
+    // filtered anyway), so `suppressedCount` is 0 and `finalize` runs with
+    // `filter` omitted.
     const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
 
-    // No Program on this path: nothing to filter (the single guard diagnostic is
-    // file-less and would never be filtered anyway), so `suppressedCount` is 0
-    // and `finalize` runs with `filter` omitted.
     return finalize(
       ts,
       options.tsConfigPath,
@@ -202,54 +351,21 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     );
   }
 
-  // D-05 + D-02: build a FRESH per-call options object (footgun guard against a
-  // mutated `noEmit` leaking across calls) spreading `...parsed.options` then the
-  // full emit-neutralizing override. `composite: false` is the gatekeeper that
-  // makes `declaration: false` / `incremental: false` safe and that breaks the
-  // composite/emitDeclarationOnly triangle producing a bogus TS5053/TS6304.
-  // D-05b: every semantics-defining option (module, moduleResolution, target,
-  // lib, paths, strictTemplates, extended*) stays untouched via the spread.
-  const result = ng.performCompilation({
-    rootNames: parsed.rootNames,
-    options: {
-      ...parsed.options,
-      // ---- D-05 emit-neutralizing override (verbatim from 02-CONTEXT.md) ----
-      noEmit: true,
-      composite: false,
-      declaration: false,
-      declarationMap: false,
-      emitDeclarationOnly: false,
-      incremental: false,
-      tsBuildInfoFile: undefined,
-      sourceMap: undefined,
-      inlineSourceMap: undefined,
-      inlineSources: undefined,
-      declarationDir: undefined,
-      mapRoot: undefined,
-      sourceRoot: undefined,
-      // ---- D-02: suppress the "Time for diagnostics" Message ----
-      diagnostics: false,
-    },
-    // D-05a / V-2: emitFlags: 0 AND noEmit: true are BOTH load-bearing, neither
-    // decorative. emitFlags: 0 is the suppressor when i18n is involved; noEmit
-    // is the suppressor for the clean fall-through to ts.Program.emit.
-    emitFlags: 0 as EmitFlags,
-    // ENG-02: the unconditional all-getter (no ngc phase short-circuit).
-    gatherDiagnostics: gatherAllDiagnostics,
-  });
+  // D-05 + D-02: run the no-emit whole-program compilation via the shared
+  // runNoEmitCompilation (gather-diagnostics.ts) -- the single source of truth for
+  // the ENTIRE invocation (a FRESH per-call options object spreading
+  // `...parsed.options` then EMIT_NEUTRALIZING_OPTIONS, `emitFlags: 0`, and the
+  // unconditional all-getter), spread IDENTICALLY here and in the solution-tsconfig
+  // walk (walk-references.ts) so the direct-leaf and walk paths can never diverge.
+  // D-05b: every semantics-defining option (module, moduleResolution, target, lib,
+  // paths, strictTemplates, extended*) stays untouched via the `...parsed.options`
+  // spread inside the helper.
+  const result = runNoEmitCompilation(ng, parsed);
 
   // D-06 / V-3 / L-3: detect a returned UNKNOWN_ERROR_CODE (500) by CODE only --
   // never by `source === 'angular'` (the synthesized diagnostic sets no source).
   // Re-throw so the infra failure is never counted as a type error.
-  const infrastructureFailure = result.diagnostics.find(
-    (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
-  );
-
-  if (infrastructureFailure !== undefined) {
-    throw new TypecheckInfrastructureError(
-      ts.flattenDiagnosticMessageText(infrastructureFailure.messageText, '\n'),
-    );
-  }
+  throwIfInfrastructureFailure(ng, ts, result.diagnostics);
 
   // #3 DEFENSE-IN-DEPTH: the real PerformCompilationResult.program is OPTIONAL
   // (the optional `program?` field of `PerformCompilationResult`); the vendored
@@ -265,7 +381,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // shim `program` stays non-optional, so TS treats the access as always-defined.
   if (result.program === undefined) {
     throw new TypecheckInfrastructureError(
-      'angular-typecheck: the Angular compiler returned no Program ' +
+      'angular-typechecker: the Angular compiler returned no Program ' +
         '(performCompilation produced neither a Program nor an ' +
         'UNKNOWN_ERROR_CODE diagnostic). This is an infrastructure failure, ' +
         'not a type error.',
@@ -284,18 +400,12 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     parsed.rootNames.length,
     [...configDiagnostics, ...result.diagnostics],
     start,
-    {
-      basePath: resolveFilterBasePath(
-        parsed.options.basePath,
-        options.tsConfigPath,
-      ),
-      includeDeps: options.includeDeps ?? false,
-      useCaseSensitiveFileNames: result.program
-        .getTsProgram()
-        .useCaseSensitiveFileNames(),
-      realpath: (filePath: string): string =>
-        ts.sys.realpath?.(filePath) ?? filePath,
-    },
+    buildFinalizeFilter(
+      ts,
+      parsed,
+      options,
+      result.program.getTsProgram().useCaseSensitiveFileNames(),
+    ),
   );
 }
 
@@ -330,11 +440,7 @@ function synthesizeZeroRootNamesDiagnostic(
   ts: typeof import('typescript'),
   parsed: ParsedConfiguration,
 ): ts.Diagnostic {
-  const hasReferences =
-    parsed.projectReferences !== undefined &&
-    parsed.projectReferences.length > 0;
-
-  const messageText = hasReferences
+  const messageText = hasProjectReferences(parsed)
     ? 'angular-typechecker: the resolved tsconfig has no input files because it ' +
       'is a solution-style / references-only config (TypeScript project ' +
       'references are not consulted by the Angular compiler). Point the ' +
@@ -345,14 +451,11 @@ function synthesizeZeroRootNamesDiagnostic(
       'source files, e.g. tsconfig.app.json, tsconfig.lib.json, or ' +
       'tsconfig.spec.json.';
 
-  return {
-    category: ts.DiagnosticCategory.Error,
-    code: ZERO_ROOT_NAMES_DIAGNOSTIC_CODE,
-    file: undefined,
-    start: undefined,
-    length: undefined,
+  return synthesizeFilelessError(
+    ts,
+    ZERO_ROOT_NAMES_DIAGNOSTIC_CODE,
     messageText,
-  };
+  );
 }
 
 /**

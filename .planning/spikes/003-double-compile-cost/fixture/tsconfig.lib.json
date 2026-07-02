@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "noEmit": true },
+  "angularCompilerOptions": { "strictTemplates": true },
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.spec.ts"]
+}

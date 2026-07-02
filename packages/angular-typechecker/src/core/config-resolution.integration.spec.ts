@@ -15,19 +15,22 @@ import { runTypecheck } from './run-typecheck';
 //   - D-03/MD-01 a malformed/unresolvable tsconfig is never silently clean; the
 //              dropped-then-restored `parsed.errors` entry is RETURNED (not
 //              thrown) so agents/CI get a non-zero signal.
-//   - D-03/D-03a a solution-style / references-only tsconfig returns the
-//              deterministic `rootNamesCount: 0` + `errorCount: 1` guard with a
-//              leaf-tsconfig-naming message -- NOT a false "0 files / 0 errors".
+//   - D-03/D-03a (Phase 13) a solution-style tsconfig with references + >=1
+//              in-project leaf WALKS the leaves and unions the per-leaf
+//              diagnostics into ONE finalize -- reporting BOTH leaves' planted
+//              TS2322 (`rootNamesCount > 0`, `errorCount: 2`) -- NOT the old
+//              short-circuit guard. TS18003 stays suppressed (references present).
 //
-// The engine itself (the D-03 prepend + zero-rootNames guard) was implemented in
-// 02-01; these fixtures + assertions prove the guard fires across the real
-// silent-lie inputs.
+// The engine itself (the D-03 prepend + zero-rootNames guard + the Phase 13
+// three-way split into the reference walk) was implemented in 02-01 / 13-04;
+// these fixtures + assertions prove the behavior across the real silent-lie
+// inputs. (The empty-project / none-in-project 90001 guard branches are proven by
+// the dedicated walk integration spec.)
 
-// Angular encodes extended codes negative: ngErrorCode(8109) = -998109. Assert NG
-// codes via the NG() helper, never the bare 8109 (PITFALL E / L-4). TS codes are
-// raw. The planted spec-file error is a plain TS2322.
+// The planted spec-file error is a plain TS2322 (raw positive). No NG8xxx code is
+// asserted here (PITFALL E / L-4), so no negative-encoding helper is needed
+// (Angular would encode extended codes negative, e.g. ngErrorCode(8109) = -998109).
 const TS2322 = 2322;
-const NG = (code: number): number => -990000 - code;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const workspaceRoot = join(packageRoot, '..', '..');
@@ -121,22 +124,45 @@ describe('config-resolution: a config-resolution 500 is infrastructure, never a 
   });
 });
 
-describe('config-resolution: solution-style guard fires (D-03/D-03a)', () => {
-  it('returns rootNamesCount 0 AND errorCount 1 with a leaf-tsconfig-naming message', async () => {
+describe('config-resolution: solution-style tsconfig walks its leaves (D-03/D-03a)', () => {
+  it('walks app + spec leaves and unions both planted TS2322 (rootNamesCount > 0, errorCount 2)', async () => {
     const result = await runTypecheck({ tsConfigPath: solutionStyleTsConfig });
 
-    // The deterministic non-zero signal: exactly one synthesized Error, zero
-    // root names -- NOT a false "0 files / 0 errors".
-    expect(result.rootNamesCount).toBe(0);
-    expect(result.errorCount).toBe(1);
+    // Phase 13 (L-3 / L-1): references + >=1 in-project leaf -> WALK, not the old
+    // zero-rootNames short-circuit. The union reports BOTH leaves' planted TS2322
+    // (app leaf + spec leaf), each in its OWN file so nothing collapses under
+    // ts.sortAndDeduplicateDiagnostics.
+    expect(result.rootNamesCount).toBeGreaterThan(0);
+    expect(result.errorCount).toBe(2);
 
-    const [guard] = result.diagnostics;
+    const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
 
-    expect(guard).toBeDefined();
-    expect(guard.category).toBe(ts.DiagnosticCategory.Error);
+    // EXACTLY two TS2322 -- one per leaf; proves both leaves ran AND nothing
+    // double-counted (no second dedupe layer over the union).
+    expect(codes.filter((code) => code === TS2322)).toHaveLength(2);
 
-    // The message must steer the user toward a leaf tsconfig.
-    expect(messageTextOf(guard)).toMatch(/tsconfig\.(app|lib|spec)\.json/);
+    // The two TS2322 live in DISTINCT files (error.component.ts vs
+    // error.component.spec.ts) -- the completeness + both-leaves-ran proof. The
+    // spec-file error is reachable ONLY through the spec leaf (a build never
+    // compiles specs), so its presence is the named build differentiator.
+    const ts2322FileNames = result.diagnostics
+      .filter((diagnostic) => diagnostic.code === TS2322)
+      .map((diagnostic) => diagnostic.file?.fileName ?? '');
+
+    expect(
+      ts2322FileNames.some((fileName) =>
+        fileName.endsWith('error.component.ts'),
+      ),
+    ).toBe(true);
+    expect(
+      ts2322FileNames.some((fileName) =>
+        fileName.endsWith('error.component.spec.ts'),
+      ),
+    ).toBe(true);
+
+    // Both references are in-project and walk cleanly, so no skipped-reference
+    // notice is recorded.
+    expect(result.skippedReferences).toBeUndefined();
   });
 
   it('does NOT gate on TS18003 (the references-suppressed "No inputs were found")', async () => {
@@ -145,8 +171,8 @@ describe('config-resolution: solution-style guard fires (D-03/D-03a)', () => {
     const codes = result.diagnostics.map((diagnostic) => diagnostic.code);
 
     // D-03a / L-2: TypeScript suppresses TS18003 when a config has `references`,
-    // so the guard MUST NOT depend on it. The result is the synthesized guard
-    // alone, not a TS18003-driven signal.
+    // so the walk branch MUST NOT depend on it. The reported set is the union of
+    // the leaves' real diagnostics, never a TS18003-driven signal.
     expect(codes).not.toContain(18003);
   });
 });

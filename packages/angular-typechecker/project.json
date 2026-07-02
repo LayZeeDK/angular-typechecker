@@ -7,9 +7,7 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/packages/angular-typechecker",
         "main": "packages/angular-typechecker/src/index.ts",
@@ -33,6 +31,11 @@
           },
           {
             "input": "./packages/angular-typechecker",
+            "glob": "generators.json",
+            "output": "."
+          },
+          {
+            "input": "./packages/angular-typechecker",
             "glob": "LICENSE",
             "output": "."
           }
@@ -48,6 +51,8 @@
       "inputs": [
         "{projectRoot}/src/core/compiler-cli-types.drift.ts",
         "{projectRoot}/src/core/compiler-cli-types.ts",
+        "{projectRoot}/src/core/extended-catalog.drift.ts",
+        "{projectRoot}/src/core/extended-catalog.members.ts",
         "{projectRoot}/tsconfig.drift.json",
         "{workspaceRoot}/tsconfig.base.json",
         {
@@ -62,9 +67,7 @@
     "test": {
       "executor": "@nx/vitest:test",
       "dependsOn": ["build"],
-      "outputs": [
-        "{options.reportsDirectory}"
-      ],
+      "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/packages/angular-typechecker"
       }

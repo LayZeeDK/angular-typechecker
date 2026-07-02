@@ -2,7 +2,7 @@ import { LocalLibComponent } from './local-lib.component';
 
 // TEST-03 matrix fixture: the SPEC-TSCONFIG project type (the 5th type, D-07).
 // This *.spec.ts file is the DISTINCT file set that tsconfig.spec.json includes
-// and the app/lib targets EXCLUDE -- so the `angular-typecheck-spec` sibling
+// and the app/lib targets EXCLUDE -- so the `typecheck-spec` sibling
 // target on local-lib is a genuinely separate check baseline. Committed clean; the
 // matrix spec injects a deliberate TS2322 HERE (not the component) so the injected
 // error provably lands in the spec file set, proving the spec tsconfig is checked.

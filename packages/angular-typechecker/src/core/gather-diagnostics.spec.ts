@@ -18,7 +18,10 @@ function diagnostic(code: number): ts.Diagnostic {
 // getTsProgram() with BOTH getGlobalDiagnostics() (COR-02) and getSourceFiles()
 // (the RES-02 per-file loop). A tiny ts.SourceFile builder keeps the loop body
 // exercised without a real compiler.
-function sourceFile(fileName: string, isDeclarationFile = false): ts.SourceFile {
+function sourceFile(
+  fileName: string,
+  isDeclarationFile = false,
+): ts.SourceFile {
   return { fileName, isDeclarationFile } as ts.SourceFile;
 }
 

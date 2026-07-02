@@ -4,3 +4,26 @@
 /.nx/cache
 /.nx/workspace-data
 .angular
+
+# GSD planning artifacts are machine-generated (each phase/quick task emits new,
+# un-Prettier'd markdown). Prettier does NOT own them: the format-lint gate only
+# checks PR-changed files, so gating .planning would force a format pass on every
+# code PR's planning churn for zero real benefit. Real source/config/docs outside
+# .planning stay Prettier-owned.
+/.planning/
+
+# Generated lockfiles -- never reformat (Prettier would churn generated content
+# and can break lockfile integrity / the matrix-e2e consumer-workspace install).
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Whitespace-sensitive diagnostic fixtures -- Angular templates whose exact
+# whitespace/reflow changes which NG diagnostics fire and HOW MANY, breaking the
+# exact-count assertions in extended-catalog.integration.spec.ts. ONLY the
+# templates proven diagnostic-sensitive are listed (verified by reformatting +
+# running the suite); other fixture templates stay Prettier-owned.
+#   - extended-batch-fn: Prettier reflow drops NG8111 (uninvokedFunctionInEventBinding)
+#   - extended-batch-expression: Prettier reflow drops NG8114 (unparenthesizedNullishCoalescing)
+/fixtures/extended-batch-fn/error.component.html
+/fixtures/extended-batch-expression/error.component.html

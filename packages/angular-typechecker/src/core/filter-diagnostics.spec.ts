@@ -44,7 +44,9 @@ describe('filterDiagnostics', () => {
     expect(result.kept).toHaveLength(2);
     expect(result.suppressedCount).toBe(3);
 
-    const keptFiles = result.kept.map((diagnostic) => diagnostic.file?.fileName);
+    const keptFiles = result.kept.map(
+      (diagnostic) => diagnostic.file?.fileName,
+    );
 
     expect(keptFiles).toContain('/ws/proj/src/a.component.ts');
     expect(keptFiles).toContain(undefined);

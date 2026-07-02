@@ -239,9 +239,9 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
 
     // The NG3004 was suppressed by the boundary filter (out of /virtual).
     expect(result.suppressedCount).toBeGreaterThanOrEqual(1);
-    expect(result.diagnostics.map((diagnostic) => diagnostic.code)).not.toContain(
-      TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
-    );
+    expect(
+      result.diagnostics.map((diagnostic) => diagnostic.code),
+    ).not.toContain(TCB_GENERATION_FATAL_DIAGNOSTIC_CODE);
 
     // YET the abort notice still fires, naming the SOURCE component (the
     // `.ngtypecheck` shim infix is normalized back to `.ts`).
@@ -264,8 +264,14 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
     compilerCliStub.performCompilation.mockReturnValue({
       diagnostics: [
         errorDiagnostic(TS2322, 'Type string is not assignable to type number'),
-        warningDiagnostic(6133, "'unused' is declared but its value is never read."),
-        suggestionDiagnostic(6138, "'x' is declared but its value is never read."),
+        warningDiagnostic(
+          6133,
+          "'unused' is declared but its value is never read.",
+        ),
+        suggestionDiagnostic(
+          6138,
+          "'x' is declared but its value is never read.",
+        ),
       ],
       program: fakeProgram(),
     });
@@ -281,7 +287,9 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
     // MD-02 anti-tautology: the Suggestion is retained but uncounted, so the explicit
     // split is STRICTLY less than length. Under the buggy `length - errorCount`,
     // warningCount would be 2 -> 1+2 === 3, NOT < 3 -> this FAILS as intended.
-    expect(result.errorCount + result.warningCount).toBeLessThan(result.diagnostics.length);
+    expect(result.errorCount + result.warningCount).toBeLessThan(
+      result.diagnostics.length,
+    );
   });
 
   // #3 DEFENSE-IN-DEPTH guard: a `{ program: undefined }` return with an EMPTY
@@ -412,7 +420,10 @@ describe('runTypecheck config-resolution infrastructure-failure handling (COR-01
       options: {},
       rootNames: ['/virtual/error.component.ts'],
       errors: [
-        errorDiagnostic(TS5012, "Cannot read file '/virtual/tsconfig.base.json'."),
+        errorDiagnostic(
+          TS5012,
+          "Cannot read file '/virtual/tsconfig.base.json'.",
+        ),
       ],
       emitFlags: 0,
     });

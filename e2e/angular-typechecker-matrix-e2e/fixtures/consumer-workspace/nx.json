@@ -12,7 +12,7 @@
     "sharedGlobals": []
   },
   "targetDefaults": {
-    "angular-typechecker:angular-typecheck": {
+    "angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
       "inputs": [

@@ -1,96 +1,85 @@
-# AtcTemp
+# angular-typechecker
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Nx executor that runs the complete Angular compiler type-check (TypeScript + template type-check + extended NG8xxx diagnostics), no emit, decoupled from build and test.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+This is the Nx-plugin monorepo for `angular-typechecker`. The published package lives at [`packages/angular-typechecker/`](packages/angular-typechecker/README.md) and is released to npm as `angular-typechecker`.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+## Type-check an Angular project (single-target walk recipe)
 
-## Run tasks
+`angular-typechecker` ships one Nx executor, `typecheck`, that runs the
+Angular compiler's full diagnostic set (TypeScript checks plus Angular template
+type-checking and extended `NG8xxx` diagnostics) for a project WITHOUT building it
+or running its tests.
 
-To run tasks with Nx use:
+Wire ONE `typecheck` target per project and point its `tsConfig` at the
+project's SOLUTION `tsconfig.json` -- the references-only config whose
+`references[]` list the project's leaf tsconfigs (for example `tsconfig.lib.json`
+or `tsconfig.app.json`, plus `tsconfig.spec.json`). The executor walks those
+in-project referenced leaves in a single run and returns the complete,
+duplicate-free diagnostic set for the whole project. You do NOT wire a separate
+target per leaf, and you do NOT need to detect the project type -- the same
+recipe covers applications, local (non-buildable), buildable, and publishable
+libraries, and their spec tsconfigs.
 
-```sh
-npx nx <target> <project-name>
+`project.json`:
+
+```json
+{
+  "targets": {
+    "typecheck": {
+      "executor": "@angular-typechecker/angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "libs/my-lib/tsconfig.json"
+      }
+    }
+  }
+}
 ```
 
-For example:
+Run it:
 
 ```sh
-npx nx build myproject
+npx nx typecheck my-lib
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+### Caching guidance (recommended `targetDefaults`)
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Because a single target type-checks every leaf (including the spec leaf) in one
+run, the target caches on ONE key. Configure the target's Nx `inputs` with the
+`default` named input so that spec (`*.spec.ts`) sources hash into that key -- a
+spec-only source edit MUST bust the cache, otherwise the cache could replay a
+stale PASS on a broken spec. Do NOT use the `production` named input here: it
+EXCLUDES `*.spec.ts`, so a spec-only change would not change the input hash.
 
-## Add new projects
+Add this to `nx.json` (or per-project `project.json` target config):
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
+```json
+{
+  "targetDefaults": {
+    "@angular-typechecker/angular-typechecker:typecheck": {
+      "cache": true,
+      "outputs": [],
+      "inputs": ["default", "{projectRoot}/tsconfig*.json", "^default"]
+    }
+  }
+}
 ```
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+- `default` -- the lib + spec source union, so both leaves' sources hash into the
+  cache key.
+- `outputs: []` -- the type-check emits nothing; it only reports diagnostics.
+- `{projectRoot}/tsconfig*.json` -- the solution and leaf tsconfigs are inputs, so
+  a tsconfig change re-checks.
+- `^default` -- dependency sources hash in, so a change in a non-buildable
+  dependency busts the cache too.
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
+## Documentation
 
-# Generate a library
-npx nx g @nx/react:lib some-lib
-```
+- Package usage (consumer docs): [`packages/angular-typechecker/README.md`](packages/angular-typechecker/README.md)
+- Contributor and AI-agent working rules: [`AGENTS.md`](AGENTS.md)
+- Security policy: [`SECURITY.md`](SECURITY.md)
+- Release history: [`CHANGELOG.md`](CHANGELOG.md)
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+## License
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
-```
-
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+MIT (c) Lars Gyrup Brink Nielsen. See [`packages/angular-typechecker/LICENSE`](packages/angular-typechecker/LICENSE).

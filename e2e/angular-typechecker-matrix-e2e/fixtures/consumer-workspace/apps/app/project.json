@@ -4,8 +4,8 @@
   "sourceRoot": "apps/app/src",
   "projectType": "application",
   "targets": {
-    "angular-typecheck": {
-      "executor": "angular-typechecker:angular-typecheck",
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
       "options": {
         "tsConfig": "apps/app/tsconfig.app.json",
         "includeDeps": true

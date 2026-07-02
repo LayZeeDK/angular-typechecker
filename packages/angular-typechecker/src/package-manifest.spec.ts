@@ -31,6 +31,7 @@ const manifestPath = join(packageRoot, 'package.json');
 
 interface PluginManifest {
   type?: string;
+  generators?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   engines?: {
@@ -58,9 +59,7 @@ const manifest = JSON.parse(
 
 describe('plugin manifest compatibility contract (CMP-01 manifest / CMP-02 / D-14)', () => {
   it('declares the exact Angular 22 + Nx 23 Node engine intersection range (CMP-02)', () => {
-    expect(manifest.engines?.node).toBe(
-      '^22.22.3 || ^24.15.0 || ^26.0.0',
-    );
+    expect(manifest.engines?.node).toBe('^22.22.3 || ^24.15.0 || ^26.0.0');
   });
 
   it('is a CommonJS package so the Nx executor loader can require() it', () => {
@@ -89,9 +88,14 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
     expect(manifest.files).toEqual([
       'src',
       'executors.json',
+      'generators.json',
       'README.md',
       'LICENSE',
     ]);
+  });
+
+  it('registers the generators collection (D-02)', () => {
+    expect(manifest.generators).toBe('./generators.json');
   });
 
   it('declares the minimal CJS exports map (D-02; barrel entry + package.json escape hatch)', () => {

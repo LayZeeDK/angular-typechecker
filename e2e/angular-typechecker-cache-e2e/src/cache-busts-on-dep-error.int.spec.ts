@@ -22,7 +22,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 const CACHE_MARKER =
   'Nx read the output from the cache instead of running the command';
 
-const TARGET = 'typecheck-consumer:angular-typecheck';
+const TARGET = 'typecheck-consumer:typecheck';
 
 // The rendered TS diagnostic code the injection deliberately triggers. Asserting
 // the full 'TS2322' token (not a bare 4-digit '2322' substring) keeps the cache-

@@ -37,7 +37,10 @@ import type { Program as RealProgram } from '@angular/compiler-cli';
 // `UNKNOWN_ERROR_CODE` as a value and `EmitFlags` as a value-namespace
 // (`RealEmitFlags.DTS` etc.). The drift file is erased at emit (this target
 // is `noEmit`), so these bindings exist only for the type-check.
-import { EmitFlags as RealEmitFlags, UNKNOWN_ERROR_CODE as RealUnknown } from '@angular/compiler-cli';
+import {
+  EmitFlags as RealEmitFlags,
+  UNKNOWN_ERROR_CODE as RealUnknown,
+} from '@angular/compiler-cli';
 import type * as ts from 'typescript';
 
 import type { Program as ShimProgram } from './compiler-cli-types';
@@ -46,6 +49,11 @@ import type { Program as ShimProgram } from './compiler-cli-types';
 // `tsd`). `To extends From` is the constraint -- the type only resolves to
 // `true` when `From` is assignable to `To`; a non-assignable pair errors where
 // the alias is instantiated below.
+// `To` is an INTENTIONAL phantom type parameter: its `extends From` constraint
+// IS the assertion (a non-assignable pair errors TS2344 at instantiation). It is
+// never referenced in the body by design, which no-unused-vars flags -- suppress
+// that single, deliberate case rather than weaken the tripwire.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type AssertAssignable<From, To extends From> = true;
 
 // D-02: the 6 DIAGNOSTIC getters the gatherer calls, one real->shim pair each.

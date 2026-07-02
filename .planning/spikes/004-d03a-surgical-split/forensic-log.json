@@ -1,0 +1,82 @@
+{
+  "spike": "004-d03a-surgical-split",
+  "environment": {
+    "node": "v24.18.0",
+    "typescript": "6.0.3"
+  },
+  "scenarios": {
+    "with-refs (solution, in-project ref)": {
+      "mode": "walk",
+      "rootNamesCount": 1,
+      "errorCount": 1,
+      "codes": [
+        2322
+      ]
+    },
+    "oop-refs (solution, out-of-project ref only)": {
+      "mode": "guard-error:references-none-in-project",
+      "rootNamesCount": 0,
+      "errorCount": 1,
+      "codes": [
+        90001
+      ]
+    },
+    "empty (no files, no references)": {
+      "mode": "guard-error:empty-project",
+      "rootNamesCount": 0,
+      "errorCount": 1,
+      "codes": [
+        90001
+      ]
+    },
+    "direct-leaf (rootNames > 0)": {
+      "mode": "compile-direct",
+      "rootNamesCount": 1,
+      "errorCount": 1,
+      "codes": [
+        2322
+      ]
+    }
+  },
+  "shippedEngineOnWithRefs": "guard-error",
+  "decisionTree": [
+    "rootNames > 0                                   -> compile-direct (UNCHANGED)",
+    "rootNames === 0 && references present && >=1 in-project -> WALK",
+    "rootNames === 0 && references present && 0 in-project   -> guard-error (references-none-in-project, NEW msg)",
+    "rootNames === 0 && no references                -> guard-error (empty-project, UNCHANGED)"
+  ],
+  "specRewrite": "config-resolution.integration.spec.ts:124-130 asserts the solution-style fixture returns rootNamesCount:0 + errorCount:1. Under the split, a solution config whose references resolve IN-project WALKS instead. Rewrite: (a) point that block at the WALK outcome (rootNamesCount>0, reports the leaf diagnostics -- so give the fixture leaf a known error), AND (b) add/keep a references-LESS empty fixture asserting the guard STILL fires. The \"not TS18003\" assertion is unchanged.",
+  "assertions": [
+    {
+      "id": "S1-with-refs-walks",
+      "pass": true,
+      "detail": "mode=walk rootNames=1 err=1 (walks the in-project leaf; guard NOT synthesized)"
+    },
+    {
+      "id": "S1b-with-refs-was-guard-error-in-shipped-engine",
+      "pass": true,
+      "detail": "the SHIPPED engine returns guard-error here -> this is the config-resolution.integration.spec.ts:124-130 rewrite"
+    },
+    {
+      "id": "S2-oop-refs-still-errors",
+      "pass": true,
+      "detail": "mode=guard-error:references-none-in-project err=1 (outsider NEVER walked)"
+    },
+    {
+      "id": "S3-empty-still-errors",
+      "pass": true,
+      "detail": "mode=guard-error:empty-project err=1 (unchanged D-03a behavior)"
+    },
+    {
+      "id": "S4-direct-leaf-untouched",
+      "pass": true,
+      "detail": "mode=compile-direct rootNames=1 err=1 (rootNames>0 path unchanged)"
+    },
+    {
+      "id": "S5-no-branch-gates-on-ts18003",
+      "pass": true,
+      "detail": "D-03a / L-2 preserved: no branch depends on TS18003 (references-suppressed \"No inputs\")"
+    }
+  ],
+  "verdict": "VALIDATED"
+}

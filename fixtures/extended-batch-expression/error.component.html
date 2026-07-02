@@ -1,0 +1,18 @@
+<!-- NG8102: `??` on a non-nullable LHS (never falls through). -->
+<p>{{ nonNullable ?? 'fallback' }}</p>
+
+<!-- NG8107: `?.` on a non-nullable LHS (optional chain is pointless). -->
+<p>{{ nonNullable?.length }}</p>
+
+<!-- NG8114: `&&` mixed with `??` without parentheses. The `??` LHS is genuinely
+     nullable so NG8102 does NOT also fire here. -->
+<p>{{ flag && maybeNull ?? 'fallback' }}</p>
+
+<!-- NG8117: a function referenced but not invoked in a text interpolation. -->
+<p>{{ greet }}</p>
+
+<!-- NG8104: a static text attribute that looks like a missed binding. -->
+<div attr.x="value"></div>
+
+<!-- NG8106: a `.px` suffix on an attribute binding (style-only suffix). -->
+<div [attr.width.px]="widthValue"></div>

@@ -1,6 +1,49 @@
 import type ts from 'typescript';
 
-import type { Program } from './compiler-cli-types';
+import type {
+  CompilerCli,
+  EmitFlags,
+  ParsedConfiguration,
+  PerformCompilationResult,
+  Program,
+} from './compiler-cli-types';
+
+/**
+ * FAL-04 (v0.1.0): the SINGLE source of truth for the emit-neutralizing
+ * `performCompilation` override, spread AFTER `...parsed.options` inside
+ * `runNoEmitCompilation` (below) -- which BOTH the direct single-leaf path
+ * (run-typecheck.ts) and the solution-tsconfig reference walk (walk-references.ts)
+ * call. It MUST stay byte-identical across those entry points -- otherwise the same
+ * project could yield different verdicts depending on whether it is checked via a
+ * leaf or via its referencing solution -- so it lives in exactly one place and the
+ * two paths reach it only through the shared helper.
+ *
+ * `composite: false` is the gatekeeper that makes `declaration: false` /
+ * `incremental: false` safe and that breaks the composite/emitDeclarationOnly
+ * triangle producing a bogus TS5053/TS6304. `diagnostics: false` suppresses the
+ * "Time for diagnostics" Message (D-02). Every semantics-defining option (module,
+ * moduleResolution, target, lib, paths, strictTemplates, extended*) is left
+ * untouched -- it stays on `parsed.options`, which is spread first.
+ *
+ * MODULE-PRIVATE: only `runNoEmitCompilation` consumes it, so it is not exported.
+ */
+const EMIT_NEUTRALIZING_OPTIONS: ts.CompilerOptions = {
+  noEmit: true,
+  composite: false,
+  declaration: false,
+  declarationMap: false,
+  emitDeclarationOnly: false,
+  incremental: false,
+  tsBuildInfoFile: undefined,
+  sourceMap: undefined,
+  inlineSourceMap: undefined,
+  inlineSources: undefined,
+  declarationDir: undefined,
+  mapRoot: undefined,
+  sourceRoot: undefined,
+  // D-02: suppress the "Time for diagnostics" Message.
+  diagnostics: false,
+};
 
 /**
  * Gathers EVERY diagnostic getter on the Angular Program unconditionally, in
@@ -54,6 +97,35 @@ import type { Program } from './compiler-cli-types';
  * calls `getGlobalDiagnostics()` explicitly), so without this call a real global
  * type error escapes the type-check (under-reporting).
  */
+/**
+ * Runs the no-emit whole-program compilation the way BOTH entry points need it:
+ * `parsed.rootNames` + `parsed.options` spread with the shared
+ * `EMIT_NEUTRALIZING_OPTIONS`, `emitFlags: 0`, and the unconditional
+ * `gatherAllDiagnostics` all-getter. The direct single-leaf path (run-typecheck.ts)
+ * and the per-leaf reference walk (walk-references.ts) both call this ONE helper, so
+ * the ENTIRE invocation -- not just the options object -- is a single source of
+ * truth and cannot diverge argument-by-argument.
+ *
+ * D-05a / V-2: `emitFlags: 0` AND `noEmit: true` (in EMIT_NEUTRALIZING_OPTIONS) are
+ * BOTH load-bearing -- emitFlags:0 suppresses when i18n is involved; noEmit is the
+ * suppressor for the clean fall-through to ts.Program.emit. ENG-02: the all-getter
+ * gathers every diagnostic phase with no ngc short-circuit.
+ */
+export function runNoEmitCompilation(
+  ng: CompilerCli,
+  parsed: ParsedConfiguration,
+): PerformCompilationResult {
+  return ng.performCompilation({
+    rootNames: parsed.rootNames,
+    options: {
+      ...parsed.options,
+      ...EMIT_NEUTRALIZING_OPTIONS,
+    },
+    emitFlags: 0 as EmitFlags,
+    gatherDiagnostics: gatherAllDiagnostics,
+  });
+}
+
 export function gatherAllDiagnostics(
   program: Program,
 ): readonly ts.Diagnostic[] {

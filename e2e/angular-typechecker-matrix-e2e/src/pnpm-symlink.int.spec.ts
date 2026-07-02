@@ -43,13 +43,18 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const INJECTED_TS_CODE = 'TS2322';
 
-// A single representative target. `app:angular-typecheck` already wires
+// A single representative target. `app:typecheck` already wires
 // includeDeps:true (project.json) so pnpm's `.pnpm/`-symlinked store is genuinely
 // traversed by the executor. The full 5-type breakdown is PM-independent and lives
 // in the npm matrix spec (D-09 rejects a second full install for no new signal).
-const TARGET = 'app:angular-typecheck';
+const TARGET = 'app:typecheck';
 
-const workspaceRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const workspaceRoot = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+);
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');
 const fixtureDir = join(
@@ -172,17 +177,52 @@ beforeAll(() => {
   // (B-03 honesty); npm_config_userconfig -> a non-existent path so ~/.npmrc
   // cannot reintroduce one. If this ERESOLVEs on the published peer ranges, that
   // is a REAL FINDING to ESCALATE -- never auto-patch.
-  execSync(
-    `pnpm add ${JSON.stringify(tarballPath)} --config.frozen-lockfile=false --ignore-scripts`,
-    {
-      cwd: consumerWorkspace,
-      env: {
-        ...env,
-        npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+  try {
+    execSync(
+      `pnpm add ${JSON.stringify(tarballPath)} --config.frozen-lockfile=false --ignore-scripts`,
+      {
+        cwd: consumerWorkspace,
+        env: {
+          ...env,
+          npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    },
-  );
+    );
+  } catch (error) {
+    // DIAGNOSTIC (v0.1.0 CI triage): execSync's default thrown message is only
+    // "Command failed: <cmd>" -- pnpm's real stdout/stderr is captured on the error
+    // object but never surfaced, hiding WHY `pnpm add` failed on the CI runner
+    // (genuine peer ERESOLVE vs a runner pnpm-provisioning/layout issue). Re-throw
+    // with both streams so the CI log shows the actual cause. Diagnostic ONLY: the
+    // install command, its flags, the env, and the B-03 no-peer-override honesty
+    // are all UNCHANGED -- this neither masks nor auto-patches the documented
+    // escalate-class finding.
+    const execError = error as {
+      stdout?: string;
+      stderr?: string;
+      message?: string;
+      status?: number;
+      signal?: string;
+    };
+
+    throw new Error(
+      [
+        'pnpm add failed on the CI runner.',
+        // The exit status/signal discriminates a pnpm resolution failure (exit 1,
+        // e.g. a genuine peer ERESOLVE -> the escalate-class) from a
+        // provisioning/tooling crash or a killed process (a signal).
+        '--- status ---',
+        String(execError.status ?? execError.signal ?? '(unknown)'),
+        '--- stdout ---',
+        execError.stdout ?? '(none)',
+        '--- stderr ---',
+        execError.stderr ?? '(none)',
+        '--- message ---',
+        execError.message ?? '(none)',
+      ].join('\n'),
+    );
+  }
 
   // Sanity: the installed executor entry resolves from the pnpm node_modules.
   const installedExecutorsManifest = join(
@@ -194,7 +234,7 @@ beforeAll(() => {
   const executorsManifest = JSON.parse(
     readFileSync(installedExecutorsManifest, 'utf8'),
   ) as { executors: Record<string, { implementation: string }> };
-  expect(executorsManifest.executors['angular-typecheck']).toBeDefined();
+  expect(executorsManifest.executors['typecheck']).toBeDefined();
 }, 300000);
 
 afterAll(() => {
@@ -236,8 +276,7 @@ function probePnpmSymlink(): {
 
   // A boundary-crossing pnpm symlink resolves THROUGH a `.pnpm` path segment
   // (node_modules/.pnpm/angular-typechecker@.../node_modules/angular-typechecker).
-  const crossesPnpmStore =
-    isSymlink && realPath.split('/').includes('.pnpm');
+  const crossesPnpmStore = isSymlink && realPath.split('/').includes('.pnpm');
 
   return { isSymlink, crossesPnpmStore, linkPath, realPath };
 }

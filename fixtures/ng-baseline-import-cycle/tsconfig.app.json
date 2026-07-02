@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "es2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "emitDecoratorMetadata": false,
+    "experimentalDecorators": false
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true,
+    "compilationMode": "partial"
+  },
+  "files": ["cycle.module.ts", "first.component.ts", "second.component.ts"]
+}

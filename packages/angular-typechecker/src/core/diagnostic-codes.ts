@@ -1,3 +1,5 @@
+import type ts from 'typescript';
+
 /**
  * NG diagnostic-code encoding helpers (D-07d named must-haves).
  *
@@ -92,3 +94,42 @@ export const IMPORT_GENERATION_FAILURE_CODE = 3004;
 export const TCB_GENERATION_FATAL_DIAGNOSTIC_CODE = NG(
   IMPORT_GENERATION_FAILURE_CODE,
 );
+
+/**
+ * The SYNTHESIZED diagnostic-code space (90000+): angular-typechecker's OWN codes
+ * for conditions the compiler never emits -- a references-only / empty config
+ * (`90001`) and a not-found referenced leaf (`90002`). Both are chosen OUTSIDE the
+ * TypeScript code range (1xxx-9xxx / TS18xxx, all < 90000), OUTSIDE the Angular
+ * negative `-99xxxx` encoding, and OUTSIDE the `500` UNKNOWN_ERROR_CODE space, so
+ * neither can collide with a genuine TS or NG diagnostic. Co-located here (the
+ * canonical code home) as siblings so the whole synthesized space is auditable in
+ * one place and a future `90003` cannot silently collide with `90001`/`90002`.
+ */
+export const ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001;
+export const REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE = 90002;
+
+/**
+ * Builds a FILE-LESS Error `ts.Diagnostic` (`file`/`start`/`length` undefined). The
+ * file-less shape is LOAD-BEARING: the project-boundary filter
+ * (filter-diagnostics.ts) keeps a diagnostic unconditionally ONLY when it is
+ * file-less, so a synthesized guard / not-found Error is never suppressed and is
+ * always counted. Both synthesized-code sites (the zero-rootNames `90001` guard in
+ * run-typecheck.ts and the not-found `90002` in walk-references.ts) build their
+ * diagnostic through this ONE factory, so that load-bearing shape -- and the risk
+ * of drifting it into a silently-suppressed false-PASS -- lives in exactly one
+ * place. `ts` is passed in so this module stays runtime-dependency-free.
+ */
+export function synthesizeFilelessError(
+  ts: typeof import('typescript'),
+  code: number,
+  messageText: string,
+): ts.Diagnostic {
+  return {
+    category: ts.DiagnosticCategory.Error,
+    code,
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    messageText,
+  };
+}

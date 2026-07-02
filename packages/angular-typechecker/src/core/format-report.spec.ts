@@ -69,9 +69,14 @@ describe('formatReport', () => {
       `${ANSI_RED}error NG8109: x${ANSI_RESET}`,
     );
 
-    const out = formatReport([diag(ts.DiagnosticCategory.Error, '/ws/a.ts')], ng, ts, {
-      color: true,
-    });
+    const out = formatReport(
+      [diag(ts.DiagnosticCategory.Error, '/ws/a.ts')],
+      ng,
+      ts,
+      {
+        color: true,
+      },
+    );
 
     expect(formatDiagnostics).toHaveBeenCalledOnce();
     expect(out).toContain('NG8109');
@@ -80,9 +85,14 @@ describe('formatReport', () => {
   it('strips ANSI when color is false (OUT-03/D-10)', () => {
     const { ng } = fakeNg(`${ANSI_RED}error NG8109: x${ANSI_RESET}`);
 
-    const out = formatReport([diag(ts.DiagnosticCategory.Error, '/ws/a.ts')], ng, ts, {
-      color: false,
-    });
+    const out = formatReport(
+      [diag(ts.DiagnosticCategory.Error, '/ws/a.ts')],
+      ng,
+      ts,
+      {
+        color: false,
+      },
+    );
 
     expect(out).not.toContain(ESC);
     expect(out).toContain('NG8109');
@@ -91,9 +101,14 @@ describe('formatReport', () => {
   it('keeps ANSI when color is true (D-10)', () => {
     const { ng } = fakeNg(`${ANSI_RED}error NG8109: x${ANSI_RESET}`);
 
-    const out = formatReport([diag(ts.DiagnosticCategory.Error, '/ws/a.ts')], ng, ts, {
-      color: true,
-    });
+    const out = formatReport(
+      [diag(ts.DiagnosticCategory.Error, '/ws/a.ts')],
+      ng,
+      ts,
+      {
+        color: true,
+      },
+    );
 
     expect(out).toContain(ANSI_RED);
   });
@@ -117,7 +132,8 @@ describe('formatReport', () => {
       color: false,
     });
 
-    const host = formatDiagnostics.mock.calls[0][1] as tsType.FormatDiagnosticsHost;
+    const host = formatDiagnostics.mock
+      .calls[0][1] as tsType.FormatDiagnosticsHost;
 
     expect(host.getNewLine()).toBe('\n');
   });
@@ -129,7 +145,8 @@ describe('formatReport', () => {
       color: false,
     });
 
-    const host = formatDiagnostics.mock.calls[0][1] as tsType.FormatDiagnosticsHost;
+    const host = formatDiagnostics.mock
+      .calls[0][1] as tsType.FormatDiagnosticsHost;
     const canonical = host.getCanonicalFileName('D:/Foo/Bar.TS');
 
     if (ts.sys.useCaseSensitiveFileNames) {
@@ -184,7 +201,8 @@ describe('formatReport', () => {
 
     formatReport(sorted, ng, ts, { color: false, failFast: true });
 
-    const passed = formatDiagnostics.mock.calls[0][0] as readonly tsType.Diagnostic[];
+    const passed = formatDiagnostics.mock
+      .calls[0][0] as readonly tsType.Diagnostic[];
 
     expect(passed).toHaveLength(2);
   });
@@ -200,7 +218,8 @@ describe('formatReport', () => {
 
     formatReport(sorted, ng, ts, { color: false });
 
-    const passed = formatDiagnostics.mock.calls[0][0] as readonly tsType.Diagnostic[];
+    const passed = formatDiagnostics.mock
+      .calls[0][0] as readonly tsType.Diagnostic[];
 
     expect(passed).toHaveLength(4);
   });
@@ -215,7 +234,8 @@ describe('formatReport', () => {
 
     formatReport(sorted, ng, ts, { color: false, failFast: true });
 
-    const passed = formatDiagnostics.mock.calls[0][0] as readonly tsType.Diagnostic[];
+    const passed = formatDiagnostics.mock
+      .calls[0][0] as readonly tsType.Diagnostic[];
 
     expect(passed).toHaveLength(3);
   });

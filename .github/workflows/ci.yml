@@ -7,9 +7,11 @@
 #     run step uses fixed target ids + flags only. There is no command-injection
 #     surface from untrusted PR metadata.
 #   - Least privilege: read-only repo scope at the top level; NO job re-grants any
-#     write permission (this is a test gate, never a publisher). It sets no
-#     registry credentials and no auth-token env -- OIDC publishing is release.yml's
-#     concern alone.
+#     write permission (this is a test gate, never a publisher). The format-lint job
+#     adds a job-level, READ-ONLY actions: read (nx-set-shas base derivation) on top
+#     of contents: read -- still zero write scope anywhere. It sets no registry
+#     credentials and no auth-token env -- OIDC publishing is release.yml's concern
+#     alone.
 #   - SHA-pinned actions: every action reference is a full 40-char commit SHA (a
 #     mutable major-version tag repointed to malicious code was the tj-actions
 #     vector). Dependabot (.github/dependabot.yml, github-actions ecosystem) keeps
@@ -47,8 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      formatlint: ${{ steps.filter.outputs.formatlint }}
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - uses: dorny/paths-filter@9d7afb8d214ad99e78fbd4247752c4caed2b6e4c # v4.0.0
@@ -63,12 +66,23 @@ jobs:
           # and wrongly set code=true, so the matrix would never skip. Proven on a
           # planning-only probe PR: `every` -> code=false -> test/e2e skipped while
           # the `ci` aggregate still reports green (no deadlock).
+          #
+          # `formatlint` is BROADER than `code`: it is true when the diff touches
+          # anything OUTSIDE .planning (the only tree in .prettierignore). It gates
+          # the format-lint job ALONE, so a docs/markdown-only PR that edits a
+          # Prettier-owned file (README.md, AGENTS.md, CLAUDE.md, CHANGELOG.md, a
+          # non-.planning doc) still runs format:check -- otherwise the tarball's
+          # README could drift out of Prettier compliance and ship (C9). A
+          # .planning-only PR (all files ignored by Prettier) still sets
+          # formatlint=false so format-lint skips it.
           predicate-quantifier: 'every'
           filters: |
             code:
               - '!.planning/**'
               - '!**/*.md'
               - '!docs/**'
+            formatlint:
+              - '!.planning/**'
 
   # Unit + integration on the LEAN 6-cell matrix (RD-01): full Node sweep on
   # Linux + the OS axis on Node 24 + the one worth-keeping cross-cell
@@ -98,10 +112,10 @@ jobs:
     env:
       NX_DAEMON: false
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -127,10 +141,10 @@ jobs:
     env:
       NX_DAEMON: false
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: npm
@@ -138,9 +152,21 @@ jobs:
         with:
           version: 11.9.0
       - run: npm ci
+      # Cross-project serialization (extends the intra-project D-21 serialization).
+      # All three e2e projects `npm pack` the SAME dist artifact
+      # (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in their
+      # beforeAll and `rmSync` it in afterAll. Vitest already serializes specs
+      # WITHIN each project (singleFork + fileParallelism:false), but `nx run-many`
+      # defaults to parallel, so the projects race on the shared tarball path: a
+      # sibling project's afterAll `rmSync` deletes the tarball mid-`pnpm add`
+      # (ENOENT). pnpm 11's supply-chain-policy verification widened the window so
+      # the latent race now trips deterministically. `--parallel=1` runs the three
+      # projects one at a time; the `-p` list line stays unchanged so the GUARD-01
+      # set-equality test still parses it.
       - run: >
           npx nx run-many -t test
           -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e
+          --parallel=1
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
@@ -162,11 +188,11 @@ jobs:
     if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
           cache: npm
@@ -175,6 +201,51 @@ jobs:
         env:
           FALLOW_AUDIT_BASE: origin/main
 
+  # Format + lint quality gate (QUAL-02). OS-independent, Linux-only, single Node
+  # (Prettier/ESLint verdicts do not vary by OS or Node minor). nrwl/nx-set-shas
+  # derives the base/head SHAs so `nx format:check` inspects ONLY the files this
+  # PR/push range changed -- never the whole repo (the repo carries intentionally
+  # un-Prettier'd fixtures + a large .planning tree). `nx run-many -t lint` lints
+  # every project that defines a lint target and fails on ANY warning: maxWarnings:0
+  # is baked into the @nx/eslint:lint targetDefaults (nx.json), so NO CI flag is
+  # passed. fetch-depth: 0 is LOAD-BEARING -- nx-set-shas resolves the base commit
+  # from git history. On a PR it derives the exact merge-base/head; on a push it
+  # reads the last successful run to compute the base (see the actions: read note
+  # on the permissions block below). Path-gated (D-08) on the BROADER `formatlint`
+  # output (NOT `code`): it runs whenever any non-.planning file changes -- so a
+  # docs/markdown-only PR still gets format:check'd (the shipped README is
+  # Prettier-owned; C9) while a .planning-only PR still skips. Same NEGATIVE if:
+  # form (`!= 'false'`), so it stays in the `act -n` plan under the empty filter
+  # output. Fixed target ids + flags only; no PR-metadata interpolation.
+  format-lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.formatlint != 'false' }}
+    runs-on: ubuntu-latest
+    # actions: read is required by nrwl/nx-set-shas -- on a push it queries the
+    # Actions workflow-runs API for the last successful run to derive the base SHA
+    # (on a PR it uses git merge-base and needs no API). Job-level permissions
+    # REPLACE (not merge with) the top-level block, so contents: read is restated
+    # here for actions/checkout. Both scopes are READ-ONLY -- no write is granted.
+    permissions:
+      contents: read
+      actions: read
+    env:
+      NX_DAEMON: false
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+        id: nx-shas
+      - run: npm ci
+      - run: npx nx format:check --base=${{ steps.nx-shas.outputs.base }} --head=${{ steps.nx-shas.outputs.head }}
+      - run: npx nx run-many -t lint
+
   # act-compatibility gate (RD-06): container-free `act --validate`
   # (parseability) + `act -n` per trigger (trigger/condition fidelity via the
   # if:-gated job selection). NEVER plain `act <event>` execution -- no nested
@@ -182,7 +253,7 @@ jobs:
   act-compat:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Install act (pinned v0.2.89)
@@ -198,7 +269,7 @@ jobs:
   lint-workflows:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Install actionlint (pinned)
@@ -224,7 +295,7 @@ jobs:
   # post-merge `main` `ci` run (which has a real code diff vs its parent on a
   # code merge) is the second backstop.
   ci:
-    needs: [changes, test, e2e, fallow, act-compat, lint-workflows]
+    needs: [changes, test, e2e, fallow, format-lint, act-compat, lint-workflows]
     runs-on: ubuntu-latest
     if: always()
     steps:

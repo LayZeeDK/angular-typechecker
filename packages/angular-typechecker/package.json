@@ -27,6 +27,7 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "executors": "./executors.json",
+  "generators": "./generators.json",
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json"
@@ -34,6 +35,7 @@
   "files": [
     "src",
     "executors.json",
+    "generators.json",
     "README.md",
     "LICENSE"
   ],

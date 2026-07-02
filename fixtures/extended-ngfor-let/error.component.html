@@ -1,0 +1,5 @@
+<!-- NG8105: NgForOf used without the `let` keyword (`*ngFor="item of items"`
+     instead of `*ngFor="let item of items"`). CommonModule IS imported so NG8103
+     does not also fire. The body references nothing (`item` is never bound as a
+     template variable here, so referencing it would raise an incidental TS error). -->
+<div *ngFor="item of items">row</div>
