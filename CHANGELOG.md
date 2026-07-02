@@ -1,3 +1,53 @@
+## 0.1.0 (2026-07-02)
+
+Reference-walking engine, a configuration/init generator suite, and `nx add`
+support. Two breaking changes -- see below -- so this is a minor release
+despite the 0.x series.
+
+### Breaking Changes
+
+- **Executor renamed** -- `angular-typechecker:angular-typecheck` is now
+  `angular-typechecker:typecheck`. Update any `project.json` target executor
+  references and `nx.json` `targetDefaults` keys from `:angular-typecheck` to
+  `:typecheck`.
+- **Public API narrowed** -- the package barrel now exports only
+  `runTypecheck`, `TypecheckInfrastructureError`, and the `CoreOptions` /
+  `CoreResult` / `SkippedReference` types. The removed exports
+  (`loadCompilerCli`, `evaluateResult`, `filterDiagnostics`, `formatReport`,
+  `gatherAllDiagnostics`, and their option/result types) were engine
+  internals, never part of the documented API -- the executor and generators
+  remain the intended surface.
+
+### Features
+
+- **Solution-tsconfig reference walking** -- the `typecheck` target now walks
+  a solution `tsconfig.json`'s in-project references and type-checks every
+  referenced leaf in one run (deduplicated, module-boundary-guarded), instead
+  of requiring one target per leaf tsconfig. A skipped or unresolved
+  reference surfaces as a loud advisory notice rather than failing silently.
+- **`configuration` generator** -- wires a single `typecheck` target for a
+  project, resolving the right tsconfig (explicit override, solution
+  tsconfig, or a flat leaf) and idempotently rewriting an existing
+  `angular-typechecker:typecheck` target.
+- **`init` generator** -- seeds the workspace-wide `angular-typechecker:typecheck`
+  `targetDefaults` (caching, inputs/outputs) in `nx.json`.
+- **`nx add` support** -- both generators are registered in `generators.json`
+  and shipped in the package, so `nx add angular-typechecker` now scaffolds a
+  working setup.
+
+### Fixes
+
+- **Reference-walking parity** -- diagnostics from the solution-tsconfig walk
+  now match what a direct per-leaf run reports.
+- **Flat single-tsconfig projects** -- the `configuration` generator now
+  resolves projects with a single flat tsconfig (no solution references) and
+  rejects an empty `targetName`.
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
+- Node `^22.22.3 || ^24.15.0 || ^26.0.0`
+
 # Changelog
 
 All notable changes to **angular-typechecker** are documented in this file.
@@ -84,6 +134,7 @@ angular-typechecker is an Nx plugin that runs the _complete_ Angular compiler ty
 
 See the [README](./packages/angular-typechecker/README.md) for wiring the `angular-typecheck` target into a project.
 
+[0.1.0]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.0
 [0.0.3]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.3
 [0.0.2]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.2
 [0.0.1]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.1
