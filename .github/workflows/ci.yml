@@ -49,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      formatlint: ${{ steps.filter.outputs.formatlint }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -65,12 +66,23 @@ jobs:
           # and wrongly set code=true, so the matrix would never skip. Proven on a
           # planning-only probe PR: `every` -> code=false -> test/e2e skipped while
           # the `ci` aggregate still reports green (no deadlock).
+          #
+          # `formatlint` is BROADER than `code`: it is true when the diff touches
+          # anything OUTSIDE .planning (the only tree in .prettierignore). It gates
+          # the format-lint job ALONE, so a docs/markdown-only PR that edits a
+          # Prettier-owned file (README.md, AGENTS.md, CLAUDE.md, CHANGELOG.md, a
+          # non-.planning doc) still runs format:check -- otherwise the tarball's
+          # README could drift out of Prettier compliance and ship (C9). A
+          # .planning-only PR (all files ignored by Prettier) still sets
+          # formatlint=false so format-lint skips it.
           predicate-quantifier: 'every'
           filters: |
             code:
               - '!.planning/**'
               - '!**/*.md'
               - '!docs/**'
+            formatlint:
+              - '!.planning/**'
 
   # Unit + integration on the LEAN 6-cell matrix (RD-01): full Node sweep on
   # Linux + the OS axis on Node 24 + the one worth-keeping cross-cell
@@ -199,13 +211,15 @@ jobs:
   # passed. fetch-depth: 0 is LOAD-BEARING -- nx-set-shas resolves the base commit
   # from git history. On a PR it derives the exact merge-base/head; on a push it
   # reads the last successful run to compute the base (see the actions: read note
-  # on the permissions block below). Path-gated (D-08), SAME negative if: form as
-  # test/e2e/fallow -- skips a planning/docs-only PR yet stays in the `act -n` plan
-  # under the empty filter output. Fixed target ids + flags only; no PR-metadata
-  # interpolation.
+  # on the permissions block below). Path-gated (D-08) on the BROADER `formatlint`
+  # output (NOT `code`): it runs whenever any non-.planning file changes -- so a
+  # docs/markdown-only PR still gets format:check'd (the shipped README is
+  # Prettier-owned; C9) while a .planning-only PR still skips. Same NEGATIVE if:
+  # form (`!= 'false'`), so it stays in the `act -n` plan under the empty filter
+  # output. Fixed target ids + flags only; no PR-metadata interpolation.
   format-lint:
     needs: changes
-    if: ${{ needs.changes.outputs.code != 'false' }}
+    if: ${{ needs.changes.outputs.formatlint != 'false' }}
     runs-on: ubuntu-latest
     # actions: read is required by nrwl/nx-set-shas -- on a push it queries the
     # Actions workflow-runs API for the last successful run to derive the base SHA
