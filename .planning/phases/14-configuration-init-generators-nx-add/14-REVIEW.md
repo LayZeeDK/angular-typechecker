@@ -23,10 +23,22 @@ findings:
   warning: 2
   info: 5
   total: 7
-status: issues_found
+warnings_resolved: 2
+resolved_in: c306eee
+status: resolved
 ---
 
 # Phase 14: Code Review Report
+
+> **Resolution (2026-07-02, commit `c306eee`):** Both WARNING findings were fixed
+> before phase verification. **WR-01** — the idempotent re-run now shallow-merges
+> over an existing OUR target (preserving user-added `options` and any
+> `configurations` block) instead of replacing it wholesale. **WR-02** — a relative
+> `--tsConfig` override is existence-probed against the tree and throws a clear
+> located error on a typo (absolute overrides stay verbatim per OQ-1). Two covering
+> unit tests were added; full suite 236 green, lint green. The 5 INFO items are
+> accepted as-is (advisory; two of them were the WR-01/WR-02 test-coverage gaps,
+> now closed).
 
 **Reviewed:** 2026-07-02T00:16:47Z
 **Depth:** deep
