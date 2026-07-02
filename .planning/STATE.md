@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-last_updated: "2026-07-02T09:50:00.000Z"
-last_activity: "2026-07-02 - Shipped v0.1.0 milestone work as PR #15 into main (all 5 phases verified, milestone audit passed, INFO findings F-03..F-06 + CI-gate drift F-07/F-08 cleared, local gates green). Release cut/publish remain a separate gated step."
+last_updated: "2026-07-02T11:15:00.000Z"
+last_activity: "2026-07-02 - Fixed PR #15 CI fallow gate (quick task 260702-hsv): targeted .fallowrc.jsonc suppressions for test-scaffolding false-positives + one scoped D-05 mirror suppression; fallow audit exit 0, all local gates green. Pushed; watching CI re-run (incl. the environmental e2e flake)."
 progress:
   total_phases: 5
   completed_phases: 5
@@ -99,6 +99,7 @@ None.
 | 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified + shipped (v0.0.3) | [260630-jnl-...](./quick/260630-jnl-address-third-round-pr-review-findings/) |
 | 260701-shh | Add CI `format:check` + `lint` gates (nrwl/nx-set-shas base/head), bake `maxWarnings:0` into the lint target, Prettier-format the whole repo (2 diagnostic-sensitive templates + lockfiles excluded), bump actions/checkout v7 + setup-node v6 | 2026-07-01 | 4f0ccdf | Complete (verified locally) | [260701-shh-...](./quick/260701-shh-add-ci-format-check-lint-jobs-nx-set-sha/) |
 | 260702-g5r | Address v0.1.0 milestone-audit INFO findings F-03..F-06: real monorepo root README (F-03), grammatical skipped-reference notice keeping both interpolations (F-04), comment-only clarification of the duplicate-under-'self-reference' fold with the public union unchanged (F-05), and the hyphenated `requirements-completed` frontmatter for CAT-05/WALK-02/GEN-06 (F-06). --research --validate; 4 atomic commits; test 239/239 + lint + format:check green | 2026-07-02 | 642d08d | Verified | [260702-g5r-...](./quick/260702-g5r-address-info-f-03-to-f-06-findings/) |
+| 260702-hsv | Fix the PR #15 CI `fallow` gate (first cumulative gate of the v0.1.0 diff vs origin/main flagged 34 dead-code + 10 complexity + 1 duplication). Targeted `.fallowrc.jsonc` for test-scaffolding false-positives (spec-file entry points, fixture/dev-lib unrendered, `@angular/core` root dep, test/fixture complexity, second drift file) + one scoped inline suppression of the intentional D-05 emit-neutralizing contract-mirror. No product-code gate weakened, no engine logic changed. --research --validate; `fallow audit` exit 0 + lint + format + test 239/239 green | 2026-07-02 | 5e32512 | Verified | [260702-hsv-...](./quick/260702-hsv-fix-fallow-ci-gate-failure-on-the-v0-1-0/) |
 
 ## Deferred Items
 
