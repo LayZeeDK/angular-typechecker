@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-last_updated: "2026-07-02T09:38:07.059Z"
-last_activity: "2026-07-02 - Quick task 260702-g5r: addressed v0.1.0 milestone-audit INFO findings F-03..F-06 (root README, skipped-ref notice grammar, walk-references comment, requirements-completed frontmatter); verified, all gates green"
+last_updated: "2026-07-02T09:50:00.000Z"
+last_activity: "2026-07-02 - Shipped v0.1.0 milestone work as PR #15 into main (all 5 phases verified, milestone audit passed, INFO findings F-03..F-06 + CI-gate drift F-07/F-08 cleared, local gates green). Release cut/publish remain a separate gated step."
 progress:
   total_phases: 5
   completed_phases: 5
