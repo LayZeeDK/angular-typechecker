@@ -47,9 +47,9 @@
 
 ### GE2E — generator end-to-end (folded into `angular-typechecker-install-e2e`)
 
-- [ ] **GE2E-01**: The plugin ships `generators.json`; the `install-e2e` consumer fixture gains a project WITHOUT a pre-wired target; an e2e scenario installs the tarball, runs `nx g angular-typechecker:configuration` on that project, and asserts the resulting `project.json` target (executor `angular-typechecker:typecheck`) AND the `init`-seeded `nx.json` `targetDefaults["angular-typechecker:typecheck"]`.
-- [ ] **GE2E-02**: The same scenario then runs `nx run <proj>:typecheck --skip-nx-cache` and asserts the verdict end-to-end (clean → success; an injected template/type error → failure with the diagnostic code visible). No Verdaccio; no new e2e project.
-- [ ] **GE2E-03**: An e2e proves `nx add angular-typechecker` runs the `init` generator and seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` on install (proves GEN-09). No Verdaccio; no new e2e project.
+- [x] **GE2E-01**: The plugin ships `generators.json`; the `install-e2e` consumer fixture gains a project WITHOUT a pre-wired target; an e2e scenario installs the tarball, runs `nx g angular-typechecker:configuration` on that project, and asserts the resulting `project.json` target (executor `angular-typechecker:typecheck`) AND the `init`-seeded `nx.json` `targetDefaults["angular-typechecker:typecheck"]`.
+- [x] **GE2E-02**: The same scenario then runs `nx run <proj>:typecheck --skip-nx-cache` and asserts the verdict end-to-end (clean → success; an injected template/type error → failure with the diagnostic code visible). No Verdaccio; no new e2e project.
+- [x] **GE2E-03**: An e2e proves `nx add angular-typechecker` runs the `init` generator and seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` on install (proves GEN-09). No Verdaccio; no new e2e project.
 
 ### GUARD — CI self-audit
 
@@ -108,9 +108,9 @@ Each requirement maps to exactly one phase (v0.1.0 phases continue from v0.0.3's
 | GEN-07 | Phase 14 | Complete |
 | GEN-08 | Phase 14 | Complete |
 | GEN-09 | Phase 14 | Complete |
-| GE2E-01 | Phase 15 | Pending |
-| GE2E-02 | Phase 15 | Pending |
-| GE2E-03 | Phase 15 | Pending |
+| GE2E-01 | Phase 15 | Complete |
+| GE2E-02 | Phase 15 | Complete |
+| GE2E-03 | Phase 15 | Complete |
 | GUARD-01 | Phase 15 | Complete |
 
 **Coverage:**
