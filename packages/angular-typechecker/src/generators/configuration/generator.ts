@@ -53,10 +53,26 @@ function resolveTsConfig(
   const root = projectConfig.root;
 
   // 1. explicit override wins (OQ-1: absolute verbatim, relative project-root-relative).
+  // A relative override is existence-probed against the tree so a typo fails HERE
+  // with a clear located error (matching branches 3/4) rather than silently writing
+  // a broken target that only fails at execute time. An ABSOLUTE override cannot be
+  // probed against the workspace-relative tree, so it is honored verbatim (OQ-1).
   if (schema.tsConfig) {
-    return isAbsolute(schema.tsConfig)
-      ? schema.tsConfig
-      : joinPathFragments(root, schema.tsConfig);
+    if (isAbsolute(schema.tsConfig)) {
+      return schema.tsConfig;
+    }
+
+    const overridePath = joinPathFragments(root, schema.tsConfig);
+
+    if (!tree.exists(overridePath)) {
+      throw new Error(
+        `--tsConfig "${schema.tsConfig}" for project "${schema.project}" ` +
+          `resolves to "${overridePath}", which does not exist. Pass a path ` +
+          `relative to the project root (or an absolute path).`,
+      );
+    }
+
+    return overridePath;
   }
 
   // 2. solution tsconfig.json WITH a non-empty references[] -> point at it.
@@ -131,9 +147,16 @@ export default async function configurationGenerator(
   }
 
   projectConfig.targets ??= {};
+  // GEN-04 / D-09: on an idempotent re-run of OUR target, preserve any user-added
+  // target keys (e.g. a `configurations` block) and extra `options` (e.g.
+  // `maxWarnings`, `includeDeps`, `failFast`) -- re-assert only the executor id and
+  // the resolved `tsConfig`, rather than clobbering the whole target object. On a
+  // first run `existing` is undefined, so this is a plain write. (A non-ours target
+  // already threw above.)
   projectConfig.targets[targetName] = {
+    ...existing,
     executor: TYPECHECK_EXECUTOR,
-    options: { tsConfig },
+    options: { ...existing?.options, tsConfig },
   };
   updateProjectConfiguration(tree, schema.project, projectConfig);
 

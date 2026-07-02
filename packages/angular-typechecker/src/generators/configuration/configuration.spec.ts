@@ -98,7 +98,9 @@ describe('configuration generator', () => {
       targets: {},
     });
     // No solution tsconfig and no flat leaf: resolution would fail WITHOUT the
-    // override, so a successful write proves the override short-circuits.
+    // override, so a successful write proves the override short-circuits. The
+    // override is existence-probed, so the file must exist.
+    writeJson(tree, 'libs/my-lib/tsconfig.custom.json', { compilerOptions: {} });
 
     await configurationGenerator(tree, {
       project: 'my-lib',
@@ -108,6 +110,24 @@ describe('configuration generator', () => {
     expect(
       readProjectConfiguration(tree, 'my-lib').targets?.typecheck?.options,
     ).toEqual({ tsConfig: 'libs/my-lib/tsconfig.custom.json' });
+  });
+
+  it('throws a located error when a relative --tsConfig override does not exist (GEN-02)', async () => {
+    addProjectConfiguration(tree, 'my-lib', {
+      root: 'libs/my-lib',
+      projectType: 'library',
+      targets: {},
+    });
+    // The override file is NOT created -- a typo must fail HERE, not at execute time.
+
+    await expect(
+      configurationGenerator(tree, {
+        project: 'my-lib',
+        tsConfig: 'tsconfig.typo.json',
+      }),
+    ).rejects.toThrow(
+      /--tsConfig "tsconfig\.typo\.json".*resolves to "libs\/my-lib\/tsconfig\.typo\.json", which does not exist/,
+    );
   });
 
   it('supports a configurable targetName', async () => {
@@ -167,6 +187,34 @@ describe('configuration generator', () => {
     expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual({
       executor: 'angular-typechecker:typecheck',
       options: { tsConfig: 'libs/my-lib/tsconfig.json' },
+    });
+  });
+
+  it('preserves user-added keys on our target during an idempotent re-run (GEN-04)', async () => {
+    addProjectConfiguration(tree, 'my-lib', {
+      root: 'libs/my-lib',
+      projectType: 'library',
+      targets: {
+        typecheck: {
+          executor: 'angular-typechecker:typecheck',
+          options: { tsConfig: 'libs/my-lib/tsconfig.json', maxWarnings: 0 },
+          configurations: { ci: { failFast: true } },
+        },
+      },
+    });
+    writeJson(tree, 'libs/my-lib/tsconfig.json', {
+      references: [{ path: './tsconfig.lib.json' }],
+    });
+
+    await configurationGenerator(tree, { project: 'my-lib' });
+
+    // Re-asserts the executor id + resolved tsConfig, but does NOT clobber the
+    // user's extra option (`maxWarnings`) or the `configurations` block (GEN-04
+    // "no clobbered config").
+    expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual({
+      executor: 'angular-typechecker:typecheck',
+      options: { tsConfig: 'libs/my-lib/tsconfig.json', maxWarnings: 0 },
+      configurations: { ci: { failFast: true } },
     });
   });
 
