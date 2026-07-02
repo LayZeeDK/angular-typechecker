@@ -20,6 +20,7 @@ key-files:
 decisions:
   - "Carried the two enum-only members' (NG8011, NG8112) introduction versions from compiler history without independent docs re-verification, and said so in the doc -- the enum (not the intro-version) is the membership authority the tripwire keys on"
   - "Rephrased corrective prose to avoid the literal strings 'not promotable' and 'jscodeshift' so the plan's literal string-count acceptance gates return zero, while preserving the corrected meaning (out-of-band-but-promotable; committed static fixtures over AST mutation)"
+requirements-completed: [CAT-05]
 metrics:
   duration: "~11 min"
   completed: "2026-07-01"

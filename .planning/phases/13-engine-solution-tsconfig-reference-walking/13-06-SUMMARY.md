@@ -39,6 +39,7 @@ decisions:
   - "Swapped BOTH walk-target-default keys (dev-workspace `angular-typechecker:angular-typecheck` AND published-package `@angular-typechecker/angular-typechecker:angular-typecheck`), not one, because there is no bare `angular-typecheck` targetDefaults key -- the two executor-id forms are the same executor's defaults for the local repo vs an installed consumer and both must carry the WALK-02 shape."
   - "Added a NEW `typecheck-walk-consumer` fixture library (solution tsconfig + spec leaf) rather than repurposing `typecheck-consumer` (whose leaf tsconfig + includeDeps the existing executor-parity / dep-error specs depend on), keeping those specs byte-unchanged."
   - "Reused the in-workspace cache-e2e harness (real nx CLI + project graph) exactly, NOT Verdaccio and NOT a new e2e project, per the plan."
+requirements-completed: [WALK-02]
 metrics:
   duration: "~35 min"
   completed: "2026-07-01"

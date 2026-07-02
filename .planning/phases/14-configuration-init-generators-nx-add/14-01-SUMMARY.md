@@ -43,7 +43,7 @@ patterns-established:
   - "TYPECHECK_TARGET_DEFAULTS module-level TargetConfiguration constant, verbatim from nx.json, with a landmine comment pinning default-not-production"
   - "Generator tier freely imports @nx/devkit (core-purity ban is scoped to src/core/** only)"
 
-requirements-completed: [GEN-07]
+requirements-completed: [GEN-07, GEN-06]
 
 # Metrics
 duration: 15min

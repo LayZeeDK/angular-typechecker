@@ -41,7 +41,7 @@ key-decisions:
   - "workspace-root-relative tsConfig path (Landmine 1): joinPathFragments(projectConfig.root, ...) yields e.g. libs/foo/tsconfig.json to match the executor's workspace-root resolution"
   - "collision by the UNSCOPED executor id (D-09/Landmine 3): existing.executor === 'angular-typechecker:typecheck' -> idempotent rewrite; any other executor -> throw; reads the virtual Tree only (readJson/tree.exists), never node:fs"
 
-requirements-completed: [GEN-01, GEN-02, GEN-03, GEN-04, GEN-08]
+requirements-completed: [GEN-01, GEN-02, GEN-03, GEN-04, GEN-08, GEN-06]
 
 # Metrics
 duration: 25min
