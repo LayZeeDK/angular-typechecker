@@ -12,8 +12,8 @@
 // that no longer exists) with no failure. This file makes that drift LOUD: it
 // deep-imports the REAL enum under classic module resolution and asserts MUTUAL
 // set-equality between the enum's string-VALUE union and the `as const` list's
-// value union. A member added upstream fails `EnumCoversCatalog`; a member
-// removed/renamed upstream fails `CatalogCoversEnum` -- either way,
+// value union. A member added upstream fails `CatalogCoversEnum`; a member
+// removed/renamed upstream fails `EnumCoversCatalog` -- either way,
 // `nx typecheck-drift` fails at the offending probe slot instead of shipping a
 // stale catalog.
 //
@@ -61,12 +61,14 @@ type AssertAssignable<From, To extends From> = true;
 type EnumValues = `${ExtendedTemplateDiagnosticName}`;
 type CatalogValues = (typeof EXTENDED_DIAGNOSTIC_MEMBERS)[number];
 
-// Mutual set-equality: catalog subset of enum AND enum subset of catalog.
-// A member REMOVED/RENAMED upstream (present in the catalog, gone from the enum)
-// fails CatalogCoversEnum; a member ADDED upstream (in the enum, missing from the
-// catalog) fails EnumCoversCatalog.
-type CatalogCoversEnum = AssertAssignable<CatalogValues, EnumValues>; // enum superset of catalog values
-type EnumCoversCatalog = AssertAssignable<EnumValues, CatalogValues>; // catalog superset of enum values
+// Mutual set-equality: catalog superset of enum AND enum superset of catalog.
+// `CatalogCoversEnum` compiles iff every ENUM value is in the catalog (catalog
+// covers enum), so a member ADDED upstream (in the enum, missing from the catalog)
+// fails it. `EnumCoversCatalog` compiles iff every CATALOG value is in the enum
+// (enum covers catalog), so a member REMOVED/RENAMED upstream (present in the
+// catalog, gone from the enum) fails it.
+type CatalogCoversEnum = AssertAssignable<CatalogValues, EnumValues>; // catalog superset of enum values
+type EnumCoversCatalog = AssertAssignable<EnumValues, CatalogValues>; // enum superset of catalog values
 
 void (0 as unknown as CatalogCoversEnum);
 void (0 as unknown as EnumCoversCatalog);
