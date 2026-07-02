@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-last_updated: "2026-07-02T08:45:40.308Z"
-last_activity: "2026-07-02 - Phase 15 closed: generator e2e (GE2E-01/02/03) + CI -p self-audit guard (GUARD-01) shipped, verified 4/4, secured (0 open threats), nyquist-compliant, code review 0 blockers (2 warnings fixed), learnings extracted"
+last_updated: "2026-07-02T09:38:07.059Z"
+last_activity: "2026-07-02 - Quick task 260702-g5r: addressed v0.1.0 milestone-audit INFO findings F-03..F-06 (root README, skipped-ref notice grammar, walk-references comment, requirements-completed frontmatter); verified, all gates green"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 
 Phase: 15
 Plan: Not started
-Status: Milestone complete
-Last activity: 2026-07-02 - Phase 15 closed: generator e2e (GE2E-01/02/03) + CI -p self-audit guard (GUARD-01) shipped, verified 4/4, secured (0 open threats), nyquist-compliant, code review 0 blockers (2 warnings fixed), learnings extracted
+Status: Milestone complete (milestone audit: tech_debt cleared; INFO findings F-03..F-06 addressed)
+Last activity: 2026-07-02 - Quick task 260702-g5r: addressed v0.1.0 milestone-audit INFO findings F-03..F-06 (root README, skipped-ref notice grammar, walk-references comment, requirements-completed frontmatter); verified, all gates green
 
 Progress: [██████████] 100%
 
@@ -98,6 +98,7 @@ None.
 | 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined) | 2026-06-30 | 95d6f58 | Verified + shipped (v0.0.3) | [260630-fg0-...](./quick/260630-fg0-address-second-round-pr-review-findings/) |
 | 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified + shipped (v0.0.3) | [260630-jnl-...](./quick/260630-jnl-address-third-round-pr-review-findings/) |
 | 260701-shh | Add CI `format:check` + `lint` gates (nrwl/nx-set-shas base/head), bake `maxWarnings:0` into the lint target, Prettier-format the whole repo (2 diagnostic-sensitive templates + lockfiles excluded), bump actions/checkout v7 + setup-node v6 | 2026-07-01 | 4f0ccdf | Complete (verified locally) | [260701-shh-...](./quick/260701-shh-add-ci-format-check-lint-jobs-nx-set-sha/) |
+| 260702-g5r | Address v0.1.0 milestone-audit INFO findings F-03..F-06: real monorepo root README (F-03), grammatical skipped-reference notice keeping both interpolations (F-04), comment-only clarification of the duplicate-under-'self-reference' fold with the public union unchanged (F-05), and the hyphenated `requirements-completed` frontmatter for CAT-05/WALK-02/GEN-06 (F-06). --research --validate; 4 atomic commits; test 239/239 + lint + format:check green | 2026-07-02 | 642d08d | Verified | [260702-g5r-...](./quick/260702-g5r-address-info-f-03-to-f-06-findings/) |
 
 ## Deferred Items
 
