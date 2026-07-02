@@ -192,6 +192,16 @@ export async function walkReferences(
     // Surviving leaf: run performCompilation with the SAME emit-neutralizing
     // override block as the direct path (run-typecheck.ts) and push the RAW
     // gathered diagnostics (never filtered per-leaf -- Pitfall 2) to the union.
+    //
+    // FAL-04 (v0.1.0): this emit-neutralizing performCompilation block is a
+    // DELIBERATE contract-mirror of the direct-leaf path in run-typecheck.ts
+    // (D-05: the walk MUST apply byte-identical emit-neutralizing options as the
+    // direct path, or the two entry points would diverge). fallow's clone detector
+    // reports the intentional mirror as a code-duplication group; suppress this one
+    // reviewed instance (which drops the 2-instance group below minOccurrences)
+    // rather than refactor verified, shipped engine code right before release.
+    // Accidental duplication elsewhere in product code stays gated.
+    // fallow-ignore-next-line code-duplication
     const result = ng.performCompilation({
       rootNames: parsed.rootNames,
       options: {
