@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: executing
-stopped_at: Phase 15 context gathered
-last_updated: "2026-07-02T07:10:55.018Z"
-last_activity: 2026-07-02 -- Phase 15 planning complete
+stopped_at: Completed 15-01-PLAN.md (GUARD-01)
+last_updated: "2026-07-02T07:27:32.702Z"
+last_activity: 2026-07-02
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
   percent: 80
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-walking engine)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 15 — generator e2e + ci self audit guard
+**Current focus:** Phase 15 — Generator e2e + CI self-audit guard
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
+Phase: 15 (Generator e2e + CI self-audit guard) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-02 -- Phase 15 planning complete
+Last activity: 2026-07-02
 
-Progress: [██████████] 100%
+Progress: [█████████░] 94%
 
 ## v0.1.0 Phase Map
 
@@ -74,6 +74,9 @@ v0.0.4 re-scoped 2026-07-01: spikes 001-005 (`.planning/spikes/MANIFEST.md`, all
 - [Phase 14]: Plan 14-01 (GEN-07): standalone init generator seeds ONLY the unscoped angular-typechecker:typecheck targetDefaults key with the WALK-02 block copied verbatim from nx.json (D-04), whole-entry ??= don't-clobber (D-05); readNxJson null guard; config-edit only (no generateFiles). GEN-05/06 only partially advanced (init slice), left Pending until configuration + generators.json land. — Idiomatic first-party Nx init pattern; whole-entry ??= keeps the coherent WALK-02 block (default-not-production inputs, outputs:[], cache:true are interdependent) from being merged into an incoherent state.
 - [Phase ?]: Plan 14-02 (GEN-01/02/03/04/08): configuration generator awaits initGenerator { skipFormat:true } FIRST then formats once (D-10); resolves tsConfig by D-07 order (override absolute-verbatim / relative-joinPathFragments; solution tsconfig.json w/ non-empty references[]; flat leaf by projectType + tree.exists; else located error); writes ONE workspace-root-relative typecheck target; collision-by-EXECUTOR (idempotent rewrite for angular-typechecker:typecheck, throw otherwise); reads virtual Tree only (no node:fs).
 - [Phase 14]: Plan 14-03 (GEN-05/GEN-09): registered both generators in a new factory-keyed root generators.json (mirroring executors.json, no ng-add alias); added package.json generators field + generators.json to files allowlist; project.json ships generators.json via a build asset glob; package-manifest.spec.ts pins both. nx add resolves init by literal key. — Register init by literal key with NO ng-add alias (D-06): nx add discovery needs only the generators field; an ng-add alias would imply the deferred Angular-CLI schematic (GEN-FUT-02). @nx/nx-plugin-checks (nx lint) is the free proof the factory/schema paths resolve.
+- [Phase 15]: GUARD-01: enumerate e2e projects via readdirSync(e2e) + each project.json .name, NOT the scope:fixture tag (three libs/* projects carry it -> would over-count 6 vs 3)
+- [Phase 15]: GUARD-01: extract the ci.yml e2e-job -p list job-scoped to the e2e: block (job-key regex includes digits) AND matched at line-start, never the mid-line test-job -p angular-typechecker; no YAML parser dependency
+- [Phase 15]: GUARD-01 deliberate-RED (D-12): probe A (phantom e2e/phantom-e2e/project.json) produced the LOCATED RED then was fully restored to green; the guard cannot silently false-PASS
 
 ### Blockers/Concerns
 
@@ -111,6 +114,6 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-02T06:28:02.887Z
-Stopped at: Phase 15 context gathered
+Last session: 2026-07-02T07:27:32.694Z
+Stopped at: Completed 15-01-PLAN.md (GUARD-01)
 Next step: Plan Phase 13 (Engine: solution-tsconfig reference-walking, WALK-01/02) via `/gsd-plan-phase 13`. The engine change is Approach-A-compatible (existing `performCompilation`, no new compiler machinery); ground the plan in spikes 001-005 and the spike `MANIFEST.md` locked requirements.

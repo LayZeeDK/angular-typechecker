@@ -53,7 +53,7 @@
 
 ### GUARD — CI self-audit
 
-- [ ] **GUARD-01**: A guard test asserts the `e2e` job's explicit `-p` project list equals the set of `e2e/*` projects in the workspace graph, converting a forgotten-`-p` silent skip into a loud, located failure.
+- [x] **GUARD-01**: A guard test asserts the `e2e` job's explicit `-p` project list equals the set of `e2e/*` projects in the workspace graph, converting a forgotten-`-p` silent skip into a loud, located failure.
 
 ## Future Requirements (deferred, tracked)
 
@@ -111,7 +111,7 @@ Each requirement maps to exactly one phase (v0.1.0 phases continue from v0.0.3's
 | GE2E-01 | Phase 15 | Pending |
 | GE2E-02 | Phase 15 | Pending |
 | GE2E-03 | Phase 15 | Pending |
-| GUARD-01 | Phase 15 | Pending |
+| GUARD-01 | Phase 15 | Complete |
 
 **Coverage:**
 - v0.1.0 requirements: 22 total
