@@ -46,6 +46,16 @@ const REQUIRED_FILES = [
   'src/index.d.ts',
   'README.md',
   'LICENSE',
+  // Phase 15 D-13: the five shipped generator runtime files `nx g` / `nx add`
+  // need. Verified shipped via project.json build assets (the root `generators.json`
+  // glob + the `**/!(*.ts)` src glob for the schemas) + the package.json `files`
+  // allowlist. The `.spec.ts` generator tests are excluded by tsconfig.lib.json, so
+  // the leak guards below do not false-positive on these paths.
+  'generators.json',
+  'src/generators/configuration/generator.js',
+  'src/generators/configuration/schema.json',
+  'src/generators/init/generator.js',
+  'src/generators/init/schema.json',
 ];
 
 // The install lifecycle script keys that must be ABSENT from the tarball's

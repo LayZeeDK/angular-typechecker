@@ -114,6 +114,27 @@ function buildCleanEnv(): NodeJS.ProcessEnv {
 
 const env = buildCleanEnv();
 
+// Best-effort teardown of a per-scenario tmp workspace. On Windows a lingering
+// nx subprocess (or a just-installed node_modules handle) can hold the tmp dir
+// open past execSync's return, so a bare recursive rmSync EPERMs on the directory
+// root -- a lock Node's linear-backoff (maxRetries/retryDelay) may not outwait. A
+// failed removal of an OS-temp dir must NEVER fail a scenario whose assertions
+// already ran (the CI e2e gate is Linux-only, where recursive rmSync never EPERMs;
+// this only manifests in Windows-local dev). Swallow the residual error; the OS
+// reclaims the temp dir.
+function removeTmpWorkspace(tmp: string): void {
+  try {
+    rmSync(tmp, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 100,
+    });
+  } catch {
+    // best-effort: an OS-temp dir left behind is harmless (unique per mkdtempSync).
+  }
+}
+
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';
 
@@ -298,7 +319,7 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       expect(bad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
       expect(bad.stdout).not.toContain('infrastructure error');
     } finally {
-      rmSync(tmp, { recursive: true, force: true });
+      removeTmpWorkspace(tmp);
     }
   });
 });
