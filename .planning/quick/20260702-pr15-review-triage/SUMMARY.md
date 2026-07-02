@@ -72,3 +72,14 @@ never-filter-config-errors-on-all-skipped invariant); merge duplicate/self-refer
 reason (keeps round-1's accuracy split); delete exit-codes.ts / TemplateCheckAborted.code
 (documented deferral / "do not drop"); trim index barrel + move pathBase + inline
 ngCodeOf + extract loadTypescript (pre-existing, out of PR scope / public-API decisions).
+
+## Follow-up: fallow CI gate (`58907e7`)
+
+The review-fix rounds tripped fallow's new-only gate two ways, both fixed:
+- unused export -- round-2's `runNoEmitCompilation` made `EMIT_NEUTRALIZING_OPTIONS`
+  module-private-only, so its `export` was dropped.
+- complexity -- round-1's correctness branches pushed `walkReferences` and
+  `resolveTsConfig` over threshold. Both are reviewer-blessed irreducible domain
+  logic (resolveTsConfig's CRAP is a coverage-estimation false-high -- fully spec'd),
+  so scoped in `.fallowrc.jsonc` rather than refactored. `fallow audit` exit 0.
+
