@@ -116,9 +116,16 @@ export async function walkReferences(
     const canonicalLeaf = canonicalize(leafPath);
 
     // D-04: skip the self-reference (canonical leaf equals the solution) and any
-    // duplicate canonical leaf already seen. Output-neutral (the union finalize
-    // dedupes diagnostics by value anyway); this saves the redundant
-    // performCompilation per skipped edge.
+    // duplicate canonical leaf already seen. BOTH cases are DELIBERATELY folded
+    // under the self-reference reason: the true self-reference and a repeated
+    // (duplicate) in-project leaf are output-neutral repeats of an
+    // already-covered leaf (the union finalize dedupes diagnostics by value
+    // anyway), so a single advisory label suffices and skipping here saves the
+    // redundant performCompilation per repeated edge. The public
+    // SkippedReference.reason union INTENTIONALLY omits a distinct duplicate
+    // member to keep the exported type stable pre-1.0 -- the label is
+    // advisory-only on a leaf that is never compiled, so the extra precision
+    // would widen a shipped public type for no runtime benefit.
     if (
       canonicalLeaf !== undefined &&
       (canonicalLeaf === canonicalSolutionPath ||
