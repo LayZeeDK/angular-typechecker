@@ -120,7 +120,9 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   2. The same scenario runs `nx run <proj>:typecheck --skip-nx-cache` and asserts the walk verdict end-to-end: a clean project yields success, and errors injected into BOTH the lib leaf AND the spec leaf yield a failure with the diagnostic codes visible in the output (proving both leaves were walked).
   3. An e2e scenario proves `nx add angular-typechecker` runs the `init` generator and seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` on install (GE2E-03).
   4. A guard test asserts the `e2e` CI job's explicit `-p` project list EQUALS the set of `e2e/*` projects in the workspace graph (predicate quantifier `every`), so a forgotten `-p` entry becomes a loud, located CI failure instead of a silent skip; the single required `ci` gate is unchanged.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 15-01-PLAN.md -- GUARD-01: in-plugin bidirectional `-p` set-equality guard (6-cell matrix) + mandatory deliberate-RED proof (GUARD-01)
+- [ ] 15-02-PLAN.md -- `consumer-generator` fixture + `generator-e2e` (GE2E-01/02) + `nx-add-e2e` (GE2E-03) heavy tarball specs + D-13 tarball-audit hardening (GE2E-01, GE2E-02, GE2E-03)
 
 ## Progress
 
@@ -142,4 +144,4 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 13. Engine -- solution-tsconfig reference-walking | v0.1.0 | 6/6 | Complete | 2026-07-01 |
 | 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 1/1 | Complete    | 2026-07-01 |
 | 14. configuration + init generators, nx add | v0.1.0 | 3/3 | Complete    | 2026-07-02 |
-| 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/? | Not started | - |
+| 15. Generator e2e + CI self-audit guard | v0.1.0 | 0/2 | Not started | - |
