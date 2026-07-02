@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-last_updated: "2026-07-02T11:15:00.000Z"
-last_activity: "2026-07-02 - Fixed PR #15 CI fallow gate (quick task 260702-hsv): targeted .fallowrc.jsonc suppressions for test-scaffolding false-positives + one scoped D-05 mirror suppression; fallow audit exit 0, all local gates green. Pushed; watching CI re-run (incl. the environmental e2e flake)."
+last_updated: "2026-07-02T12:05:00.000Z"
+last_activity: "2026-07-02 - PR #15 CI is fully GREEN (ci + CodeQL x2 + e2e + fallow + format-lint + 7 test-matrix cells). Fixed two CI failures on the branch: (1) fallow gate (quick task 260702-hsv, config), (2) e2e shared-tarball ENOENT race (serialized the 3 e2e projects via --parallel=1 in ci.yml; commit 10c0a83; diagnostic a1b58bc). Awaiting human review/merge (main is PR-only)."
 progress:
   total_phases: 5
   completed_phases: 5
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 
 Phase: 15
 Plan: Not started
-Status: Milestone complete (milestone audit: tech_debt cleared; INFO findings F-03..F-06 addressed)
-Last activity: 2026-07-02 - Quick task 260702-g5r: addressed v0.1.0 milestone-audit INFO findings F-03..F-06 (root README, skipped-ref notice grammar, walk-references comment, requirements-completed frontmatter); verified, all gates green
+Status: Milestone complete; shipped as PR #15 (CI fully green, awaiting human review/merge)
+Last activity: 2026-07-02 - PR #15 CI is fully GREEN. Fixed two branch CI failures: fallow gate (quick task 260702-hsv) + e2e shared-tarball ENOENT race (serialized the 3 e2e projects, ci.yml --parallel=1). Awaiting human review/merge (main is PR-only; release cut/publish remain a separate gated step)
 
 Progress: [██████████] 100%
 
