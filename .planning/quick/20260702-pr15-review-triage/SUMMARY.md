@@ -50,3 +50,25 @@ Green: `nx test` (251/251, 34 files), `nx build` (tsc), `nx typecheck-drift`,
 act-compat could not run locally (Docker down) but the change preserves the
 `!= 'false'` if: form and the pre-change workflow fails act-compat identically
 locally, so the regression is environmental; CI (with Docker) runs it.
+
+## Round 2 (quality / simplification reviews)
+
+Six more reports (`/thermo-nuclear-code-quality-review`, `/ponytail-review`
+full+ultra, `/simplify`, `/ponytail-audit` full+ultra) -- all simplification/dead-code,
+several targeting the parallel boilerplate round-1's correctness fixes ADDED.
+Triage principle: fix boilerplate THIS PR (incl. round-1) introduced; defer/reject
+pre-existing or documented-intentional structure. 3 behavior-preserving `refactor`
+commits (251/251 unchanged):
+
+- `641f79e` refactor(core): throwIfInfrastructureFailure (3 sites), runNoEmitCompilation
+  (2 sites), buildFinalizeFilter (2 sites), hasProjectReferences (2 sites), 90001/90002
+  codes + synthesizeFilelessError moved to diagnostic-codes.ts
+- `5808180` refactor(generators): export/reuse TYPECHECK_EXECUTOR_ID, configuration
+  returns void (drops the no-op runTasksInSerial), hoist tree.exists(solution)
+- `11efce7` refactor(executor): skippedReferences?.length
+
+Declined/deferred with rationale: finalize-fork collapse (keeps the stronger
+never-filter-config-errors-on-all-skipped invariant); merge duplicate/self-reference
+reason (keeps round-1's accuracy split); delete exit-codes.ts / TemplateCheckAborted.code
+(documented deferral / "do not drop"); trim index barrel + move pathBase + inline
+ngCodeOf + extract loadTypescript (pre-existing, out of PR scope / public-API decisions).
