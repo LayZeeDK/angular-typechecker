@@ -83,3 +83,10 @@ The review-fix rounds tripped fallow's new-only gate two ways, both fixed:
   logic (resolveTsConfig's CRAP is a coverage-estimation false-high -- fully spec'd),
   so scoped in `.fallowrc.jsonc` rather than refactored. `fallow audit` exit 0.
 
+Then a `/simplify` audit (`c5e9131`) revisited the complexity: applied Fix 1 (hoist
+walkReferences' repeated `canonicalLeaf !== undefined` guard; cyclomatic 13->10, but
+cognitive stays ~20, so it stays fallow-scoped -- the report's "cognitive drops more"
+was wrong) and Fix 3 (extract `resolveTsConfigOverride`; cyclomatic 10->7 clears its
+CRAP, so resolveTsConfig is now UNSCOPED). Skipped Fix 2 (cosmetic closure). Net: the
+fallow complexity scope is down to the single irreducible `walkReferences`.
+
