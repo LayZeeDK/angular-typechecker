@@ -6,7 +6,10 @@ import type { EmitFlags, ParsedConfiguration } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
 import { TCB_GENERATION_FATAL_DIAGNOSTIC_CODE } from './diagnostic-codes';
 import { filterDiagnostics } from './filter-diagnostics';
-import { gatherAllDiagnostics } from './gather-diagnostics';
+import {
+  EMIT_NEUTRALIZING_OPTIONS,
+  gatherAllDiagnostics,
+} from './gather-diagnostics';
 import type { SkippedReference } from './walk-references';
 import { walkReferences } from './walk-references';
 
@@ -201,8 +204,9 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // config skips the direct `performCompilation` and splits three ways:
   //   1. references present + >=1 in-project leaf -> WALK the leaves and feed the
   //      raw union into the SAME single `finalize` as the direct path.
-  //   2. references present + 0 in-project leaves (all skipped) -> synthesize the
-  //      references-present 90001 guard + attach the recorded skippedReferences.
+  //   2. references present + 0 in-project leaves (all skipped/reclassified) ->
+  //      finalize the walk's counted union (the not-found 90002s) when non-empty,
+  //      else synthesize the none-in-project 90001 guard; attach skippedReferences.
   //   3. no references (empty project) -> synthesize the empty-project 90001 guard
   //      (UNCHANGED).
   // Every path returns at least one synthesized/counted Error or a walked union so
@@ -216,6 +220,29 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 
     if (hasReferences) {
       const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
+
+      // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
+      // union -- whether returned by a surviving leaf's performCompilation OR
+      // raised by an EXISTING leaf's config resolution (walk-references.ts) -- is
+      // an INFRASTRUCTURE failure, never a type error. Re-throw it here exactly as
+      // the direct single-leaf path does below (the walk stays pure and free of the
+      // run-typecheck import cycle), so `errorCount` never counts a compiler crash
+      // and the leaf-vs-solution entry points stay consistent. The synthesized
+      // not-found code is 90002 (NOT 500), so a genuine missing reference is not
+      // caught here -- it stays a counted 90002 and the run resolves.
+      const walkInfrastructureFailure = walk.rawDiagnostics.find(
+        (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
+      );
+
+      if (walkInfrastructureFailure !== undefined) {
+        throw new TypecheckInfrastructureError(
+          ts.flattenDiagnosticMessageText(
+            walkInfrastructureFailure.messageText,
+            '\n',
+          ),
+        );
+      }
+
       // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
       // adapter's presence check is sufficient; mirror the templateCheckAborted
       // conditional-spread idiom in `finalize`.
@@ -255,14 +282,27 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
       }
 
       // References present but 0 in-project leaves (every reference skipped /
-      // reclassified): synthesize the references-present none-in-project 90001
-      // guard and attach the (non-empty here) skippedReferences.
-      const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
+      // reclassified). If the walk produced counted diagnostics -- the actionable
+      // 90002 "referenced tsconfig not found" Errors, one per not-found leaf --
+      // finalize the UNION so those SPECIFIC, path-named diagnostics are reported
+      // (I-1). Collapsing N broken references into one generic 90001, whose message
+      // ("references are not consulted ... point the tsConfig at a leaf that lists
+      // files") is simply WRONG for the all-not-found case, would misdescribe the
+      // cause. Only when the union is EMPTY -- every reference was boundary-skipped
+      // / zero-root-names / self-reference / duplicate, so nothing was counted --
+      // do we synthesize the none-in-project 90001 guard, keeping the verdict a
+      // deterministic non-zero signal. Every diagnostic here is file-less (no
+      // surviving leaf ran, and the infra-500 case already re-threw above), so no
+      // boundary filter is needed.
+      const guardDiagnostics =
+        walk.rawDiagnostics.length > 0
+          ? walk.rawDiagnostics
+          : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
       const result = finalize(
         ts,
         options.tsConfigPath,
         0,
-        [...configDiagnostics, guard],
+        [...configDiagnostics, ...guardDiagnostics],
         start,
       );
 
@@ -286,31 +326,17 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 
   // D-05 + D-02: build a FRESH per-call options object (footgun guard against a
   // mutated `noEmit` leaking across calls) spreading `...parsed.options` then the
-  // full emit-neutralizing override. `composite: false` is the gatekeeper that
-  // makes `declaration: false` / `incremental: false` safe and that breaks the
-  // composite/emitDeclarationOnly triangle producing a bogus TS5053/TS6304.
-  // D-05b: every semantics-defining option (module, moduleResolution, target,
-  // lib, paths, strictTemplates, extended*) stays untouched via the spread.
+  // full emit-neutralizing override. That override is the shared
+  // EMIT_NEUTRALIZING_OPTIONS single source of truth (gather-diagnostics.ts),
+  // spread IDENTICALLY here and in the solution-tsconfig walk (walk-references.ts)
+  // so the direct-leaf and walk paths can never diverge. D-05b: every
+  // semantics-defining option (module, moduleResolution, target, lib, paths,
+  // strictTemplates, extended*) stays untouched via the `...parsed.options` spread.
   const result = ng.performCompilation({
     rootNames: parsed.rootNames,
     options: {
       ...parsed.options,
-      // ---- D-05 emit-neutralizing override (verbatim from 02-CONTEXT.md) ----
-      noEmit: true,
-      composite: false,
-      declaration: false,
-      declarationMap: false,
-      emitDeclarationOnly: false,
-      incremental: false,
-      tsBuildInfoFile: undefined,
-      sourceMap: undefined,
-      inlineSourceMap: undefined,
-      inlineSources: undefined,
-      declarationDir: undefined,
-      mapRoot: undefined,
-      sourceRoot: undefined,
-      // ---- D-02: suppress the "Time for diagnostics" Message ----
-      diagnostics: false,
+      ...EMIT_NEUTRALIZING_OPTIONS,
     },
     // D-05a / V-2: emitFlags: 0 AND noEmit: true are BOTH load-bearing, neither
     // decorative. emitFlags: 0 is the suppressor when i18n is involved; noEmit

@@ -56,6 +56,7 @@ const solutionStyleOverlap = fixtureTsConfig('solution-style-overlap');
 const solutionStyleOop = fixtureTsConfig('solution-style-oop');
 const solutionStyleEmpty = fixtureTsConfig('solution-style-empty');
 const solutionStyleBrokenRef = fixtureTsConfig('solution-style-broken-ref');
+const solutionStyleAllMissing = fixtureTsConfig('solution-style-all-missing');
 const solutionStyleSelfRef = fixtureTsConfig('solution-style-selfref');
 
 function codesOf(diagnostics: readonly ts.Diagnostic[]): number[] {
@@ -207,6 +208,37 @@ describe('walk-references: SC3 three-way D-03a split', () => {
   });
 });
 
+describe('walk-references: C8 the zero-rootNames guard message is actionable (regression guard)', () => {
+  it('names a leaf tsconfig and distinguishes references-only from empty-project', async () => {
+    const refsOnly = await runTypecheck({ tsConfigPath: solutionStyleOop });
+    const empty = await runTypecheck({ tsConfigPath: solutionStyleEmpty });
+
+    function guardMessage(diagnostics: readonly ts.Diagnostic[]): string {
+      const guard = diagnostics.find(
+        (diagnostic) => diagnostic.code === ZERO_ROOT_NAMES,
+      );
+
+      return guard !== undefined && typeof guard.messageText === 'string'
+        ? guard.messageText
+        : '';
+    }
+
+    const refsOnlyMessage = guardMessage(refsOnly.diagnostics);
+    const emptyMessage = guardMessage(empty.diagnostics);
+
+    // C8: no spec pinned this message text, so a regression that empties/garbles/
+    // collapses the two branch messages would ship silently (the code stays 90001).
+    // Both branches MUST keep the actionable "point at a leaf tsconfig" guidance.
+    expect(refsOnlyMessage).toContain('tsconfig.app.json');
+    expect(refsOnlyMessage).toContain('references-only');
+    expect(emptyMessage).toContain('tsconfig.app.json');
+    expect(emptyMessage).toContain('empty project');
+
+    // The two branches carry DISTINCT guidance and are never collapsed together.
+    expect(refsOnlyMessage).not.toBe(emptyMessage);
+  });
+});
+
 describe('walk-references: SC3/D-05 fold-and-count (solution-style-broken-ref)', () => {
   it('synthesizes ONE counted 90002, STILL walks the survivor, and RESOLVES (no rethrow)', async () => {
     const result = await runTypecheck({ tsConfigPath: solutionStyleBrokenRef });
@@ -256,6 +288,51 @@ describe('walk-references: SC3/D-05 fold-and-count (solution-style-broken-ref)',
     await expect(
       runTypecheck({ tsConfigPath: solutionStyleBrokenRef }),
     ).resolves.not.toBeInstanceOf(TypecheckInfrastructureError);
+  });
+});
+
+describe('walk-references: I-1 all-references-not-found surfaces the 90002s (solution-style-all-missing)', () => {
+  it('reports ONE counted 90002 PER missing reference, NOT a single generic 90001 guard', async () => {
+    const result = await runTypecheck({ tsConfigPath: solutionStyleAllMissing });
+
+    const codes = codesOf(result.diagnostics);
+
+    // I-1: EVERY reference is not-found, so no leaf survives (rootNamesCount 0). The
+    // walk's counted 90002 "referenced tsconfig not found" Errors -- one per missing
+    // leaf -- must be REPORTED, not discarded in favour of the generic 90001 guard
+    // whose message ("references are not consulted ... point at a leaf that lists
+    // files") is WRONG for this case.
+    expect(result.rootNamesCount).toBe(0);
+    expect(codes.filter((code) => code === REFERENCE_NOT_FOUND)).toHaveLength(2);
+    expect(codes).not.toContain(ZERO_ROOT_NAMES);
+    expect(result.errorCount).toBe(2);
+
+    // Both not-found references are recorded for the advisory notice, path-named.
+    expect(result.skippedReferences).toBeDefined();
+    expect(result.skippedReferences).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: 'not-found',
+          referencePath: expect.stringContaining('tsconfig.missing-a.json'),
+        }),
+        expect.objectContaining({
+          reason: 'not-found',
+          referencePath: expect.stringContaining('tsconfig.missing-b.json'),
+        }),
+      ]),
+    );
+
+    // The messages name each missing path so an agent/CI gets an actionable step.
+    const messages = result.diagnostics.map((diagnostic) =>
+      typeof diagnostic.messageText === 'string' ? diagnostic.messageText : '',
+    );
+
+    expect(
+      messages.some((message) => message.includes('tsconfig.missing-a.json')),
+    ).toBe(true);
+    expect(
+      messages.some((message) => message.includes('tsconfig.missing-b.json')),
+    ).toBe(true);
   });
 });
 

@@ -335,7 +335,100 @@ describe('walkReferences', () => {
     ]);
   });
 
-  it('leaves a folded 5012 (bad extends target) as a normal leaf diagnostic, NOT reclassified (D-05 scope)', async () => {
+  it('pushes an EXISTING leaf config 500 to the union as infrastructure, NOT a not-found 90002 (S-7)', async () => {
+    // A leaf whose PATH EXISTS but whose readConfiguration crashes (circular
+    // `extends` RangeError, EACCES) surfaces a code-500 in parsed.errors. Unlike a
+    // nonexistent PATH (ENOENT -> 90002 not-found), an existing-but-crashing leaf is
+    // INFRASTRUCTURE: the raw 500 is unioned unchanged so runTypecheck re-throws it,
+    // never mislabelled "not found" for a file that is present.
+    const base = tsForWalk(await import('typescript'));
+    const existingCrashPath = leaf('./tsconfig.circular.json');
+    const ts = {
+      ...base,
+      sys: {
+        ...base.sys,
+        // The leaf FILE exists on disk; only its config resolution crashed.
+        fileExists: (filePath: string): boolean =>
+          filePath === existingCrashPath,
+      },
+    } as typeof import('typescript');
+
+    const { ng, performedPaths } = stubCompilerCli({
+      [existingCrashPath]: {
+        parsed: parsedConfig(
+          existingCrashPath,
+          [],
+          [diagnostic(UNKNOWN_ERROR_CODE)],
+        ),
+        diagnostics: [],
+      },
+    });
+
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.circular.json' }],
+    );
+
+    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+
+    const codes = walk.rawDiagnostics.map((d) => d.code);
+
+    // The raw 500 is in the union (runTypecheck's scan re-throws it) and it is
+    // NEITHER reclassified to 90002 NOR recorded as a skip; the leaf never compiled.
+    expect(codes).toContain(UNKNOWN_ERROR_CODE);
+    expect(codes).not.toContain(REFERENCE_NOT_FOUND);
+    expect(walk.skippedReferences).toEqual([]);
+    expect(performedPaths).toEqual([]);
+  });
+
+  it('WALKS a leaf whose realpath throws instead of dropping it (boundary over-keep-safe, S-1)', async () => {
+    // A throwing realpath makes canonicalLeaf undefined. The walk CANNOT prove the
+    // leaf is out-of-project, so it WALKS it (over-keep-safe, matching the
+    // filter-diagnostics RES-03 bias) rather than silently dropping it as
+    // out-of-project -- the leaf's diagnostics are boundary-filtered downstream.
+    const base = tsForWalk(await import('typescript'));
+    const throwingPath = leaf('./tsconfig.throwing.json');
+    const source = leaf('./throwing.ts');
+    const ts = {
+      ...base,
+      sys: {
+        ...base.sys,
+        realpath: (filePath: string): string => {
+          if (filePath === throwingPath) {
+            throw new Error('EACCES');
+          }
+
+          return filePath;
+        },
+      },
+    } as typeof import('typescript');
+
+    const { ng, performedPaths } = stubCompilerCli({
+      [throwingPath]: {
+        parsed: parsedConfig(throwingPath, [source]),
+        diagnostics: [diagnostic(TS2322, source)],
+      },
+    });
+
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.throwing.json' }],
+    );
+
+    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+
+    // The leaf was WALKED (compiled), NOT skipped as out-of-project.
+    expect(performedPaths).toEqual([throwingPath]);
+    expect(walk.rootNamesCount).toBe(1);
+    expect(walk.rawDiagnostics.map((d) => d.code)).toContain(TS2322);
+    expect(walk.skippedReferences).toEqual([]);
+  });
+
+  it('KEEPS a surviving leaf folded config error (parsed.errors) in the union, NOT reclassified (C-1 / MD-01 parity)', async () => {
     const ts = tsForWalk(await import('typescript'));
 
     const badExtendsPath = leaf('./tsconfig.bad-extends.json');
@@ -344,12 +437,14 @@ describe('walkReferences', () => {
 
     const { ng, performedPaths } = stubCompilerCli({
       [badExtendsPath]: {
-        // A bad `extends` TARGET folds as a 5012 (NOT a 500). It is not a
-        // not-found PATH, so the leaf still resolves with rootNames and compiles;
-        // the 5012 flows through as a normal diagnostic on parsed.errors is not
-        // modelled here -- what matters is: no 90002, no skip.
-        parsed: parsedConfig(badExtendsPath, [source]),
-        diagnostics: [diagnostic(TS5012, source)],
+        // A bad/typo'd `extends` TARGET folds as a config diagnostic (e.g. TS5012/
+        // TS5083) on parsed.errors (NOT a 500), and the leaf STILL resolves with
+        // rootNames and compiles. Modelling the error where it really lands --
+        // parsed.errors, not performCompilation's output -- is the C-1 regression
+        // guard: the surviving leaf's config error MUST be unioned (a missing base
+        // silently weakens strict options, so dropping it is a false PASS).
+        parsed: parsedConfig(badExtendsPath, [source], [diagnostic(TS5012)]),
+        diagnostics: [diagnostic(TS2322, source)],
       },
     });
 
@@ -372,7 +467,11 @@ describe('walkReferences', () => {
 
     const codes = walk.rawDiagnostics.map((d) => d.code);
 
+    // The parsed.errors TS5012 SURVIVES into the union (C-1 fix) alongside the
+    // leaf's own performCompilation diagnostic ...
     expect(codes).toContain(TS5012);
+    expect(codes).toContain(TS2322);
+    // ... and it is NOT reclassified to a not-found 90002 and NOT skipped.
     expect(codes).not.toContain(REFERENCE_NOT_FOUND);
     expect(walk.skippedReferences).toEqual([]);
   });
@@ -411,7 +510,7 @@ describe('walkReferences', () => {
     ]);
   });
 
-  it('skips a self-reference / duplicate leaf and compiles at most once (D-04)', async () => {
+  it('labels a self-reference and a duplicate leaf DISTINCTLY and compiles at most once (D-04)', async () => {
     const ts = tsForWalk(await import('typescript'));
 
     const appPath = leaf('./tsconfig.app.json');
@@ -450,16 +549,19 @@ describe('walkReferences', () => {
       SOLUTION_TSCONFIG,
     );
 
-    // The app leaf is compiled EXACTLY ONCE; the self-reference is never
-    // compiled (output-neutral dedupe).
+    // The app leaf is compiled EXACTLY ONCE; the self-reference and the duplicate
+    // edge are never compiled (output-neutral dedupe).
     expect(performedPaths).toEqual([appPath]);
     expect(walk.rootNamesCount).toBe(1);
     expect(walk.rawDiagnostics.filter((d) => d.code === TS2322)).toHaveLength(
       1,
     );
+    // The self-reference and the repeated leaf are labelled DISTINCTLY (I-3): the
+    // solution-referencing-itself edge is 'self-reference'; the second
+    // ./tsconfig.app.json edge is 'duplicate', NOT a false 'self-reference'.
     expect(walk.skippedReferences).toEqual([
       { referencePath: SOLUTION_TSCONFIG, reason: 'self-reference' },
-      { referencePath: appPath, reason: 'self-reference' },
+      { referencePath: appPath, reason: 'duplicate' },
     ]);
   });
 

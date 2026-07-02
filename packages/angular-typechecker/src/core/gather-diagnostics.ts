@@ -3,6 +3,41 @@ import type ts from 'typescript';
 import type { Program } from './compiler-cli-types';
 
 /**
+ * FAL-04 (v0.1.0): the SINGLE source of truth for the emit-neutralizing
+ * `performCompilation` override, spread AFTER `...parsed.options` on BOTH the
+ * direct single-leaf path (run-typecheck.ts) and the solution-tsconfig reference
+ * walk (walk-references.ts). It MUST be byte-identical across the two entry
+ * points -- otherwise the same project could yield different verdicts depending
+ * on whether it is checked via a leaf or via its referencing solution. Extracting
+ * it here (both files already import this module, so there is no import cycle)
+ * makes that impossible to drift and retires the prior clone-detector suppression.
+ *
+ * `composite: false` is the gatekeeper that makes `declaration: false` /
+ * `incremental: false` safe and that breaks the composite/emitDeclarationOnly
+ * triangle producing a bogus TS5053/TS6304. `diagnostics: false` suppresses the
+ * "Time for diagnostics" Message (D-02). Every semantics-defining option (module,
+ * moduleResolution, target, lib, paths, strictTemplates, extended*) is left
+ * untouched -- it stays on `parsed.options`, which is spread first.
+ */
+export const EMIT_NEUTRALIZING_OPTIONS: ts.CompilerOptions = {
+  noEmit: true,
+  composite: false,
+  declaration: false,
+  declarationMap: false,
+  emitDeclarationOnly: false,
+  incremental: false,
+  tsBuildInfoFile: undefined,
+  sourceMap: undefined,
+  inlineSourceMap: undefined,
+  inlineSources: undefined,
+  declarationDir: undefined,
+  mapRoot: undefined,
+  sourceRoot: undefined,
+  // D-02: suppress the "Time for diagnostics" Message.
+  diagnostics: false,
+};
+
+/**
  * Gathers EVERY diagnostic getter on the Angular Program unconditionally, in
  * order, without the phase short-circuit that ngc's `defaultGatherDiagnostics`
  * applies (its `&&`-chain stops at `getNgSemanticDiagnostics` once an earlier

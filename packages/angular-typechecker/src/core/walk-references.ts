@@ -8,7 +8,10 @@ import type {
   ParsedConfiguration,
 } from './compiler-cli-types';
 import { createCanonicalizer, isUnderDir } from './filter-diagnostics';
-import { gatherAllDiagnostics } from './gather-diagnostics';
+import {
+  EMIT_NEUTRALIZING_OPTIONS,
+  gatherAllDiagnostics,
+} from './gather-diagnostics';
 
 /**
  * WALK-01 (Phase 13): the PURE core reference walk for a solution /
@@ -46,10 +49,10 @@ export interface WalkResult {
   // Sum of `parsed.rootNames.length` across WALKED (surviving) leaves. A
   // skipped/broken leaf contributes 0 (L-3 / Pitfall 5).
   rootNamesCount: number;
-  // References skipped (out-of-project / zero-root-names / self-reference) or
-  // reclassified (not-found -> 90002) during the walk. Empty array when every
-  // reference walked cleanly; `runTypecheck` maps `[]` -> `undefined` on
-  // `CoreResult` so the adapter's presence check is sufficient.
+  // References skipped (out-of-project / zero-root-names / self-reference /
+  // duplicate) or reclassified (not-found -> 90002) during the walk. Empty array
+  // when every reference walked cleanly; `runTypecheck` maps `[]` -> `undefined`
+  // on `CoreResult` so the adapter's presence check is sufficient.
   skippedReferences: readonly SkippedReference[];
 }
 
@@ -66,7 +69,18 @@ export interface SkippedReference {
   // The resolved absolute path of the referenced leaf tsconfig.
   referencePath: string;
   // Discriminator explaining why the reference was skipped or reclassified.
-  reason: 'out-of-project' | 'zero-root-names' | 'self-reference' | 'not-found';
+  // `self-reference` is the solution referencing ITSELF; `duplicate` is a leaf
+  // listed more than once. Both are output-neutral (the leaf is never compiled
+  // twice), but they are DISTINCT causes, so the advisory names each accurately
+  // rather than folding a genuine duplicate under the misleading `self-reference`
+  // label. Additive to the union (0.x semver); the executor renders the reason
+  // string verbatim.
+  reason:
+    | 'out-of-project'
+    | 'zero-root-names'
+    | 'self-reference'
+    | 'duplicate'
+    | 'not-found';
 }
 
 // Private synthesized-diagnostic code for the D-05 not-found reference (a
@@ -116,24 +130,26 @@ export async function walkReferences(
     const canonicalLeaf = canonicalize(leafPath);
 
     // D-04: skip the self-reference (canonical leaf equals the solution) and any
-    // duplicate canonical leaf already seen. BOTH cases are DELIBERATELY folded
-    // under the self-reference reason: the true self-reference and a repeated
-    // (duplicate) in-project leaf are output-neutral repeats of an
+    // duplicate canonical leaf already seen. Both are output-neutral repeats of an
     // already-covered leaf (the union finalize dedupes diagnostics by value
-    // anyway), so a single advisory label suffices and skipping here saves the
-    // redundant performCompilation per repeated edge. The public
-    // SkippedReference.reason union INTENTIONALLY omits a distinct duplicate
-    // member to keep the exported type stable pre-1.0 -- the label is
-    // advisory-only on a leaf that is never compiled, so the extra precision
-    // would widen a shipped public type for no runtime benefit.
-    if (
-      canonicalLeaf !== undefined &&
-      (canonicalLeaf === canonicalSolutionPath ||
-        seenCanonicalLeaves.has(canonicalLeaf))
-    ) {
+    // anyway), so skipping here saves the redundant performCompilation per
+    // repeated edge -- but they are DISTINCT causes, so each is labelled honestly:
+    // a solution referencing ITSELF is `self-reference`; a leaf listed twice is
+    // `duplicate`. Folding a genuine duplicate under `self-reference` would print a
+    // false "self-referential" advisory for a config that is not self-referential.
+    if (canonicalLeaf !== undefined && canonicalLeaf === canonicalSolutionPath) {
       skippedReferences.push({
         referencePath: leafPath,
         reason: 'self-reference',
+      });
+
+      continue;
+    }
+
+    if (canonicalLeaf !== undefined && seenCanonicalLeaves.has(canonicalLeaf)) {
+      skippedReferences.push({
+        referencePath: leafPath,
+        reason: 'duplicate',
       });
 
       continue;
@@ -146,9 +162,20 @@ export async function walkReferences(
     // D-01: the module-boundary guard. If the resolved leaf is NOT under the
     // solution tsconfig's directory, SKIP it (never compile it) so an outsider's
     // sources never enter the union. Reuses `isUnderDir` verbatim. A `undefined`
-    // canonicalLeaf (a throwing realpath) is treated by `isUnderDir` as
-    // over-keep-safe, so the leaf is walked -- never silently dropped.
-    if (!isUnderDir(canonicalLeaf ?? leafPath, canonicalSolutionDir)) {
+    // canonicalLeaf (a throwing realpath) CANNOT prove the leaf is out-of-project,
+    // so we DELIBERATELY skip this boundary check and WALK the leaf (over-keep-safe,
+    // matching the RES-03 fail-safe bias in filter-diagnostics.ts) -- its own
+    // diagnostics are still boundary-filtered against the solution basePath in
+    // `finalize`, so an out-of-project source cannot leak. Guarding on
+    // `canonicalLeaf !== undefined` is REQUIRED: `isUnderDir`'s over-keep branch
+    // keys off an undefined DIR, not an undefined FILE, so passing the raw
+    // (backslash, un-normalized) `leafPath` would fail `startsWith` the
+    // forward-slashed `canonicalSolutionDir` on Windows and wrongly drop the leaf
+    // as out-of-project.
+    if (
+      canonicalLeaf !== undefined &&
+      !isUnderDir(canonicalLeaf, canonicalSolutionDir)
+    ) {
       skippedReferences.push({
         referencePath: leafPath,
         reason: 'out-of-project',
@@ -157,21 +184,36 @@ export async function walkReferences(
       continue;
     }
 
-    // Per-leaf config resolution. A NONEXISTENT PATH surfaces as a code-500
-    // UNKNOWN_ERROR_CODE in `parsed.errors` (ENOENT via readConfiguration's
-    // outer catch).
+    // Per-leaf config resolution. A code-500 UNKNOWN_ERROR_CODE in `parsed.errors`
+    // comes from readConfiguration's outer catch (a nonexistent PATH's ENOENT, or
+    // a genuine crash on an EXISTING file such as a circular `extends` RangeError).
     const parsed = ng.readConfiguration(leafPath);
 
-    // D-05 (B3 fold-and-count): detect the not-found 500 BY CODE ONLY (never
-    // `source`/message text) and RECLASSIFY it into a counted 90002 Error, then
-    // CONTINUE to the next leaf (this leaf contributes 0 to rootNamesCount). A
-    // bad-`extends` TARGET yields a folded 5012 (NOT a 500) and is out of scope
-    // for D-05 -- it would flow through as a normal leaf diagnostic.
-    const notFound = parsed.errors.find(
+    // D-05 (B3): detect the config 500 BY CODE ONLY (never `source`/message text),
+    // then split the two causes by whether the leaf FILE exists on disk (still a
+    // code-only test -- no message sniffing):
+    //   - the leaf does NOT exist (ENOENT) -> a genuine not-found reference.
+    //     Fold-and-count into a counted 90002 Error, record the skip, and CONTINUE
+    //     (this leaf contributes 0 to rootNamesCount).
+    //   - the leaf EXISTS but config resolution still crashed -> an INFRASTRUCTURE
+    //     failure, exactly as on the direct single-leaf path (run-typecheck.ts).
+    //     Push the raw 500 into the union UNCHANGED; `runTypecheck`'s post-walk
+    //     union scan re-throws it as a TypecheckInfrastructureError (walk-references
+    //     stays pure and free of the run-typecheck import cycle). It must NEVER be
+    //     mislabelled "not found" for a file that is present.
+    // A bad-`extends` TARGET yields a folded 5012 (NOT a 500) and is out of scope
+    // here -- it flows through as a normal surviving-leaf diagnostic below.
+    const configFailure = parsed.errors.find(
       (diagnostic) => diagnostic.code === ng.UNKNOWN_ERROR_CODE,
     );
 
-    if (notFound !== undefined) {
+    if (configFailure !== undefined) {
+      if (ts.sys.fileExists(leafPath)) {
+        rawDiagnostics.push(configFailure);
+
+        continue;
+      }
+
       rawDiagnostics.push(synthesizeReferenceNotFoundDiagnostic(ts, leafPath));
       skippedReferences.push({ referencePath: leafPath, reason: 'not-found' });
 
@@ -190,43 +232,29 @@ export async function walkReferences(
     }
 
     // Surviving leaf: run performCompilation with the SAME emit-neutralizing
-    // override block as the direct path (run-typecheck.ts) and push the RAW
-    // gathered diagnostics (never filtered per-leaf -- Pitfall 2) to the union.
-    //
-    // FAL-04 (v0.1.0): this emit-neutralizing performCompilation block is a
-    // DELIBERATE contract-mirror of the direct-leaf path in run-typecheck.ts
-    // (D-05: the walk MUST apply byte-identical emit-neutralizing options as the
-    // direct path, or the two entry points would diverge). fallow's clone detector
-    // reports the intentional mirror as a code-duplication group; suppress this one
-    // reviewed instance (which drops the 2-instance group below minOccurrences)
-    // rather than refactor verified, shipped engine code right before release.
-    // Accidental duplication elsewhere in product code stays gated.
-    // fallow-ignore-next-line code-duplication
+    // override as the direct path -- the shared EMIT_NEUTRALIZING_OPTIONS single
+    // source of truth (gather-diagnostics.ts), spread AFTER `...parsed.options`
+    // exactly as run-typecheck.ts does, so a leaf and its referencing solution
+    // can never diverge.
     const result = ng.performCompilation({
       rootNames: parsed.rootNames,
       options: {
         ...parsed.options,
-        // ---- D-05 emit-neutralizing override (verbatim from run-typecheck.ts) ----
-        noEmit: true,
-        composite: false,
-        declaration: false,
-        declarationMap: false,
-        emitDeclarationOnly: false,
-        incremental: false,
-        tsBuildInfoFile: undefined,
-        sourceMap: undefined,
-        inlineSourceMap: undefined,
-        inlineSources: undefined,
-        declarationDir: undefined,
-        mapRoot: undefined,
-        sourceRoot: undefined,
-        // ---- D-02: suppress the "Time for diagnostics" Message ----
-        diagnostics: false,
+        ...EMIT_NEUTRALIZING_OPTIONS,
       },
       emitFlags: 0 as EmitFlags,
       gatherDiagnostics: gatherAllDiagnostics,
     });
 
+    // MD-01 parity with the direct path (run-typecheck.ts prepends
+    // `[...parsed.errors]`): a surviving leaf's OWN config-parse diagnostics (e.g.
+    // a folded TS5012/TS5083 from a missing/typo'd `extends` base that silently
+    // WEAKENS strict options) are first-class counted diagnostics, NEVER dropped.
+    // Without this the walk could report a false PASS on a broken leaf that FAILS
+    // when pointed at directly -- the exact "type-checker that lies" class. (The
+    // code-500 infra case was handled above, so parsed.errors here carries only
+    // genuine folded config diagnostics.)
+    rawDiagnostics.push(...parsed.errors);
     rawDiagnostics.push(...result.diagnostics);
     rootNamesCount += parsed.rootNames.length;
   }
