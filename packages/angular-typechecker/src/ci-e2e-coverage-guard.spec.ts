@@ -49,17 +49,13 @@ function enumerateE2eProjects(root: string): string[] {
     .sort();
 }
 
-// Extract the `e2e` job's `-p` project list from ci.yml WITHOUT a YAML parser
-// (line-level invariant; reuses the release-hygiene no-parser precedent). Two
-// robustness levers, both applied (belt-and-suspenders):
-//   1. Job-scope to the `e2e:` block (slice to the next top-level job key). The
-//      job-key regex MUST allow digits or it would miss `e2e:` itself (the `2`).
-//   2. Match the physical-line-start `-p` of the folded (`>`) run scalar. There is
-//      a SECOND `-p` in the `test` job (`-p angular-typechecker`, MID-line); the
-//      line-start match uniquely selects the e2e continuation, never the test one.
-// Throws a clear located Error if the `e2e:` job or its `-p` line is absent, so a
-// ci.yml refactor fails LOUDLY -- never silently.
-function extractE2ePList(ci: string): string[] {
+// Slice the `e2e:` job block (from its key to the next top-level job key) WITHOUT a
+// YAML parser (line-level invariant; reuses the release-hygiene no-parser
+// precedent). Shared by the `-p` list guard (GUARD-01) and the `--parallel=1`
+// serialization guard (GUARD-01b) so there is ONE job-scoping implementation. The
+// job-key regex MUST allow digits or it would miss `e2e:` itself (the `2`). Throws a
+// clear located Error if the `e2e:` job is absent, so a ci.yml refactor fails LOUDLY.
+function extractE2eJobLines(ci: string): string[] {
   const lines = ci.split('\n');
   const start = lines.findIndex((line) => /^ {2}e2e:\s*$/.test(line));
 
@@ -79,9 +75,14 @@ function extractE2ePList(ci: string): string[] {
     }
   }
 
-  const pLine = lines
-    .slice(start, end)
-    .find((line) => /^\s*-p\s+\S/.test(line));
+  return lines.slice(start, end);
+}
+
+// Extract the `e2e` job's `-p` project list. The line-start `-p` match uniquely
+// selects the folded (`>`) run scalar's continuation; there is a SECOND `-p` in the
+// `test` job (`-p angular-typechecker`, MID-line) that the anchor never captures.
+function extractE2ePList(ci: string): string[] {
+  const pLine = extractE2eJobLines(ci).find((line) => /^\s*-p\s+\S/.test(line));
 
   if (pLine === undefined) {
     throw new Error(
@@ -124,5 +125,30 @@ describe('GUARD-01: the ci.yml e2e job -p list equals the e2e/* project set', ()
 
   it('is an exact bidirectional set match', () => {
     expect(pList).toEqual(graph);
+  });
+});
+
+// GUARD-01b (e2e shared-tarball race guard). The correctness of the `e2e` gate
+// depends on `--parallel=1`: all three e2e projects `npm pack` the SAME dist
+// artifact (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in
+// beforeAll and `rmSync` it in afterAll. Vitest serializes specs WITHIN each project
+// (singleFork + fileParallelism:false), but `nx run-many` defaults to parallel, so
+// without `--parallel=1` a sibling project's afterAll `rmSync` deletes the tarball
+// mid-`pnpm add` -> a nondeterministic ENOENT flake. `--parallel=1` is therefore
+// load-bearing; guard it the same way the `-p` list is guarded (GUARD-01) so that
+// dropping it becomes a loud, LOCATED test failure instead of a silent flake.
+describe('GUARD-01b: the ci.yml e2e job serializes its projects (shared-tarball race guard)', () => {
+  const ci = readFileSync(
+    join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
+    'utf8',
+  );
+
+  it('passes --parallel=1 to the e2e run-many', () => {
+    const e2eBlock = extractE2eJobLines(ci).join('\n');
+
+    expect(
+      /--parallel=1\b/.test(e2eBlock),
+      'GUARD-01b: the `e2e` job must pass `--parallel=1` to `nx run-many` so the three e2e projects run serially. They share one dist tarball path (each packs it in beforeAll + `rmSync`s it in afterAll); running them in parallel races to an ENOENT on `pnpm add`. If this flag was removed intentionally, first give each e2e project a UNIQUE tarball path so cross-project parallelism is safe.',
+    ).toBe(true);
   });
 });

@@ -202,11 +202,18 @@ beforeAll(() => {
       stdout?: string;
       stderr?: string;
       message?: string;
+      status?: number;
+      signal?: string;
     };
 
     throw new Error(
       [
         'pnpm add failed on the CI runner.',
+        // The exit status/signal discriminates a pnpm resolution failure (exit 1,
+        // e.g. a genuine peer ERESOLVE -> the escalate-class) from a
+        // provisioning/tooling crash or a killed process (a signal).
+        '--- status ---',
+        String(execError.status ?? execError.signal ?? '(unknown)'),
         '--- stdout ---',
         execError.stdout ?? '(none)',
         '--- stderr ---',

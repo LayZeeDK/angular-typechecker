@@ -25,16 +25,25 @@
   ],
 
   // FAL-01 (v0.1.0 milestone-integration gate): `@angular/core` is a genuine ROOT
-  // devDependency (root package.json) imported ONLY by test fixtures + dev libs
-  // (fixtures/**, e2e/**/fixtures/**, libs/**) to make them compilable Angular
-  // sources for the engine to type-check. The PUBLISHED package
-  // (packages/angular-typechecker) does NOT import `@angular/core` (it uses
-  // `@angular/compiler-cli`), and its dependency hygiene is owned by
-  // @nx/dependency-checks, not fallow. fallow's monorepo resolver attributes the
-  // new fixture imports to a project package.json without `@angular/core` and
-  // reports an `unlisted-dependencies` (error) false positive. Ignoring it here is
-  // safe: no shipped product code depends on `@angular/core`, so nothing real is
-  // masked.
+  // devDependency (root package.json) imported ONLY by NON-PUBLISHED projects -- the
+  // Nx apps (apps/**), the committed diagnostic fixtures (fixtures/**), the e2e
+  // consumer fixtures (e2e/**/fixtures/**), and the dev test-consumer libs (libs/**)
+  // -- to make them compilable Angular sources for the engine to type-check. The
+  // PUBLISHED package (packages/angular-typechecker) does NOT import `@angular/core`
+  // (it uses `@angular/compiler-cli`), and its dependency hygiene is owned by
+  // @nx/dependency-checks, not fallow. fallow's monorepo resolver reports an
+  // `unlisted-dependencies` (error) false positive for it.
+  //
+  // Why a repo-global `ignoreDependencies` and NOT a per-glob `overrides` scoping:
+  // a file-path-glob `overrides` entry with `unlisted-dependencies: off` does NOT
+  // suppress this finding (empirically verified 2026-07-02 -- it resurfaced). fallow
+  // attributes `unlisted-dependencies` at the PROJECT (package.json) level, not per
+  // importing file, so a path glob cannot reach it; the global ignore is the only
+  // mechanism that works. This is a documented defense-in-depth reduction, NOT a
+  // hole: no shipped product code imports `@angular/core` (verified: zero non-spec
+  // `packages/angular-typechecker/src/**` importers), and @nx/dependency-checks
+  // (ESLint, error-tier, maxWarnings:0) independently gates the published
+  // package.json against an undeclared/errant dependency.
   "ignoreDependencies": ["@angular/core"],
 
   "rules": {
