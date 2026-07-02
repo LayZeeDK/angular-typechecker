@@ -7,10 +7,17 @@ import type {
 
 import type { InitGeneratorSchema } from './schema';
 
+// The UNSCOPED published executor id -- ALSO the key Nx uses for this executor's
+// `targetDefaults` entry. Exported so the `configuration` generator wires the
+// target with the SAME id (Landmine 3 / Pitfall 2: never the scoped
+// `@angular-typechecker/...` dev-repo alias, which exists only because this repo
+// aliases its own package).
+export const TYPECHECK_EXECUTOR_ID = 'angular-typechecker:typecheck';
+
 // D-04 / WALK-02: copied VERBATIM from the workspace `nx.json`
-// targetDefaults['angular-typechecker:typecheck'] block (the UNSCOPED published
-// executor id, NOT the scoped `@angular-typechecker/...` dev-repo alias). Keep
-// this block in sync with nx.json.
+// targetDefaults[TYPECHECK_EXECUTOR_ID] block (the UNSCOPED published executor id,
+// NOT the scoped `@angular-typechecker/...` dev-repo alias). Keep this block in
+// sync with nx.json.
 //
 // LANDMINE: the first `inputs` entry MUST stay 'default', never 'production'.
 // The coarse single walk target caches on ONE key, so the named input decides
@@ -60,8 +67,7 @@ export default async function initGenerator(
   const nxJson: NxJsonConfiguration = readNxJson(tree) ?? {};
 
   nxJson.targetDefaults ??= {};
-  nxJson.targetDefaults['angular-typechecker:typecheck'] ??=
-    TYPECHECK_TARGET_DEFAULTS;
+  nxJson.targetDefaults[TYPECHECK_EXECUTOR_ID] ??= TYPECHECK_TARGET_DEFAULTS;
   updateNxJson(tree, nxJson);
 
   if (!schema?.skipFormat) {

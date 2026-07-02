@@ -5,19 +5,12 @@ import {
   joinPathFragments,
   readJson,
   readProjectConfiguration,
-  runTasksInSerial,
   updateProjectConfiguration,
 } from '@nx/devkit';
-import type { GeneratorCallback, ProjectConfiguration, Tree } from '@nx/devkit';
+import type { ProjectConfiguration, Tree } from '@nx/devkit';
 
-import initGenerator from '../init/generator';
+import initGenerator, { TYPECHECK_EXECUTOR_ID } from '../init/generator';
 import type { ConfigurationGeneratorSchema } from './schema';
-
-// The UNSCOPED published executor id (Phase 13.1). The generated target and the
-// collision check both key off this id -- NOT the scoped `@angular-typechecker/...`
-// dev-repo alias, which exists only because this repo aliases its own package
-// (Landmine 3 / Pitfall 2).
-const TYPECHECK_EXECUTOR = 'angular-typechecker:typecheck';
 
 /**
  * Resolves the WORKSPACE-root-relative tsconfig path the generated target points
@@ -77,8 +70,9 @@ function resolveTsConfig(
 
   // 2. solution tsconfig.json WITH a non-empty references[] -> point at it.
   const solution = joinPathFragments(root, 'tsconfig.json');
+  const solutionExists = tree.exists(solution);
 
-  if (tree.exists(solution)) {
+  if (solutionExists) {
     const json = readJson<{ references?: unknown[] }>(tree, solution);
 
     if (Array.isArray(json.references) && json.references.length > 0) {
@@ -104,7 +98,7 @@ function resolveTsConfig(
   // runTypecheck reads its rootNames and type-checks it via the direct leaf path
   // (the walk never engages without references). Without this a validly-checkable
   // single-tsconfig project would be un-configurable (C3).
-  if (tree.exists(solution)) {
+  if (solutionExists) {
     return solution;
   }
 
@@ -131,7 +125,7 @@ function resolveTsConfig(
 export default async function configurationGenerator(
   tree: Tree,
   schema: ConfigurationGeneratorSchema,
-): Promise<GeneratorCallback> {
+): Promise<void> {
   // GEN-08 / D-10: seed workspace caching FIRST via init. `skipFormat: true` so
   // the nested init does not format -- we format ONCE at the end (first-party
   // `@nx/eslint:lint-project` / `@nx/vitest:configuration` composition).
@@ -158,7 +152,7 @@ export default async function configurationGenerator(
   // same-named target that IS ours is rewritten to the same shape (idempotent).
   const existing = projectConfig.targets?.[targetName];
 
-  if (existing && existing.executor !== TYPECHECK_EXECUTOR) {
+  if (existing && existing.executor !== TYPECHECK_EXECUTOR_ID) {
     throw new Error(
       `Project "${schema.project}" already has a "${targetName}" target using ` +
         `executor "${existing.executor}". Choose a different --targetName or ` +
@@ -175,7 +169,7 @@ export default async function configurationGenerator(
   // already threw above.)
   projectConfig.targets[targetName] = {
     ...existing,
-    executor: TYPECHECK_EXECUTOR,
+    executor: TYPECHECK_EXECUTOR_ID,
     options: { ...existing?.options, tsConfig },
   };
   updateProjectConfiguration(tree, schema.project, projectConfig);
@@ -185,7 +179,7 @@ export default async function configurationGenerator(
   }
 
   // No deferred post-generation tasks (the nested init is awaited above, and its
-  // formatting is folded into the single formatFiles here). Return the no-op
-  // GeneratorCallback so the return type stays a GeneratorCallback (Nx contract).
-  return runTasksInSerial();
+  // formatting is folded into the single formatFiles here), so this returns void
+  // -- matching the sibling `init` generator (no no-op GeneratorCallback needed;
+  // Nx accepts a void generator return).
 }
