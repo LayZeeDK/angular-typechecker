@@ -2,16 +2,13 @@ import { dirname, resolve } from 'node:path';
 
 import type ts from 'typescript';
 
-import type {
-  CompilerCli,
-  EmitFlags,
-  ParsedConfiguration,
-} from './compiler-cli-types';
-import { createCanonicalizer, isUnderDir } from './filter-diagnostics';
+import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
 import {
-  EMIT_NEUTRALIZING_OPTIONS,
-  gatherAllDiagnostics,
-} from './gather-diagnostics';
+  REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE,
+  synthesizeFilelessError,
+} from './diagnostic-codes';
+import { createCanonicalizer, isUnderDir } from './filter-diagnostics';
+import { runNoEmitCompilation } from './gather-diagnostics';
 
 /**
  * WALK-01 (Phase 13): the PURE core reference walk for a solution /
@@ -82,14 +79,6 @@ export interface SkippedReference {
     | 'duplicate'
     | 'not-found';
 }
-
-// Private synthesized-diagnostic code for the D-05 not-found reference (a
-// sibling to run-typecheck.ts's `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE = 90001`).
-// Chosen OUTSIDE the TypeScript code range (1xxx-9xxx / TS18xxx, all < 90000),
-// OUTSIDE the Angular negative `-99xxxx` encoding, and OUTSIDE the `500`
-// UNKNOWN_ERROR_CODE space, so it can never collide with a genuine TS or NG
-// diagnostic (same rationale as 90001).
-const REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE = 90002;
 
 /**
  * Walks the solution tsconfig's direct references and returns the raw union +
@@ -248,20 +237,12 @@ export async function walkReferences(
       continue;
     }
 
-    // Surviving leaf: run performCompilation with the SAME emit-neutralizing
-    // override as the direct path -- the shared EMIT_NEUTRALIZING_OPTIONS single
-    // source of truth (gather-diagnostics.ts), spread AFTER `...parsed.options`
-    // exactly as run-typecheck.ts does, so a leaf and its referencing solution
-    // can never diverge.
-    const result = ng.performCompilation({
-      rootNames: parsed.rootNames,
-      options: {
-        ...parsed.options,
-        ...EMIT_NEUTRALIZING_OPTIONS,
-      },
-      emitFlags: 0 as EmitFlags,
-      gatherDiagnostics: gatherAllDiagnostics,
-    });
+    // Surviving leaf: run the SAME no-emit whole-program compilation the direct
+    // path uses -- runNoEmitCompilation (gather-diagnostics.ts) is the single source
+    // of truth for the ENTIRE invocation (rootNames + emit-neutralized options +
+    // emitFlags:0 + the all-getter), so a leaf and its referencing solution can
+    // never diverge argument-by-argument.
+    const result = runNoEmitCompilation(ng, parsed);
 
     // MD-01 parity with the direct path (run-typecheck.ts prepends
     // `[...parsed.errors]`): a surviving leaf's OWN config-parse diagnostics (e.g.
@@ -281,23 +262,18 @@ export async function walkReferences(
 
 /**
  * Builds the D-05 not-found Error diagnostic for a nonexistent referenced leaf
- * PATH. Mirrors the file-less shape of run-typecheck.ts's
- * `synthesizeZeroRootNamesDiagnostic`: `file`/`start`/`length` undefined and
- * category `Error`, so the boundary filter never drops it (file-less
- * diagnostics are always kept) and `finalize` counts it as an Error. The
- * message names the resolved path so an agent/CI gets an actionable next step.
+ * PATH via the shared `synthesizeFilelessError` factory (diagnostic-codes.ts): a
+ * file-less, category-`Error` diagnostic the boundary filter never drops (file-less
+ * diagnostics are always kept) and `finalize` counts. The message names the
+ * resolved path so an agent/CI gets an actionable next step.
  */
 function synthesizeReferenceNotFoundDiagnostic(
   ts: typeof import('typescript'),
   resolvedPath: string,
 ): ts.Diagnostic {
-  return {
-    category: ts.DiagnosticCategory.Error,
-    code: REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE,
-    file: undefined,
-    start: undefined,
-    length: undefined,
-    messageText:
-      'angular-typechecker: referenced tsconfig not found: ' + resolvedPath,
-  };
+  return synthesizeFilelessError(
+    ts,
+    REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE,
+    'angular-typechecker: referenced tsconfig not found: ' + resolvedPath,
+  );
 }

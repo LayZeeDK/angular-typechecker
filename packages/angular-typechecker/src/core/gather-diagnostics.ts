@@ -1,6 +1,12 @@
 import type ts from 'typescript';
 
-import type { Program } from './compiler-cli-types';
+import type {
+  CompilerCli,
+  EmitFlags,
+  ParsedConfiguration,
+  PerformCompilationResult,
+  Program,
+} from './compiler-cli-types';
 
 /**
  * FAL-04 (v0.1.0): the SINGLE source of truth for the emit-neutralizing
@@ -89,6 +95,35 @@ export const EMIT_NEUTRALIZING_OPTIONS: ts.CompilerOptions = {
  * calls `getGlobalDiagnostics()` explicitly), so without this call a real global
  * type error escapes the type-check (under-reporting).
  */
+/**
+ * Runs the no-emit whole-program compilation the way BOTH entry points need it:
+ * `parsed.rootNames` + `parsed.options` spread with the shared
+ * `EMIT_NEUTRALIZING_OPTIONS`, `emitFlags: 0`, and the unconditional
+ * `gatherAllDiagnostics` all-getter. The direct single-leaf path (run-typecheck.ts)
+ * and the per-leaf reference walk (walk-references.ts) both call this ONE helper, so
+ * the ENTIRE invocation -- not just the options object -- is a single source of
+ * truth and cannot diverge argument-by-argument.
+ *
+ * D-05a / V-2: `emitFlags: 0` AND `noEmit: true` (in EMIT_NEUTRALIZING_OPTIONS) are
+ * BOTH load-bearing -- emitFlags:0 suppresses when i18n is involved; noEmit is the
+ * suppressor for the clean fall-through to ts.Program.emit. ENG-02: the all-getter
+ * gathers every diagnostic phase with no ngc short-circuit.
+ */
+export function runNoEmitCompilation(
+  ng: CompilerCli,
+  parsed: ParsedConfiguration,
+): PerformCompilationResult {
+  return ng.performCompilation({
+    rootNames: parsed.rootNames,
+    options: {
+      ...parsed.options,
+      ...EMIT_NEUTRALIZING_OPTIONS,
+    },
+    emitFlags: 0 as EmitFlags,
+    gatherDiagnostics: gatherAllDiagnostics,
+  });
+}
+
 export function gatherAllDiagnostics(
   program: Program,
 ): readonly ts.Diagnostic[] {
