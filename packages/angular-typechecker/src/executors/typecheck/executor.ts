@@ -75,10 +75,21 @@ export default async function typecheckExecutor(
       result.skippedReferences.length > 0
     ) {
       for (const skipped of result.skippedReferences) {
+        // A `not-found` reference is folded into the report as a COUNTED 90002
+        // Error that FAILS the verdict, so its notice must NOT claim to be
+        // advisory-only (the C4 inaccuracy). Every OTHER reason (out-of-project /
+        // zero-root-names / self-reference / duplicate) excludes the leaf's own
+        // diagnostics WITHOUT changing the verdict, so that advisory wording holds.
+        const verdictNote =
+          skipped.reason === 'not-found'
+            ? `It is reported as a counted error (90002) that FAILS the type-check -- ` +
+              `restore the referenced tsconfig or remove the stale reference.`
+            : `This notice is advisory only -- the type-check verdict is unchanged.`;
+
         logger.warn(
           `angular-typechecker: referenced tsconfig '${skipped.referencePath}' was skipped ` +
             `or reclassified during the solution-tsconfig reference walk (reason: ${skipped.reason}). ` +
-            `This notice is advisory only -- the type-check verdict is unchanged.`,
+            verdictNote,
         );
       }
     }
