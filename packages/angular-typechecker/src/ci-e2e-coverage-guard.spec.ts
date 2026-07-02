@@ -25,7 +25,12 @@ import { describe, expect, it } from 'vitest';
 // Resolve the workspace root from this spec's location
 // (packages/angular-typechecker/src/<file>) -- 3 dirs up -- so every file read is
 // cwd-independent (identical depth to the e2e specs).
-const workspaceRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const workspaceRoot = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+);
 
 // Enumerate the workspace's e2e projects by the strict `e2e/<dir>/project.json`
 // convention (each project's `.name` === its directory name). Do NOT enumerate by
@@ -56,7 +61,7 @@ function enumerateE2eProjects(root: string): string[] {
 // ci.yml refactor fails LOUDLY -- never silently.
 function extractE2ePList(ci: string): string[] {
   const lines = ci.split('\n');
-  const start = lines.findIndex((line) => /^  e2e:\s*$/.test(line));
+  const start = lines.findIndex((line) => /^ {2}e2e:\s*$/.test(line));
 
   if (start === -1) {
     throw new Error(
@@ -67,14 +72,16 @@ function extractE2ePList(ci: string): string[] {
   let end = lines.length;
 
   for (let index = start + 1; index < lines.length; index++) {
-    if (/^  [a-z0-9-]+:\s*$/.test(lines[index])) {
+    if (/^ {2}[a-z0-9-]+:\s*$/.test(lines[index])) {
       end = index;
 
       break;
     }
   }
 
-  const pLine = lines.slice(start, end).find((line) => /^\s*-p\s+\S/.test(line));
+  const pLine = lines
+    .slice(start, end)
+    .find((line) => /^\s*-p\s+\S/.test(line));
 
   if (pLine === undefined) {
     throw new Error(

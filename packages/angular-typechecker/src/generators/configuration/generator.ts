@@ -8,11 +8,7 @@ import {
   runTasksInSerial,
   updateProjectConfiguration,
 } from '@nx/devkit';
-import type {
-  GeneratorCallback,
-  ProjectConfiguration,
-  Tree,
-} from '@nx/devkit';
+import type { GeneratorCallback, ProjectConfiguration, Tree } from '@nx/devkit';
 
 import initGenerator from '../init/generator';
 import type { ConfigurationGeneratorSchema } from './schema';

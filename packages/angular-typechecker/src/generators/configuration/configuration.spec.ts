@@ -100,7 +100,9 @@ describe('configuration generator', () => {
     // No solution tsconfig and no flat leaf: resolution would fail WITHOUT the
     // override, so a successful write proves the override short-circuits. The
     // override is existence-probed, so the file must exist.
-    writeJson(tree, 'libs/my-lib/tsconfig.custom.json', { compilerOptions: {} });
+    writeJson(tree, 'libs/my-lib/tsconfig.custom.json', {
+      compilerOptions: {},
+    });
 
     await configurationGenerator(tree, {
       project: 'my-lib',
@@ -184,10 +186,12 @@ describe('configuration generator', () => {
 
     await configurationGenerator(tree, { project: 'my-lib' });
 
-    expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual({
-      executor: 'angular-typechecker:typecheck',
-      options: { tsConfig: 'libs/my-lib/tsconfig.json' },
-    });
+    expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual(
+      {
+        executor: 'angular-typechecker:typecheck',
+        options: { tsConfig: 'libs/my-lib/tsconfig.json' },
+      },
+    );
   });
 
   it('preserves user-added keys on our target during an idempotent re-run (GEN-04)', async () => {
@@ -211,11 +215,13 @@ describe('configuration generator', () => {
     // Re-asserts the executor id + resolved tsConfig, but does NOT clobber the
     // user's extra option (`maxWarnings`) or the `configurations` block (GEN-04
     // "no clobbered config").
-    expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual({
-      executor: 'angular-typechecker:typecheck',
-      options: { tsConfig: 'libs/my-lib/tsconfig.json', maxWarnings: 0 },
-      configurations: { ci: { failFast: true } },
-    });
+    expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual(
+      {
+        executor: 'angular-typechecker:typecheck',
+        options: { tsConfig: 'libs/my-lib/tsconfig.json', maxWarnings: 0 },
+        configurations: { ci: { failFast: true } },
+      },
+    );
   });
 
   it('throws on a non-ours same-named target instead of clobbering (GEN-04)', async () => {
