@@ -118,62 +118,53 @@ export async function walkReferences(
     const leafPath = resolve(solutionDir, reference.path);
     const canonicalLeaf = canonicalize(leafPath);
 
-    // D-04: skip the self-reference (canonical leaf equals the solution) and any
-    // duplicate canonical leaf already seen. Both are output-neutral repeats of an
-    // already-covered leaf (the union finalize dedupes diagnostics by value
-    // anyway), so skipping here saves the redundant performCompilation per
-    // repeated edge -- but they are DISTINCT causes, so each is labelled honestly:
-    // a solution referencing ITSELF is `self-reference`; a leaf listed twice is
-    // `duplicate`. Folding a genuine duplicate under `self-reference` would print a
-    // false "self-referential" advisory for a config that is not self-referential.
-    if (
-      canonicalLeaf !== undefined &&
-      canonicalLeaf === canonicalSolutionPath
-    ) {
-      skippedReferences.push({
-        referencePath: leafPath,
-        reason: 'self-reference',
-      });
-
-      continue;
-    }
-
-    if (canonicalLeaf !== undefined && seenCanonicalLeaves.has(canonicalLeaf)) {
-      skippedReferences.push({
-        referencePath: leafPath,
-        reason: 'duplicate',
-      });
-
-      continue;
-    }
-
+    // A canonicalized leaf (realpath succeeded) is checked for self-reference,
+    // duplication, and the module boundary. A `undefined` canonicalLeaf (a throwing
+    // realpath) CANNOT prove any of those, so the whole block is skipped and the leaf
+    // is WALKED (over-keep-safe, matching the RES-03 fail-safe bias in
+    // filter-diagnostics.ts) -- its own diagnostics are still boundary-filtered
+    // against the solution basePath in `finalize`, so an out-of-project source cannot
+    // leak. Hoisting the single `canonicalLeaf !== undefined` guard here (rather than
+    // repeating it on each check) is what makes that fall-through explicit.
     if (canonicalLeaf !== undefined) {
+      // D-04: skip the self-reference (canonical leaf equals the solution) and any
+      // duplicate already seen -- both are output-neutral repeats of an
+      // already-covered leaf, but DISTINCT causes, so each is labelled honestly (a
+      // solution referencing ITSELF is `self-reference`; a leaf listed twice is
+      // `duplicate`), never folding a duplicate under a false "self-reference".
+      if (canonicalLeaf === canonicalSolutionPath) {
+        skippedReferences.push({
+          referencePath: leafPath,
+          reason: 'self-reference',
+        });
+
+        continue;
+      }
+
+      if (seenCanonicalLeaves.has(canonicalLeaf)) {
+        skippedReferences.push({
+          referencePath: leafPath,
+          reason: 'duplicate',
+        });
+
+        continue;
+      }
+
       seenCanonicalLeaves.add(canonicalLeaf);
-    }
 
-    // D-01: the module-boundary guard. If the resolved leaf is NOT under the
-    // solution tsconfig's directory, SKIP it (never compile it) so an outsider's
-    // sources never enter the union. Reuses `isUnderDir` verbatim. A `undefined`
-    // canonicalLeaf (a throwing realpath) CANNOT prove the leaf is out-of-project,
-    // so we DELIBERATELY skip this boundary check and WALK the leaf (over-keep-safe,
-    // matching the RES-03 fail-safe bias in filter-diagnostics.ts) -- its own
-    // diagnostics are still boundary-filtered against the solution basePath in
-    // `finalize`, so an out-of-project source cannot leak. Guarding on
-    // `canonicalLeaf !== undefined` is REQUIRED: `isUnderDir`'s over-keep branch
-    // keys off an undefined DIR, not an undefined FILE, so passing the raw
-    // (backslash, un-normalized) `leafPath` would fail `startsWith` the
-    // forward-slashed `canonicalSolutionDir` on Windows and wrongly drop the leaf
-    // as out-of-project.
-    if (
-      canonicalLeaf !== undefined &&
-      !isUnderDir(canonicalLeaf, canonicalSolutionDir)
-    ) {
-      skippedReferences.push({
-        referencePath: leafPath,
-        reason: 'out-of-project',
-      });
+      // D-01: the module-boundary guard. If the resolved leaf is NOT under the
+      // solution tsconfig's directory, SKIP it (never compile it) so an outsider's
+      // sources never enter the union. Reuses `isUnderDir` verbatim. (The Windows
+      // raw-backslash trap the old per-check guard warned about cannot occur here:
+      // this branch runs only for a defined, slash-normalized canonicalLeaf.)
+      if (!isUnderDir(canonicalLeaf, canonicalSolutionDir)) {
+        skippedReferences.push({
+          referencePath: leafPath,
+          reason: 'out-of-project',
+        });
 
-      continue;
+        continue;
+      }
     }
 
     // Per-leaf config resolution. A code-500 UNKNOWN_ERROR_CODE in `parsed.errors`

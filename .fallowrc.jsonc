@@ -57,23 +57,20 @@
     // not here.
   },
 
-  // FAL-02 (v0.1.0 milestone-integration gate): complexity (CRAP) analysis is
-  // scoped OFF for test + fixture scaffolding, PLUS two reviewed product functions
-  // whose complexity is GENUINE, irreducible domain logic (not accidental bloat) --
-  // both were explicitly blessed as correctly-shaped in the PR #15 simplification
-  // review, and round-1's CORRECTNESS branches (not bloat) pushed them just over the
-  // default thresholds:
-  //   - core/walk-references.ts `walkReferences`: the solution-tsconfig reference
-  //     walk MUST classify each ref as self / duplicate / out-of-project / not-found
-  //     / infra-500 / zero-root / survivor -- an irreducible N-case dispatch for a
-  //     no-lying verdict (13 cyclomatic / 20 cognitive).
-  //   - generators/configuration/generator.ts `resolveTsConfig`: a 5-branch tsconfig
-  //     resolution decision table. Its ONLY trigger is CRAP, which fallow ESTIMATES
-  //     from export-references (it cannot see the spec suite), so 31.6 is a
-  //     coverage-estimation false-high -- the function is fully covered by
-  //     configuration.spec.ts. The other functions in these two files are small.
-  // Product engine complexity elsewhere in packages/angular-typechecker/src/**/*.ts
-  // (NOT *.spec.ts) stays gated.
+  // FAL-02 (v0.1.0 milestone-integration gate): complexity analysis is scoped OFF
+  // for test + fixture scaffolding, PLUS one reviewed product function --
+  // core/walk-references.ts `walkReferences` -- whose COGNITIVE complexity (20) is
+  // irreducible essential domain logic: the solution-tsconfig walk is a single
+  // N-case dispatch (self / duplicate / out-of-project / not-found / infra-500 /
+  // zero-root / survivor) for a no-lying verdict, review-blessed and spec-covered.
+  // Its cyclomatic was already brought to the threshold (13 -> 10) by hoisting the
+  // shared `canonicalLeaf !== undefined` guard; cutting cognitive further would mean
+  // extracting a classifier that threads the mutable seen-set out of the loop --
+  // strictly more indirection than the essential dispatch warrants.
+  // NOTE: `resolveTsConfig` was NOT scoped -- it was REFACTORED instead (its override
+  // rung extracted to `resolveTsConfigOverride`), which cleared it outright. Product
+  // engine complexity elsewhere in packages/angular-typechecker/src/**/*.ts (NOT
+  // *.spec.ts) stays gated.
   "health": {
     "ignore": [
       "e2e/**",
@@ -81,7 +78,6 @@
       "**/*.spec.ts",
       "**/*.int.spec.ts",
       "packages/angular-typechecker/src/core/walk-references.ts",
-      "packages/angular-typechecker/src/generators/configuration/generator.ts",
     ],
   },
 

@@ -13,6 +13,36 @@ import initGenerator, { TYPECHECK_EXECUTOR_ID } from '../init/generator';
 import type { ConfigurationGeneratorSchema } from './schema';
 
 /**
+ * OQ-1: resolves an explicit `--tsConfig` override. An ABSOLUTE path passes through
+ * verbatim (it cannot be existence-probed against the workspace-relative tree); a
+ * relative one is interpreted project-root-relative and existence-probed so a typo
+ * fails HERE with a clear located error (matching the other resolution rungs)
+ * rather than silently writing a broken target that only fails at execute time.
+ */
+function resolveTsConfigOverride(
+  tree: Tree,
+  projectRoot: string,
+  tsConfig: string,
+  project: string,
+): string {
+  if (isAbsolute(tsConfig)) {
+    return tsConfig;
+  }
+
+  const overridePath = joinPathFragments(projectRoot, tsConfig);
+
+  if (!tree.exists(overridePath)) {
+    throw new Error(
+      `--tsConfig "${tsConfig}" for project "${project}" resolves to ` +
+        `"${overridePath}", which does not exist. Pass a path relative to the ` +
+        `project root (or an absolute path).`,
+    );
+  }
+
+  return overridePath;
+}
+
+/**
  * Resolves the WORKSPACE-root-relative tsconfig path the generated target points
  * at, per D-07 resolution order. Reads the virtual `Tree` ONLY (never `node:fs`)
  * so it works on `createTreeWithEmptyWorkspace` (Landmine 2).
@@ -45,27 +75,10 @@ function resolveTsConfig(
 ): string {
   const root = projectConfig.root;
 
-  // 1. explicit override wins (OQ-1: absolute verbatim, relative project-root-relative).
-  // A relative override is existence-probed against the tree so a typo fails HERE
-  // with a clear located error (matching branches 3/4) rather than silently writing
-  // a broken target that only fails at execute time. An ABSOLUTE override cannot be
-  // probed against the workspace-relative tree, so it is honored verbatim (OQ-1).
+  // 1. explicit override wins (OQ-1) -- a cohesive sub-decision, so it lives in its
+  // own helper (absolute verbatim / relative probed-and-located).
   if (schema.tsConfig) {
-    if (isAbsolute(schema.tsConfig)) {
-      return schema.tsConfig;
-    }
-
-    const overridePath = joinPathFragments(root, schema.tsConfig);
-
-    if (!tree.exists(overridePath)) {
-      throw new Error(
-        `--tsConfig "${schema.tsConfig}" for project "${schema.project}" ` +
-          `resolves to "${overridePath}", which does not exist. Pass a path ` +
-          `relative to the project root (or an absolute path).`,
-      );
-    }
-
-    return overridePath;
+    return resolveTsConfigOverride(tree, root, schema.tsConfig, schema.project);
   }
 
   // 2. solution tsconfig.json WITH a non-empty references[] -> point at it.
