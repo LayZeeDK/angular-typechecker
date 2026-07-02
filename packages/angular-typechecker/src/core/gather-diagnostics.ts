@@ -10,13 +10,13 @@ import type {
 
 /**
  * FAL-04 (v0.1.0): the SINGLE source of truth for the emit-neutralizing
- * `performCompilation` override, spread AFTER `...parsed.options` on BOTH the
- * direct single-leaf path (run-typecheck.ts) and the solution-tsconfig reference
- * walk (walk-references.ts). It MUST be byte-identical across the two entry
- * points -- otherwise the same project could yield different verdicts depending
- * on whether it is checked via a leaf or via its referencing solution. Extracting
- * it here (both files already import this module, so there is no import cycle)
- * makes that impossible to drift and retires the prior clone-detector suppression.
+ * `performCompilation` override, spread AFTER `...parsed.options` inside
+ * `runNoEmitCompilation` (below) -- which BOTH the direct single-leaf path
+ * (run-typecheck.ts) and the solution-tsconfig reference walk (walk-references.ts)
+ * call. It MUST stay byte-identical across those entry points -- otherwise the same
+ * project could yield different verdicts depending on whether it is checked via a
+ * leaf or via its referencing solution -- so it lives in exactly one place and the
+ * two paths reach it only through the shared helper.
  *
  * `composite: false` is the gatekeeper that makes `declaration: false` /
  * `incremental: false` safe and that breaks the composite/emitDeclarationOnly
@@ -24,8 +24,10 @@ import type {
  * "Time for diagnostics" Message (D-02). Every semantics-defining option (module,
  * moduleResolution, target, lib, paths, strictTemplates, extended*) is left
  * untouched -- it stays on `parsed.options`, which is spread first.
+ *
+ * MODULE-PRIVATE: only `runNoEmitCompilation` consumes it, so it is not exported.
  */
-export const EMIT_NEUTRALIZING_OPTIONS: ts.CompilerOptions = {
+const EMIT_NEUTRALIZING_OPTIONS: ts.CompilerOptions = {
   noEmit: true,
   composite: false,
   declaration: false,
