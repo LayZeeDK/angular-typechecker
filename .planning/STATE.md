@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
-status: Awaiting next milestone
-stopped_at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-last_updated: "2026-07-02T20:19:04.414Z"
-last_activity: 2026-07-02 — Milestone v0.1.0 completed and archived
+status: completed
+stopped_at: "v0.1.0 (configuration + init generators, nx add support, and the typecheck executor rename) shipped, audited (passed, 22/22, zero tech debt), and ARCHIVED. Published live as angular-typechecker@0.1.0. Next milestone not yet scoped."
+last_updated: "2026-07-02"
+last_activity: 2026-07-02
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,71 +18,40 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-walking engine)
+See: .planning/PROJECT.md (updated 2026-07-02 after v0.1.0 milestone completion)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone -- run `/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: Milestone v0.1.0 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-02 — Milestone v0.1.0 completed and archived
+Milestone: v0.1.0 (configuration + init generators, nx add support, and the typecheck executor rename) -- COMPLETE and archived.
+Status: shipped (published `angular-typechecker@0.1.0`); no active phase.
+Next: next milestone not yet scoped. Natural candidates (Out of Scope in PROJECT.md): `createNodesV2` inferred per-leaf targets (WALK-FUT-01), `NgtscProgram` incremental engine (WALK-FUT-02, REP-RES-02b), Angular CLI (`angular.json`) generator/schematic support (GEN-FUT-01/02), machine-readable reporters (JSON/SARIF), or the `totalFilesCount` observability field (OBS-01).
 
-## v0.1.0 Phase Map
-
-| Phase | Name | Requirements | Depends on |
-|-------|------|--------------|------------|
-| 12 | Extended-diagnostic catalog + completeness tripwire | CAT-01..05, DRIFT-01 | — (engine-only; generator-independent) — DONE |
-| 13 | Engine: solution-tsconfig reference-walking | WALK-01, WALK-02 | — (builds on the shipped `performCompilation` engine; spikes 001-005 GO) |
-| 14 | typecheck-configuration generator | GEN-01..06 | Phase 13 (wires ONE `typecheck` target relying on the walk) |
-| 15 | Generator e2e + CI self-audit guard | GE2E-01, GE2E-02, GUARD-01 | Phase 14 (needs the shipped generator + `generators.json`) |
-
-Sequencing note: engine-walk (13) → generator (14) → e2e (15). Phase 12 (catalog + tripwire) already shipped. Phase 13 teaches the engine to walk a solution `tsconfig.json`'s in-project referenced leaves (union + dedupe, module-boundary-guarded, coarse-cached) — the prerequisite that makes Phase 14's generator thin (ONE `typecheck` target → solution `tsconfig.json`; no per-project-type `tsConfig` detection, no separate spec target). Phase 15 folds the generator e2e into `angular-typechecker-install-e2e` and adds the `-p` set-equality guard. The previously-OPEN GEN-02/03 shape blocker (single-target vs. multiple targets vs. `configurations`, and per-project-type detection) is now RESOLVED by reference-walking: spikes 001-005 all VALIDATED (GO), so the generator wires ONE target and the engine walks the references.
+Shipped milestones (historical record): `.planning/MILESTONES.md`.
+Full roadmap: `.planning/ROADMAP.md` (v0.0.1 + v0.0.3 + v0.1.0 collapsed to SHIPPED).
+Phase execution history: `.planning/milestones/v0.0.1-phases/`, `.planning/milestones/v0.0.3-phases/`, and `.planning/milestones/v0.1.0-phases/`.
 
 ## Accumulated Context
 
-### Roadmap Evolution
-
-- Phase 13.1 inserted after Phase 13: v0.1.0 re-scope: executor rename EXEC-01 + configuration/init generators + nx add; re-versioned v0.0.4 -> v0.1.0
-
 ### Decisions
 
-All milestone decisions (v0.0.1 + v0.0.3) are logged in PROJECT.md Key Decisions
+All milestone decisions (v0.0.1 + v0.0.3 + v0.1.0) are logged in PROJECT.md Key Decisions
 (outcomes closed) and in the per-milestone archives:
 
+- v0.1.0 decision summary: `.planning/milestones/v0.1.0-ROADMAP.md` (Milestone Summary) + the phase SUMMARYs under `.planning/milestones/v0.1.0-phases/`.
 - v0.0.3 decision summary: `.planning/milestones/v0.0.3-ROADMAP.md` (Milestone Summary) + the phase SUMMARYs under `.planning/milestones/v0.0.3-phases/`.
 - v0.0.1 decision log: `.planning/milestones/v0.0.1-ROADMAP.md` + `.planning/milestones/v0.0.1-phases/`.
 
-v0.0.4 testing strategy ratified by a unanimous 8-lens Opus board (record: `.planning/research/v0.0.4-testing/board2/CONSENSUS.md`): in-memory `createTreeWithEmptyWorkspace` substrate (NO bespoke `createFsTree`); single enum-keyed `it.each` catalog over committed fixtures (exact code + category + count + one promotion case; NG8011 out-of-band/not promotable); enum-vs-table completeness tripwire; generator e2e folded into `angular-typechecker-install-e2e` (no Verdaccio, no new e2e project); in-plugin specs auto-route into the existing 6-cell `test` matrix (no `ci.yml` structural change); a `-p` set-equality guard; single required `ci` gate unchanged.
-
-v0.0.4 re-scoped 2026-07-01: spikes 001-005 (`.planning/spikes/MANIFEST.md`, all VALIDATED) proved runtime solution-tsconfig reference-walking feasible on the existing `performCompilation` engine. Added WALK-01/02 (engine, new Phase 13) and reshaped GEN-01/02/03 (the generator, now Phase 14, wires ONE `typecheck` target at the solution `tsconfig.json`). This supersedes the D-03a solution-style short-circuit and the board's decision-B "no executor change" assumption (D1 in-memory generator tests unchanged; it is the executor that changes, not the generator).
-
-- [Phase 12]: Phase 12 Plan 01 (DRIFT-01): the extended-diagnostic completeness tripwire deep-imports ExtendedTemplateDiagnosticName from the sub-barrel @angular/compiler-cli/src/ngtsc/diagnostics under classic resolution -- compiled green on first typecheck-drift run, no leaf-path fallback needed (Assumption A2 resolved).
-- [Phase 12]: Phase 12 Plan 01 (D-02): EXTENDED_DIAGNOSTIC_MEMBERS is the single dependency-free as-const source of truth (18 enum VALUES, declaration order) consumed by BOTH the Plan 02 catalog spec and the type-level tripwire; deliberate-RED proof confirmed it fails loudly (TS2344 at the CatalogCoversEnum probe) on drift and returns green when restored.
-- [Phase 12]: Phase 12 Plan 04 (CAT-05 / D-10..D-13): DIAGNOSTIC-CATALOG.md is now enum-driven -- the extended section lists all 18 ExtendedTemplateDiagnosticName members (adds NG8011 controlFlowPreventingContentProjection + NG8112 unusedLetDeclaration), notes NG8110/NG8118 as non-enum ErrorCodes, frames NG8011/NG8113 as out-of-band-but-promotable (all 18 promotable via defaultCategory), and replaces the per-version file-split + programmatic-injection test-org guidance with the single enum-keyed it.each + completeness-tripwire decision. The stale un-promotable-exception framing for NG8011 (CONSENSUS D2 / CAT-02 parenthetical) is superseded per D-13 and reconciled at the milestone audit, not re-ratified this phase.
-- [Phase 12]: Phase 12 Plan 02 (CAT-01/CAT-02/CAT-04, D-03..D-09): the 18-row extended-diagnostic it.each catalog (extended-catalog.integration.spec.ts) keyed on EXTENDED_DIAGNOSTIC_MEMBERS asserts every member by exact NG() code + DiagnosticCategory + occurrence count against real @angular/compiler-cli@22.0.4; ZERO it.skip rows (all 18 fire from a static fixture, RESEARCH A1 confirmed by a real run). NG8011 is a normal Warning-default promotable row (D-09), not skipped. The single NG8101 promotion proof + count invariant are folded in (D-08); extended.angular13 + extended.promotion deleted (D-07). Two D-03 fixture-count bugs auto-fixed: NG8105 split into its own CommonModule-importing fixture (bare *ngFor co-fires NG8103), and NG8108 uses the static ngSkipHydration="yes" text-attribute trigger ([ngSkipHydration] binding co-fires NG8002).
-- [Phase ?]: [Phase 12]: Phase 12 Plan 03 (CAT-03 / D-06/D-07): all 12 baseline TS/NG codes asserted by exact code in a sibling it.each table inside the one catalog of record; NG6100 asserted as a Warning. Two new fixtures (ng-baseline-extra fires 8 NG codes; ng-baseline-import-cycle fires NG3003 via an NgModule declarations cycle under compilationMode: partial -- standalone imports forward-declare and never fire NG3003; NG2005 needs a constructor dependency). baseline.angular13 folded+deleted; TESTING.md integration-spec count 10 -> 8.
-- [Phase 13]: Phase 13 Plan 03 (WALK-01): walk-references.ts is the pure core walk (walkReferences + WalkResult + SkippedReference); 90002 not-found code + file-less synthesizer co-located in the walk module; detect-by-code-only 500->90002; returns raw union + summed rootNamesCount + skippedReferences; reuses exported createCanonicalizer/isUnderDir (no duplicate canonicalizer)
-- [Phase 13]: Phase 13 Plan 03: the pre-compile canonicalizer sources realpath + useCaseSensitiveFileNames from ts.sys (no per-leaf Program exists yet at boundary-guard time); keeps core pure and is injectable in the stub-driven unit spec
-- [Phase 13]: Phase 13 Plan 04 (WALK-01): run-typecheck D-03a three-way split invokes walkReferences; the walk-branch finalize sources useCaseSensitiveFileNames + realpath from ts.sys (no per-leaf Program in runTypecheck); union feeds the single existing finalize (solution-dir basePath, includeDeps once); skippedReferences threaded non-empty-only ([] -> undefined); COR-01 direct 500 path + direct override block byte-unchanged; one sortAndDeduplicateDiagnostics call
-- [Phase 13]: Phase 13 Plan 04 (D-02): SkippedReference re-exported from ./core/walk-references via index.ts; executor adapter renders a per-reference advisory logger.warn AFTER the templateCheckAborted block, gated presence-AND-non-empty, verdict unchanged (L-4), no new import. Rewrote the now-stale config-resolution solution-style block to assert the walk (rootNamesCount>0, errorCount 2, two distinct-file TS2322, skippedReferences undefined) so existing coverage does not regress; COR-01 pinning block byte-unchanged
-- [Phase ?]: Phase 13.1 (EXEC-01): renamed the shipped Nx executor angular-typechecker:angular-typecheck to angular-typechecker:typecheck (executors.json key, impl dir via git mv, impl/schema paths, schema $id + TS options interface to TypecheckExecutorOptions, default-export to typecheckExecutor, nx.json targetDefaults both id forms with WALK-02 value preserved, all consumers/fixtures/specs/READMEs). Behavior unchanged; committed as breaking feat! (956e657). Human-facing message prefixes moved to package name angular-typechecker:.
-- [Phase 14]: Plan 14-01 (GEN-07): standalone init generator seeds ONLY the unscoped angular-typechecker:typecheck targetDefaults key with the WALK-02 block copied verbatim from nx.json (D-04), whole-entry ??= don't-clobber (D-05); readNxJson null guard; config-edit only (no generateFiles). GEN-05/06 only partially advanced (init slice), left Pending until configuration + generators.json land. — Idiomatic first-party Nx init pattern; whole-entry ??= keeps the coherent WALK-02 block (default-not-production inputs, outputs:[], cache:true are interdependent) from being merged into an incoherent state.
-- [Phase ?]: Plan 14-02 (GEN-01/02/03/04/08): configuration generator awaits initGenerator { skipFormat:true } FIRST then formats once (D-10); resolves tsConfig by D-07 order (override absolute-verbatim / relative-joinPathFragments; solution tsconfig.json w/ non-empty references[]; flat leaf by projectType + tree.exists; else located error); writes ONE workspace-root-relative typecheck target; collision-by-EXECUTOR (idempotent rewrite for angular-typechecker:typecheck, throw otherwise); reads virtual Tree only (no node:fs).
-- [Phase 14]: Plan 14-03 (GEN-05/GEN-09): registered both generators in a new factory-keyed root generators.json (mirroring executors.json, no ng-add alias); added package.json generators field + generators.json to files allowlist; project.json ships generators.json via a build asset glob; package-manifest.spec.ts pins both. nx add resolves init by literal key. — Register init by literal key with NO ng-add alias (D-06): nx add discovery needs only the generators field; an ng-add alias would imply the deferred Angular-CLI schematic (GEN-FUT-02). @nx/nx-plugin-checks (nx lint) is the free proof the factory/schema paths resolve.
-- [Phase 15]: GUARD-01: enumerate e2e projects via readdirSync(e2e) + each project.json .name, NOT the scope:fixture tag (three libs/* projects carry it -> would over-count 6 vs 3)
-- [Phase 15]: GUARD-01: extract the ci.yml e2e-job -p list job-scoped to the e2e: block (job-key regex includes digits) AND matched at line-start, never the mid-line test-job -p angular-typechecker; no YAML parser dependency
-- [Phase 15]: GUARD-01 deliberate-RED (D-12): probe A (phantom e2e/phantom-e2e/project.json) produced the LOCATED RED then was fully restored to green; the guard cannot silently false-PASS
-- [Phase 15]: Plan 15-02 (GE2E-01/02/03): new un-wired consumer-generator fixture (2-reference solution tsconfig, NO targetDefaults key per D-02, no lockfile) installed from the packed tarball proves configuration wires ONE typecheck target + init seeds the default-input WALK-02 block; the target walks BOTH leaves (green clean; TS2322 lib + TS2345 spec on two-leaf injection); nx add's init path (npm install tarball + nx g angular-typechecker:init) seeds targetDefaults from ABSENT; D-13 added the 5 generator paths to tarball-audit REQUIRED_FILES. Windows tmp teardown made best-effort (Rule 3). Full suite 26/26 GREEN. — Empirical real-consumer proof of the shipped Phase 14 generator suite -- the last coverage gate before the v0.1.0 Release PR.
-
 ### Blockers/Concerns
 
-Carried forward into v0.0.4:
+v0.1.0 is closed; all phase-input concerns were resolved during the milestone. Carried
+forward into the next milestone:
 
-- **RESOLVED (was OPEN — Phase 13 design decision):** the generator's per-project-type `tsConfig`-defaulting shape (originally GEN-02/03) — single target + `--tsConfig` option vs. multiple targets vs. `configurations`, plus the project-type detection method — is no longer open. Spikes 001-005 (`.planning/spikes/MANIFEST.md`, all VALIDATED, GO) resolved it via runtime solution-tsconfig **reference-walking**: the engine (new Phase 13, WALK-01/02) walks the solution `tsconfig.json`'s in-project referenced leaves, so the generator (Phase 14) wires ONE `typecheck` target at the solution `tsconfig.json` — per-project-type detection and a separate spec target evaporate. Board decision D1 (no bespoke FsTree; in-memory generator tests; generator emits no files) STILL HOLDS: it is the executor that changes, not the generator.
 - **CARRIED FORWARD (dev-repo only):** `.npmrc legacy-peer-deps=true` is required in this dev repo because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is Angular 22. It does NOT reach consumers (a clean tarball install on stable Angular 22.0.4 + Nx 23.0.1 needs no override). Revisit/drop when a stable `@nx/angular` admits Angular 22 in its peers.
+- **RESOLVED in v0.1.0:** the generator's per-project-type `tsConfig`-defaulting shape (originally GEN-02/03) is no longer open -- spikes 001-005 resolved it via reference-walking (the engine walks a solution `tsconfig.json`'s in-project leaves; the generator wires ONE target).
+- **PROCESS DEBT (not a code blocker):** the `audit-open` quick-task scanner bug (reads a bare `<dir>/SUMMARY.md`, but `/gsd-quick` writes `<id>-SUMMARY.md`) has now recurred at TWO milestone closes (v0.0.3, v0.1.0). See `.planning/RETROSPECTIVE.md` v0.1.0 "What Was Inefficient" -- the fix belongs in the GSD scanner, not another per-repo workaround. Similarly, the "close requirement statuses at phase verification" lesson has recurred a THIRD time; both need a mechanical gate before the next milestone.
 
 ### Pending Todos
 
@@ -90,17 +59,13 @@ None.
 
 ### Quick Tasks Completed
 
-| # | Description | Date | Commit | Status | Directory |
-|---|-------------|------|--------|--------|-----------|
-| 260630-dyd | Address all PR #11 review findings (I-1 silent-notice fix + T1/T3/S-types test gaps + S-code/S-test/S-comments cleanups; T2 dropped as refuted) | 2026-06-30 | 53c8c18 | Verified + shipped (v0.0.3) | [260630-dyd-...](./quick/260630-dyd-address-all-review-findings/) |
-| 260630-fg0 | Address second-round PR #11 review findings (#1 realpath keep-on-throw false-negative fix + inverted T1, #3 program guard, #2/S1/S2 comments, S3/S5a/S5c/S5d pinning tests; S4 + S5b refuted, S6 declined) | 2026-06-30 | 95d6f58 | Verified + shipped (v0.0.3) | [260630-fg0-...](./quick/260630-fg0-address-second-round-pr-review-findings/) |
-| 260630-jnl | Address third-round PR #11 review findings (de-tautologize S5c warningCount test + cover the undefined-base filter branch + the program-undefined guard branch; de-pin a stale line ref + sharpen 2 comments; #4 "infra-failure:204" half refuted) | 2026-06-30 | 02c5ead | Verified + shipped (v0.0.3) | [260630-jnl-...](./quick/260630-jnl-address-third-round-pr-review-findings/) |
-| 260701-shh | Add CI `format:check` + `lint` gates (nrwl/nx-set-shas base/head), bake `maxWarnings:0` into the lint target, Prettier-format the whole repo (2 diagnostic-sensitive templates + lockfiles excluded), bump actions/checkout v7 + setup-node v6 | 2026-07-01 | 4f0ccdf | Complete (verified locally) | [260701-shh-...](./quick/260701-shh-add-ci-format-check-lint-jobs-nx-set-sha/) |
-| 260702-g5r | Address v0.1.0 milestone-audit INFO findings F-03..F-06: real monorepo root README (F-03), grammatical skipped-reference notice keeping both interpolations (F-04), comment-only clarification of the duplicate-under-'self-reference' fold with the public union unchanged (F-05), and the hyphenated `requirements-completed` frontmatter for CAT-05/WALK-02/GEN-06 (F-06). --research --validate; 4 atomic commits; test 239/239 + lint + format:check green | 2026-07-02 | 642d08d | Verified | [260702-g5r-...](./quick/260702-g5r-address-info-f-03-to-f-06-findings/) |
-| 260702-hsv | Fix the PR #15 CI `fallow` gate (first cumulative gate of the v0.1.0 diff vs origin/main flagged 34 dead-code + 10 complexity + 1 duplication). Targeted `.fallowrc.jsonc` for test-scaffolding false-positives (spec-file entry points, fixture/dev-lib unrendered, `@angular/core` root dep, test/fixture complexity, second drift file) + one scoped inline suppression of the intentional D-05 emit-neutralizing contract-mirror. No product-code gate weakened, no engine logic changed. --research --validate; `fallow audit` exit 0 + lint + format + test 239/239 green | 2026-07-02 | 5e32512 | Verified | [260702-hsv-...](./quick/260702-hsv-fix-fallow-ci-gate-failure-on-the-v0-1-0/) |
-| 20260702-pr15-review-triage | Merge/dedupe/audit/triage 3 PR #15 code-review reports (29 raw -> 21 unique), then fix all triaged findings: engine walk-vs-direct parity (C-1 keep parsed.errors, I-1 surface all-not-found 90002s, I-2/S-7 rethrow per-leaf/existing-leaf 500, I-3 'duplicate' reason, S-1 boundary over-keep, C10 extract EMIT_NEUTRALIZING_OPTIONS); C4 advisory wording; C3 flat-tsconfig + C13 empty-targetName + S-3 dead-code (generators); B1/C14 drift comments + S-6 uniqueness + I-4 keyof-binding + C11 target-defaults drift test; C9 CI format-lint on doc PRs; I-5/C7 decision recorded; C12/S-5 deferred with rationale. ROUND 2 (6 simplification reports): behavior-preserving DRY of the boilerplate round-1 added -- throwIfInfrastructureFailure/runNoEmitCompilation/buildFinalizeFilter/hasProjectReferences helpers, 90001/90002 + synthesizeFilelessError into diagnostic-codes.ts, shared TYPECHECK_EXECUTOR_ID, configuration returns void, executor skippedReferences?.length; declined finalize-fork collapse + duplicate-reason merge + exit-codes/TemplateCheckAborted.code deletes + barrel/pathBase/loadTypescript (documented/pre-existing) plus a fallow follow-up (58907e7): drop the now-module-private EMIT_NEUTRALIZING_OPTIONS export + scope complexity for the reviewer-blessed walkReferences/resolveTsConfig in .fallowrc.jsonc (resolveTsConfig CRAP is a coverage-estimation false-high) then a /simplify audit (c5e9131) reduced their complexity: Fix 1 hoisted walkReferences' repeated undefined guard (cyclomatic 13->10, still cognitive-scoped) + Fix 3 extracted resolveTsConfigOverride (cyclomatic 10->7, UNSCOPED); skipped Fix 2 (cosmetic). fallow complexity scope now down to walkReferences alone | 2026-07-02 | 47760be..c5e9131 | Verified (test 251/251 + build + drift + lint + prettier + fallow exit 0) | [20260702-pr15-...](./quick/20260702-pr15-review-triage/) |
-| 20260702-trim-public-barrel | Resolve PR #15 review finding M (deferred as a public-API decision; user approved Option A + breaking OK pre-1.0). Trim the published barrel src/index.ts to a minimal public API -- keep runTypecheck + TypecheckInfrastructureError + CoreOptions/CoreResult/SkippedReference; drop the engine internals (loadCompilerCli, evaluateResult/EvaluateOptions, filterDiagnostics/FilterOptions/FilterResult, formatReport/FormatOptions, gatherAllDiagnostics, renderReport/RenderOptions) which stay module-internal. --validate; refactor(core)! (BREAKING CHANGE footer) | 2026-07-02 | 96e9c83 | Verified (test 251/251 + build + drift + lint incl. dependency-checks + prettier) | [20260702-trim-...](./quick/20260702-trim-public-barrel/) |
-| 260702-rq7 | Triage the 4th PR #15 review round (`/thermos:thermos` -- thermo-nuclear branch + code-quality audits) against Phase/Milestone/Project decisions + the prior triage + ponytail-full. OUTCOME: zero code changes -- every finding already-satisfied, deliberately-decided, or correctly-deferred. #1 skip migrations.json (rename break already documented via commit 956e657 `feat(executor)!` BREAKING CHANGE footer; nx release computes 0.1.0). #2 keep GSD IDs + plain language (verified zero ID-only comments in all 20 shipped core files; reviewer's strip-IDs rejected). #3 extract run-typecheck.ts:260-352 walk branch DECLINED (deliberate D-03a three-way split, Phase 13 OQ2 "attach skippedReferences after finalize, no finalize param"; round-2 already declined finalize-fork collapse; 6-arg helper = long-param smell, no behavior gain). #4 target-defaults 2 specs KEPT (guard distinct failure modes: drift=mutual-equality vs intent=correct-values/stale-PASS -- reviewer wrongly called redundant); schema-parity 3x DEFERRED (test boilerplate, low-value churn); directory-ref LOW DEFERRED (Nx never emits dir refs; fails loud not silent; single-level limit already documented) | 2026-07-02 | 4e5a74d | Verified (triage only -- zero code changes; PR remains green) | [260702-rq7-...](./quick/260702-rq7-pr15-thermos-triage/) |
+All v0.1.0 quick tasks are verified + shipped; full detail (descriptions, commits,
+directories) is preserved in `.planning/milestones/v0.1.0-phases/` and the quick-task
+directories under `.planning/quick/`. Summary: 3 PR-review rounds against PR #15
+(260630-era carried from v0.0.3 close; 20260702-pr15-review-triage + its round-2
+simplification pass; 260702-rq7 thermos triage with zero code changes), 2 milestone-audit
+INFO-finding fixes (260702-g5r), 1 CI fallow-gate fix (260702-hsv), 1 CI format/lint gate
+addition (260701-shh), and 1 breaking public-barrel trim (20260702-trim-public-barrel).
 
 ## Deferred Items
 
@@ -109,7 +74,7 @@ Tracked as Future Requirements (out of scope, not debt):
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | FsTree testing | FSTREE-01: bespoke real-disk `createFsTree`/`flushFsTreeChanges` helpers | Deferred (board Option A; only if a future generator emits files) | v0.0.4 requirements definition |
-| Generator surface | GEN-FUT-01 (Angular CLI `angular.json` support) / GEN-FUT-02 (`ng add` / `nx add`) | Deferred (later milestone) | v0.0.4 requirements definition |
+| Generator surface | GEN-FUT-01 (Angular CLI `angular.json` support) / GEN-FUT-02 (`ng add` Angular CLI schematic) | Deferred (later milestone; Nx's `nx add` shipped in v0.1.0) | v0.0.4 requirements definition |
 | Engine / performance | WALK-FUT-01 (`createNodesV2` granular per-leaf `typecheck` targets) / WALK-FUT-02 (project-references / `NgtscProgram` incremental declaration-reuse to collapse the walk's double-compile tax) | Deferred (additive, not blocking; WALK-FUT-02 needs the deferred `NgtscProgram` engine) | v0.0.4 re-scope (spikes 001-005) |
 | Resilience | REP-RES-02b: faithful per-file TEMPLATE/extended diagnostic recovery after a TCB-generation Fatal (needs `NgtscProgram` / `OptimizeFor.SingleFile`; same limit as `@angular/build` today) | Deferred to the `NgtscProgram` incremental milestone | v0.0.3 RES-02 reframe |
 | Observability | OBS-01: `totalFilesCount` field on `CoreResult` (`@nx/js` parity) | Deferred pending charter-fit | v0.0.3 requirements definition |
@@ -118,10 +83,14 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-02T07:54:09.883Z
-Stopped at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-Next step: Verify Phase 15 goal (spawn gsd-verifier -> 15-VERIFICATION.md), then run the phase-gate full e2e run-many on the merged main tree (`npx nx run-many -t test -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e`), then secure/validate/extract-learnings before the v0.1.0 milestone Release PR. All 5 phases (12/13/13.1/14/15) executed; GE2E-01/02/03 + GUARD-01 complete.
-
-## Operator Next Steps
-
-- Start the next milestone with /gsd-new-milestone
+Last session: 2026-07-02 -- `/gsd-complete-milestone v0.1.0`.
+Stopped at: v0.1.0 (configuration + init generators, nx add support, and the typecheck
+executor rename) closed and archived (ROADMAP + REQUIREMENTS + audit + phases moved to
+`.planning/milestones/`; PROJECT.md evolved; MILESTONES.md + RETROSPECTIVE.md updated;
+REQUIREMENTS.md removed for the next milestone). Per the v0.0.1/v0.0.3 precedent and the
+repo's `angular-typechecker@x.y.z` tag convention, no separate `v0.1.0` GSD tag was
+created (`angular-typechecker@0.1.0` already marks the release, tagged on the PR #16 merge
+commit). Commits made on branch `complete-gsd-v0.1.0`; NOT pushed directly (main is
+PR-only).
+Next step: open a PR for `complete-gsd-v0.1.0` into `main`, then `/gsd-new-milestone` to
+scope the next version.
