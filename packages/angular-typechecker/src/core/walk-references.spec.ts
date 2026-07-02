@@ -371,7 +371,12 @@ describe('walkReferences', () => {
       [{ path: './tsconfig.circular.json' }],
     );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     const codes = walk.rawDiagnostics.map((d) => d.code);
 
@@ -419,7 +424,12 @@ describe('walkReferences', () => {
       [{ path: './tsconfig.throwing.json' }],
     );
 
-    const walk = await walkReferences(ng, ts, solutionParsed, SOLUTION_TSCONFIG);
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
 
     // The leaf was WALKED (compiled), NOT skipped as out-of-project.
     expect(performedPaths).toEqual([throwingPath]);

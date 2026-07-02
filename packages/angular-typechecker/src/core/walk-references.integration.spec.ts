@@ -293,7 +293,9 @@ describe('walk-references: SC3/D-05 fold-and-count (solution-style-broken-ref)',
 
 describe('walk-references: I-1 all-references-not-found surfaces the 90002s (solution-style-all-missing)', () => {
   it('reports ONE counted 90002 PER missing reference, NOT a single generic 90001 guard', async () => {
-    const result = await runTypecheck({ tsConfigPath: solutionStyleAllMissing });
+    const result = await runTypecheck({
+      tsConfigPath: solutionStyleAllMissing,
+    });
 
     const codes = codesOf(result.diagnostics);
 
@@ -303,7 +305,9 @@ describe('walk-references: I-1 all-references-not-found surfaces the 90002s (sol
     // whose message ("references are not consulted ... point at a leaf that lists
     // files") is WRONG for this case.
     expect(result.rootNamesCount).toBe(0);
-    expect(codes.filter((code) => code === REFERENCE_NOT_FOUND)).toHaveLength(2);
+    expect(codes.filter((code) => code === REFERENCE_NOT_FOUND)).toHaveLength(
+      2,
+    );
     expect(codes).not.toContain(ZERO_ROOT_NAMES);
     expect(result.errorCount).toBe(2);
 

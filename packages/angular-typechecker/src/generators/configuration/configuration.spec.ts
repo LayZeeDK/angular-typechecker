@@ -208,7 +208,10 @@ describe('configuration generator', () => {
     // and win32 (path.isAbsolute('/x') === true on Windows).
     const absolute = '/abs/ws/libs/my-lib/tsconfig.app.json';
 
-    await configurationGenerator(tree, { project: 'my-lib', tsConfig: absolute });
+    await configurationGenerator(tree, {
+      project: 'my-lib',
+      tsConfig: absolute,
+    });
 
     expect(
       readProjectConfiguration(tree, 'my-lib').targets?.typecheck?.options,
