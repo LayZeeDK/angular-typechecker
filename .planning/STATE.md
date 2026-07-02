@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
-status: completed
+status: Awaiting next milestone
 stopped_at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
-last_updated: "2026-07-02T12:05:00.000Z"
-last_activity: "2026-07-02 - PR #15 CI is fully GREEN (ci + CodeQL x2 + e2e + fallow + format-lint + 7 test-matrix cells). Fixed two CI failures on the branch: (1) fallow gate (quick task 260702-hsv, config), (2) e2e shared-tarball ENOENT race (serialized the 3 e2e projects via --parallel=1 in ci.yml; commit 10c0a83; diagnostic a1b58bc). Awaiting human review/merge (main is PR-only)."
+last_updated: "2026-07-02T20:19:04.414Z"
+last_activity: 2026-07-02 — Milestone v0.1.0 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -25,12 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-01 after v0.0.4 re-scope: reference-w
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
-Status: Milestone complete; shipped as PR #15 (CI fully green, awaiting human review/merge)
-Last activity: 2026-07-02 - PR #15 CI is fully GREEN. Fixed two branch CI failures: fallow gate (quick task 260702-hsv) + e2e shared-tarball ENOENT race (serialized the 3 e2e projects, ci.yml --parallel=1). Awaiting human review/merge (main is PR-only; release cut/publish remain a separate gated step)
-
-Progress: [██████████] 100%
+Phase: Milestone v0.1.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-02 — Milestone v0.1.0 completed and archived
 
 ## v0.1.0 Phase Map
 
@@ -123,3 +121,7 @@ Tracked as Future Requirements (out of scope, not debt):
 Last session: 2026-07-02T07:54:09.883Z
 Stopped at: Completed 15-02-PLAN.md (GE2E-01/02/03) — Phase 15 complete, ready for verification
 Next step: Verify Phase 15 goal (spawn gsd-verifier -> 15-VERIFICATION.md), then run the phase-gate full e2e run-many on the merged main tree (`npx nx run-many -t test -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e`), then secure/validate/extract-learnings before the v0.1.0 milestone Release PR. All 5 phases (12/13/13.1/14/15) executed; GE2E-01/02/03 + GUARD-01 complete.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
