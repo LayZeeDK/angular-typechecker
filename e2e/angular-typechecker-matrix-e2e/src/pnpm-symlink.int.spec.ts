@@ -177,17 +177,45 @@ beforeAll(() => {
   // (B-03 honesty); npm_config_userconfig -> a non-existent path so ~/.npmrc
   // cannot reintroduce one. If this ERESOLVEs on the published peer ranges, that
   // is a REAL FINDING to ESCALATE -- never auto-patch.
-  execSync(
-    `pnpm add ${JSON.stringify(tarballPath)} --config.frozen-lockfile=false --ignore-scripts`,
-    {
-      cwd: consumerWorkspace,
-      env: {
-        ...env,
-        npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+  try {
+    execSync(
+      `pnpm add ${JSON.stringify(tarballPath)} --config.frozen-lockfile=false --ignore-scripts`,
+      {
+        cwd: consumerWorkspace,
+        env: {
+          ...env,
+          npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+        },
+        encoding: 'utf8',
       },
-      encoding: 'utf8',
-    },
-  );
+    );
+  } catch (error) {
+    // DIAGNOSTIC (v0.1.0 CI triage): execSync's default thrown message is only
+    // "Command failed: <cmd>" -- pnpm's real stdout/stderr is captured on the error
+    // object but never surfaced, hiding WHY `pnpm add` failed on the CI runner
+    // (genuine peer ERESOLVE vs a runner pnpm-provisioning/layout issue). Re-throw
+    // with both streams so the CI log shows the actual cause. Diagnostic ONLY: the
+    // install command, its flags, the env, and the B-03 no-peer-override honesty
+    // are all UNCHANGED -- this neither masks nor auto-patches the documented
+    // escalate-class finding.
+    const execError = error as {
+      stdout?: string;
+      stderr?: string;
+      message?: string;
+    };
+
+    throw new Error(
+      [
+        'pnpm add failed on the CI runner.',
+        '--- stdout ---',
+        execError.stdout ?? '(none)',
+        '--- stderr ---',
+        execError.stderr ?? '(none)',
+        '--- message ---',
+        execError.message ?? '(none)',
+      ].join('\n'),
+    );
+  }
 
   // Sanity: the installed executor entry resolves from the pnpm node_modules.
   const installedExecutorsManifest = join(
