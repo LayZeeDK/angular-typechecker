@@ -28,7 +28,7 @@
 - [x] **GEN-03**: Spec-tsconfig (`tsconfig.spec.json`) type-checking is automatic via WALK-01 (the spec tsconfig is an in-project referenced leaf the engine walks) — no separate target or `configuration` is wired. In the flat-project fallback (no solution tsconfig), spec checking is out of the single leaf target's scope and left to the consumer.
 - [x] **GEN-04**: Re-running the `configuration` generator on an already-wired project is idempotent (no duplicate target, no clobbered config); an existing NON-ours target of the same name (executor ≠ `angular-typechecker:typecheck`) is not clobbered — the generator errors with a clear, located message instead.
 - [x] **GEN-05**: The plugin ships hand-authored `schema.json` + `schema.d.ts` for BOTH the `configuration` and `init` generators, registered via `generators.json` (each entry keyed with `factory`) and the published `package.json` `generators` field; the generators + schemas are included in the tarball `files` set (the root `generators.json` is globbed into the build output alongside `executors.json`; the `schema.json` files under `src/generators/**` are copied by the existing non-`.ts` asset glob).
-- [ ] **GEN-06**: Generator unit tests run on the public in-memory `createTreeWithEmptyWorkspace` substrate and assert the `configuration` generator's written target for the solution-tsconfig case AND the flat-project fallback case plus idempotency; a schema-parity spec asserts each generator's `schema.json` property keys === its `schema.d.ts` interface.
+- [x] **GEN-06**: Generator unit tests run on the public in-memory `createTreeWithEmptyWorkspace` substrate and assert the `configuration` generator's written target for the solution-tsconfig case AND the flat-project fallback case plus idempotency; a schema-parity spec asserts each generator's `schema.json` property keys === its `schema.d.ts` interface.
 - [x] **GEN-07**: A standalone `nx g angular-typechecker:init` generator idempotently seeds `nx.json` `targetDefaults["angular-typechecker:typecheck"]` with the WALK-02 cacheable block (`cache: true`, `outputs: []`, the `default`-based input set — never `production`, which would under-hash `*.spec.ts` → stale PASS), keyed by the **unscoped published** executor id, and never clobbers an existing / user-customized entry (per-key `??=` merge). In-memory `createTreeWithEmptyWorkspace` unit tests assert the seeded shape, an idempotent re-run, don't-clobber, and `default`-not-`production`.
 - [x] **GEN-08**: The `configuration` generator invokes `init` as part of its run, so a single `nx g angular-typechecker:configuration <project>` both seeds the workspace `targetDefaults` (via `init`) and wires the project's minimal `typecheck` target — the idiomatic first-party pattern (`@nx/eslint:lint-project` → `lintInitGenerator`, `@nx/vitest:configuration` → `init`).
 - [x] **GEN-09**: `nx add angular-typechecker` auto-runs the `init` generator on install (Nx invokes the package's registered `init` generator), seeding `targetDefaults` so a freshly-added plugin is cacheable without a manual edit. `ng add` (Angular CLI) remains deferred (GEN-FUT-02).
@@ -104,7 +104,7 @@ Each requirement maps to exactly one phase (v0.1.0 phases continue from v0.0.3's
 | GEN-03 | Phase 14 | Complete |
 | GEN-04 | Phase 14 | Complete |
 | GEN-05 | Phase 14 | Complete |
-| GEN-06 | Phase 14 | Pending |
+| GEN-06 | Phase 14 | Complete |
 | GEN-07 | Phase 14 | Complete |
 | GEN-08 | Phase 14 | Complete |
 | GEN-09 | Phase 14 | Complete |
