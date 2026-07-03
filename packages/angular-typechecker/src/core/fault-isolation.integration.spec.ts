@@ -60,8 +60,9 @@ const TS2322 = 2322;
 // Fatal -- the Phase 8 infra-vs-type boundary RES-02 must NOT cross (D-05).
 const UNKNOWN_ERROR_CODE = 500;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 const faultIsolationTsConfig = join(
   workspaceRoot,
   'fixtures',

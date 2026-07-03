@@ -53,7 +53,7 @@ const BROKEN_LIB_CONST = `export const consumerGeneratorLibOnly: number = ${JSON
 const BROKEN_STATEMENT = `('x').padStart(${JSON.stringify('str')});`;
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every path
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every path
 // is cwd-independent (D-17 main tree), mirroring install-smoke / matrix-5types.
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),

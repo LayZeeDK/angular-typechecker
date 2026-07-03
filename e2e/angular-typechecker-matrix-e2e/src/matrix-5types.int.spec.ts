@@ -34,7 +34,7 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-matrix-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every path
+// (e2e/angular-typechecker-matrix-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every path
 // is cwd-independent (D-17 main tree), mirroring install-smoke.
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),

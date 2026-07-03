@@ -33,7 +33,7 @@ const TARGET = 'typecheck-consumer:typecheck';
 const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-cache-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every nx
+// (e2e/angular-typechecker-cache-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every nx
 // invocation + file write is cwd-independent (D-17 main tree).
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),

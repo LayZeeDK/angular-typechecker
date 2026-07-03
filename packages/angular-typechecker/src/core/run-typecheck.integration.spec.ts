@@ -19,8 +19,9 @@ const NG = (code: number): number => -990000 - code;
 
 const TS6059 = 6059;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 const fixtureDir = join(workspaceRoot, 'fixtures', 'gate-b-error');
 
 const appTsConfig = join(fixtureDir, 'tsconfig.app.json');

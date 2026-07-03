@@ -23,7 +23,7 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 // serialized vitest.config.mts (forks/singleFork/no-parallel/node env, 300000ms).
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every nx /
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every nx /
 // npm invocation is cwd-independent.
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),

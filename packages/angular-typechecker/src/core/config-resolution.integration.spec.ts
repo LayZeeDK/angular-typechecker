@@ -33,8 +33,9 @@ import { runTypecheck } from './run-typecheck';
 // (Angular would encode extended codes negative, e.g. ngErrorCode(8109) = -998109).
 const TS2322 = 2322;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const specTsConfig = join(
   workspaceRoot,

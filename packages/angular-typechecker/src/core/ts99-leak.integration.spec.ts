@@ -33,8 +33,9 @@ import { runTypecheck } from './run-typecheck';
 // with a fabricated negative code, so the rewrite runs against genuine compiler
 // output.
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const extendedPromotedTsConfig = join(
   workspaceRoot,

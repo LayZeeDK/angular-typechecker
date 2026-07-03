@@ -38,8 +38,9 @@ import { runTypecheck } from './run-typecheck';
 // `it.skip`-ped, NOT framed as "not promotable", and NO assertion anywhere expects it
 // to stay a Warning under `defaultCategory: "error"`.
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 /**
  * Resolves the `tsconfig.app.json` of a committed fixture under the workspace-root

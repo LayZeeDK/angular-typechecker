@@ -58,8 +58,9 @@ const GATHERED_GETTERS = [
   'getNgSemanticDiagnostics',
 ] as const;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 // RESEARCH Open Question 2: reuse an existing fixture (`ng-baseline`) with
 // `gatherDiagnostics: () => []` so the program is built (returning a real

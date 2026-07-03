@@ -19,7 +19,7 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 // line-level and a regex is sufficient + cheaper than adding a YAML lib.
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every file
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every file
 // read is cwd-independent (matches the tarball-audit + install-smoke specs).
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),

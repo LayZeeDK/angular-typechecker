@@ -24,7 +24,7 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 // release-hygiene precedent.
 
 // Resolve the workspace root from this spec's location
-// (packages/angular-typechecker/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every file read is
+// (packages/angular-typechecker/src/<file>); findWorkspaceRoot() walks up to nx.json, so every file read is
 // cwd-independent (identical depth to the e2e specs).
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),

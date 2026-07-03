@@ -28,8 +28,9 @@ const TS5053 = 5053;
 const TS6304 = 6304;
 const TS6379 = 6379;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const compositeTriangleTsConfig = join(
   workspaceRoot,

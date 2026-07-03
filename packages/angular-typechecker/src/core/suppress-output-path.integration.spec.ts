@@ -38,8 +38,9 @@ import { runTypecheck } from './run-typecheck';
 
 const TS5055 = 5055;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const compositeTriangleTsConfig = join(
   workspaceRoot,

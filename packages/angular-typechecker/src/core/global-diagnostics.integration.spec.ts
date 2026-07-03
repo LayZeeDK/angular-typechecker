@@ -23,8 +23,9 @@ import { runTypecheck } from './run-typecheck';
 // so it is asserted directly, never via the negative NG() encoding.
 const TS2318 = 2318;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = findWorkspaceRoot(packageRoot);
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const globalDiagnosticsTsConfig = join(
   workspaceRoot,
