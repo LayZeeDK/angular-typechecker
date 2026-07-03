@@ -208,7 +208,7 @@ frame. The report can carry three kinds of finding, all in the same run:
 - Angular template type-check diagnostics, from checking template expressions and
   bindings against component types, such as `NG8002` above.
 - Angular extended diagnostics: the stricter, opt-in template checks, such as
-  `NG8101` (an invalid banana-in-box binding) or `NG8109` (a signal not invoked
+  `NG8101` (an invalid banana-in-a-box binding) or `NG8109` (a signal not invoked
   in a template).
 
 Three things shape the output:
