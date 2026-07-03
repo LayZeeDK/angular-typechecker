@@ -245,7 +245,7 @@ warning-threshold failure, and an infrastructure error apart, read the output.
 Since the target exits non-zero on an error, a CI step that runs
 `nx run <project>:typecheck` fails the job on any type or template error with no
 extra scripting. Run it across only the projects a change touches with
-`nx affected --target=typecheck`.
+`nx affected -t typecheck`.
 
 The workspace-relative `file:line:col` paths also let GitHub Actions annotate each
 diagnostic inline. Because the output is a `tsc` superset, one `tsc`-style problem
