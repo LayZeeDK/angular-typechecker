@@ -5,13 +5,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import initGenerator from './generator';
 
-// The UNSCOPED published executor id `init` seeds (D-04). A SCOPED dev-repo alias
-// must NEVER be written into a consumer's nx.json. The forbidden key is assembled
-// from parts so this file does not itself carry the banned scoped literal that the
-// repo-wide guard (scoped-name-guard.spec.ts) forbids.
+// The UNSCOPED published executor id `init` seeds (D-04). The generator must add
+// ONLY this key -- never a scoped dev-repo alias.
 const UNSCOPED_KEY = 'angular-typechecker:typecheck';
-const NPM_SCOPE = '@angular-typechecker';
-const SCOPED_KEY = `${NPM_SCOPE}/angular-typechecker:typecheck`;
 
 describe('init generator (GEN-07)', () => {
   let tree: Tree;
@@ -58,9 +54,14 @@ describe('init generator (GEN-07)', () => {
     });
   });
 
-  it('seeds ONLY the unscoped id, never the scoped dev-repo key (D-04)', async () => {
+  it('seeds ONLY the unscoped id, adding no scoped alias key (D-04)', async () => {
+    const before = Object.keys(readNxJson(tree)?.targetDefaults ?? {});
+
     await initGenerator(tree, {});
 
-    expect(readNxJson(tree)?.targetDefaults?.[SCOPED_KEY]).toBeUndefined();
+    const after = Object.keys(readNxJson(tree)?.targetDefaults ?? {});
+    const added = after.filter((key) => !before.includes(key));
+
+    expect(added).toEqual([UNSCOPED_KEY]);
   });
 });
