@@ -19,6 +19,9 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 // ponytail: CONTIGUOUS LITERALS ONLY -- a runtime-assembled id (`SCOPE + '/x'`) is
 // out of scope by design; combined with tracked-files-only, these are the guard's
 // deliberate ceilings. Each fails loudly, never a false PASS.
+//
+// This file hosts TWO regression guards for the v0.1.0 rename: the scoped-name scan
+// (immediately below) and the executor-id resolution invariant (bottom of file).
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -124,23 +127,39 @@ describe('scoped-name regression guard (QT-260703-lp0)', () => {
 // It catches not just the scoped form but ANY aliased-scope or typo'd id that would
 // resolve to the real executor exactly as the v0.1.0 bug did (a tsconfig `paths`
 // alias under a different scope, an unscoped typo) -- the disease, not the symptom.
+const pluginDir = 'packages/angular-typechecker';
+
 const registeredExecutorNames = Object.keys(
   (
     JSON.parse(
-      readFileSync(
-        join(workspaceRoot, 'packages/angular-typechecker/executors.json'),
-        'utf8',
-      ),
+      readFileSync(join(workspaceRoot, pluginDir, 'executors.json'), 'utf8'),
     ) as { executors?: Record<string, unknown> }
   ).executors ?? {},
 );
 
+// Single-sourced canonical ids: the SCOPE is the plugin's package.json name (the
+// same authority the Nx executor id derives from), the NAME segments are the keys
+// registered in executors.json. Deriving the scope (not hard-coding it) keeps this
+// guard tracking a plugin rename instead of asserting a stale id -- the same
+// discipline the scoped-name carve-out (ALLOWED) uses above.
+const pluginName = (
+  JSON.parse(
+    readFileSync(join(workspaceRoot, pluginDir, 'package.json'), 'utf8'),
+  ) as { name: string }
+).name;
+
 const canonicalExecutorIds = new Set(
-  registeredExecutorNames.map((name) => `angular-typechecker:${name}`),
+  registeredExecutorNames.map((name) => `${pluginName}:${name}`),
 );
 
 // Every executor id whose name segment is a registered name (here `:typecheck`),
 // as used in a project.json `executor` field or an nx.json targetDefault key.
+//
+// ponytail ceiling: `isOurs` matches by the `:<name>` suffix, so it deliberately
+// flags aliased-scope / typo'd ids (the disease) -- and would also flag a
+// legitimate third-party executor ending in the same `:<name>` (none exist in this
+// repo). It inspects only project.json / nx.json; no tracked package.json declares
+// nx targets. Both are acceptable ceilings for this workspace today.
 function executorIdReferences(): { file: string; id: string }[] {
   const suffixes = registeredExecutorNames.map((name) => `:${name}`);
   const isOurs = (id: string): boolean => suffixes.some((s) => id.endsWith(s));
@@ -159,6 +178,9 @@ function executorIdReferences(): { file: string; id: string }[] {
     try {
       json = JSON.parse(readFileSync(join(workspaceRoot, file), 'utf8'));
     } catch {
+      // Unreadable (deleted-but-unstaged) or malformed config carries no executor
+      // ref to validate -- skip, mirroring the ENOENT skip in findViolations. A
+      // malformed project.json / nx.json fails the build on its own.
       continue;
     }
 
