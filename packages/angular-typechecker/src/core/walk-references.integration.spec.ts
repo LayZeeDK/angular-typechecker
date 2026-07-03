@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import type ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { runTypecheck, TypecheckInfrastructureError } from './run-typecheck';
 
@@ -45,7 +46,7 @@ const ZERO_ROOT_NAMES = 90001;
 const REFERENCE_NOT_FOUND = 90002;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(packageRoot);
 
 function fixtureTsConfig(name: string): string {
   return join(workspaceRoot, 'fixtures', name, 'tsconfig.json');

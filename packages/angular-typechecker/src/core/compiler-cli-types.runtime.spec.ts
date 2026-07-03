@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import type { Program } from './compiler-cli-types';
 import { NG, ngCodeOf } from './diagnostic-codes';
@@ -58,7 +59,7 @@ const GATHERED_GETTERS = [
 ] as const;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(packageRoot);
 
 // RESEARCH Open Question 2: reuse an existing fixture (`ng-baseline`) with
 // `gatherDiagnostics: () => []` so the program is built (returning a real

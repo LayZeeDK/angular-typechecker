@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // PKG-02: the phase's packaging-fidelity gate. A source-tree check cannot catch
 // a `files`-allowlist defect, a `.d.ts` resolution escape (D-10), or a stale-dist
@@ -22,13 +23,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // serialized vitest.config.mts (forks/singleFork/no-parallel/node env, 300000ms).
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>) -- 3 dirs up -- so every nx /
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every nx /
 // npm invocation is cwd-independent.
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 // The plugin build outputPath (project.json build.options.outputPath) -- the dist

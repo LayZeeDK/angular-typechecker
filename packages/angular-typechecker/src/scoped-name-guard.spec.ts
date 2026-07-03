@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // QT-260703-lp0 regression guard. We do NOT own the `@angular-typechecker` npm
 // scope; the package is `angular-typechecker` (executor `angular-typechecker:typecheck`).
@@ -19,11 +20,8 @@ import { describe, expect, it } from 'vitest';
 // out of scope by design; combined with tracked-files-only, these are the guard's
 // deliberate ceilings. Each fails loudly, never a false PASS.
 
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const SCOPE = '@angular-typechecker';

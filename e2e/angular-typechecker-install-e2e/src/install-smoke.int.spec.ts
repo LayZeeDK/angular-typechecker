@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // TEST-05: THE tracer bullet (D-22). 05-02 proved the packed tarball is SHAPED
 // correctly (publint/attw against the .tgz); this smoke proves it actually WORKS
@@ -33,13 +34,10 @@ const INJECTED_TS_CODE = 'TS2322';
 const TARGET = 'consumer-app:typecheck';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>) -- 3 dirs up -- so every path
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every path
 // is cwd-independent (D-17 main tree).
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');

@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { NG } from './diagnostic-codes';
 import { renderReport } from './render-report';
@@ -33,7 +34,7 @@ import { runTypecheck } from './run-typecheck';
 // output.
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(packageRoot);
 
 const extendedPromotedTsConfig = join(
   workspaceRoot,

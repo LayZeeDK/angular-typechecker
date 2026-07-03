@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import type { EmitFlags } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
@@ -32,7 +33,7 @@ const NG8109 = -998109;
 const UNKNOWN_ERROR_CODE = 500;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(packageRoot);
 const fixtureDir = join(workspaceRoot, 'fixtures', 'gate-b-error');
 
 const appTsConfig = join(fixtureDir, 'tsconfig.app.json');

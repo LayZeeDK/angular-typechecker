@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { runTypecheck } from './run-typecheck';
 
@@ -33,7 +34,7 @@ import { runTypecheck } from './run-typecheck';
 const TS2322 = 2322;
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(packageRoot);
 
 const specTsConfig = join(
   workspaceRoot,

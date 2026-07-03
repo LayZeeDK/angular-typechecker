@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // PKG-03 (release scoping) + PKG-04 (supply-chain-hardened CI) regression gate.
 // The hardened release controls are CONFIG, not code -- a single careless edit
@@ -18,13 +19,10 @@ import { describe, expect, it } from 'vitest';
 // line-level and a regex is sufficient + cheaper than adding a YAML lib.
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>) -- 3 dirs up -- so every file
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so so every file
 // read is cwd-independent (matches the tarball-audit + install-smoke specs).
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const nxJsonPath = join(workspaceRoot, 'nx.json');

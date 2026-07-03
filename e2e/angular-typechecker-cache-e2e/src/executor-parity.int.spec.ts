@@ -12,6 +12,7 @@ import {
 } from '@nx/devkit';
 import { runTypecheck, type CoreResult } from 'angular-typechecker';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // EXE-01 / EXE-07 / D-16 / D-05: prove the executor matches the core on
 // STRUCTURED values (NOT rendered stdout -- formatting/paths/ANSI diverge
@@ -30,12 +31,9 @@ const TARGET = 'typecheck';
 const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-cache-e2e/src/<file>) -- 4 dirs up.
-const workspaceRoot = join(
+// (e2e/angular-typechecker-cache-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json.
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const DEP_FILE_REL = 'libs/typecheck-consumer-dep/src/lib/dep.component.ts';

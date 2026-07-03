@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // GATE A static: prove the built artifacts retain a native dynamic `import()`
 // of @angular/compiler-cli and never downlevel it to a `require()` call. This is
@@ -26,7 +27,7 @@ const packageRoot = join(
   '..',
   '..',
 );
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(packageRoot);
 
 interface BuildTarget {
   options: {
