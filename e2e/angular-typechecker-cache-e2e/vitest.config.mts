@@ -14,8 +14,8 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/e2e/angular-typechecker-cache-e2e',
-  // nxViteTsPaths resolves @angular-typechecker/angular-typechecker (the core
-  // barrel) under Vitest so the runExecutor parity oracle can import runTypecheck.
+  // nxViteTsPaths resolves the `angular-typechecker` core barrel under Vitest so
+  // the runExecutor parity oracle can import runTypecheck.
   plugins: [nxViteTsPaths(), nxCopyAssetsPlugin([])],
   test: {
     name: 'angular-typechecker-cache-e2e',

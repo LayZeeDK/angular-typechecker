@@ -10,10 +10,7 @@ import {
   readProjectsConfigurationFromProjectGraph,
   runExecutor,
 } from '@nx/devkit';
-import {
-  runTypecheck,
-  type CoreResult,
-} from '@angular-typechecker/angular-typechecker';
+import { runTypecheck, type CoreResult } from 'angular-typechecker';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 // EXE-01 / EXE-07 / D-16 / D-05: prove the executor matches the core on

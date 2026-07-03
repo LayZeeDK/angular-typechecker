@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { TYPECHECK_EXECUTOR_ID } from '../generators/init/generator';
+
 // WALK-02 / L-5 / Spike 005 (manifest contract): pin the shape of the
 // `typecheck` walk-target defaults in the workspace `nx.json`. The
 // coarse single walk target caches on ONE key, so the NAMED input decides what
@@ -18,12 +20,11 @@ import { describe, expect, it } from 'vitest';
 // artifact) -- it runs in the fast `nx test` loop with no `nx build`
 // prerequisite, mirroring `package-manifest.spec.ts`.
 //
-// The executor is registered under TWO target-default keys -- the dev-workspace
-// executor id (`angular-typechecker:typecheck`) and the published-package
-// executor id (`@angular-typechecker/angular-typechecker:typecheck`) --
-// which are the same executor's defaults for the local repo vs an installed
-// consumer. Both MUST carry the WALK-02 shape so the caching contract holds in
-// both contexts, so the assertions run against each.
+// The executor has ONE canonical target-default key -- the UNSCOPED published
+// executor id `angular-typechecker:typecheck` -- both in this dev workspace and
+// in an installed consumer. It MUST carry the WALK-02 shape so the caching
+// contract holds. A scoped dev-repo form is never a real executor id; the
+// repo-wide guard (scoped-name-guard.spec.ts) keeps that form from creeping back.
 
 // packages/angular-typechecker/src/core/<file> -> workspace root is 4 dirs up.
 const workspaceRoot = join(
@@ -47,56 +48,44 @@ interface NxJson {
 
 const nxJson = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as NxJson;
 
-const WALK_TARGET_DEFAULT_KEYS = [
-  'angular-typechecker:typecheck',
-  '@angular-typechecker/angular-typechecker:typecheck',
-] as const;
+const KEY = TYPECHECK_EXECUTOR_ID;
 
 const TSCONFIG_GLOB = '{projectRoot}/tsconfig*.json';
 
-function inputsOf(key: string): unknown[] {
-  const targetDefault = nxJson.targetDefaults?.[key];
+function inputsOf(): unknown[] {
+  const targetDefault = nxJson.targetDefaults?.[KEY];
 
   if (targetDefault === undefined) {
-    throw new Error(`nx.json targetDefaults is missing the key: ${key}`);
+    throw new Error(`nx.json targetDefaults is missing the key: ${KEY}`);
   }
 
   const { inputs } = targetDefault;
 
   if (inputs === undefined) {
-    throw new Error(`nx.json targetDefaults[${key}] has no inputs array`);
+    throw new Error(`nx.json targetDefaults[${KEY}] has no inputs array`);
   }
 
   return inputs;
 }
 
 describe('nx.json typecheck walk-target defaults (WALK-02 / L-5)', () => {
-  it.each(WALK_TARGET_DEFAULT_KEYS)(
-    'uses the "default" named input and NOT "production" (%s)',
-    (key) => {
-      const inputs = inputsOf(key);
+  it('uses the "default" named input and NOT "production"', () => {
+    const inputs = inputsOf();
 
-      expect(inputs).toContain('default');
-      expect(inputs).not.toContain('production');
-    },
-  );
+    expect(inputs).toContain('default');
+    expect(inputs).not.toContain('production');
+  });
 
-  it.each(WALK_TARGET_DEFAULT_KEYS)(
-    'retains the "{projectRoot}/tsconfig*.json" glob and "^default" (%s)',
-    (key) => {
-      const inputs = inputsOf(key);
+  it('retains the "{projectRoot}/tsconfig*.json" glob and "^default"', () => {
+    const inputs = inputsOf();
 
-      expect(inputs).toContain(TSCONFIG_GLOB);
-      expect(inputs).toContain('^default');
-    },
-  );
+    expect(inputs).toContain(TSCONFIG_GLOB);
+    expect(inputs).toContain('^default');
+  });
 
-  it.each(WALK_TARGET_DEFAULT_KEYS)(
-    'declares outputs as an empty array -- the walk emits nothing (%s)',
-    (key) => {
-      const targetDefault = nxJson.targetDefaults?.[key];
+  it('declares outputs as an empty array -- the walk emits nothing', () => {
+    const targetDefault = nxJson.targetDefaults?.[KEY];
 
-      expect(targetDefault?.outputs).toEqual([]);
-    },
-  );
+    expect(targetDefault?.outputs).toEqual([]);
+  });
 });

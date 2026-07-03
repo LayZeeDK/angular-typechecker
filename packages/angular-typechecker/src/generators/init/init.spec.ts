@@ -3,12 +3,12 @@ import type { NxJsonConfiguration, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import initGenerator from './generator';
+import initGenerator, { TYPECHECK_EXECUTOR_ID } from './generator';
 
-// The UNSCOPED published executor id `init` seeds (D-04). The SCOPED dev-repo
-// alias must NEVER be written into a consumer's nx.json.
-const UNSCOPED_KEY = 'angular-typechecker:typecheck';
-const SCOPED_KEY = '@angular-typechecker/angular-typechecker:typecheck';
+// The UNSCOPED published executor id `init` seeds (D-04). The generator must add
+// ONLY this key -- never a scoped dev-repo alias. Import the id from the generator
+// so a future rename updates one source, not three spec copies.
+const UNSCOPED_KEY = TYPECHECK_EXECUTOR_ID;
 
 describe('init generator (GEN-07)', () => {
   let tree: Tree;
@@ -55,9 +55,14 @@ describe('init generator (GEN-07)', () => {
     });
   });
 
-  it('seeds ONLY the unscoped id, never the scoped dev-repo key (D-04)', async () => {
+  it('seeds ONLY the unscoped id, adding no scoped alias key (D-04)', async () => {
+    const before = Object.keys(readNxJson(tree)?.targetDefaults ?? {});
+
     await initGenerator(tree, {});
 
-    expect(readNxJson(tree)?.targetDefaults?.[SCOPED_KEY]).toBeUndefined();
+    const after = Object.keys(readNxJson(tree)?.targetDefaults ?? {});
+    const added = after.filter((key) => !before.includes(key));
+
+    expect(added).toEqual([UNSCOPED_KEY]);
   });
 });

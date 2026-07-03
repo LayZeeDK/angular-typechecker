@@ -67,6 +67,16 @@ simplification pass; 260702-rq7 thermos triage with zero code changes), 2 milest
 INFO-finding fixes (260702-g5r), 1 CI fallow-gate fix (260702-hsv), 1 CI format/lint gate
 addition (260701-shh), and 1 breaking public-barrel trim (20260702-trim-public-barrel).
 
+Post-v0.1.0: **260703-lp0** (`fix-stray-scoped-angular-typechecker-exe`, 2026-07-03) --
+removed the stray scoped `@angular-typechecker/angular-typechecker[:typecheck]` form the
+v0.1.0 executor rename left in the dev workspace (`nx.json` duplicate targetDefault, two
+`libs/*` consumer executors, the `tsconfig.base.json` path alias), root README, e2e, and
+specs; added a repo-wide `scoped-name-guard.spec.ts` tripwire. Distributed package verified
+UNAFFECTED (shipped generator + package README already correct; specs excluded from the
+tarball; the three scoped comments in the shipped `generator.js` were reworded) -- so NO
+release/tag/publish/CHANGELOG. Diagnosis of the silent-green CI: the leftover tsconfig alias
+made the bogus scoped id resolve to the real executor, and two shape-only specs REQUIRED it.
+
 ## Deferred Items
 
 Tracked as Future Requirements (out of scope, not debt):
