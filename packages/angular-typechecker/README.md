@@ -294,7 +294,7 @@ import type { CoreOptions, CoreResult, SkippedReference } from 'angular-typechec
 // process.cwd() (unlike the executor's workspace-relative `tsConfig`).
 const options: CoreOptions = {
   tsConfigPath: '/abs/path/to/apps/my-app/tsconfig.json',
-  includeDeps: false, // fold out-of-project + node_modules diagnostics back in
+  includeDeps: false, // set true to include out-of-project + node_modules diagnostics
 };
 
 try {
