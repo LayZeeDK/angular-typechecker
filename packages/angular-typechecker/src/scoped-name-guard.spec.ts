@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 //
 // The search needle is assembled from parts (`SCOPE + '/'`) so THIS guard file
 // does not itself contain the banned literal -- otherwise it would flag itself.
+// This parts-assembly discipline is LOAD-BEARING: any NEW file that must mention
+// the banned scoped form has to assemble it the same way (see `init.spec.ts`) or
+// live under `.planning/`; a literal reference anywhere else fails this guard.
 //
 // Cheap read-only filesystem/git scan (no build/pack/install), so it rides the
 // existing in-plugin `test` matrix as a plain `*.spec.ts`. Historical `.planning/`
@@ -23,7 +26,9 @@ import { describe, expect, it } from 'vitest';
 const SCOPE = '@angular-typechecker';
 const NEEDLE = `${SCOPE}/`;
 const ALLOWED = `${SCOPE}/source`;
-const SCOPED_REF = new RegExp(`${SCOPE}/[A-Za-z0-9._-]+`, 'g');
+// `*` (not `+`): a bare `<scope>/` with no trailing name -- or one followed by a
+// non-name char -- still matches and is flagged (only `<scope>/source` is allowed).
+const SCOPED_REF = new RegExp(`${SCOPE}/[A-Za-z0-9._-]*`, 'g');
 
 // Resolve the workspace root from this spec's location
 // (packages/angular-typechecker/src/<file>) -- 3 dirs up.
@@ -38,7 +43,7 @@ function trackedFiles(): string[] {
   return execSync('git ls-files', {
     cwd: workspaceRoot,
     encoding: 'utf8',
-    maxBuffer: 32 * 1024 * 1024,
+    maxBuffer: 8 * 1024 * 1024,
   })
     .split('\n')
     .map((line) => line.trim())
@@ -46,10 +51,10 @@ function trackedFiles(): string[] {
     .filter((file) => !file.startsWith('.planning/'));
 }
 
-function findViolations(): string[] {
+function findViolations(files: string[]): string[] {
   const violations: string[] = [];
 
-  for (const file of trackedFiles()) {
+  for (const file of files) {
     const content = readFileSync(join(workspaceRoot, file), 'utf8');
 
     if (!content.includes(NEEDLE)) {
@@ -74,6 +79,11 @@ function findViolations(): string[] {
 
 describe('scoped-name regression guard (QT-260703-lp0)', () => {
   it(`allows only ${ALLOWED} across tracked non-.planning files`, () => {
-    expect(findViolations()).toEqual([]);
+    const files = trackedFiles();
+
+    // Guard against a vacuous pass (e.g. run outside a git checkout): the scan
+    // MUST actually see tracked files before asserting the absence of violations.
+    expect(files.length).toBeGreaterThan(0);
+    expect(findViolations(files)).toEqual([]);
   });
 });

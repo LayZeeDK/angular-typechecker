@@ -46,7 +46,7 @@ interface NxJson {
 
 const nxJson = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as NxJson;
 
-const WALK_TARGET_DEFAULT_KEYS = ['angular-typechecker:typecheck'] as const;
+const KEY = 'angular-typechecker:typecheck';
 
 const TSCONFIG_GLOB = '{projectRoot}/tsconfig*.json';
 
@@ -67,32 +67,23 @@ function inputsOf(key: string): unknown[] {
 }
 
 describe('nx.json typecheck walk-target defaults (WALK-02 / L-5)', () => {
-  it.each(WALK_TARGET_DEFAULT_KEYS)(
-    'uses the "default" named input and NOT "production" (%s)',
-    (key) => {
-      const inputs = inputsOf(key);
+  it('uses the "default" named input and NOT "production"', () => {
+    const inputs = inputsOf(KEY);
 
-      expect(inputs).toContain('default');
-      expect(inputs).not.toContain('production');
-    },
-  );
+    expect(inputs).toContain('default');
+    expect(inputs).not.toContain('production');
+  });
 
-  it.each(WALK_TARGET_DEFAULT_KEYS)(
-    'retains the "{projectRoot}/tsconfig*.json" glob and "^default" (%s)',
-    (key) => {
-      const inputs = inputsOf(key);
+  it('retains the "{projectRoot}/tsconfig*.json" glob and "^default"', () => {
+    const inputs = inputsOf(KEY);
 
-      expect(inputs).toContain(TSCONFIG_GLOB);
-      expect(inputs).toContain('^default');
-    },
-  );
+    expect(inputs).toContain(TSCONFIG_GLOB);
+    expect(inputs).toContain('^default');
+  });
 
-  it.each(WALK_TARGET_DEFAULT_KEYS)(
-    'declares outputs as an empty array -- the walk emits nothing (%s)',
-    (key) => {
-      const targetDefault = nxJson.targetDefaults?.[key];
+  it('declares outputs as an empty array -- the walk emits nothing', () => {
+    const targetDefault = nxJson.targetDefaults?.[KEY];
 
-      expect(targetDefault?.outputs).toEqual([]);
-    },
-  );
+    expect(targetDefault?.outputs).toEqual([]);
+  });
 });
