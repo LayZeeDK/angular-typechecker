@@ -125,7 +125,11 @@ jobs:
       # OS-independent (depends only on the installed @angular/compiler-cli
       # typings) and Nx-cached per its inputs, so the per-matrix-cell re-runs are
       # cheap. Fixed target ids + flags only; no PR-metadata interpolation.
-      - run: npx nx run-many -t typecheck-drift test -p angular-typechecker
+      # test-util is included so @workspace/test-util's own unit tests (findWorkspaceRoot,
+      # incl. the negative-throw + depth-independence cases) run in CI, not just when a
+      # consuming spec happens to exercise the happy path. It has no typecheck-drift target;
+      # run-many skips that target for it.
+      - run: npx nx run-many -t typecheck-drift test -p angular-typechecker test-util
 
   # The heavy tarball-install gate, Linux-only (RD-03), Node 24 (matching
   # release.yml). Runs the three serialized e2e projects by EXPLICIT project
