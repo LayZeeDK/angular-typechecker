@@ -290,7 +290,7 @@ exports a small barrel:
 import { runTypecheck, TypecheckInfrastructureError } from 'angular-typechecker';
 import type { CoreOptions, CoreResult, SkippedReference } from 'angular-typechecker';
 
-// tsConfigPath must be absolute -- runTypecheck does not resolve it for you.
+// tsConfigPath must be absolute. runTypecheck does not resolve it for you.
 const options: CoreOptions = {
   tsConfigPath: '/abs/path/to/apps/my-app/tsconfig.json',
   includeDeps: false, // set true to include out-of-project + node_modules diagnostics
