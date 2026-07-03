@@ -162,14 +162,10 @@ outputs via `dependentTasksOutputFiles`:
 }
 ```
 
-Two things to get right here:
-
-- The first input is `default`, not `production`. `production` drops `*.spec.ts`,
-  which would under-hash the spec sources the walk checks, so a spec-only edit
-  could then reuse a stale cache and pass when it should fail.
-- Use the published, unscoped id `angular-typechecker:typecheck`. A
-  workspace-scoped key such as `@your-scope/...:typecheck` will not bind to the
-  installed package.
+One thing to get right: the first input must be `default`, not `production`.
+`production` drops `*.spec.ts`, which would under-hash the spec sources the walk
+checks, so a spec-only edit could then reuse a stale cache and pass when it
+should fail.
 
 ## Executor options
 
