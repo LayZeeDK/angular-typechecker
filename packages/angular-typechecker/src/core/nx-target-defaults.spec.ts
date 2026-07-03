@@ -18,12 +18,11 @@ import { describe, expect, it } from 'vitest';
 // artifact) -- it runs in the fast `nx test` loop with no `nx build`
 // prerequisite, mirroring `package-manifest.spec.ts`.
 //
-// The executor is registered under TWO target-default keys -- the dev-workspace
-// executor id (`angular-typechecker:typecheck`) and the published-package
-// executor id (`@angular-typechecker/angular-typechecker:typecheck`) --
-// which are the same executor's defaults for the local repo vs an installed
-// consumer. Both MUST carry the WALK-02 shape so the caching contract holds in
-// both contexts, so the assertions run against each.
+// The executor has ONE canonical target-default key -- the UNSCOPED published
+// executor id `angular-typechecker:typecheck` -- both in this dev workspace and
+// in an installed consumer. It MUST carry the WALK-02 shape so the caching
+// contract holds. A scoped dev-repo form is never a real executor id; the
+// repo-wide guard (scoped-name-guard.spec.ts) keeps that form from creeping back.
 
 // packages/angular-typechecker/src/core/<file> -> workspace root is 4 dirs up.
 const workspaceRoot = join(
@@ -47,10 +46,7 @@ interface NxJson {
 
 const nxJson = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as NxJson;
 
-const WALK_TARGET_DEFAULT_KEYS = [
-  'angular-typechecker:typecheck',
-  '@angular-typechecker/angular-typechecker:typecheck',
-] as const;
+const WALK_TARGET_DEFAULT_KEYS = ['angular-typechecker:typecheck'] as const;
 
 const TSCONFIG_GLOB = '{projectRoot}/tsconfig*.json';
 
