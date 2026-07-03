@@ -45,6 +45,14 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "scoped-name-guard": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "vitest run --config packages/angular-typechecker/vitest.config.mts scoped-name-guard",
+        "cwd": "."
+      }
+    },
     "typecheck-drift": {
       "executor": "nx:run-commands",
       "cache": true,

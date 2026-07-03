@@ -287,10 +287,14 @@ jobs:
   # resolution guards (packages/angular-typechecker/src/scoped-name-guard.spec.ts)
   # must run on EVERY PR -- including a docs-only PR, where the code-gated `test`
   # job is skipped yet a stray scoped ref pasted into the shipped README would
-  # otherwise ship green (E1). `--skip-nx-cache` forces the whole-repo scan to
-  # re-execute rather than replay a per-project `test` cache hit that a stray ref
-  # in another project never busts (E3). OS/Node-independent (a text + JSON scan),
-  # so Linux + single Node. Read-only; inherits the top-level `contents: read`.
+  # otherwise ship green (E1). It runs the dedicated `scoped-name-guard` target
+  # (packages/angular-typechecker/project.json), which is `cache: false` so the
+  # whole-repo scan ALWAYS re-executes rather than replaying a per-project cache hit
+  # that a stray ref in another project never busts (E3), and is an `nx:run-commands`
+  # vitest run over ONLY the guard spec with NO `dependsOn: build` -- the guard reads
+  # files (git ls-files + JSON), needs no compiled output, and stays decoupled from
+  # the plugin's compilability (a docs-only PR pays no build). OS/Node-independent, so
+  # Linux + single Node. Read-only; inherits top-level `contents: read`.
   scoped-name-guard:
     runs-on: ubuntu-latest
     steps:
@@ -302,7 +306,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx nx test angular-typechecker --skip-nx-cache -- --run scoped-name-guard
+      - run: npx nx scoped-name-guard angular-typechecker
 
   # Aggregate gate (RD-09 / D-02 cross-phase contract). Job id AND name are
   # EXACTLY `ci` -- the exact required-status-check name Phase 7's Default branch
