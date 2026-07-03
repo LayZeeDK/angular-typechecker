@@ -3,11 +3,12 @@ import type { NxJsonConfiguration, Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import initGenerator from './generator';
+import initGenerator, { TYPECHECK_EXECUTOR_ID } from './generator';
 
 // The UNSCOPED published executor id `init` seeds (D-04). The generator must add
-// ONLY this key -- never a scoped dev-repo alias.
-const UNSCOPED_KEY = 'angular-typechecker:typecheck';
+// ONLY this key -- never a scoped dev-repo alias. Import the id from the generator
+// so a future rename updates one source, not three spec copies.
+const UNSCOPED_KEY = TYPECHECK_EXECUTOR_ID;
 
 describe('init generator (GEN-07)', () => {
   let tree: Tree;

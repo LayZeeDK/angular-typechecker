@@ -7,7 +7,7 @@ import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import initGenerator from './generator';
+import initGenerator, { TYPECHECK_EXECUTOR_ID } from './generator';
 
 // D-04 / WALK-02 drift guard (C11): the targetDefaults block the init generator
 // SEEDS into a consumer workspace is ALSO hand-copied into the dev-repo `nx.json`
@@ -24,7 +24,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = join(testDir, '..', '..', '..', '..', '..');
 const nxJsonPath = join(workspaceRoot, 'nx.json');
 
-const UNSCOPED_ID = 'angular-typechecker:typecheck';
+const UNSCOPED_ID = TYPECHECK_EXECUTOR_ID;
 
 interface NxJsonShape {
   targetDefaults?: Record<string, unknown>;

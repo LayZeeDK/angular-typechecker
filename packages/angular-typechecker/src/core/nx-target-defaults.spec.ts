@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import { TYPECHECK_EXECUTOR_ID } from '../generators/init/generator';
+
 // WALK-02 / L-5 / Spike 005 (manifest contract): pin the shape of the
 // `typecheck` walk-target defaults in the workspace `nx.json`. The
 // coarse single walk target caches on ONE key, so the NAMED input decides what
@@ -46,7 +48,7 @@ interface NxJson {
 
 const nxJson = JSON.parse(readFileSync(nxJsonPath, 'utf8')) as NxJson;
 
-const KEY = 'angular-typechecker:typecheck';
+const KEY = TYPECHECK_EXECUTOR_ID;
 
 const TSCONFIG_GLOB = '{projectRoot}/tsconfig*.json';
 
