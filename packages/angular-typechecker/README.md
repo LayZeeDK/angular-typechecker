@@ -1,114 +1,118 @@
 # angular-typechecker
 
 [![npm version](https://img.shields.io/npm/v/angular-typechecker.svg)](https://www.npmjs.com/package/angular-typechecker)
+[![npm downloads](https://img.shields.io/npm/dm/angular-typechecker.svg)](https://www.npmjs.com/package/angular-typechecker)
 [![license](https://img.shields.io/npm/l/angular-typechecker.svg)](https://github.com/LayZeeDK/angular-typechecker/blob/main/LICENSE)
 [![CI](https://github.com/LayZeeDK/angular-typechecker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LayZeeDK/angular-typechecker/actions/workflows/ci.yml?query=branch%3Amain)
 
-An Nx plugin that runs the _complete_ Angular compiler type-check (TypeScript
-checks, Angular template type-checking, and extended NG8xxx diagnostics) with no
-emit, without building your app or running your tests. It covers every Angular
-project type: applications, libraries (local/non-buildable, buildable, and
-publishable), and unit-test (spec) tsconfigs.
+The complete Angular compiler type-check as a fast, cacheable Nx target -- no
+build, no emit.
 
-## Why this exists
+angular-typechecker runs the full Angular compiler diagnostic set over a project
+and reports what it finds. It is built for the loops the editor does not cover:
+CI, pre-commit, and AI coding agents that need a complete static check on demand.
 
-Brandon Roberts' "Angular Compilation, Type-Checking, and Build Bottlenecks"
-(2026) shows that at scale the whole-program type-check is the dominant cost of
-an Angular build, and a separable one. Fast per-file compilers (AnalogJS
-`fastCompile`, the experimental Oxc compiler) and esbuild dev skip the
-type-check for speed and expect you to run it elsewhere. In the editor, the
-Angular Language Service covers the live loop.
+- Runs Angular's full diagnostic set -- TypeScript, template type-checking, and
+  extended NG8xxx -- in one pass, not just `tsc`.
+- Emits nothing and builds nothing: no bundler, no test runner, no output files.
+- Covers applications and every library kind (local/non-buildable, buildable,
+  publishable), and checks the spec tsconfig in the same run.
+- Runs as a first-class, cacheable Nx target, so unchanged projects are skipped
+  on re-runs.
+- Prints deterministic, ANSI-free output and exits non-zero on any error, so CI
+  jobs and agents need no extra parsing.
 
-angular-typechecker is that "elsewhere" for headless CI and AI-agent loops:
-Nx-native, cacheable, runnable per project. Unlike a bare `ngc --noEmit`, it
-gathers option, syntactic, semantic, template, and extended diagnostics in one
-unconditional pass, so template and extended NG8xxx diagnostics still surface
-when a co-located TypeScript error exists. It also differs from Nx's built-in
-`@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular projects can't use that
-fast path, because Angular has no TypeScript project-references support, and it
-would not surface Angular template or extended diagnostics anyway.
+It is a type-checker, not a build, a linter, or a test runner, and it does not
+replace your editor's Angular Language Service. It is the complete, headless
+check you run everywhere the editor is not.
 
-Reference: https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f
+## Contents
+
+- [What it does](#what-it-does)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Executor options](#executor-options)
+- [Output](#output)
+- [Exit codes](#exit-codes)
+- [Continuous integration](#continuous-integration)
+- [Programmatic API](#programmatic-api)
+- [How it compares](#how-it-compares)
+- [License](#license)
+
+## What it does
+
+For each project, angular-typechecker walks the solution `tsconfig.json` down to
+its in-project leaves -- the app or lib tsconfig and `tsconfig.spec.json` -- and
+runs the Angular compiler with no emit. It gathers diagnostics from every phase
+(option, syntactic, semantic, template, and extended NG8xxx) in one unconditional
+pass, so a template or NG8xxx problem still surfaces even when a TypeScript error
+sits in the same file. A bare `ngc --noEmit` stops at the first failing phase and
+can bury the rest.
 
 ## Requirements
 
-- Nx 23.x
-- Angular 22.x (stable). `@angular/compiler-cli` is a peer dependency, range
-  `^22.0.0`.
-- TypeScript `>=6.0.0 <6.1.0`, a peer dependency.
-- Node `^22.22.3 || ^24.15.0 || ^26.0.0`
+| Tool                                    | Supported version                     |
+| --------------------------------------- | ------------------------------------- |
+| Nx                                      | 23.x                                  |
+| Angular (`@angular/compiler-cli`, peer) | 22.x stable (`^22.0.0`)               |
+| TypeScript (peer)                       | `>=6.0.0 <6.1.0`                      |
+| Node                                    | `^22.22.3 \|\| ^24.15.0 \|\| ^26.0.0` |
 
-`@nx/devkit` ships as a pinned dependency of this package, so you do not declare
-it.
+`@nx/devkit` ships as a pinned dependency, so you never declare it yourself. You
+provide `@angular/compiler-cli` and `typescript` -- the versions your workspace
+already uses.
 
-### A note on Angular pre-releases
-
-The published peer range `@angular/compiler-cli: "^22.0.0"` excludes Angular 22
-pre-releases (`-next` / `-rc`) by semver rules. To use the plugin on a 22.x
-pre-release, install with `--legacy-peer-deps`. The range may widen in a future
-release; widening is non-breaking under 0.x semver.
+Note: the `^22.0.0` peer range excludes Angular 22 pre-releases (`-next` /
+`-rc`) by semver rules. To run the plugin on a 22.x pre-release, install with
+`--legacy-peer-deps`. The range may widen later; widening is non-breaking under
+0.x semver.
 
 ## Installation
-
-```sh
-npm install --save-dev angular-typechecker
-```
-
-Or install and seed the cacheable target defaults in one step with `nx add` (see
-Usage below).
-
-## Usage
-
-The quickest way to wire a project is the generator. An equivalent manual recipe
-follows it.
-
-### Recommended: the `configuration` generator
-
-Install the plugin and seed the cacheable target defaults in one step:
 
 ```sh
 nx add angular-typechecker
 ```
 
-`nx add` runs this plugin's `init` generator on install, which seeds the
+`nx add` installs the package and runs its `init` generator, which seeds a
 cacheable `angular-typechecker:typecheck` entry into `nx.json` `targetDefaults`.
-If you installed with `npm install --save-dev angular-typechecker` instead, run
-`nx g angular-typechecker:init` once to seed the same defaults. The plugin uses
-`nx add`; there is no Angular-CLI installer.
 
-Then wire a project's `typecheck` target:
+Prefer plain npm? Install the package and run `init` yourself:
+
+```sh
+npm install --save-dev angular-typechecker
+nx g angular-typechecker:init
+```
+
+This is `nx add`, not the Angular CLI's `ng add` -- there is no Angular-CLI
+installer.
+
+## Quick start
+
+Wire a project with the `configuration` generator, then run the target:
 
 ```sh
 nx g angular-typechecker:configuration my-app
-```
-
-This adds a single `typecheck` target pointed at the project's solution
-`tsconfig.json`. The engine walks that tsconfig's in-project referenced leaves
-(the lib/app tsconfig and the `tsconfig.spec.json`) in one run, so the spec
-tsconfig is type-checked automatically. You do not wire a second target.
-
-Run it:
-
-```sh
 nx run my-app:typecheck
 ```
 
-Useful flags:
+The generator adds a single `typecheck` target pointed at the project's solution
+`tsconfig.json`. Because the engine walks that tsconfig's leaves, the spec
+tsconfig is checked in the same run -- you never add a second target. Two flags
+are worth knowing:
 
-- `--tsConfig <path>` overrides the tsconfig the target points at. It defaults to
-  the project's solution `tsconfig.json`, falling back to the leaf
-  `tsconfig.app.json` / `tsconfig.lib.json` for a flat project with no solution
-  tsconfig.
+- `--tsConfig <path>` points the target at a different tsconfig. It defaults to
+  the solution `tsconfig.json`, falling back to `tsconfig.app.json` /
+  `tsconfig.lib.json` for a flat project with no solution tsconfig.
 - `--targetName <name>` names the target something other than `typecheck`.
 
-Re-running the generator is idempotent: it will not clobber a target of the same
-name that is not ours.
+Re-running the generator is safe: it will not overwrite a target of the same name
+that is not ours.
 
-### Manual wiring (equivalent)
+### Wiring a project by hand
 
-To edit config by hand, add the `typecheck` target to the project's
-`project.json`, pointed at its solution `tsconfig.json` (so the engine walks the
-lib/app and spec leaves), referencing the published executor id
+To skip the generator, add the target yourself. Point it at the solution
+`tsconfig.json` and reference the published executor id
 `angular-typechecker:typecheck`:
 
 ```jsonc
@@ -124,9 +128,8 @@ lib/app and spec leaves), referencing the published executor id
 }
 ```
 
-Then add a cacheable `targetDefaults` entry to `nx.json`, keyed by the published
-executor id. This is what the `init` generator seeds for you. It declares the
-inputs that make the whole-program check correctly cacheable, including
+Then add the cacheable `targetDefaults` entry to `nx.json` (this is what `init`
+seeds). Its inputs are what make the whole-program check cache correctly, covering
 non-buildable dependency sources via `^default` and buildable dependency outputs
 via `dependentTasksOutputFiles`:
 
@@ -155,39 +158,37 @@ via `dependentTasksOutputFiles`:
 }
 ```
 
-> The first input must be `default`, not `production`. `production` excludes
-> `*.spec.ts`, so it would under-hash the spec sources the walk type-checks. A
-> spec-only edit would then fail to bust the cache and could yield a stale pass.
+Two things to get right here:
 
-> Use the published, unscoped executor id `angular-typechecker:typecheck`. A
-> workspace-scoped key (for example `@your-scope/...:typecheck`) will not bind to
-> the installed package in a consumer workspace.
+- The first input is `default`, not `production`. `production` drops `*.spec.ts`,
+  which would under-hash the spec sources the walk checks -- a spec-only edit
+  could then reuse a stale cache and pass when it should fail.
+- Use the published, unscoped id `angular-typechecker:typecheck`. A
+  workspace-scoped key such as `@your-scope/...:typecheck` will not bind to the
+  installed package.
 
-### `includeDeps` and non-buildable dependencies
-
-When the project you check imports a non-buildable (local) library in the same
-workspace, that library's source files sit outside the project's own tsconfig
-boundary, so their diagnostics are excluded by default. Set `includeDeps: true`
-to fold those out-of-project (and `node_modules`) diagnostics back in. Otherwise
-a type error introduced in a non-buildable dependency would not surface, and a
-cached "pass" could hide it. Set it when your project has non-buildable workspace
-dependencies you want covered.
-
-## Options
+## Executor options
 
 | Option        | Type    | Default    | Description                                                                                                      |
 | ------------- | ------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
 | `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                   |
-| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. Default excludes them (project-in-isolation).             |
+| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).         |
 | `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone. |
 | `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                |
 
+By default the check is scoped to the project in isolation. When it imports a
+non-buildable (local) library, that library's sources sit outside the project's
+tsconfig boundary and their diagnostics are skipped -- so a type error you
+introduce in a local dependency would not show up, and a cached pass could hide
+it. Set `includeDeps: true` to fold those out-of-project (and `node_modules`)
+diagnostics back in.
+
 ## Output
 
-There is one output format: the Angular compiler's `formatDiagnostics`, a
-superset of `tsc` that renders NG codes and template codeframes. The executor
-writes it to raw stdout. A run reporting a TypeScript error and an Angular
-template diagnostic (NG8xxx) looks like this:
+angular-typechecker prints one format: the Angular compiler's `formatDiagnostics`,
+a superset of `tsc` that renders NG codes and template code frames, written
+straight to stdout. A run with a TypeScript error and an Angular template
+diagnostic looks like this:
 
 ```
 libs/ui/src/lib/greeting.component.ts:8:38 - error TS2322: Type 'number' is not assignable to type 'string'.
@@ -200,32 +201,51 @@ libs/ui/src/lib/greeting.component.html:1:6 - error NG8002: Can't bind to 'srcc'
        ~~~~~~~~~~~~~~
 ```
 
-A few knobs shape that output:
+Each diagnostic is `path:line:column - severity CODE: message`, followed by a code
+frame. The report can carry three kinds of finding, all in the same run:
 
-- Color is auto-detected via `stdout.isTTY` and stripped off-TTY (CI, pipes,
+- Plain TypeScript diagnostics (`TS2322` and the rest of the `TSxxxx` set).
+- Angular template type-check diagnostics, from checking bindings against
+  component types.
+- Extended diagnostics -- the `NG8xxx` codes, such as `NG8002` above.
+
+A few knobs shape the output:
+
+- Color is auto-detected from `stdout.isTTY` and stripped off-TTY (CI, pipes,
   agents), so captured logs stay ANSI-free.
-- `failFast` truncates the reported list at the first error. It is an
-  output-brevity switch, not a speed-up: every diagnostic is still gathered.
-- Paths are workspace-root-relative, so they work with a standard
-  `file:line:col` problem matcher (see CI integration).
+- `failFast` cuts the reported list off at the first error. It shortens output
+  only; every diagnostic is still gathered.
+- Paths are workspace-root-relative, so they line up with a standard
+  `file:line:col` problem matcher (see [Continuous integration](#continuous-integration)).
 
-The exit-code contract is simple: the executor exits non-zero on any
-error-category diagnostic, or when the warning count exceeds `maxWarnings`. That
-makes it agent-ready and CI-ready with no extra parsing.
-
-Machine-readable reporters (JSON/SARIF) are a known non-goal in v0.x; the single
+Machine-readable reporters (JSON, SARIF) are a deliberate non-goal in v0.x; the
 human-readable format above is the only output.
 
-## CI integration
+## Exit codes
 
-Because the executor exits non-zero on any error-category diagnostic, a CI step
-that runs `nx run <project>:typecheck` fails the job on a type or template error
-with no extra scripting.
+The executor reports a pass/fail result that Nx maps to the process exit code, so
+a CI step or an agent can branch on it with no parsing:
 
-The workspace-relative `file:line:col` paths also let you surface each diagnostic
-as an inline GitHub Actions annotation via a `tsc`-style problem matcher. Since
-the output is a `tsc` superset, one matcher annotates both TypeScript (`TSxxxx`)
-and Angular (`NGxxxx`) diagnostics. Add `.github/matchers/tsc.json`:
+- Exit `0` -- no error-category diagnostics were reported, and the warning count
+  is within `maxWarnings`.
+- Non-zero -- at least one error-category diagnostic was reported, or the warning
+  count exceeded `maxWarnings`.
+- Non-zero -- the Angular compiler failed to run at all (an infrastructure error,
+  such as a missing or unreadable tsconfig). This is logged distinctly from a
+  type error, because a type-checker that reports success on its own crash is
+  worse than none.
+
+## Continuous integration
+
+Since the target exits non-zero on an error, a CI step that runs
+`nx run <project>:typecheck` fails the job on any type or template error with no
+extra scripting. Run it across only the projects a change touches with
+`nx affected --target=typecheck`.
+
+The workspace-relative `file:line:col` paths also let GitHub Actions annotate each
+diagnostic inline. Because the output is a `tsc` superset, one `tsc`-style problem
+matcher catches both TypeScript (`TSxxxx`) and Angular (`NGxxxx`) codes. Drop this
+in `.github/matchers/tsc.json`:
 
 ```json
 {
@@ -248,7 +268,7 @@ and Angular (`NGxxxx`) diagnostics. Add `.github/matchers/tsc.json`:
 }
 ```
 
-Then register it immediately before running the target:
+Register it right before the target runs:
 
 ```yaml
 - run: echo "::add-matcher::.github/matchers/tsc.json"
@@ -257,15 +277,15 @@ Then register it immediately before running the target:
 
 ## Programmatic API
 
-The plugin's primary surface is the executor and the generators, both of which Nx
-loads by path. To run the whole-program type-check from code, the package also
+Nx loads the executor and the generators by path, so most consumers never import
+the package directly. When you do need to run the check from code, the package
 exports a small barrel:
 
 ```ts
 import { runTypecheck, TypecheckInfrastructureError } from 'angular-typechecker';
 import type { CoreOptions, CoreResult, SkippedReference } from 'angular-typechecker';
 
-// CoreOptions.tsConfigPath must be absolute -- the core never touches
+// CoreOptions.tsConfigPath must be absolute -- the core never reads
 // process.cwd() (unlike the executor's workspace-relative `tsConfig`).
 const options: CoreOptions = {
   tsConfigPath: '/abs/path/to/apps/my-app/tsconfig.json',
@@ -280,18 +300,39 @@ try {
   process.exitCode = result.errorCount > 0 ? 1 : 0;
 } catch (error) {
   if (error instanceof TypecheckInfrastructureError) {
-    // a compiler/infrastructure crash (code 500), not a type error
+    // the compiler crashed (code 500) -- an infrastructure failure, not a type error
   }
 
   throw error;
 }
 ```
 
-`maxWarnings`, `failFast`, and the formatter/color options are executor concerns,
-not part of the barrel API. `runTypecheck` returns the raw counts and
-diagnostics and leaves the verdict and rendering to the caller. The engine
-internals (compiler loader, gatherer, boundary filter, formatter) are
-intentionally not exported.
+`runTypecheck` hands back the raw counts and diagnostics and leaves the verdict
+and rendering to you. `maxWarnings`, `failFast`, and color live in the executor,
+not the barrel, and the engine internals (compiler loader, gatherer, boundary
+filter, formatter) stay unexported.
+
+## How it compares
+
+Angular builds already type-check, but they tie that check to emit -- and fast
+dev pipelines skip it on purpose. Per-file compilers (AnalogJS `fastCompile`, the
+experimental Oxc compiler) and esbuild dev trade the whole-program check for
+speed and tell you to run it elsewhere; in the editor, the Angular Language
+Service handles the live loop. This plugin is that "elsewhere" for headless CI and
+agent loops.
+
+- Compared with `ngc --noEmit`: `ngc` short-circuits by phase, so a TypeScript
+  error can mask template and NG8xxx diagnostics. angular-typechecker gathers
+  every phase in one pass, the way `@angular/build` does, so nothing hides behind
+  an earlier error.
+- Compared with Nx's `@nx/js` `typecheck` target: that runs plain `tsc` / `tsgo`,
+  which Angular projects cannot use (Angular has no TypeScript project-references
+  support) and which never sees template or NG8xxx diagnostics anyway.
+
+For the background on why the whole-program type-check is the dominant, separable
+cost of an Angular build, see Brandon Roberts' [Angular Compilation, Type-Checking,
+and Build Bottlenecks](https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f)
+(2026).
 
 ## License
 
