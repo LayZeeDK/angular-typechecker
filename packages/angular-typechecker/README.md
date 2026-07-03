@@ -291,9 +291,6 @@ import { runTypecheck, TypecheckInfrastructureError } from 'angular-typechecker'
 import type { CoreOptions, CoreResult, SkippedReference } from 'angular-typechecker';
 
 // tsConfigPath must be absolute -- runTypecheck does not resolve it for you.
-// A relative path is not rejected, but it makes the result depend on
-// process.cwd(). (The executor resolves its workspace-relative `tsConfig`
-// option against the workspace root before calling the core.)
 const options: CoreOptions = {
   tsConfigPath: '/abs/path/to/apps/my-app/tsconfig.json',
   includeDeps: false, // set true to include out-of-project + node_modules diagnostics
