@@ -27,7 +27,7 @@ libraries, and their spec tsconfigs.
 {
   "targets": {
     "typecheck": {
-      "executor": "@angular-typechecker/angular-typechecker:typecheck",
+      "executor": "angular-typechecker:typecheck",
       "options": {
         "tsConfig": "libs/my-lib/tsconfig.json"
       }
@@ -56,7 +56,7 @@ Add this to `nx.json` (or per-project `project.json` target config):
 ```json
 {
   "targetDefaults": {
-    "@angular-typechecker/angular-typechecker:typecheck": {
+    "angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
       "inputs": ["default", "{projectRoot}/tsconfig*.json", "^default"]

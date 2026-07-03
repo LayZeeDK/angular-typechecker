@@ -85,7 +85,7 @@ angular-typechecker/
 
 **Configuration:**
 - `nx.json`: `targetDefaults` (incl. the cacheable `angular-typecheck` recipe), `release` (conventionalCommits, `git.tag: false`, `releaseTag.pattern`), `namedInputs`.
-- `tsconfig.base.json`: workspace TS base + path aliases (`@angular-typechecker/angular-typechecker`).
+- `tsconfig.base.json`: workspace TS base + path aliases (`angular-typechecker`).
 - `packages/angular-typechecker/tsconfig.json`: solution config that pins `module: nodenext` (the CJS->ESM bridge enabler).
 - `packages/angular-typechecker/package.json`: published manifest (peers, `files` allowlist, `engines`).
 

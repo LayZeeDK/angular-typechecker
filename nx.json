@@ -56,22 +56,6 @@
         },
         { "externalDependencies": ["typescript", "@angular/compiler-cli"] }
       ]
-    },
-    "@angular-typechecker/angular-typechecker:typecheck": {
-      "cache": true,
-      "outputs": [],
-      "inputs": [
-        "default",
-        "{projectRoot}/tsconfig*.json",
-        "{projectRoot}/package.json",
-        "{workspaceRoot}/tsconfig.base.json",
-        "^default",
-        {
-          "dependentTasksOutputFiles": "**/*.{d.ts,d.cts,d.mts,tsbuildinfo}",
-          "transitive": true
-        },
-        { "externalDependencies": ["typescript", "@angular/compiler-cli"] }
-      ]
     }
   },
   "generators": {

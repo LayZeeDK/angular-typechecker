@@ -6,7 +6,7 @@
   "tags": ["scope:fixture"],
   "targets": {
     "typecheck": {
-      "executor": "@angular-typechecker/angular-typechecker:typecheck",
+      "executor": "angular-typechecker:typecheck",
       "options": {
         "tsConfig": "libs/typecheck-consumer/tsconfig.lib.json",
         "includeDeps": true
