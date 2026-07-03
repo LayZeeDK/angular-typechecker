@@ -283,6 +283,31 @@ jobs:
       - name: Lint workflows
         run: ./actionlint -color
 
+  # Always-run regression guard (NEVER path-gated). The scoped-name + executor-id
+  # resolution guards (packages/angular-typechecker/src/scoped-name-guard.spec.ts)
+  # must run on EVERY PR -- including a docs-only PR, where the code-gated `test`
+  # job is skipped yet a stray scoped ref pasted into the shipped README would
+  # otherwise ship green (E1). It runs the dedicated `scoped-name-guard` target
+  # (packages/angular-typechecker/project.json), which is `cache: false` so the
+  # whole-repo scan ALWAYS re-executes rather than replaying a per-project cache hit
+  # that a stray ref in another project never busts (E3), and is an `nx:run-commands`
+  # vitest run over ONLY the guard spec with NO `dependsOn: build` -- the guard reads
+  # files (git ls-files + JSON), needs no compiled output, and stays decoupled from
+  # the plugin's compilability (a docs-only PR pays no build). OS/Node-independent, so
+  # Linux + single Node. Read-only; inherits top-level `contents: read`.
+  scoped-name-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx nx scoped-name-guard angular-typechecker
+
   # Aggregate gate (RD-09 / D-02 cross-phase contract). Job id AND name are
   # EXACTLY `ci` -- the exact required-status-check name Phase 7's Default branch
   # ruleset will consume. needs all upstream jobs (incl. the new `changes`);
@@ -299,7 +324,17 @@ jobs:
   # post-merge `main` `ci` run (which has a real code diff vs its parent on a
   # code merge) is the second backstop.
   ci:
-    needs: [changes, test, e2e, fallow, format-lint, act-compat, lint-workflows]
+    needs:
+      [
+        changes,
+        test,
+        e2e,
+        fallow,
+        format-lint,
+        act-compat,
+        lint-workflows,
+        scoped-name-guard,
+      ]
     runs-on: ubuntu-latest
     if: always()
     steps:

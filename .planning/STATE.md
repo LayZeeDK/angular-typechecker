@@ -86,6 +86,14 @@ targets); made the lib buildable so the buildable plugin may import it. Deferred
 findings (docs-only skip, per-project cache stale-green, executor-resolution invariant) to a
 follow-up.
 
+**260703-u74** (`harden-scoped-name-guard-...`, 2026-07-03) -- resolved that deferred
+follow-up: a dedicated always-run, `--skip-nx-cache` CI `scoped-name-guard` job (E1 docs-only
+skip + E3 per-project-cache stale-green), a new executor-id resolution-invariant guard (E4/E5
+-- every `:typecheck` executor id across `project.json`/`nx.json` must equal the canonical
+`angular-typechecker:typecheck` in `executors.json`; catches aliased/typo'd ids the scope scan
+misses), and ENOENT-robust file reads (E8). Verified an aliased `@atc/core:typecheck` trips the
+new guard.
+
 ## Deferred Items
 
 Tracked as Future Requirements (out of scope, not debt):

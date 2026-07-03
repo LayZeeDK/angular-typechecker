@@ -19,6 +19,9 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 // ponytail: CONTIGUOUS LITERALS ONLY -- a runtime-assembled id (`SCOPE + '/x'`) is
 // out of scope by design; combined with tracked-files-only, these are the guard's
 // deliberate ceilings. Each fails loudly, never a false PASS.
+//
+// This file hosts TWO regression guards for the v0.1.0 rename: the scoped-name scan
+// (immediately below) and the executor-id resolution invariant (bottom of file).
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -66,7 +69,18 @@ function findViolations(files: string[]): string[] {
   const violations: string[] = [];
 
   for (const file of files) {
-    const lines = readFileSync(join(workspaceRoot, file), 'utf8').split('\n');
+    let content: string;
+
+    try {
+      content = readFileSync(join(workspaceRoot, file), 'utf8');
+    } catch {
+      // A tracked file absent from the working tree (deleted-but-unstaged
+      // mid-refactor) has no content to scan -- skip it rather than crash on
+      // ENOENT. CI runs a fresh checkout where every tracked file exists.
+      continue;
+    }
+
+    const lines = content.split('\n');
 
     for (let index = 0; index < lines.length; index += 1) {
       for (const ref of disallowedScopedRefs(lines[index])) {
@@ -104,5 +118,103 @@ describe('scoped-name regression guard (QT-260703-lp0)', () => {
     // git checkout) before asserting the absence of violations.
     expect(files.length).toBeGreaterThan(0);
     expect(findViolations(files)).toEqual([]);
+  });
+});
+
+// Executor-id resolution invariant (E4/E5). The scan above enforces the naming
+// rule (no disowned scope). This enforces the RESOLUTION rule: every executor id
+// the workspace uses for our plugin's target must be the canonical, registered id.
+// It catches not just the scoped form but ANY aliased-scope or typo'd id that would
+// resolve to the real executor exactly as the v0.1.0 bug did (a tsconfig `paths`
+// alias under a different scope, an unscoped typo) -- the disease, not the symptom.
+const pluginDir = 'packages/angular-typechecker';
+
+const registeredExecutorNames = Object.keys(
+  (
+    JSON.parse(
+      readFileSync(join(workspaceRoot, pluginDir, 'executors.json'), 'utf8'),
+    ) as { executors?: Record<string, unknown> }
+  ).executors ?? {},
+);
+
+// Single-sourced canonical ids: the SCOPE is the plugin's package.json name (the
+// same authority the Nx executor id derives from), the NAME segments are the keys
+// registered in executors.json. Deriving the scope (not hard-coding it) keeps this
+// guard tracking a plugin rename instead of asserting a stale id -- the same
+// discipline the scoped-name carve-out (ALLOWED) uses above.
+const pluginName = (
+  JSON.parse(
+    readFileSync(join(workspaceRoot, pluginDir, 'package.json'), 'utf8'),
+  ) as { name: string }
+).name;
+
+const canonicalExecutorIds = new Set(
+  registeredExecutorNames.map((name) => `${pluginName}:${name}`),
+);
+
+// Every executor id whose name segment is a registered name (here `:typecheck`),
+// as used in a project.json `executor` field or an nx.json targetDefault key.
+//
+// ponytail ceiling: `isOurs` matches by the `:<name>` suffix, so it deliberately
+// flags aliased-scope / typo'd ids (the disease) -- and would also flag a
+// legitimate third-party executor ending in the same `:<name>` (none exist in this
+// repo). It inspects only project.json / nx.json; no tracked package.json declares
+// nx targets. Both are acceptable ceilings for this workspace today.
+function executorIdReferences(): { file: string; id: string }[] {
+  const suffixes = registeredExecutorNames.map((name) => `:${name}`);
+  const isOurs = (id: string): boolean => suffixes.some((s) => id.endsWith(s));
+  const refs: { file: string; id: string }[] = [];
+
+  for (const file of trackedFiles()) {
+    if (!file.endsWith('project.json') && !file.endsWith('nx.json')) {
+      continue;
+    }
+
+    let json: {
+      targets?: Record<string, { executor?: string }>;
+      targetDefaults?: Record<string, unknown>;
+    };
+
+    try {
+      json = JSON.parse(readFileSync(join(workspaceRoot, file), 'utf8'));
+    } catch {
+      // Unreadable (deleted-but-unstaged) or malformed config carries no executor
+      // ref to validate -- skip, mirroring the ENOENT skip in findViolations. A
+      // malformed project.json / nx.json fails the build on its own.
+      continue;
+    }
+
+    for (const target of Object.values(json.targets ?? {})) {
+      if (typeof target?.executor === 'string' && isOurs(target.executor)) {
+        refs.push({ file, id: target.executor });
+      }
+    }
+
+    for (const key of Object.keys(json.targetDefaults ?? {})) {
+      if (isOurs(key)) {
+        refs.push({ file, id: key });
+      }
+    }
+  }
+
+  return refs;
+}
+
+describe('executor-id resolution invariant (E4/E5)', () => {
+  it('registers the typecheck executor in executors.json', () => {
+    expect(registeredExecutorNames).toContain('typecheck');
+  });
+
+  it('references our executor only by the canonical angular-typechecker:<name> id', () => {
+    const refs = executorIdReferences();
+
+    // Non-vacuous: the workspace must actually reference the executor somewhere.
+    expect(refs.length).toBeGreaterThan(0);
+
+    const nonCanonical = refs.filter(
+      (ref) => !canonicalExecutorIds.has(ref.id),
+    );
+
+    expect(nonCanonical).toEqual([]);
   });
 });
