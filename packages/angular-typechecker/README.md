@@ -96,7 +96,7 @@ Wire a project with the `configuration` generator, then run the target:
 
 ```sh
 nx g angular-typechecker:configuration my-app
-nx run my-app:typecheck
+nx typecheck my-app
 ```
 
 The generator adds a single `typecheck` target pointed at the project's solution
@@ -243,7 +243,7 @@ warning-threshold failure, and an infrastructure error apart, read the output.
 ## Continuous integration
 
 Since the target exits non-zero on an error, a CI step that runs
-`nx run <project>:typecheck` fails the job on any type or template error with no
+`nx typecheck <project>` fails the job on any type or template error with no
 extra scripting. Run it across only the projects a change touches with
 `nx affected -t typecheck`.
 
@@ -277,7 +277,7 @@ Register it right before the target runs:
 
 ```yaml
 - run: echo "::add-matcher::.github/matchers/tsc.json"
-- run: npx nx run my-app:typecheck
+- run: npx nx typecheck my-app
 ```
 
 ## Programmatic API
