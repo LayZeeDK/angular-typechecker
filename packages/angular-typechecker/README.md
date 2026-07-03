@@ -1,5 +1,9 @@
 # angular-typechecker
 
+[![npm version](https://img.shields.io/npm/v/angular-typechecker.svg)](https://www.npmjs.com/package/angular-typechecker)
+[![license](https://img.shields.io/npm/l/angular-typechecker.svg)](https://github.com/LayZeeDK/angular-typechecker/blob/main/LICENSE)
+[![CI](https://github.com/LayZeeDK/angular-typechecker/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LayZeeDK/angular-typechecker/actions/workflows/ci.yml?query=branch%3Amain)
+
 An Nx plugin that runs the _complete_ Angular compiler type-check -- TypeScript
 checks plus Angular template type-checking and extended (NG8xxx) diagnostics --
 with **no emit**, decoupled from building the application or running the tests.
@@ -10,26 +14,21 @@ non-buildable, buildable, and publishable), and unit-test (spec) tsconfigs.
 
 As Brandon Roberts documents in "Angular Compilation, Type-Checking, and Build
 Bottlenecks" (2026), at scale the whole-program type-check is the _dominant,
-separable_ cost of an Angular build (a standalone `ngc --noEmit` is a large
-fraction of a full esbuild build). Fast per-file compilers (AnalogJS
+separable_ cost of an Angular build. Fast per-file compilers (AnalogJS
 `fastCompile`, the experimental Oxc compiler) and esbuild dev deliberately _skip_
 the type-check for speed and expect you to "run the type-check elsewhere"; the
 editor's Angular Language Service covers the live loop.
 
 angular-typechecker is that "elsewhere" for headless CI and AI-agent loops --
-Nx-native, cacheable, and runnable per project. Unlike a bare `ngc --noEmit` (the
-step AnalogJS and that article recommend), it models the modern
-`@angular/build:application` builder: it gathers option / syntactic / semantic /
-template / extended diagnostics **unconditionally** in one pass, rather than
-short-circuiting by phase the way `ngc` does -- so it surfaces template and
-extended NG8xxx diagnostics even when a co-located TypeScript error exists.
-
-It is distinct from Nx's built-in `@nx/js` `typecheck` target (plain
-`tsc`/`tsgo`): Angular projects cannot use that fast path (Angular lacks
-TypeScript project-references support), and it would not surface Angular template
-or extended diagnostics anyway.
-
-Reference: https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f
+Nx-native, cacheable, and runnable per project. Unlike a bare `ngc --noEmit`, it
+gathers option / syntactic / semantic / template / extended diagnostics
+**unconditionally** in one pass, so it surfaces template and extended NG8xxx
+diagnostics even when a co-located TypeScript error exists. It is also distinct
+from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): Angular
+projects cannot use that fast path (Angular lacks TypeScript project-references
+support), and it would not surface Angular template or extended diagnostics
+anyway. Reference:
+https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f
 
 ## Requirements
 
@@ -54,6 +53,9 @@ widened in a future release; widening is non-breaking under 0.x semver.
 npm install --save-dev angular-typechecker
 ```
 
+Or install and seed the cacheable target defaults in one step with `nx add`
+(see Usage below).
+
 ## Usage
 
 The fastest way to wire a project is the generator; an equivalent manual recipe
@@ -70,7 +72,8 @@ nx add angular-typechecker
 `nx add` runs this plugin's `init` generator on install, which seeds the
 cacheable `angular-typechecker:typecheck` entry into `nx.json` `targetDefaults`.
 (If you installed with `npm install --save-dev angular-typechecker` instead, run
-`nx g angular-typechecker:init` once to seed the same defaults.)
+`nx g angular-typechecker:init` once to seed the same defaults.) This plugin uses
+`nx add` -- there is no Angular-CLI installer.
 
 Then wire a project's `typecheck` target:
 
@@ -178,10 +181,115 @@ dependencies you want covered.
 | `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone. |
 | `failFast`    | boolean | `false`    | Report only the first error (output brevity). NOT a speed-up -- all diagnostics are still gathered.              |
 
-The default human-readable output uses the Angular compiler's `formatDiagnostics`
-(a superset of `tsc`; it renders NG codes and template codeframes). The executor
-exits non-zero when any error-category diagnostic is reported, making it
-agent-ready and CI-ready.
+## Output
+
+There is one output format: the Angular compiler's `formatDiagnostics` -- a
+superset of `tsc` that renders NG codes and template codeframes. The executor
+writes it to raw stdout. A run reporting a TypeScript error and an Angular
+template diagnostic (NG8xxx) looks like this:
+
+```
+libs/ui/src/lib/greeting.component.ts:8:38 - error TS2322: Type 'number' is not assignable to type 'string'.
+
+8   protected readonly label: string = 0;
+                                       ~
+libs/ui/src/lib/greeting.component.html:1:6 - error NG8002: Can't bind to 'srcc' since it isn't a known property of 'img'.
+
+1 <img [srcc]="label" />
+       ~~~~~~~~~~~~~~
+```
+
+Knobs:
+
+- **Color** is auto-detected via `stdout.isTTY` and stripped off-TTY (CI, pipes,
+  agents), so captured logs stay ANSI-free.
+- **`failFast`** truncates the _reported_ list at the first error. It is an
+  output-brevity switch, not a speed-up -- every diagnostic is still gathered.
+- **Paths** are workspace-root-relative, which makes them compatible with a
+  standard `file:line:col` problem matcher (see CI integration).
+
+Exit-code contract: the executor exits non-zero on any error-category diagnostic,
+or when the warning count exceeds `maxWarnings` -- so it is agent-ready and
+CI-ready with no extra parsing.
+
+Machine-readable reporters (JSON/SARIF) are a known non-goal in v0.x; the single
+human-readable format above is the only output.
+
+## CI integration
+
+Because the executor exits non-zero on any error-category diagnostic, a CI step
+that runs `nx run <project>:typecheck` fails the job on a type or template error
+with no extra scripting.
+
+The workspace-relative `file:line:col` paths also let you surface each diagnostic
+as an inline GitHub Actions annotation via a `tsc`-style problem matcher. Since
+the output is a `tsc` superset, one matcher annotates BOTH TypeScript (`TSxxxx`)
+and Angular (`NGxxxx`) diagnostics. Add `.github/matchers/tsc.json`:
+
+```json
+{
+  "problemMatcher": [
+    {
+      "owner": "angular-typechecker",
+      "pattern": [
+        {
+          "regexp": "^(\\S.*?):(\\d+):(\\d+)\\s+-\\s+(error|warning)\\s+((?:TS|NG)\\d+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "code": 5,
+          "message": 6
+        }
+      ]
+    }
+  ]
+}
+```
+
+Then register it immediately before running the target:
+
+```yaml
+- run: echo "::add-matcher::.github/matchers/tsc.json"
+- run: npx nx run my-app:typecheck
+```
+
+## Programmatic API
+
+The plugin's primary surface is the executor and the generators (Nx loads both by
+path). For running the whole-program type-check from code, the package also
+exports a small barrel:
+
+```ts
+import { runTypecheck, TypecheckInfrastructureError } from 'angular-typechecker';
+import type { CoreOptions, CoreResult, SkippedReference } from 'angular-typechecker';
+
+// CoreOptions.tsConfigPath MUST be absolute -- the core never touches
+// process.cwd() (distinct from the executor's workspace-relative `tsConfig`).
+const options: CoreOptions = {
+  tsConfigPath: '/abs/path/to/apps/my-app/tsconfig.json',
+  includeDeps: false, // fold out-of-project + node_modules diagnostics back in
+};
+
+try {
+  const result: CoreResult = await runTypecheck(options);
+  // result: { tsConfigPath, rootNamesCount, diagnostics: readonly ts.Diagnostic[],
+  //   errorCount, warningCount, suppressedCount, durationMs,
+  //   templateCheckAborted?, skippedReferences?: readonly SkippedReference[] }
+  process.exitCode = result.errorCount > 0 ? 1 : 0;
+} catch (error) {
+  if (error instanceof TypecheckInfrastructureError) {
+    // a compiler/infrastructure crash (code 500) -- NOT a type error
+  }
+
+  throw error;
+}
+```
+
+`maxWarnings`, `failFast`, and formatter/color options are executor concerns, not
+part of the barrel API -- `runTypecheck` returns the raw counts and diagnostics
+and leaves the verdict and rendering to the caller. The engine internals (compiler
+loader, gatherer, boundary filter, formatter) are intentionally not exported.
 
 ## License
 
