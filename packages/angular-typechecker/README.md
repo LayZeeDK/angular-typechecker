@@ -10,21 +10,20 @@ build, no emit.
 
 angular-typechecker runs the full Angular compiler diagnostic set over a project
 and reports what it finds. It is built for the loops the editor does not cover:
-CI, pre-commit, and AI coding agents that need a complete static check on demand.
+CI, pre-commit, and AI coding agents that need a static check on demand.
 
 - Runs Angular's full diagnostic set -- TypeScript, template type-checking, and
   extended NG8xxx -- in one pass, not just `tsc`.
 - Emits nothing and builds nothing: no bundler, no test runner, no output files.
 - Covers applications and every library kind (local/non-buildable, buildable,
   publishable), and checks the spec tsconfig in the same run.
-- Runs as a first-class, cacheable Nx target, so unchanged projects are skipped
-  on re-runs.
+- Runs as a cacheable Nx target, so unchanged projects are skipped on re-runs.
 - Prints deterministic, ANSI-free output and exits non-zero on any error, so CI
   jobs and agents need no extra parsing.
 
 It is a type-checker, not a build, a linter, or a test runner, and it does not
-replace your editor's Angular Language Service. It is the complete, headless
-check you run everywhere the editor is not.
+replace your editor's Angular Language Service. It is the headless check you
+run everywhere the editor is not.
 
 ## Contents
 
