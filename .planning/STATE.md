@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: "v0.1.0 (configuration + init generators, nx add support, and the typecheck executor rename) shipped, audited (passed, 22/22, zero tech debt), and ARCHIVED. Published live as angular-typechecker@0.1.0. Next milestone not yet scoped."
-last_updated: "2026-07-02"
-last_activity: 2026-07-02
+last_updated: "2026-07-03"
+last_activity: 2026-07-03
 progress:
   total_phases: 5
   completed_phases: 5
@@ -93,6 +93,21 @@ skip + E3 per-project-cache stale-green), a new executor-id resolution-invariant
 `angular-typechecker:typecheck` in `executors.json`; catches aliased/typo'd ids the scope scan
 misses), and ENOENT-robust file reads (E8). Verified an aliased `@atc/core:typecheck` trips the
 new guard.
+
+**260703-wcg** (`license-relocation-and-package-readme-ov`, 2026-07-03, `--validate --research`)
+-- relocated the MIT `LICENSE` from `packages/angular-typechecker/` to the repo root (`git mv`,
+history preserved) and re-pointed the `@nx/js:tsc` build asset (`input: "."`) so the root file
+still lands in `dist/packages/angular-typechecker/LICENSE` -- the published tarball is UNCHANGED
+(load-bearing check: deleted the dist copy, rebuilt `--skip-nx-cache`, it reappeared
+byte-identical; `tarball-audit.int.spec.ts` + `package-manifest.spec.ts` green; `package.json`
+`files` untouched). Fixed the root README license link to `./LICENSE`. Overhauled the published
+package README (`packages/angular-typechecker/README.md`) per a README-conventions research pass:
+badge row (npm version/license/CI), new `## Output` (one honest human-readable format + a real
+TS2322/NG8002 codeframe example), `## CI integration` (tsc-superset problem matcher), and
+`## Programmatic API` (`runTypecheck`/`TypecheckInfrastructureError`/`CoreOptions`/`CoreResult`);
+documents only real features (JSON/SARIF framed as a v0.x non-goal; `nx add`, never `ng add`).
+Docs/config only -- NO version bump/tag/publish. Verified 9/9 must-haves. On branch
+`docs/license-root-and-readme-overhaul` (PR-bound; main is PR-only).
 
 ## Deferred Items
 
