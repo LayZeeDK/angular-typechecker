@@ -77,6 +77,15 @@ tarball; the three scoped comments in the shipped `generator.js` were reworded) 
 release/tag/publish/CHANGELOG. Diagnosis of the silent-green CI: the leftover tsconfig alias
 made the bogus scoped id resolve to the real executor, and two shape-only specs REQUIRED it.
 
+**260703-p2x** (`create-workspace-test-util-lib-with-find`, 2026-07-03, stacked on the
+260703-lp0 PR) -- created the internal `@workspace/test-util` Nx library exporting a tested
+`findWorkspaceRoot` (anchor-walk to `nx.json`), then refactored 26 specs (plugin + 3 e2e
+projects) off the depth-coupled `join(dir, '..', ...)` chain (review Finding J). Reverted the
+`@nx/js:library` generator's inferred-`plugins` block (workspace uses explicit executor
+targets); made the lib buildable so the buildable plugin may import it. Deferred guard-CI
+findings (docs-only skip, per-project cache stale-green, executor-resolution invariant) to a
+follow-up.
+
 ## Deferred Items
 
 Tracked as Future Requirements (out of scope, not debt):
