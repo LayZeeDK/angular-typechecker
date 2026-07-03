@@ -105,7 +105,7 @@ tsconfig is checked in the same run, so you never add a second target. Two flags
 matter:
 
 - `--tsConfig <path>` points the target at a different tsconfig. It defaults to
-  the solution `tsconfig.json`, falling back to `tsconfig.app.json` /
+  the solution `tsconfig.json` and falls back to `tsconfig.app.json` /
   `tsconfig.lib.json` when the project has no solution tsconfig with project
   references.
 - `--targetName <name>` names the target something other than `typecheck`.
@@ -211,8 +211,9 @@ frame. The report can carry three kinds of finding, all in the same run:
 - Plain TypeScript diagnostics (`TS2322` and the rest of the `TSxxxx` set).
 - Angular template type-check diagnostics, from checking template expressions and
   bindings against component types, such as `NG8002` above.
-- Angular extended diagnostics: the `NG81xx` family of stricter template checks
-  (for example `NG8101` invalidBananaInBox, `NG8109` interpolatedSignalNotInvoked).
+- Angular extended diagnostics: the stricter, opt-in template checks, such as
+  `NG8101` (an invalid banana-in-box binding) or `NG8109` (a signal not invoked
+  in a template).
 
 Three things shape the output:
 
@@ -241,8 +242,7 @@ a CI step or an agent can gate on pass/fail directly:
   worse than none.
 
 The exit code signals only pass or fail. To tell a type error, a
-warning-threshold failure, and an infrastructure error apart, read the output;
-the infrastructure error is logged distinctly.
+warning-threshold failure, and an infrastructure error apart, read the output.
 
 ## Continuous integration
 
