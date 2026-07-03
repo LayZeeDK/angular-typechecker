@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // TEST-03 / OUT-02 backstop (D-09): the pnpm symlinked-store e2e + the realpath
 // regression-guard. The npm matrix spec (matrix-5types.int.spec.ts) covers the
@@ -49,11 +50,8 @@ const INJECTED_TS_CODE = 'TS2322';
 // in the npm matrix spec (D-09 rejects a second full install for no new signal).
 const TARGET = 'app:typecheck';
 
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');

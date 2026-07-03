@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // WALK-02 / SC5 / T-13-03: the coarse SINGLE walk target caches on ONE key. The
 // target points at a SOLUTION tsconfig.json whose references include a
@@ -36,13 +37,10 @@ const TARGET = 'typecheck-walk-consumer:typecheck';
 const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-cache-e2e/src/<file>) -- 3 dirs up -- so every nx
+// (e2e/angular-typechecker-cache-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every nx
 // invocation + file write is cwd-independent.
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 // The SPEC-leaf source mutated to inject the error (a *.spec.ts file the

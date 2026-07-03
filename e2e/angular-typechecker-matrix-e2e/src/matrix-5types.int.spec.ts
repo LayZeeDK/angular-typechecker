@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // TEST-03: the FULL project-type e2e matrix (D-07). The Phase-5 install-e2e smoke
 // proved the packaged tarball resolves + runs for ONE project type (an
@@ -33,13 +34,10 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-matrix-e2e/src/<file>) -- 3 dirs up -- so every path
+// (e2e/angular-typechecker-matrix-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every path
 // is cwd-independent (D-17 main tree), mirroring install-smoke.
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');

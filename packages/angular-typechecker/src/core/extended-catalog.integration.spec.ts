@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { NG } from './diagnostic-codes';
 import { EXTENDED_DIAGNOSTIC_MEMBERS } from './extended-catalog.members';
@@ -37,8 +38,9 @@ import { runTypecheck } from './run-typecheck';
 // `it.skip`-ped, NOT framed as "not promotable", and NO assertion anywhere expects it
 // to stay a Warning under `defaultCategory: "error"`.
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 /**
  * Resolves the `tsconfig.app.json` of a committed fixture under the workspace-root

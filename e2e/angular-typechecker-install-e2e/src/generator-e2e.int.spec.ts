@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // GE2E-01 + GE2E-02 (Phase 15): the real-consumer proof of the shipped Phase 14
 // generator suite against the freshly-packed tarball. This installs the tarball
@@ -52,13 +53,10 @@ const BROKEN_LIB_CONST = `export const consumerGeneratorLibOnly: number = ${JSON
 const BROKEN_STATEMENT = `('x').padStart(${JSON.stringify('str')});`;
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>) -- 3 dirs up -- so every path
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every path
 // is cwd-independent (D-17 main tree), mirroring install-smoke / matrix-5types.
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');

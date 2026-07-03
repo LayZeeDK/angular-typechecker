@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { TYPECHECK_EXECUTOR_ID } from '../generators/init/generator';
 
@@ -26,13 +27,9 @@ import { TYPECHECK_EXECUTOR_ID } from '../generators/init/generator';
 // contract holds. A scoped dev-repo form is never a real executor id; the
 // repo-wide guard (scoped-name-guard.spec.ts) keeps that form from creeping back.
 
-// packages/angular-typechecker/src/core/<file> -> workspace root is 4 dirs up.
-const workspaceRoot = join(
+// packages/angular-typechecker/src/core/<file> -> findWorkspaceRoot() walks up to the nx.json workspace root.
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
-  '..',
 );
 const nxJsonPath = join(workspaceRoot, 'nx.json');
 

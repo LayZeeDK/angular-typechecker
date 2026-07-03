@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { NG } from './diagnostic-codes';
 import { renderReport } from './render-report';
@@ -32,8 +33,9 @@ import { runTypecheck } from './run-typecheck';
 // with a fabricated negative code, so the rewrite runs against genuine compiler
 // output.
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const extendedPromotedTsConfig = join(
   workspaceRoot,

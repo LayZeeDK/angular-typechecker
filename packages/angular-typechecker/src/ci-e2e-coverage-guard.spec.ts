@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // GUARD-01 (CI e2e-coverage self-audit). The CI `e2e` job runs its e2e projects
 // by an EXPLICIT `-p` list in .github/workflows/ci.yml, NOT `nx affected`. If a
@@ -23,13 +24,10 @@ import { describe, expect, it } from 'vitest';
 // release-hygiene precedent.
 
 // Resolve the workspace root from this spec's location
-// (packages/angular-typechecker/src/<file>) -- 3 dirs up -- so every file read is
+// (packages/angular-typechecker/src/<file>); findWorkspaceRoot() walks up to nx.json, so every file read is
 // cwd-independent (identical depth to the e2e specs).
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 // Enumerate the workspace's e2e projects by the strict `e2e/<dir>/project.json`

@@ -6,6 +6,7 @@ import { readNxJson } from '@nx/devkit';
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import initGenerator, { TYPECHECK_EXECUTOR_ID } from './generator';
 
@@ -19,9 +20,9 @@ import initGenerator, { TYPECHECK_EXECUTOR_ID } from './generator';
 // fails LOUDLY instead of drifting silently.
 
 // This spec lives at packages/angular-typechecker/src/generators/init, so the
-// workspace root (where nx.json lives) is five directories up.
+// workspace root is found by walking up to nx.json.
 const testDir = dirname(fileURLToPath(import.meta.url));
-const workspaceRoot = join(testDir, '..', '..', '..', '..', '..');
+const workspaceRoot = findWorkspaceRoot(testDir);
 const nxJsonPath = join(workspaceRoot, 'nx.json');
 
 const UNSCOPED_ID = TYPECHECK_EXECUTOR_ID;

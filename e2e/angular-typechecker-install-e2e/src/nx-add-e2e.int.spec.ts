@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // GE2E-03 (Phase 15): prove `nx add angular-typechecker`'s install-time init path
 // seeds the nx.json targetDefaults FROM ABSENT against the freshly-packed tarball.
@@ -31,13 +32,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // worktree-hostile.
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-install-e2e/src/<file>) -- 3 dirs up -- so every path
+// (e2e/angular-typechecker-install-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every path
 // is cwd-independent (D-17 main tree).
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 const distDir = join(workspaceRoot, 'dist', 'packages', 'angular-typechecker');

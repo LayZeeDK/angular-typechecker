@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 // TEST-04: the phase's central correctness gate. A green run caches a HIT; a
 // type error injected into a NON-buildable transitive dep's SOURCE must bust the
@@ -32,13 +33,10 @@ const TARGET = 'typecheck-consumer:typecheck';
 const INJECTED_TS_CODE = 'TS2322';
 
 // Resolve the workspace root from this spec's location
-// (e2e/angular-typechecker-cache-e2e/src/<file>) -- 4 dirs up -- so every nx
+// (e2e/angular-typechecker-cache-e2e/src/<file>); findWorkspaceRoot() walks up to nx.json, so every nx
 // invocation + file write is cwd-independent (D-17 main tree).
-const workspaceRoot = join(
+const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
-  '..',
-  '..',
-  '..',
 );
 
 // The dep SOURCE file mutated to inject the error (a non-.spec file the Vitest

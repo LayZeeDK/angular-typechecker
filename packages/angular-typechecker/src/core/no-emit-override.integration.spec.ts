@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { runTypecheck } from './run-typecheck';
 
@@ -27,8 +28,9 @@ const TS5053 = 5053;
 const TS6304 = 6304;
 const TS6379 = 6379;
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const workspaceRoot = join(packageRoot, '..', '..');
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const compositeTriangleTsConfig = join(
   workspaceRoot,
