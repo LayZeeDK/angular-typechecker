@@ -9,14 +9,14 @@ import type { InitGeneratorSchema } from './schema';
 
 // The UNSCOPED published executor id -- ALSO the key Nx uses for this executor's
 // `targetDefaults` entry. Exported so the `configuration` generator wires the
-// target with the SAME id (Landmine 3 / Pitfall 2: never a scoped dev-repo path
-// alias, which exists only because this repo aliases its own package -- we do
-// not own that npm scope).
+// target with the SAME id (Landmine 3 / Pitfall 2: never a scoped dev-repo
+// executor id -- this repo aliases its own package under a scope it does not own
+// or publish).
 export const TYPECHECK_EXECUTOR_ID = 'angular-typechecker:typecheck';
 
 // D-04 / WALK-02: copied VERBATIM from the workspace `nx.json`
 // targetDefaults[TYPECHECK_EXECUTOR_ID] block (the UNSCOPED published executor id,
-// NOT a scoped dev-repo path alias). Keep this block in sync with nx.json.
+// NOT a scoped dev-repo executor id). Keep this block in sync with nx.json.
 //
 // LANDMINE: the first `inputs` entry MUST stay 'default', never 'production'.
 // The coarse single walk target caches on ONE key, so the named input decides
@@ -55,8 +55,8 @@ const TYPECHECK_TARGET_DEFAULTS: TargetConfiguration = {
  * block is seeded ONLY when the unscoped key is absent; a pre-existing (possibly
  * user-customized) entry of ANY shape is left untouched, because a sub-key merge
  * could produce an incoherent block (the `default`-not-`production` inputs,
- * `outputs: []`, and `cache: true` are interdependent). A scoped dev-repo
- * alias key is never written.
+ * `outputs: []`, and `cache: true` are interdependent). A scoped executor-id
+ * key is never written.
  */
 export default async function initGenerator(
   tree: Tree,

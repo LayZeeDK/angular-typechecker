@@ -50,17 +50,17 @@ const KEY = 'angular-typechecker:typecheck';
 
 const TSCONFIG_GLOB = '{projectRoot}/tsconfig*.json';
 
-function inputsOf(key: string): unknown[] {
-  const targetDefault = nxJson.targetDefaults?.[key];
+function inputsOf(): unknown[] {
+  const targetDefault = nxJson.targetDefaults?.[KEY];
 
   if (targetDefault === undefined) {
-    throw new Error(`nx.json targetDefaults is missing the key: ${key}`);
+    throw new Error(`nx.json targetDefaults is missing the key: ${KEY}`);
   }
 
   const { inputs } = targetDefault;
 
   if (inputs === undefined) {
-    throw new Error(`nx.json targetDefaults[${key}] has no inputs array`);
+    throw new Error(`nx.json targetDefaults[${KEY}] has no inputs array`);
   }
 
   return inputs;
@@ -68,14 +68,14 @@ function inputsOf(key: string): unknown[] {
 
 describe('nx.json typecheck walk-target defaults (WALK-02 / L-5)', () => {
   it('uses the "default" named input and NOT "production"', () => {
-    const inputs = inputsOf(KEY);
+    const inputs = inputsOf();
 
     expect(inputs).toContain('default');
     expect(inputs).not.toContain('production');
   });
 
   it('retains the "{projectRoot}/tsconfig*.json" glob and "^default"', () => {
-    const inputs = inputsOf(KEY);
+    const inputs = inputsOf();
 
     expect(inputs).toContain(TSCONFIG_GLOB);
     expect(inputs).toContain('^default');
