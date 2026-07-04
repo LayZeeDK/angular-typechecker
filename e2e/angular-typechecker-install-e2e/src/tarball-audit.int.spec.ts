@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import { buildCleanEnv, findWorkspaceRoot } from '@workspace/test-util';
 
 // PKG-02: the phase's packaging-fidelity gate. A source-tree check cannot catch
 // a `files`-allowlist defect, a `.d.ts` resolution escape (D-10), or a stale-dist
@@ -67,39 +67,11 @@ const INSTALL_SCRIPT_KEYS = [
   'prepublish',
 ];
 
-// The outer `nx run <install-e2e>:test` injects cache-defeating NX_* vars into
-// this process; a naive `...process.env` would propagate them into the nested
-// `nx build` and silently force a cache-miss (or worse, a stale graph). Strip
-// them so the nested build is a clean top-level invocation (clone of the
-// cache-e2e buildCleanEnv pattern).
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // NX_DAEMON off so a stale daemon cannot serve an outdated graph; FORCE_COLOR=0
-  // (NOT --no-color -- the executor schema's additionalProperties:false rejects
-  // color:false; 04-02 hand-off) keeps tool output un-split by ANSI.
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-  };
-}
-
+// The shared buildCleanEnv strips the outer runner's cache-defeating NX_* vars so
+// the nested `nx build` is a clean top-level invocation, and sets NX_DAEMON=false
+// + FORCE_COLOR=0 (FORCE_COLOR, NOT --no-color, which the executor schema's
+// additionalProperties:false rejects as color:false; 04-02 hand-off). No npm
+// install here, so the default (legacy-peer-deps-only) strip is sufficient.
 const env = buildCleanEnv();
 
 interface PackEntry {

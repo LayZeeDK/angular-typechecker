@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import { buildCleanEnv, findWorkspaceRoot, run } from '@workspace/test-util';
 
 // WALK-02 / SC5 / T-13-03: the coarse SINGLE walk target caches on ONE key. The
 // target points at a SOLUTION tsconfig.json whose references include a
@@ -51,77 +51,17 @@ const SPEC_FILE_REL =
 const SPEC_FILE = join(workspaceRoot, SPEC_FILE_REL);
 const PRISTINE = `${SPEC_FILE}.pristine`;
 
-// CRITICAL (nested-nx isolation): this spec runs UNDER `nx run <cache-e2e>:test`,
-// so the outer Nx runner injects env vars into this process that a naive
-// `...process.env` would propagate into the nested `nx run` and silently break the
-// cache test. Most importantly `NX_SKIP_NX_CACHE=true` (set whenever the OUTER
-// test task itself ran with --skip-nx-cache) would make EVERY nested run a
-// cache-miss -> the CACHE HIT assertion can never pass and the gate is dead. Strip
-// them all so the nested `nx run` is a clean top-level invocation regardless of how
-// the outer test was invoked.
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(cacheDirectory: string): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // Determinism: a per-run isolated cache dir (avoids the global .nx lock on
-  // Windows + guarantees a cold baseline) + NX_DAEMON off so a stale daemon
-  // cannot serve an outdated graph. FORCE_COLOR=0 keeps the dim() marker
-  // un-split by ANSI.
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-    NX_CACHE_DIRECTORY: cacheDirectory,
-  };
-}
-
+// Determinism: a per-run isolated cache dir avoids the global .nx lock on Windows
+// and guarantees a cold baseline. The shared buildCleanEnv strips the outer
+// runner's NX_* vars (see its doc -- most importantly NX_SKIP_NX_CACHE, which
+// would force every nested run to a cache-miss and kill the CACHE HIT assertion)
+// and sets NX_DAEMON=false + FORCE_COLOR=0; NX_CACHE_DIRECTORY layers the isolated
+// cache dir on top.
 const cacheDir = mkdtempSync(join(tmpdir(), 'atc-walk-cache-'));
-const env = buildCleanEnv(cacheDir);
-
-interface RunResult {
-  stdout: string;
-  code: number;
-}
-
-// execSync throws on a non-zero exit -- so the catch is how we capture the
-// CACHE-MISS non-zero exit + the diagnostic output. NEVER pipe nx through
-// head/rg: the pipe tail's exit code masks Nx's. No untrusted string reaches the
-// shell: a fixed target id + fixed flags only.
-function run(extra = ''): RunResult {
-  try {
-    const stdout = execSync(
-      `npx nx run ${TARGET} --output-style=static ${extra}`.trim(),
-      { cwd: workspaceRoot, env, encoding: 'utf8' },
-    );
-
-    return { stdout, code: 0 };
-  } catch (error) {
-    const execError = error as {
-      stdout?: string;
-      stderr?: string;
-      status?: number;
-    };
-
-    return {
-      stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-      code: execError.status ?? 1,
-    };
-  }
-}
+const env: NodeJS.ProcessEnv = {
+  ...buildCleanEnv(),
+  NX_CACHE_DIRECTORY: cacheDir,
+};
 
 function healFromPristine(): void {
   // Restore the spec source from the committed byte-identical sidecar (preserves
@@ -170,13 +110,13 @@ describe('WALK-02/SC5: a spec-only edit busts the coarse single walk-target cach
 
     try {
       // Green baseline: the first run executes (cold per-run cache).
-      const first = run();
+      const first = run(workspaceRoot, TARGET, { env });
       expect(first.code).toBe(0);
 
       // CACHE HIT: the 2nd identical green run is served from the cache -- proves
       // caching is live (without this, a permanently-disabled cache would also
       // "pass" the MISS case for the wrong reason).
-      const second = run();
+      const second = run(workspaceRoot, TARGET, { env });
       expect(second.stdout).toContain(CACHE_MARKER);
       expect(second.code).toBe(0);
 
@@ -197,7 +137,7 @@ describe('WALK-02/SC5: a spec-only edit busts the coarse single walk-target cach
       //   (1) the cache-hit marker is ABSENT (the run actually executed),
       //   (2) the freshly-injected diagnostic code is present in stdout,
       //   (3) the exit code is non-zero.
-      const third = run();
+      const third = run(workspaceRoot, TARGET, { env });
       expect(third.stdout).not.toContain(CACHE_MARKER);
       // Require the real, rendered TS code token (not a bare 4-digit substring)
       // so the cache was busted AND the genuine spec-leaf diagnostic was reported
@@ -229,7 +169,7 @@ describe('WALK-02/SC5: a spec-only edit busts the coarse single walk-target cach
       // A forced real run (never cached) must report the spec error + non-zero
       // exit -- the explicit "the cache is not lying" check. The marker can never
       // appear with --skip-nx-cache.
-      const forced = run('--skip-nx-cache');
+      const forced = run(workspaceRoot, TARGET, { env, skipNxCache: true });
       expect(forced.stdout).not.toContain(CACHE_MARKER);
       expect(forced.stdout).toContain(INJECTED_TS_CODE);
       expect(forced.code).not.toBe(0);
