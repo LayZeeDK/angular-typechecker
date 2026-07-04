@@ -35,6 +35,12 @@ const releaseWorkflowPath = join(
 );
 const dependabotPath = join(workspaceRoot, '.github', 'dependabot.yml');
 const changelogPath = join(workspaceRoot, 'CHANGELOG.md');
+const projectJsonPath = join(
+  workspaceRoot,
+  'packages',
+  'angular-typechecker',
+  'project.json',
+);
 
 // The published, unscoped project name nx release must be scoped to. Anything
 // else in release.projects would risk versioning/publishing a fixture, the spike
@@ -108,6 +114,26 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     // Re-flipping this to true would re-couple the version commit to the publish
     // trigger and bypass the PR gate -- so assert it stays false.
     expect(nx.release?.git?.tag).toBe(false);
+  });
+});
+
+describe('REL-04: nx release publishes the built dist, not the source tree', () => {
+  it('sets nx-release-publish packageRoot to the build outputPath (dist/packages/angular-typechecker)', () => {
+    const projectConfig = JSON.parse(readFileSync(projectJsonPath, 'utf8')) as {
+      targets?: Record<string, { options?: { packageRoot?: string } }>;
+    };
+
+    // Load-bearing regression guard. `nx release publish` joins
+    // `context.root + (options.packageRoot ?? projectConfig.root)`
+    // (@nx/js release-publish.impl.js:68). With NO packageRoot it falls back to
+    // the project SOURCE root, whose package.json `files: ["src", ...]` globs
+    // `src/**/*.ts` -- so the published tarball would ship raw TypeScript with
+    // zero compiled .js (the exact defect this target fixes). Reverting the fix
+    // deletes this target and fails here instantly -- a pure config read, before
+    // any build/pack/publish -- so a source-vs-dist regression can never ship.
+    expect(
+      projectConfig.targets?.['nx-release-publish']?.options?.packageRoot,
+    ).toBe('dist/packages/angular-typechecker');
   });
 });
 

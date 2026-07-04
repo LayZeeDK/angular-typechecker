@@ -259,3 +259,33 @@ describe('PKG-02: the packed tarball is publish-correct', () => {
     }
   });
 });
+
+describe('REL-04: the built dist carries the source version through the build', () => {
+  it('publishes the same version the source manifest declares (dist === source)', () => {
+    // `nx release publish` packs from dist (options.packageRoot), so the version
+    // that reaches the registry is the DIST manifest's. CI's release job builds
+    // off a fresh checkout of the already-bumped tagged commit, and @nx/js:tsc
+    // copies the source package.json verbatim into dist -- so dist version must
+    // equal source version. This closes the residual of the packageRoot fix: it
+    // proves the build-off-tagged-source flow yields the bumped dist version, not
+    // a stale one. Reuses the fresh dist beforeAll already built (no second build).
+    const sourceManifestPath = join(
+      workspaceRoot,
+      'packages',
+      'angular-typechecker',
+      'package.json',
+    );
+    const distManifestPath = join(distDir, 'package.json');
+
+    const sourceVersion = (
+      JSON.parse(readFileSync(sourceManifestPath, 'utf8')) as {
+        version: string;
+      }
+    ).version;
+    const distVersion = (
+      JSON.parse(readFileSync(distManifestPath, 'utf8')) as { version: string }
+    ).version;
+
+    expect(distVersion).toBe(sourceVersion);
+  });
+});
