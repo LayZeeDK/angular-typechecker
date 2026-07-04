@@ -11,7 +11,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildCleanEnv, findWorkspaceRoot, run } from '@workspace/test-util';
+import {
+  buildCleanEnv,
+  findWorkspaceRoot,
+  run,
+  sh,
+} from '@workspace/test-util';
 
 // TEST-05: THE tracer bullet (D-22). 05-02 proved the packed tarball is SHAPED
 // correctly (publint/attw against the .tgz); this smoke proves it actually WORKS
@@ -62,17 +67,9 @@ const env = buildCleanEnv();
 let tarballPath = '';
 
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source (packing a
-  // stale dist would smoke-test a stale artifact -- Pitfall 6). --skip-nx-cache
-  // forces a real emit even when the outer run is cached.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
-  // npm pack --json from the dist dir produces the EXACT artifact `nx release
-  // publish` ships and writes the .tgz on disk. Capture its absolute path.
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. npm pack --json from the dist dir produces
+  // the EXACT artifact `nx release publish` ships and writes the .tgz on disk.
   const packOutput = execSync('npm pack --json', {
     cwd: distDir,
     env,
@@ -110,10 +107,9 @@ describe('TEST-05: a clean install of the packed tarball resolves + runs the exe
       // FINDING -- let the test FAIL surfacing it; do NOT auto-add the override
       // (the remediation is escalated per B-03). npm_config_userconfig -> a path
       // that does not exist so the user ~/.npmrc cannot reintroduce an override.
-      execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+      sh(`npm install ${JSON.stringify(tarballPath)}`, {
         cwd: tmp,
         env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-        encoding: 'utf8',
       });
 
       // Sanity: the installed package's executor entry is resolvable from the tmp

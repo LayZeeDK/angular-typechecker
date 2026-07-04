@@ -16,6 +16,7 @@ import {
   findWorkspaceRoot,
   removeTmpDir,
   run,
+  sh,
 } from '@workspace/test-util';
 
 // GE2E-01 + GE2E-02 (Phase 15): the real-consumer proof of the shipped Phase 14
@@ -84,18 +85,9 @@ const env = buildCleanEnv();
 let tarballPath = '';
 
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source (packing a
-  // stale dist would test a stale artifact). --skip-nx-cache forces a real emit
-  // even when the outer run is cached. Per-file build+pack (D-08 acceptable
-  // fallback) keeps isolation parity with the existing install-e2e specs.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
-  // npm pack --json from the dist dir produces the EXACT artifact `nx release
-  // publish` ships and writes the .tgz on disk. Capture its absolute path.
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. npm pack --json from the dist dir produces
+  // the EXACT artifact `nx release publish` ships and writes the .tgz on disk.
   const packOutput = execSync('npm pack --json', {
     cwd: distDir,
     env,
@@ -128,10 +120,9 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       // Install the freshly-packed tarball with NO peer-resolution override flag.
       // A real ERESOLVE on the published peer ranges is a REAL FINDING -- let it
       // surface; do NOT auto-add the override (escalate per B-03).
-      execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+      sh(`npm install ${JSON.stringify(tarballPath)}`, {
         cwd: tmp,
         env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-        encoding: 'utf8',
       });
 
       // GE2E-01(b) seeded-from-ABSENT baseline: the tmp fixture nx.json must NOT
@@ -152,9 +143,9 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       // Generate the typecheck target. --skipFormat so formatFiles (Prettier) is a
       // no-op (the fixture installs no Prettier). Do NOT pass --output-style=static
       // to `nx g` -- that is a run flag, not a generate flag (Finding 4 / A2).
-      execSync(
+      sh(
         'npx nx g angular-typechecker:configuration consumer-generator --skipFormat',
-        { cwd: tmp, env, encoding: 'utf8' },
+        { cwd: tmp, env },
       );
 
       // GE2E-01(a): the generator wrote exactly ONE `typecheck` target using the

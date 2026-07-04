@@ -1,11 +1,5 @@
 import { execSync } from 'node:child_process';
-import {
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  statSync,
-} from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -100,33 +94,20 @@ let filePaths: string[] = [];
 let extractDir = '';
 
 // Recursively collect the shipped .d.ts text from the extracted tarball so the
-// @fixtures-leak guard greps the ACTUAL published declarations.
+// @fixtures-leak guard greps the ACTUAL published declarations (R1:
+// readdirSync recursive + entry.parentPath, Node 20.12+; repo targets Node 22+).
 function collectDtsText(dir: string): string {
-  let combined = '';
-
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-
-    if (statSync(full).isDirectory()) {
-      combined += collectDtsText(full);
-    } else if (entry.endsWith('.d.ts')) {
-      combined += readFileSync(full, 'utf8');
-    }
-  }
-
-  return combined;
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))
+    .map((entry) => readFileSync(join(entry.parentPath, entry.name), 'utf8'))
+    .join('');
 }
 
 beforeAll(() => {
-  // Build FRESH dist so we never pack a stale tarball (Pitfall 6). --skip-nx-cache
-  // guarantees the dist on disk reflects the current source. NEVER pipe nx through
-  // head/rg: the pipe tail's exit code masks Nx's (RESEARCH anti-pattern).
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. NEVER pipe nx/npm through head/rg: the
+  // pipe tail's exit code masks the tool's (RESEARCH anti-pattern).
+  //
   // Pack from the dist dir; `npm pack --json` writes the structured file list to
   // stdout AND creates the `.tgz` on disk. files[].path is package-relative
   // (no `package/` prefix). Keep the bare filename for the relative `tar` call.

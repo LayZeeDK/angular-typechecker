@@ -15,6 +15,7 @@ import {
   buildCleanEnv,
   findWorkspaceRoot,
   removeTmpDir,
+  sh,
 } from '@workspace/test-util';
 
 // GE2E-03 (Phase 15): prove `nx add angular-typechecker`'s install-time init path
@@ -62,18 +63,9 @@ const env = buildCleanEnv();
 let tarballPath = '';
 
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source.
-  // --skip-nx-cache forces a real emit even when the outer run is cached.
-  // Per-file build+pack (D-08 acceptable fallback) keeps isolation parity with the
-  // existing install-e2e specs.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
-  // npm pack --json from the dist dir produces the EXACT artifact `nx release
-  // publish` ships and writes the .tgz on disk. Capture its absolute path.
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. npm pack --json from the dist dir produces
+  // the EXACT artifact `nx release publish` ships and writes the .tgz on disk.
   const packOutput = execSync('npm pack --json', {
     cwd: distDir,
     env,
@@ -116,20 +108,18 @@ describe("GE2E-03: nx add's init path seeds nx.json targetDefaults from absent",
       // the package under test; the fixture's Angular/Nx/TS deps still resolve from
       // the registry, like every existing install-e2e spec). NO peer-override flag
       // (B-03): a real ERESOLVE must surface, not be masked.
-      execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+      sh(`npm install ${JSON.stringify(tarballPath)}`, {
         cwd: tmp,
         env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-        encoding: 'utf8',
       });
 
       // Run the SAME init generator `nx add`'s runPluginInitGenerator constructs
       // (`g <plugin>:init`). This resolves the installed package's generators.json
       // `init` entry -- the load-bearing half of GEN-09. --skipFormat: the fixture
       // installs no Prettier.
-      execSync('npx nx g angular-typechecker:init --skipFormat', {
+      sh('npx nx g angular-typechecker:init --skipFormat', {
         cwd: tmp,
         env,
-        encoding: 'utf8',
       });
 
       // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first

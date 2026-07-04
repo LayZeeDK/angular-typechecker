@@ -11,7 +11,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { buildCleanEnv, findWorkspaceRoot, run } from '@workspace/test-util';
+import {
+  buildCleanEnv,
+  findWorkspaceRoot,
+  run,
+  sh,
+} from '@workspace/test-util';
 
 // TEST-03: the FULL project-type e2e matrix (D-07). The Phase-5 install-e2e smoke
 // proved the packaged tarball resolves + runs for ONE project type (an
@@ -118,13 +123,12 @@ beforeAll(() => {
   // let the test FAIL surfacing it; do NOT auto-add the override (the remediation
   // is escalated per B-03). npm_config_userconfig -> a path that does not exist so
   // the user ~/.npmrc cannot reintroduce an override.
-  execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+  sh(`npm install ${JSON.stringify(tarballPath)}`, {
     cwd: consumerWorkspace,
     env: {
       ...env,
       npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
     },
-    encoding: 'utf8',
   });
 
   // Sanity: the installed package's executor entry is resolvable from the tmp
