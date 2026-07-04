@@ -45,6 +45,11 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/packages/angular-typechecker"
+      }
+    },
     "scoped-name-guard": {
       "executor": "nx:run-commands",
       "cache": false,
