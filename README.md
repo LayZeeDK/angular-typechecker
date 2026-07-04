@@ -82,4 +82,4 @@ Add this to `nx.json` (or per-project `project.json` target config):
 
 ## License
 
-MIT (c) Lars Gyrup Brink Nielsen. See [`packages/angular-typechecker/LICENSE`](packages/angular-typechecker/LICENSE).
+MIT (c) Lars Gyrup Brink Nielsen. See [`LICENSE`](./LICENSE).
