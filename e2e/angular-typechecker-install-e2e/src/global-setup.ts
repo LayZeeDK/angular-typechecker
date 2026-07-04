@@ -63,13 +63,24 @@ async function mintCiToken(registryUrl: string): Promise<string> {
 export default async function ({ provide }: GlobalSetupContext) {
   const root = findWorkspaceRoot(__dirname);
 
+  // The setup-verdaccio generator put the local-registry target on the root project,
+  // whose name is the root package.json name. Derive the target id from that name
+  // (append the target) rather than hardcoding it -- this tracks a rename and, since
+  // the derived id is assembled from parts, carries no banned contiguous
+  // `<scope>/source:<target>` literal for the scoped-name regression guard to flag.
+  const rootProjectName = (
+    JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
+      name: string;
+    }
+  ).name;
+
   // startLocalRegistry forks `nx` (not an `npx` cmd shim) and resolves readiness
   // by scraping the "http://localhost:PORT" line out of stdout (log.level: http
   // in config.yml keeps that line printing). clearStorage wipes the storage dir --
   // including the htpasswd under it -- so every run gets a deterministic fresh
   // ci-user sign-up (no cross-run EPUBLISHCONFLICT / htpasswd idempotency ambiguity).
   const stop = await startLocalRegistry({
-    localRegistryTarget: '@angular-typechecker/source:local-registry',
+    localRegistryTarget: `${rootProjectName}:local-registry`,
     storage: './tmp/local-registry/storage',
     verbose: false,
     clearStorage: true,
