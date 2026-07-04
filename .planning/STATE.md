@@ -163,6 +163,17 @@ independently: `nx build`, `nx test angular-typechecker` (unit), install-e2e 6/2
 matrix-e2e 7, format:check, lint. Windows teardown prints benign `local registry exit 143`
 (SIGTERM double-fork edge; CI is Linux-only).
 
+PR #23 REVIEW ROUND (commit e7b8653): audited/triaged a 6-finding max-effort review (all
+test-harness reliability/cleanup, none blocking) against code and fixed all 6 in one
+`test(e2e)` commit -- `stripAllNpmConfig:true` in the 3 install-consuming specs (the shared
+globalSetup sets `npm_config_registry` process-wide, inherited by the singleFork worker),
+`AbortSignal.timeout` on the `mintCiToken` fetch, node_modules-excluded installed-tree walk,
+`install-smoke` `removeTmpDir` teardown, a documented `collectDtsText` regular-files assumption,
+and `NX_RUNNER_ENV_KEYS` made module-private (dead public export). Verified green: install-e2e
+6/29, format:check, lint, fallow. Also fixed a prior CI regression: fallow flagged the vitest
+`global-setup.ts` as unused (config-only reachability) -> declared it a fallow entry point
+(057f610). PR #23 CI all-green across the full matrix; still merge-ready + human-gated.
+
 POST-0.1.1-RELEASE FOLLOW-UPS (human-gated, strictly AFTER 0.1.1 publishes):
 - Deprecate all prior npm releases: `npm deprecate 'angular-typechecker@<=0.1.0' "<broken
   packaging; non-functional as an Nx executor; upgrade to >=0.1.1>"` for 0.0.1/0.0.2/0.0.3/0.1.0
