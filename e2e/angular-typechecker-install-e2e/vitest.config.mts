@@ -25,6 +25,11 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'node',
     include: ['src/**/*.int.spec.ts'],
+    // Stands up the Verdaccio local-registry, builds dist ONCE, mints a token, and
+    // publishes ONCE (finding E1); provides verdaccioUrl + verdaccioToken to the
+    // specs. Runs for EVERY invocation (including a single selected spec), so the
+    // registry + dist are always provisioned before any spec.
+    globalSetup: ['./src/global-setup.ts'],
     reporters: ['default'],
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },
