@@ -1,16 +1,10 @@
 import { execSync } from 'node:child_process';
-import {
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  statSync,
-} from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import { buildCleanEnv, findWorkspaceRoot } from '@workspace/test-util';
 
 // PKG-02: the phase's packaging-fidelity gate. A source-tree check cannot catch
 // a `files`-allowlist defect, a `.d.ts` resolution escape (D-10), or a stale-dist
@@ -67,39 +61,11 @@ const INSTALL_SCRIPT_KEYS = [
   'prepublish',
 ];
 
-// The outer `nx run <install-e2e>:test` injects cache-defeating NX_* vars into
-// this process; a naive `...process.env` would propagate them into the nested
-// `nx build` and silently force a cache-miss (or worse, a stale graph). Strip
-// them so the nested build is a clean top-level invocation (clone of the
-// cache-e2e buildCleanEnv pattern).
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // NX_DAEMON off so a stale daemon cannot serve an outdated graph; FORCE_COLOR=0
-  // (NOT --no-color -- the executor schema's additionalProperties:false rejects
-  // color:false; 04-02 hand-off) keeps tool output un-split by ANSI.
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-  };
-}
-
+// The shared buildCleanEnv strips the outer runner's cache-defeating NX_* vars so
+// the nested `nx build` is a clean top-level invocation, and sets NX_DAEMON=false
+// + FORCE_COLOR=0 (FORCE_COLOR, NOT --no-color, which the executor schema's
+// additionalProperties:false rejects as color:false; 04-02 hand-off). No npm
+// install here, so the default (legacy-peer-deps-only) strip is sufficient.
 const env = buildCleanEnv();
 
 interface PackEntry {
@@ -128,33 +94,23 @@ let filePaths: string[] = [];
 let extractDir = '';
 
 // Recursively collect the shipped .d.ts text from the extracted tarball so the
-// @fixtures-leak guard greps the ACTUAL published declarations.
+// @fixtures-leak guard greps the ACTUAL published declarations (R1:
+// readdirSync recursive + entry.parentPath, Node 20.12+; repo targets Node 22+).
+// `isFile()` does not follow symlinks -- correct here: `tar -xzf` of an npm
+// tarball yields only regular files/dirs (never symlinked .d.ts), so every
+// shipped declaration is captured.
 function collectDtsText(dir: string): string {
-  let combined = '';
-
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-
-    if (statSync(full).isDirectory()) {
-      combined += collectDtsText(full);
-    } else if (entry.endsWith('.d.ts')) {
-      combined += readFileSync(full, 'utf8');
-    }
-  }
-
-  return combined;
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))
+    .map((entry) => readFileSync(join(entry.parentPath, entry.name), 'utf8'))
+    .join('');
 }
 
 beforeAll(() => {
-  // Build FRESH dist so we never pack a stale tarball (Pitfall 6). --skip-nx-cache
-  // guarantees the dist on disk reflects the current source. NEVER pipe nx through
-  // head/rg: the pipe tail's exit code masks Nx's (RESEARCH anti-pattern).
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. NEVER pipe nx/npm through head/rg: the
+  // pipe tail's exit code masks the tool's (RESEARCH anti-pattern).
+  //
   // Pack from the dist dir; `npm pack --json` writes the structured file list to
   // stdout AND creates the `.tgz` on disk. files[].path is package-relative
   // (no `package/` prefix). Keep the bare filename for the relative `tar` call.
@@ -259,3 +215,11 @@ describe('PKG-02: the packed tarball is publish-correct', () => {
     }
   });
 });
+
+// A3: the former "REL-04 version parity (dist === source)" describe is DELETED. It
+// was tautological -- @nx/js:tsc copies the source package.json verbatim into dist,
+// so dist version ALWAYS equals source version by construction. The REAL invariant
+// (publish packs dist, not source) is guarded by release-hygiene REL-04
+// (packageRoot === build.outputPath), and the globalSetup + verdaccio-publish
+// publish->install-by-name->run round-trip subsumes version parity (a wrong dist
+// version would fail install-by-name).

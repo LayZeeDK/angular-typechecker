@@ -11,7 +11,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import {
+  buildCleanEnv,
+  findWorkspaceRoot,
+  removeTmpDir,
+  run,
+  sh,
+} from '@workspace/test-util';
 
 // GE2E-01 + GE2E-02 (Phase 15): the real-consumer proof of the shipped Phase 14
 // generator suite against the freshly-packed tarball. This installs the tarball
@@ -68,128 +74,23 @@ const fixtureDir = join(
   'consumer-generator',
 );
 
-// CRITICAL (nested-nx isolation): this spec runs UNDER `nx run
-// <install-e2e>:test`, so the outer Nx runner injects env vars into this process
-// that a naive `...process.env` would propagate into the nested `nx g` / `nx run`
-// / `npm install` and silently corrupt the run. NX_SKIP_NX_CACHE in particular
-// (set when the outer test ran with --skip-nx-cache) would change cache behavior;
-// the NX_TASK_HASH / NX_FORKED_TASK_EXECUTOR / NX_INVOCATION_ROOT_PID vars mark
-// the run as "inner". Strip them all so the nested run is a clean top-level
-// invocation regardless of how the outer test was invoked (Phase-4 pattern).
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // D-20 honesty: a leaked peer-resolution override (via env or an inherited
-  // .npmrc) would MASK a real consumer ERESOLVE on the published peer ranges
-  // (B-03). Strip the env form here; the tmp workspace also gets its own empty
-  // .npmrc (below) so no ancestor .npmrc is consulted, and we set
-  // npm_config_userconfig to a non-existent path so the user-level ~/.npmrc
-  // cannot reintroduce it. (The npm config keys use underscores, not the CLI
-  // flag form, so they never read as a passed override flag.)
-  delete cleaned['npm_config_legacy_peer_deps'];
-  delete cleaned['NPM_CONFIG_LEGACY_PEER_DEPS'];
-
-  // NX_DAEMON off so a stale daemon cannot serve an outdated graph. FORCE_COLOR=0
-  // (NOT the color-disabling CLI flag: Nx forwards that flag as color:false into
-  // the executor options, which the schema's additionalProperties:false rejects;
-  // 04-02 hand-off) keeps stdout un-split by ANSI for the code assertions.
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-  };
-}
-
-const env = buildCleanEnv();
-
-// Best-effort teardown of a per-scenario tmp workspace. On Windows a lingering
-// nx subprocess (or a just-installed node_modules handle) can hold the tmp dir
-// open past execSync's return, so a bare recursive rmSync EPERMs on the directory
-// root -- a lock Node's linear-backoff (maxRetries/retryDelay) may not outwait. A
-// failed removal of an OS-temp dir must NEVER fail a scenario whose assertions
-// already ran (the CI e2e gate is Linux-only, where recursive rmSync never EPERMs;
-// this only manifests in Windows-local dev). Swallow the residual error; the OS
-// reclaims the temp dir.
-function removeTmpWorkspace(tmp: string): void {
-  try {
-    rmSync(tmp, {
-      recursive: true,
-      force: true,
-      maxRetries: 10,
-      retryDelay: 100,
-    });
-  } catch {
-    // best-effort: an OS-temp dir left behind is harmless (unique per mkdtempSync).
-  }
-}
+// Nested-nx isolation + B-03 honesty: the shared buildCleanEnv strips the outer
+// runner's NX_* vars, sets NX_DAEMON=false + FORCE_COLOR=0, and
+// (stripAllNpmConfig) strips EVERY npm_config_* -- REQUIRED because the shared
+// globalSetup's startLocalRegistry sets npm_config_registry process-wide
+// (inherited by this singleFork worker); an inherited registry would outrank the
+// tmp .npmrc and resolve the consumer install through Verdaccio's proxy instead
+// of npmjs. Stripping all npm_config_* also drops the legacy-peer-deps override
+// so a leaked one cannot MASK a real consumer ERESOLVE (B-03 honesty).
+const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';
 
-interface RunResult {
-  stdout: string;
-  code: number;
-}
-
-// execSync throws on a non-zero exit -- so the catch is how we capture the
-// injected-error non-zero exit + the diagnostic output. NEVER pipe nx through
-// head/rg: the pipe tail's exit code masks Nx's (RESEARCH anti-pattern). No
-// untrusted string reaches the shell: a fixed target id + fixed flags only. cwd
-// is the per-run tmp consumer (the installed-from-tarball workspace), NOT the dev
-// workspaceRoot.
-function run(cwd: string, target: string): RunResult {
-  try {
-    // --skip-nx-cache: each green/injected invocation MUST really execute the
-    // executor -- the injected re-run must reflect the mutated sources, not a
-    // warm coarse cache that could replay a stale GREEN verdict.
-    const stdout = execSync(
-      `npx nx run ${target} --output-style=static --skip-nx-cache`,
-      { cwd, env, encoding: 'utf8' },
-    );
-
-    return { stdout, code: 0 };
-  } catch (error) {
-    const execError = error as {
-      stdout?: string;
-      stderr?: string;
-      status?: number;
-    };
-
-    return {
-      stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-      code: execError.status ?? 1,
-    };
-  }
-}
-
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source (packing a
-  // stale dist would test a stale artifact). --skip-nx-cache forces a real emit
-  // even when the outer run is cached. Per-file build+pack (D-08 acceptable
-  // fallback) keeps isolation parity with the existing install-e2e specs.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
-  // npm pack --json from the dist dir produces the EXACT artifact `nx release
-  // publish` ships and writes the .tgz on disk. Capture its absolute path.
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. npm pack --json from the dist dir produces
+  // the EXACT artifact `nx release publish` ships and writes the .tgz on disk.
   const packOutput = execSync('npm pack --json', {
     cwd: distDir,
     env,
@@ -222,10 +123,9 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       // Install the freshly-packed tarball with NO peer-resolution override flag.
       // A real ERESOLVE on the published peer ranges is a REAL FINDING -- let it
       // surface; do NOT auto-add the override (escalate per B-03).
-      execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+      sh(`npm install ${JSON.stringify(tarballPath)}`, {
         cwd: tmp,
         env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-        encoding: 'utf8',
       });
 
       // GE2E-01(b) seeded-from-ABSENT baseline: the tmp fixture nx.json must NOT
@@ -246,9 +146,9 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       // Generate the typecheck target. --skipFormat so formatFiles (Prettier) is a
       // no-op (the fixture installs no Prettier). Do NOT pass --output-style=static
       // to `nx g` -- that is a run flag, not a generate flag (Finding 4 / A2).
-      execSync(
+      sh(
         'npx nx g angular-typechecker:configuration consumer-generator --skipFormat',
-        { cwd: tmp, env, encoding: 'utf8' },
+        { cwd: tmp, env },
       );
 
       // GE2E-01(a): the generator wrote exactly ONE `typecheck` target using the
@@ -295,7 +195,10 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
 
       // GE2E-02 clean: the committed-clean lib + spec leaves type-check green from
       // the installed package via the just-wired target.
-      const green = run(tmp, 'consumer-generator:typecheck');
+      const green = run(tmp, 'consumer-generator:typecheck', {
+        env,
+        skipNxCache: true,
+      });
       expect(green.code).toBe(0);
 
       // GE2E-02 two-leaf injection (DISTINCT codes -> proves BOTH leaves walked).
@@ -336,14 +239,17 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       //       compiler-cli survived packaging,
       //   (5) NO infra-error meta message -- the non-zero exit is the real
       //       diagnostic, not an unrelated crash masquerading as a finding.
-      const bad = run(tmp, 'consumer-generator:typecheck');
+      const bad = run(tmp, 'consumer-generator:typecheck', {
+        env,
+        skipNxCache: true,
+      });
       expect(bad.code).not.toBe(0);
       expect(bad.stdout).toContain(LIB_LEAF_CODE);
       expect(bad.stdout).toContain(SPEC_LEAF_CODE);
       expect(bad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
       expect(bad.stdout).not.toContain('infrastructure error');
     } finally {
-      removeTmpWorkspace(tmp);
+      removeTmpDir(tmp);
     }
   });
 });

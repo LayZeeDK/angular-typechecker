@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import { buildCleanEnv, findWorkspaceRoot, run } from '@workspace/test-util';
 
 // TEST-03 / OUT-02 backstop (D-09): the pnpm symlinked-store e2e + the realpath
 // regression-guard. The npm matrix spec (matrix-5types.int.spec.ts) covers the
@@ -63,79 +63,21 @@ const fixtureDir = join(
   'consumer-workspace',
 );
 
-// Same nested-nx isolation strip as the install/matrix specs (Phase-4 pattern):
-// the outer `nx run <matrix-e2e>:test` injects NX_* vars a naive ...process.env
-// would propagate into the nested pnpm/nx run and corrupt the result.
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // B-03 honesty preserved under pnpm: strip the env form of the peer-resolution
-  // override so a leaked override cannot MASK a real consumer ERESOLVE. The tmp
-  // workspace also gets its own empty .npmrc and a non-existent
-  // npm_config_userconfig (below) so no ancestor config reintroduces it.
-  delete cleaned['npm_config_legacy_peer_deps'];
-  delete cleaned['NPM_CONFIG_LEGACY_PEER_DEPS'];
-
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-  };
-}
-
+// Nested-nx isolation + B-03 honesty under pnpm: the shared buildCleanEnv strips
+// the outer runner's NX_* vars and (default) the legacy-peer-deps override so a
+// leaked override cannot MASK a real consumer ERESOLVE, and sets NX_DAEMON=false +
+// FORCE_COLOR=0. The tmp workspace also gets its own empty .npmrc + a non-existent
+// npm_config_userconfig below so no ancestor config reintroduces the override.
 const env = buildCleanEnv();
 
 let tarballPath = '';
 let consumerWorkspace = '';
 
-interface RunResult {
-  stdout: string;
-  code: number;
-}
-
-// Same hardened invocation as the matrix spec: execSync throws on non-zero exit
-// (the catch captures the injected-error case); NEVER pipe through head/rg (the
-// pipe tail masks Nx's exit code); a fixed target id + fixed flags only.
-function run(cwd: string): RunResult {
-  try {
-    // --skip-nx-cache: each green/injected invocation MUST really execute the
-    // executor (the cacheable target could otherwise serve a cached prior result
-    // across the green->injected transition). Cache-correctness is the cache-e2e
-    // project's concern; here we want a real run every time.
-    const stdout = execSync(
-      `npx nx run ${TARGET} --output-style=static --skip-nx-cache`,
-      { cwd, env, encoding: 'utf8' },
-    );
-
-    return { stdout, code: 0 };
-  } catch (error) {
-    const execError = error as {
-      stdout?: string;
-      stderr?: string;
-      status?: number;
-    };
-
-    return {
-      stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-      code: execError.status ?? 1,
-    };
-  }
-}
+// The shared run() wraps `npx nx run <target> --output-style=static
+// --skip-nx-cache`: each green/injected invocation MUST really execute the
+// executor (the cacheable target could otherwise serve a cached prior result
+// across the green->injected transition). Cache-correctness is the cache-e2e
+// project's concern; here we want a real run every time.
 
 beforeAll(() => {
   // FRESH dist -> packed tarball reflects current source (--skip-nx-cache forces a
@@ -283,7 +225,7 @@ describe('TEST-03 / OUT-02: the installed tarball type-checks under a pnpm symli
   it('green run exit 0 -> injected TS2322 non-zero + token + no ERR_REQUIRE_ESM (includeDeps traverses .pnpm/)', () => {
     // GREEN: the committed-clean fixture type-checks clean from the pnpm-installed
     // package, with includeDeps:true so the `.pnpm/`-symlinked store is traversed.
-    const green = run(consumerWorkspace);
+    const green = run(consumerWorkspace, TARGET, { env, skipNxCache: true });
     expect(green.code).toBe(0);
 
     const componentPath = join(
@@ -307,7 +249,7 @@ describe('TEST-03 / OUT-02: the installed tarball type-checks under a pnpm symli
       // layout (not a no-op exit 0): non-zero exit + TS2322 token + no
       // ERR_REQUIRE_ESM (CJS->ESM import() survived the symlinked resolution) + no
       // infrastructure error.
-      const bad = run(consumerWorkspace);
+      const bad = run(consumerWorkspace, TARGET, { env, skipNxCache: true });
       expect(bad.code).not.toBe(0);
       expect(bad.stdout).toContain(INJECTED_TS_CODE);
       expect(bad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);

@@ -1,0 +1,61 @@
+# Local Verdaccio config for the angular-typechecker-install-e2e publish gate.
+# Scaffolded by `nx g @nx/js:setup-verdaccio`, then customized with the three
+# load-bearing deltas the gate requires (see 260704-mse-A1-RESEARCH.md):
+#   1. an `angular-typechecker` NO-proxy package block (below), so the round-trip
+#      exercises OUR freshly built dist, never the live npmjs copy;
+#   2. an `auth.htpasswd` block, so the ci-user sign-up can mint a REAL publish
+#      token (Verdaccio 6 401s an unverifiable bearer, so the @nx/js dummy token
+#      is not enough and anonymous-only cannot publish either);
+#   3. `log.level: http`, so startLocalRegistry's stdout log-scrape always sees
+#      the "http://localhost:PORT" readiness line (at `warn` it can be suppressed
+#      and startLocalRegistry -- which has no readiness timeout -- would hang).
+#
+# storage is overridden at runtime by the executor (--storage
+# tmp/local-registry/storage + VERDACCIO_STORAGE_PATH); keep a sane relative
+# default here. `clear: true` (the @nx/js:verdaccio executor default) wipes the
+# storage dir -- INCLUDING the .htpasswd placed under it -- each run, so every run
+# gets a deterministic fresh ci-user sign-up.
+storage: ../tmp/local-registry/storage
+
+# htpasswd auth is REQUIRED for the ci-user sign-up that mints a real publish
+# token. The file path is relative to THIS config file (.verdaccio/); placing it
+# under the cleared storage dir means clear:true resets it each run.
+auth:
+  htpasswd:
+    file: ../tmp/local-registry/storage/.htpasswd
+    max_users: 1000
+
+# a list of other known repositories we can talk to
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    maxage: 60m
+
+packages:
+  # BEHAVIOR 1: served ONLY from local storage -- NO proxy key -- so `npm view` /
+  # install never fall through to the live npmjs angular-typechecker. The
+  # round-trip must exercise OUR dist. Matched top-down, first match wins, so this
+  # block MUST stay ABOVE the catch-all '**'.
+  'angular-typechecker':
+    access: $all
+    publish: $all
+    unpublish: $all
+
+  '**':
+    # give all users (including non-authenticated users) full access
+    # because it is a local registry
+    access: $all
+    publish: $all
+    unpublish: $all
+
+    # everything else proxies npmjs so the consumer's Angular / Nx / TS deps resolve
+    proxy: npmjs
+
+# log settings
+log:
+  type: stdout
+  format: pretty
+  level: http
+
+publish:
+  allow_offline: true # set offline to true to allow publish offline

@@ -11,7 +11,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import {
+  buildCleanEnv,
+  findWorkspaceRoot,
+  run,
+  sh,
+} from '@workspace/test-util';
 
 // TEST-03: the FULL project-type e2e matrix (D-07). The Phase-5 install-e2e smoke
 // proved the packaged tarball resolves + runs for ONE project type (an
@@ -49,53 +54,11 @@ const fixtureDir = join(
   'consumer-workspace',
 );
 
-// CRITICAL (nested-nx isolation): this spec runs UNDER `nx run
-// <matrix-e2e>:test`, so the outer Nx runner injects env vars into this process
-// that a naive `...process.env` would propagate into the nested `nx run` /
-// `npm install` and silently corrupt the matrix. NX_SKIP_NX_CACHE in particular
-// (set when the outer test ran with --skip-nx-cache) would change cache behavior;
-// the NX_TASK_HASH / NX_FORKED_TASK_EXECUTOR / NX_INVOCATION_ROOT_PID vars mark
-// the run as "inner". Strip them all so the nested run is a clean top-level
-// invocation regardless of how the outer test was invoked (Phase-4 pattern).
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // D-20 honesty: a leaked peer-resolution override (via env or an inherited
-  // .npmrc) would MASK a real consumer ERESOLVE on the published peer ranges
-  // (B-03). Strip the env form here; the tmp workspace also gets its own empty
-  // .npmrc (below) so no ancestor .npmrc is consulted, and we set
-  // npm_config_userconfig to a non-existent path so the user-level ~/.npmrc
-  // cannot reintroduce it. (The npm config keys use underscores, not the CLI
-  // flag form, so they never read as a passed override flag.)
-  delete cleaned['npm_config_legacy_peer_deps'];
-  delete cleaned['NPM_CONFIG_LEGACY_PEER_DEPS'];
-
-  // NX_DAEMON off so a stale daemon cannot serve an outdated graph. FORCE_COLOR=0
-  // (NOT the color-disabling CLI flag: Nx forwards that flag as color:false into
-  // the executor options, which the schema's additionalProperties:false rejects;
-  // 04-02 hand-off) keeps stdout un-split by ANSI for the TS2322 assertion.
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-  };
-}
-
+// Nested-nx isolation + B-03 honesty: the shared buildCleanEnv strips the outer
+// runner's NX_* vars and (default) the legacy-peer-deps override so a leaked
+// override cannot MASK a real consumer ERESOLVE, and sets NX_DAEMON=false +
+// FORCE_COLOR=0. The tmp workspace also gets its own empty .npmrc + a non-existent
+// npm_config_userconfig below so no ancestor config reintroduces the override.
 const env = buildCleanEnv();
 
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
@@ -106,46 +69,14 @@ let tarballPath = '';
 // rows; afterAll discards it.
 let consumerWorkspace = '';
 
-interface RunResult {
-  stdout: string;
-  code: number;
-}
-
-// execSync throws on a non-zero exit -- so the catch is how we capture the
-// injected-error non-zero exit + the diagnostic output. NEVER pipe nx through
-// head/rg: the pipe tail's exit code masks Nx's (RESEARCH anti-pattern). No
-// untrusted string reaches the shell: a fixed target id + fixed flags only. cwd
-// is the per-run tmp consumer-workspace (the installed-from-tarball consumer),
-// NOT the dev workspaceRoot. Parameterized by the target id so each of the five
-// project types runs through the same hardened invocation (D-07).
-function run(cwd: string, target: string): RunResult {
-  try {
-    // --skip-nx-cache: each green/injected invocation MUST really execute the
-    // executor. The cacheable typecheck target's `production` input
-    // EXCLUDES *.spec.ts (nx.json namedInput), so mutating the spec-row source
-    // does NOT bust the cache -- without --skip-nx-cache the injected spec run
-    // would be served the cached GREEN (exit 0) and the injected assertion would
-    // false-PASS. Cache-correctness is the separate cache-e2e project's concern;
-    // here we want a real run every time.
-    const stdout = execSync(
-      `npx nx run ${target} --output-style=static --skip-nx-cache`,
-      { cwd, env, encoding: 'utf8' },
-    );
-
-    return { stdout, code: 0 };
-  } catch (error) {
-    const execError = error as {
-      stdout?: string;
-      stderr?: string;
-      status?: number;
-    };
-
-    return {
-      stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-      code: execError.status ?? 1,
-    };
-  }
-}
+// The shared run() wraps `npx nx run <target> --output-style=static
+// --skip-nx-cache`: each green/injected invocation MUST really execute the
+// executor. The cacheable typecheck target's `production` input EXCLUDES
+// *.spec.ts (nx.json namedInput), so mutating the spec-row source does NOT bust
+// the cache -- without --skip-nx-cache the injected spec run would be served the
+// cached GREEN (exit 0) and the injected assertion would false-PASS.
+// Cache-correctness is the separate cache-e2e project's concern; here we want a
+// real run every time.
 
 beforeAll(() => {
   // Build a FRESH dist so the packed tarball reflects current source (packing a
@@ -192,13 +123,12 @@ beforeAll(() => {
   // let the test FAIL surfacing it; do NOT auto-add the override (the remediation
   // is escalated per B-03). npm_config_userconfig -> a path that does not exist so
   // the user ~/.npmrc cannot reintroduce an override.
-  execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+  sh(`npm install ${JSON.stringify(tarballPath)}`, {
     cwd: consumerWorkspace,
     env: {
       ...env,
       npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
     },
-    encoding: 'utf8',
   });
 
   // Sanity: the installed package's executor entry is resolvable from the tmp
@@ -340,7 +270,10 @@ describe('TEST-03: the installed tarball type-checks all five project types gree
       try {
         // GREEN: the committed-clean fixture type-checks clean from the installed
         // package for this project type.
-        const green = run(consumerWorkspace, target);
+        const green = run(consumerWorkspace, target, {
+          env,
+          skipNxCache: true,
+        });
         expect(green.code).toBe(0);
 
         // Inject a known TS2322 ahead of the unique label line, using the row's
@@ -364,7 +297,10 @@ describe('TEST-03: the installed tarball type-checks all five project types gree
         //       ESM compiler-cli survived packaging (D-19),
         //   (4) NO infra-error meta message -- the non-zero exit is the real
         //       diagnostic, not an unrelated crash masquerading as a finding.
-        const bad = run(consumerWorkspace, target);
+        const bad = run(consumerWorkspace, target, {
+          env,
+          skipNxCache: true,
+        });
         expect(bad.code).not.toBe(0);
         expect(bad.stdout).toContain(INJECTED_TS_CODE);
         expect(bad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);

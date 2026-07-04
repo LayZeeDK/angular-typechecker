@@ -13,10 +13,11 @@
 //
 // PURITY (D-07 / eslint `**/src/core/**`): this policy performs NO process side
 // effects. The deferred standalone CLI surface owns `process.exit(toExitCode(...))`
-// (it owns its process, like `ngc`); the Nx executor stays bound to Nx's
-// `{ success }` -> 0/1 contract (D-08) and consumes this only for classification.
-// One definition, three consumers (Nx executor now, Angular CLI builder + CLI
-// later) -- which is why it lives in `core/`.
+// (it owns its process, like `ngc`) and is the ONLY consumer. The Nx executor does
+// NOT call `toExitCode` -- it maps the run to Nx's `{ success }` -> 0/1 contract via
+// `evaluateResult` (D-08). So `toExitCode` currently has no live consumer; it is
+// the deliberate COR-04 scaffold for the deferred CLI (and a future Angular CLI
+// builder could reuse it), which is why the one exit-code policy lives in `core/`.
 //
 // LAYERING: `toExitCode` is a leaf consumed by the adapters. `run-typecheck.ts`
 // must NOT import this module -- the engine stays unaware of the exit policy and

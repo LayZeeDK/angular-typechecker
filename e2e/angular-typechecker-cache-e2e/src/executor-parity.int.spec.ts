@@ -12,7 +12,7 @@ import {
 } from '@nx/devkit';
 import { runTypecheck, type CoreResult } from 'angular-typechecker';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import { buildCleanEnv, findWorkspaceRoot } from '@workspace/test-util';
 
 // EXE-01 / EXE-07 / D-16 / D-05: prove the executor matches the core on
 // STRUCTURED values (NOT rendered stdout -- formatting/paths/ANSI diverge
@@ -60,28 +60,9 @@ const CORE_OPTIONS = {
 };
 
 // Strip the outer-runner env so a nested real `nx run` is a clean top-level
-// invocation (same rationale as the cache spec: NX_SKIP_NX_CACHE et al.).
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  return { ...cleaned, NX_DAEMON: 'false', FORCE_COLOR: '0' };
-}
-
+// invocation (see buildCleanEnv's doc: NX_SKIP_NX_CACHE et al. + NX_DAEMON=false
+// + FORCE_COLOR=0). No npm install here, so the default (legacy-peer-deps-only)
+// strip is sufficient.
 const env = buildCleanEnv();
 
 const TS2322_INJECTION = `const __atc_bust: number = ${JSON.stringify('str')};\n  return String(__atc_bust);`;

@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: "v0.1.0 (configuration + init generators, nx add support, and the typecheck executor rename) shipped, audited (passed, 22/22, zero tech debt), and ARCHIVED. Published live as angular-typechecker@0.1.0. Next milestone not yet scoped."
-last_updated: "2026-07-03"
-last_activity: 2026-07-03
+last_updated: "2026-07-04"
+last_activity: 2026-07-04
 progress:
   total_phases: 5
   completed_phases: 5
@@ -108,6 +108,80 @@ TS2322/NG8002 codeframe example), `## CI integration` (tsc-superset problem matc
 documents only real features (JSON/SARIF framed as a v0.x non-goal; `nx add`, never `ng add`).
 Docs/config only -- NO version bump/tag/publish. Verified 9/9 must-haves. On branch
 `docs/license-root-and-readme-overhaul` (PR-bound; main is PR-only).
+
+**260704-mse** (`fix-nx-release-publishing-typescript-sou`, 2026-07-04, `--research`) --
+CRITICAL release-mechanics bug: every published version (0.0.1-0.1.0) shipped raw TypeScript
+source (0 `.js`, no `src/index.js`), so `nx add` / `nx g` / `nx typecheck` / `require` all
+failed on a stock Nx 23 workspace. Root cause: `nx release publish` had no `packageRoot`, so
+it packed the project SOURCE root (`files: ["src"]` -> `src/**/*.ts`) instead of the built
+`dist/` (the build itself was always correct). Surfaced by dogfooding the published package
+against real Nx 23 + Angular 22 OSS repos (mmstack, ngx-lottie). Fix: added an
+`nx-release-publish` target with `options.packageRoot: "dist/packages/angular-typechecker"`
+to `project.json`. Regression gates: config guard (packageRoot === dist) + dist/source
+version-parity guard in the serialized install-e2e, plus a NEW Verdaccio publish round-trip
+e2e (real `nx release publish --registry <local>` -> install-by-name -> init/configuration/
+typecheck green, asserts the installed tree has `.js` and zero `.ts`/`.spec`); added
+`verdaccio@6.7.4` devDep; README pnpm-install fallback. 4 atomic commits on `release/0.1.1`;
+full install-e2e suite green (6 files/29 tests), format + lint clean. Cutting **v0.1.1** as a
+patch hotfix (PR-bound; tag/npm-publish/GitHub-release are human-gated). Recorded to memory
+([[angular-typechecker-npm-releases-ship-source]]).
+
+PR #23 REVIEW FOLLOW-UP (commit `2e2f8ab`): audited + merged + deduplicated findings from two
+independent review reports (Thermos branch-audit + a 4-agent PR review) against the actual
+code (both reports cited stale line numbers -- file is 553 lines). Zero critical/medium; all
+test-harness honesty/robustness. FIXED (one `test(e2e)` commit, all 29 install-e2e tests green
+locally): stale "dummy token"->"minted token" comments + the affirmatively-wrong "\$all accepts
+dummy token as anonymous" + "five"->"three" file count; `green.stdout` on the typecheck
+assertion; `JSON.parse` guard + registration request timeout; an `npm_config_*`-strip safety
+assertion (the localhost check alone was tautological); `packageRoot === build.outputPath`
+drift-proof invariant; "install by PATH" mischaracterization, overstated version-parity it()
+title, and the rotting `@nx/js impl.js:68` line ref. DEFERRED (low value / beyond a ship-ready
+hotfix, tracked for a follow-up, NOT blocking merge): extract the 4x-copied e2e harness
+(`buildCleanEnv`/`run`/`RunResult`/`removeTmp*`/`walkFiles`) into `@workspace/test-util`;
+wrap the install/init/configuration `execSync` calls to surface stdout on failure; add a
+`.d.ts` installed-tree assertion; add `dependsOn: ["build"]` to `nx-release-publish`; note the
+non-hermetic npmjs-uplink flake surface for CI triage.
+
+PR #23 CLEANUP LANDING (user directed "land ALL deferred findings in #23"): audited + merged
++ deduped six more cleanup reports (/simplify + /ponytail-audit + /ponytail-review in full +
+ultra) against the deferred set; verified each against code (reports cited stale line numbers).
+Only distributed-code items could bind the "runtime findings land now" rule; scan of .planning
+confirmed `toExitCode` is deliberate COR-04 deferred-CLI scaffolding (KEEP, not slop) and
+`TemplateCheckAborted.code` a drift pin (KEEP). Scaffolded a throwaway `@nx/plugin:e2e-project`
+(create-nx-workspace under scratchpad) to diff canonical vs our e2e setup: we already match on
+implicitDependencies + serialization; adopted the canonical local-registry/globalSetup shape;
+justified divergences (Vitest not Jest; publish REAL dist not `releaseVersion({0.0.0-e2e})`
+which mutates source version; custom config.yml for no-proxy + htpasswd + real token since
+canonical's `'**':proxy` + dummy token fail on Verdaccio 6). Landed 10 commits (59c022c..0c16285)
+on `release/0.1.1`: adopted `@nx/js:setup-verdaccio` + `startLocalRegistry` in a vitest
+globalSetup (single build/publish), extracted shared e2e helpers into `@workspace/test-util`
+(M8/M9), R1 readdirSync-recursive, deleted the tautological version-parity test (A3), M14
+`dependsOn:["build"]` on nx-release-publish, a programmatic-API barrel-load smoke (catches the
+original dangling-`main` defect), and the shipped-source `loadTypescript` dedup to a private
+`core/load-typescript.ts` leaf + `exit-codes.ts` comment fix (kept `toExitCode`). Verified green
+independently: `nx build`, `nx test angular-typechecker` (unit), install-e2e 6/29, cache-e2e 9,
+matrix-e2e 7, format:check, lint. Windows teardown prints benign `local registry exit 143`
+(SIGTERM double-fork edge; CI is Linux-only).
+
+PR #23 REVIEW ROUND (commit e7b8653): audited/triaged a 6-finding max-effort review (all
+test-harness reliability/cleanup, none blocking) against code and fixed all 6 in one
+`test(e2e)` commit -- `stripAllNpmConfig:true` in the 3 install-consuming specs (the shared
+globalSetup sets `npm_config_registry` process-wide, inherited by the singleFork worker),
+`AbortSignal.timeout` on the `mintCiToken` fetch, node_modules-excluded installed-tree walk,
+`install-smoke` `removeTmpDir` teardown, a documented `collectDtsText` regular-files assumption,
+and `NX_RUNNER_ENV_KEYS` made module-private (dead public export). Verified green: install-e2e
+6/29, format:check, lint, fallow. Also fixed a prior CI regression: fallow flagged the vitest
+`global-setup.ts` as unused (config-only reachability) -> declared it a fallow entry point
+(057f610). PR #23 CI all-green across the full matrix; still merge-ready + human-gated.
+
+POST-0.1.1-RELEASE FOLLOW-UPS (human-gated, strictly AFTER 0.1.1 publishes):
+- Deprecate all prior npm releases: `npm deprecate 'angular-typechecker@<=0.1.0' "<broken
+  packaging; non-functional as an Nx executor; upgrade to >=0.1.1>"` for 0.0.1/0.0.2/0.0.3/0.1.0
+  (needs the user's npm auth), and mark their GitHub releases as pre-release + deprecated (they
+  only ever worked via the programmatic API, never as an Nx executor).
+- Exercise the README Programmatic API (`runTypecheck`) against a real Angular 22 solution
+  tsconfig in the OSS repos (mmstack/ngx-lottie/radix) with the 0.1.1 tarball — the e2e suite now
+  covers barrel-load, but a full `runTypecheck()` call against real Angular is done in re-validation.
 
 ## Deferred Items
 

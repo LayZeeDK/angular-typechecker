@@ -11,7 +11,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { findWorkspaceRoot } from '@workspace/test-util';
+import {
+  buildCleanEnv,
+  findWorkspaceRoot,
+  removeTmpDir,
+  sh,
+} from '@workspace/test-util';
 
 // GE2E-03 (Phase 15): prove `nx add angular-typechecker`'s install-time init path
 // seeds the nx.json targetDefaults FROM ABSENT against the freshly-packed tarball.
@@ -47,86 +52,23 @@ const fixtureDir = join(
   'consumer-generator',
 );
 
-// CRITICAL (nested-nx isolation): this spec runs UNDER `nx run
-// <install-e2e>:test`, so the outer Nx runner injects env vars into this process
-// that a naive `...process.env` would propagate into the nested `nx g` /
-// `npm install` and silently corrupt the run. Strip them so the nested run is a
-// clean top-level invocation regardless of how the outer test was invoked.
-const NX_RUNNER_ENV_KEYS = [
-  'NX_SKIP_NX_CACHE',
-  'NX_TASK_HASH',
-  'NX_INVOCATION_ROOT_PID',
-  'NX_FORKED_TASK_EXECUTOR',
-  'NX_TASK_TARGET_PROJECT',
-  'NX_TASK_TARGET_TARGET',
-  'NX_CLI_SET',
-  'NX_TERMINAL_CAPTURE_STDERR',
-];
-
-function buildCleanEnv(): NodeJS.ProcessEnv {
-  const cleaned: NodeJS.ProcessEnv = { ...process.env };
-
-  for (const key of NX_RUNNER_ENV_KEYS) {
-    delete cleaned[key];
-  }
-
-  // D-20 honesty: a leaked peer-resolution override (via env or an inherited
-  // .npmrc) would MASK a real consumer ERESOLVE on the published peer ranges
-  // (B-03). Strip the env form here; the tmp workspace also gets its own empty
-  // .npmrc (below) so no ancestor .npmrc is consulted, and we set
-  // npm_config_userconfig to a non-existent path so the user-level ~/.npmrc
-  // cannot reintroduce it.
-  delete cleaned['npm_config_legacy_peer_deps'];
-  delete cleaned['NPM_CONFIG_LEGACY_PEER_DEPS'];
-
-  // NX_DAEMON off so a stale daemon cannot serve an outdated graph; FORCE_COLOR=0
-  // keeps output un-split by ANSI.
-  return {
-    ...cleaned,
-    NX_DAEMON: 'false',
-    FORCE_COLOR: '0',
-  };
-}
-
-const env = buildCleanEnv();
-
-// Best-effort teardown of a per-scenario tmp workspace. On Windows a lingering
-// nx subprocess (or a just-installed node_modules handle) can hold the tmp dir
-// open past execSync's return, so a bare recursive rmSync EPERMs on the directory
-// root -- a lock Node's linear-backoff (maxRetries/retryDelay) may not outwait. A
-// failed removal of an OS-temp dir must NEVER fail a scenario whose assertions
-// already ran (the CI e2e gate is Linux-only, where recursive rmSync never EPERMs;
-// this only manifests in Windows-local dev). Swallow the residual error; the OS
-// reclaims the temp dir.
-function removeTmpWorkspace(tmp: string): void {
-  try {
-    rmSync(tmp, {
-      recursive: true,
-      force: true,
-      maxRetries: 10,
-      retryDelay: 100,
-    });
-  } catch {
-    // best-effort: an OS-temp dir left behind is harmless (unique per mkdtempSync).
-  }
-}
+// Nested-nx isolation + B-03 honesty: the shared buildCleanEnv strips the outer
+// runner's NX_* vars, sets NX_DAEMON=false + FORCE_COLOR=0, and
+// (stripAllNpmConfig) strips EVERY npm_config_* -- REQUIRED because the shared
+// globalSetup's startLocalRegistry sets npm_config_registry process-wide
+// (inherited by this singleFork worker); an inherited registry would outrank the
+// tmp .npmrc and resolve the consumer install through Verdaccio's proxy instead
+// of npmjs. Stripping all npm_config_* also drops the legacy-peer-deps override
+// so a leaked one cannot MASK a real consumer ERESOLVE (B-03 honesty).
+const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';
 
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source.
-  // --skip-nx-cache forces a real emit even when the outer run is cached.
-  // Per-file build+pack (D-08 acceptable fallback) keeps isolation parity with the
-  // existing install-e2e specs.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
-  // npm pack --json from the dist dir produces the EXACT artifact `nx release
-  // publish` ships and writes the .tgz on disk. Capture its absolute path.
+  // The project globalSetup already built dist ONCE (finding E1); pack that shared
+  // dist -- no redundant per-spec build. npm pack --json from the dist dir produces
+  // the EXACT artifact `nx release publish` ships and writes the .tgz on disk.
   const packOutput = execSync('npm pack --json', {
     cwd: distDir,
     env,
@@ -169,20 +111,18 @@ describe("GE2E-03: nx add's init path seeds nx.json targetDefaults from absent",
       // the package under test; the fixture's Angular/Nx/TS deps still resolve from
       // the registry, like every existing install-e2e spec). NO peer-override flag
       // (B-03): a real ERESOLVE must surface, not be masked.
-      execSync(`npm install ${JSON.stringify(tarballPath)}`, {
+      sh(`npm install ${JSON.stringify(tarballPath)}`, {
         cwd: tmp,
         env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-        encoding: 'utf8',
       });
 
       // Run the SAME init generator `nx add`'s runPluginInitGenerator constructs
       // (`g <plugin>:init`). This resolves the installed package's generators.json
       // `init` entry -- the load-bearing half of GEN-09. --skipFormat: the fixture
       // installs no Prettier.
-      execSync('npx nx g angular-typechecker:init --skipFormat', {
+      sh('npx nx g angular-typechecker:init --skipFormat', {
         cwd: tmp,
         env,
-        encoding: 'utf8',
       });
 
       // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first
@@ -200,7 +140,7 @@ describe("GE2E-03: nx add's init path seeds nx.json targetDefaults from absent",
       expect(seeded?.outputs).toEqual([]);
       expect(seeded?.inputs?.[0]).toBe('default');
     } finally {
-      removeTmpWorkspace(tmp);
+      removeTmpDir(tmp);
     }
   });
 });

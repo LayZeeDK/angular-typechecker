@@ -35,6 +35,12 @@ const releaseWorkflowPath = join(
 );
 const dependabotPath = join(workspaceRoot, '.github', 'dependabot.yml');
 const changelogPath = join(workspaceRoot, 'CHANGELOG.md');
+const projectJsonPath = join(
+  workspaceRoot,
+  'packages',
+  'angular-typechecker',
+  'project.json',
+);
 
 // The published, unscoped project name nx release must be scoped to. Anything
 // else in release.projects would risk versioning/publishing a fixture, the spike
@@ -108,6 +114,50 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
     // Re-flipping this to true would re-couple the version commit to the publish
     // trigger and bypass the PR gate -- so assert it stays false.
     expect(nx.release?.git?.tag).toBe(false);
+  });
+});
+
+describe('REL-04: nx release publishes the built dist, not the source tree', () => {
+  it('sets nx-release-publish packageRoot to the build outputPath (dist/packages/angular-typechecker)', () => {
+    const projectConfig = JSON.parse(readFileSync(projectJsonPath, 'utf8')) as {
+      targets?: Record<
+        string,
+        { options?: { packageRoot?: string; outputPath?: string } }
+      >;
+    };
+
+    // Load-bearing regression guard. `nx release publish` joins
+    // `context.root + (options.packageRoot ?? projectConfig.root)` (the @nx/js
+    // release-publish executor). With NO packageRoot it falls back to the project
+    // SOURCE root, whose package.json `files: ["src", ...]` globs `src/**/*.ts`
+    // -- so the published tarball would ship raw TypeScript with zero compiled
+    // .js (the exact defect this target fixes). Reverting the fix deletes this
+    // target and fails here instantly -- a pure config read, before any
+    // build/pack/publish -- so a source-vs-dist regression can never ship.
+    const publishPackageRoot =
+      projectConfig.targets?.['nx-release-publish']?.options?.packageRoot;
+
+    expect(publishPackageRoot).toBe('dist/packages/angular-typechecker');
+    // Assert the INVARIANT, not just the literal: publish MUST pack the same dir
+    // the build emits. A future `outputPath` change that forgot to update
+    // packageRoot would ship stale/empty output but still pass a literal check.
+    expect(publishPackageRoot).toBe(
+      projectConfig.targets?.build?.options?.outputPath,
+    );
+  });
+
+  it('makes nx-release-publish depend on build so it never packs a stale dist (M14)', () => {
+    const projectConfig = JSON.parse(readFileSync(projectJsonPath, 'utf8')) as {
+      targets?: Record<string, { dependsOn?: string[] }>;
+    };
+
+    // With dependsOn:["build"], `nx release publish` builds dist through the task
+    // orchestrator before packing packageRoot -- so a publish can never ship a
+    // stale/missing dist. In CI (which runs an explicit build first) this is a
+    // cache hit; the guard keeps the dependency from being dropped.
+    expect(projectConfig.targets?.['nx-release-publish']?.dependsOn).toContain(
+      'build',
+    );
   });
 });
 

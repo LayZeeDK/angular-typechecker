@@ -12,6 +12,13 @@
   "entry": [
     "packages/angular-typechecker/src/core/compiler-cli-types.drift.ts",
     "packages/angular-typechecker/src/core/extended-catalog.drift.ts",
+    // The install-e2e vitest globalSetup (starts the @nx/js local registry +
+    // builds/publishes the tarball once) is reachable ONLY via
+    // vitest.config.mts's `globalSetup: [...]` string, never via the import
+    // graph, so fallow flags it `unused_file`. It is a genuine test-runner
+    // entry point -- declare it (same config-only reachability as the drift
+    // tripwires above).
+    "e2e/angular-typechecker-install-e2e/src/global-setup.ts",
   ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
