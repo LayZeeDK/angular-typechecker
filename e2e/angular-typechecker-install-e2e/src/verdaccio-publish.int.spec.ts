@@ -5,6 +5,7 @@ import {
   readdirSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -116,6 +117,28 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
         },
       });
 
+      const installedRoot = join(consumer, 'node_modules', PACKAGE_NAME);
+
+      // Programmatic-API barrel-load smoke (README "Programmatic API"): require the
+      // INSTALLED package and assert its public surface loads. This directly catches
+      // the dangling-`main` / missing-`index.js` defect -- a broken tarball throws
+      // MODULE_NOT_FOUND on require here. Angular-INDEPENDENT by design: requiring
+      // the barrel does NOT load @angular/compiler-cli or typescript (both are
+      // lazy-imported INSIDE runTypecheck), so this asserts only that the barrel
+      // resolves and exports the documented shape -- it never calls runTypecheck().
+      const installedApi = createRequire(import.meta.url)(installedRoot) as {
+        runTypecheck?: unknown;
+        TypecheckInfrastructureError?: unknown;
+      };
+      expect(typeof installedApi.runTypecheck).toBe('function');
+      expect(typeof installedApi.TypecheckInfrastructureError).toBe('function');
+      expect(
+        () =>
+          new (installedApi.TypecheckInfrastructureError as new (
+            message: string,
+          ) => unknown)('probe'),
+      ).not.toThrow();
+
       // Documented flow: seed nx.json (init) -> wire the typecheck target
       // (configuration) -> run it. --skipFormat: the fixture installs no Prettier.
       sh('npx nx g angular-typechecker:init --skipFormat', {
@@ -134,8 +157,6 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
 
       // (2) The installed tree carries the compiled runtime .js (index + the
       //     generator + the executor) -- proof the packageRoot fix shipped dist.
-      const installedRoot = join(consumer, 'node_modules', PACKAGE_NAME);
-
       for (const relativeJs of REQUIRED_INSTALLED_JS) {
         expect(existsSync(join(installedRoot, relativeJs))).toBe(true);
       }
