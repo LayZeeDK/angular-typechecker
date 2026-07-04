@@ -131,6 +131,13 @@ export default async function ({ provide }: GlobalSetupContext) {
     // via npm_config_userconfig so the repo/user .npmrc is not consulted;
     // --registry is MANDATORY (SAFETY above). --first-release skips the pre-publish
     // `npm view` (nothing is published yet).
+    //
+    // --excludeTaskDependencies is LOAD-BEARING here: nx-release-publish now
+    // dependsOn ["build"] (M14). Without this flag the publish would re-run build
+    // -- a cache HIT that RE-MATERIALIZES dist from the cache and CLOBBERS the
+    // provenance strip above (re-introducing publishConfig.provenance:true, which
+    // aborts a non-CI publish). The explicit build above already produced dist, so
+    // we skip the dependent build and publish the stripped dist we just prepared.
     const nerfDart = `//${new URL(registryUrl).host}/`;
     const publishNpmrc = join(root, 'tmp', 'local-registry', 'publish.npmrc');
     mkdirSync(dirname(publishNpmrc), { recursive: true });
@@ -138,10 +145,13 @@ export default async function ({ provide }: GlobalSetupContext) {
       publishNpmrc,
       `registry=${registryUrl}\n${nerfDart}:_authToken="${token}"\n`,
     );
-    sh(`npx nx release publish --registry ${registryUrl} --first-release`, {
-      cwd: root,
-      env: { ...env, npm_config_userconfig: publishNpmrc },
-    });
+    sh(
+      `npx nx release publish --registry ${registryUrl} --first-release --excludeTaskDependencies`,
+      {
+        cwd: root,
+        env: { ...env, npm_config_userconfig: publishNpmrc },
+      },
+    );
 
     provide('verdaccioUrl', registryUrl);
     provide('verdaccioToken', token);

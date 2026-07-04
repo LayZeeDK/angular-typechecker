@@ -145,6 +145,20 @@ describe('REL-04: nx release publishes the built dist, not the source tree', () 
       projectConfig.targets?.build?.options?.outputPath,
     );
   });
+
+  it('makes nx-release-publish depend on build so it never packs a stale dist (M14)', () => {
+    const projectConfig = JSON.parse(readFileSync(projectJsonPath, 'utf8')) as {
+      targets?: Record<string, { dependsOn?: string[] }>;
+    };
+
+    // With dependsOn:["build"], `nx release publish` builds dist through the task
+    // orchestrator before packing packageRoot -- so a publish can never ship a
+    // stale/missing dist. In CI (which runs an explicit build first) this is a
+    // cache hit; the guard keeps the dependency from being dropped.
+    expect(projectConfig.targets?.['nx-release-publish']?.dependsOn).toContain(
+      'build',
+    );
+  });
 });
 
 describe('PKG-04: SECURITY.md is present at the repo root', () => {
