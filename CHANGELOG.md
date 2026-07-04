@@ -2,6 +2,38 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.1.1 (2026-07-04)
+
+Critical packaging fix. Every prior release (0.0.1 through 0.1.0) published the
+plugin's raw TypeScript source instead of its compiled JavaScript, so on a
+standard Nx 23 workspace the executor and generators failed to load and
+`nx add angular-typechecker`, `nx g angular-typechecker:configuration`,
+`nx typecheck`, and `require('angular-typechecker')` all errored out. 0.1.1 is
+the first release that installs and runs as documented -- if you are on any
+earlier version, upgrade.
+
+### Fixes
+
+- **Publish the built package, not the source** -- `nx release publish` now packs
+  the compiled `dist` output (JavaScript plus type declarations) instead of the
+  project source tree. Earlier tarballs shipped `.ts` source with no compiled
+  `.js` and a `main` field pointing at a file that was never published, which
+  Node's native type-stripping refuses to load from `node_modules`. No API,
+  option, or wiring change -- the package simply installs and runs now.
+
+### Internal
+
+- Added a Verdaccio publish-and-install end-to-end regression test (publishes the
+  real tarball to a local registry, installs it by name into a fresh Nx
+  workspace, and asserts the installed package contains compiled JavaScript and no
+  source `.ts`), plus config guards pinning the publish package root and the
+  built-vs-source version -- closing the gap that let the packaging defect ship.
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
+- Node `^22.22.3 || ^24.15.0 || ^26.0.0`
+
 ## 0.1.0 (2026-07-02)
 
 Reference-walking engine, a configuration/init generator suite, and `nx add`
@@ -134,6 +166,7 @@ angular-typechecker is an Nx plugin that runs the _complete_ Angular compiler ty
 
 See the [README](./packages/angular-typechecker/README.md) for wiring the `angular-typecheck` target into a project.
 
+[0.1.1]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.1
 [0.1.0]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.0
 [0.0.3]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.3
 [0.0.2]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.2
