@@ -4,8 +4,8 @@ milestone: v0.1.0
 milestone_name: configuration + init generators, nx add support, and the typecheck executor rename
 status: completed
 stopped_at: "v0.1.0 (configuration + init generators, nx add support, and the typecheck executor rename) shipped, audited (passed, 22/22, zero tech debt), and ARCHIVED. Published live as angular-typechecker@0.1.0. Next milestone not yet scoped."
-last_updated: "2026-07-03"
-last_activity: 2026-07-03
+last_updated: "2026-07-04"
+last_activity: 2026-07-04
 progress:
   total_phases: 5
   completed_phases: 5
@@ -108,6 +108,23 @@ TS2322/NG8002 codeframe example), `## CI integration` (tsc-superset problem matc
 documents only real features (JSON/SARIF framed as a v0.x non-goal; `nx add`, never `ng add`).
 Docs/config only -- NO version bump/tag/publish. Verified 9/9 must-haves. On branch
 `docs/license-root-and-readme-overhaul` (PR-bound; main is PR-only).
+
+**260704-mse** (`fix-nx-release-publishing-typescript-sou`, 2026-07-04, `--research`) --
+CRITICAL release-mechanics bug: every published version (0.0.1-0.1.0) shipped raw TypeScript
+source (0 `.js`, no `src/index.js`), so `nx add` / `nx g` / `nx typecheck` / `require` all
+failed on a stock Nx 23 workspace. Root cause: `nx release publish` had no `packageRoot`, so
+it packed the project SOURCE root (`files: ["src"]` -> `src/**/*.ts`) instead of the built
+`dist/` (the build itself was always correct). Surfaced by dogfooding the published package
+against real Nx 23 + Angular 22 OSS repos (mmstack, ngx-lottie). Fix: added an
+`nx-release-publish` target with `options.packageRoot: "dist/packages/angular-typechecker"`
+to `project.json`. Regression gates: config guard (packageRoot === dist) + dist/source
+version-parity guard in the serialized install-e2e, plus a NEW Verdaccio publish round-trip
+e2e (real `nx release publish --registry <local>` -> install-by-name -> init/configuration/
+typecheck green, asserts the installed tree has `.js` and zero `.ts`/`.spec`); added
+`verdaccio@6.7.4` devDep; README pnpm-install fallback. 4 atomic commits on `release/0.1.1`;
+full install-e2e suite green (6 files/29 tests), format + lint clean. Cutting **v0.1.1** as a
+patch hotfix (PR-bound; tag/npm-publish/GitHub-release are human-gated). Recorded to memory
+([[angular-typechecker-npm-releases-ship-source]]).
 
 ## Deferred Items
 
