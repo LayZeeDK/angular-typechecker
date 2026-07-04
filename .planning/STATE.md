@@ -142,6 +142,36 @@ wrap the install/init/configuration `execSync` calls to surface stdout on failur
 `.d.ts` installed-tree assertion; add `dependsOn: ["build"]` to `nx-release-publish`; note the
 non-hermetic npmjs-uplink flake surface for CI triage.
 
+PR #23 CLEANUP LANDING (user directed "land ALL deferred findings in #23"): audited + merged
++ deduped six more cleanup reports (/simplify + /ponytail-audit + /ponytail-review in full +
+ultra) against the deferred set; verified each against code (reports cited stale line numbers).
+Only distributed-code items could bind the "runtime findings land now" rule; scan of .planning
+confirmed `toExitCode` is deliberate COR-04 deferred-CLI scaffolding (KEEP, not slop) and
+`TemplateCheckAborted.code` a drift pin (KEEP). Scaffolded a throwaway `@nx/plugin:e2e-project`
+(create-nx-workspace under scratchpad) to diff canonical vs our e2e setup: we already match on
+implicitDependencies + serialization; adopted the canonical local-registry/globalSetup shape;
+justified divergences (Vitest not Jest; publish REAL dist not `releaseVersion({0.0.0-e2e})`
+which mutates source version; custom config.yml for no-proxy + htpasswd + real token since
+canonical's `'**':proxy` + dummy token fail on Verdaccio 6). Landed 10 commits (59c022c..0c16285)
+on `release/0.1.1`: adopted `@nx/js:setup-verdaccio` + `startLocalRegistry` in a vitest
+globalSetup (single build/publish), extracted shared e2e helpers into `@workspace/test-util`
+(M8/M9), R1 readdirSync-recursive, deleted the tautological version-parity test (A3), M14
+`dependsOn:["build"]` on nx-release-publish, a programmatic-API barrel-load smoke (catches the
+original dangling-`main` defect), and the shipped-source `loadTypescript` dedup to a private
+`core/load-typescript.ts` leaf + `exit-codes.ts` comment fix (kept `toExitCode`). Verified green
+independently: `nx build`, `nx test angular-typechecker` (unit), install-e2e 6/29, cache-e2e 9,
+matrix-e2e 7, format:check, lint. Windows teardown prints benign `local registry exit 143`
+(SIGTERM double-fork edge; CI is Linux-only).
+
+POST-0.1.1-RELEASE FOLLOW-UPS (human-gated, strictly AFTER 0.1.1 publishes):
+- Deprecate all prior npm releases: `npm deprecate 'angular-typechecker@<=0.1.0' "<broken
+  packaging; non-functional as an Nx executor; upgrade to >=0.1.1>"` for 0.0.1/0.0.2/0.0.3/0.1.0
+  (needs the user's npm auth), and mark their GitHub releases as pre-release + deprecated (they
+  only ever worked via the programmatic API, never as an Nx executor).
+- Exercise the README Programmatic API (`runTypecheck`) against a real Angular 22 solution
+  tsconfig in the OSS repos (mmstack/ngx-lottie/radix) with the 0.1.1 tarball — the e2e suite now
+  covers barrel-load, but a full `runTypecheck()` call against real Angular is done in re-validation.
+
 ## Deferred Items
 
 Tracked as Future Requirements (out of scope, not debt):
