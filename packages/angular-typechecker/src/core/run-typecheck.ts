@@ -11,6 +11,7 @@ import {
 } from './diagnostic-codes';
 import { filterDiagnostics } from './filter-diagnostics';
 import { runNoEmitCompilation } from './gather-diagnostics';
+import { loadTypescript } from './load-typescript';
 import type { SkippedReference } from './walk-references';
 import { walkReferences } from './walk-references';
 
@@ -618,17 +619,4 @@ function normalizeShimFileName(
   }
 
   return fileName.replace(/\.ngtypecheck\.ts$/, '.ts');
-}
-
-let cachedTypescript: typeof ts | undefined;
-
-async function loadTypescript(): Promise<typeof ts> {
-  if (cachedTypescript === undefined) {
-    const loaded = (await import('typescript')) as typeof ts & {
-      default?: typeof ts;
-    };
-    cachedTypescript = loaded.default ?? loaded;
-  }
-
-  return cachedTypescript;
 }

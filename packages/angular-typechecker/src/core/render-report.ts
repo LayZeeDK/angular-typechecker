@@ -1,7 +1,6 @@
-import type ts from 'typescript';
-
 import { loadCompilerCli } from './compiler-loader';
 import { formatReport } from './format-report';
+import { loadTypescript } from './load-typescript';
 import type { CoreResult } from './run-typecheck';
 
 /**
@@ -20,23 +19,6 @@ export interface RenderOptions {
   pathBase?: string;
   color: boolean;
   failFast?: boolean;
-}
-
-// D-02 anti-leak: `loadTypescript` is duplicated here as a MODULE-PRIVATE memo
-// (copied verbatim from run-typecheck.ts) so the `ts` load stays inside core and
-// is NEVER barrel-exported. Each `import('typescript')` resolves the same module
-// instance, so the second memo is a near-free cache miss once.
-let cachedTypescript: typeof ts | undefined;
-
-async function loadTypescript(): Promise<typeof ts> {
-  if (cachedTypescript === undefined) {
-    const loaded = (await import('typescript')) as typeof ts & {
-      default?: typeof ts;
-    };
-    cachedTypescript = loaded.default ?? loaded;
-  }
-
-  return cachedTypescript;
 }
 
 /**
