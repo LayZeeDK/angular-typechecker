@@ -87,6 +87,13 @@ npm install --save-dev angular-typechecker
 nx g angular-typechecker:init
 ```
 
+In a pnpm workspace, add it to the workspace root and run `init` the same way:
+
+```sh
+pnpm add -Dw angular-typechecker
+nx g angular-typechecker:init
+```
+
 This is `nx add`, not the Angular CLI's `ng add`, and there is no Angular-CLI
 installer.
 
