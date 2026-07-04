@@ -126,6 +126,22 @@ full install-e2e suite green (6 files/29 tests), format + lint clean. Cutting **
 patch hotfix (PR-bound; tag/npm-publish/GitHub-release are human-gated). Recorded to memory
 ([[angular-typechecker-npm-releases-ship-source]]).
 
+PR #23 REVIEW FOLLOW-UP (commit `2e2f8ab`): audited + merged + deduplicated findings from two
+independent review reports (Thermos branch-audit + a 4-agent PR review) against the actual
+code (both reports cited stale line numbers -- file is 553 lines). Zero critical/medium; all
+test-harness honesty/robustness. FIXED (one `test(e2e)` commit, all 29 install-e2e tests green
+locally): stale "dummy token"->"minted token" comments + the affirmatively-wrong "\$all accepts
+dummy token as anonymous" + "five"->"three" file count; `green.stdout` on the typecheck
+assertion; `JSON.parse` guard + registration request timeout; an `npm_config_*`-strip safety
+assertion (the localhost check alone was tautological); `packageRoot === build.outputPath`
+drift-proof invariant; "install by PATH" mischaracterization, overstated version-parity it()
+title, and the rotting `@nx/js impl.js:68` line ref. DEFERRED (low value / beyond a ship-ready
+hotfix, tracked for a follow-up, NOT blocking merge): extract the 4x-copied e2e harness
+(`buildCleanEnv`/`run`/`RunResult`/`removeTmp*`/`walkFiles`) into `@workspace/test-util`;
+wrap the install/init/configuration `execSync` calls to surface stdout on failure; add a
+`.d.ts` installed-tree assertion; add `dependsOn: ["build"]` to `nx-release-publish`; note the
+non-hermetic npmjs-uplink flake surface for CI triage.
+
 ## Deferred Items
 
 Tracked as Future Requirements (out of scope, not debt):
