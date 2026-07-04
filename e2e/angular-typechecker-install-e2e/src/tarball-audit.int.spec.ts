@@ -96,6 +96,9 @@ let extractDir = '';
 // Recursively collect the shipped .d.ts text from the extracted tarball so the
 // @fixtures-leak guard greps the ACTUAL published declarations (R1:
 // readdirSync recursive + entry.parentPath, Node 20.12+; repo targets Node 22+).
+// `isFile()` does not follow symlinks -- correct here: `tar -xzf` of an npm
+// tarball yields only regular files/dirs (never symlinked .d.ts), so every
+// shipped declaration is captured.
 function collectDtsText(dir: string): string {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith('.d.ts'))

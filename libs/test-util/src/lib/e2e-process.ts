@@ -8,7 +8,7 @@ import { rmSync } from 'node:fs';
 // run to a cache-miss and kills the cache-e2e CACHE HIT assertions). Stripping
 // them makes every nested invocation a clean top-level one regardless of how the
 // outer test task was invoked. Identical in every e2e spec -- extracted here.
-export const NX_RUNNER_ENV_KEYS: readonly string[] = [
+const NX_RUNNER_ENV_KEYS: readonly string[] = [
   'NX_SKIP_NX_CACHE',
   'NX_TASK_HASH',
   'NX_INVOCATION_ROOT_PID',

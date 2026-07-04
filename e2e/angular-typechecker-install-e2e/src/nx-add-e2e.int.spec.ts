@@ -53,11 +53,14 @@ const fixtureDir = join(
 );
 
 // Nested-nx isolation + B-03 honesty: the shared buildCleanEnv strips the outer
-// runner's NX_* vars and (default) the legacy-peer-deps override so a leaked
-// override cannot MASK a real consumer ERESOLVE, and sets NX_DAEMON=false +
-// FORCE_COLOR=0. The tmp workspace also gets its own empty .npmrc + a non-existent
-// npm_config_userconfig below so no ancestor config reintroduces the override.
-const env = buildCleanEnv();
+// runner's NX_* vars, sets NX_DAEMON=false + FORCE_COLOR=0, and
+// (stripAllNpmConfig) strips EVERY npm_config_* -- REQUIRED because the shared
+// globalSetup's startLocalRegistry sets npm_config_registry process-wide
+// (inherited by this singleFork worker); an inherited registry would outrank the
+// tmp .npmrc and resolve the consumer install through Verdaccio's proxy instead
+// of npmjs. Stripping all npm_config_* also drops the legacy-peer-deps override
+// so a leaked one cannot MASK a real consumer ERESOLVE (B-03 honesty).
+const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';

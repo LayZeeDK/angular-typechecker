@@ -40,6 +40,11 @@ async function mintCiToken(registryUrl: string): Promise<string> {
         roles: [],
         date: new Date().toISOString(),
       }),
+      // Fail fast + loud if the registration stalls (registry mid-startup,
+      // htpasswd write contention, a dropped connection). vitest globalSetup is
+      // NOT bounded by testTimeout/hookTimeout, so without this the whole suite
+      // would hang to the CI job wall-clock limit with no diagnostic.
+      signal: AbortSignal.timeout(10000),
     },
   );
 

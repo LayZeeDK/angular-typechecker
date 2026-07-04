@@ -78,11 +78,17 @@ const env = buildCleanEnv({ stripAllNpmConfig: true });
 // readdirSync's recursive mode (R1: entry.parentPath is Node 20.12+; this repo
 // targets Node 22+).
 function walkInstalledFiles(root: string): string[] {
-  return readdirSync(root, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .map((entry) =>
-      relative(root, join(entry.parentPath, entry.name)).replace(/\\/g, '/'),
-    );
+  return (
+    readdirSync(root, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) =>
+        relative(root, join(entry.parentPath, entry.name)).replace(/\\/g, '/'),
+      )
+      // Exclude any nested node_modules: a transitive dep that failed to hoist
+      // could ship its own raw .ts/.spec and trip the zero-.ts assertion below
+      // even though angular-typechecker itself packed correctly.
+      .filter((path) => !path.split('/').includes('node_modules'))
+  );
 }
 
 describe('REL-04: nx release publish -> install-by-name -> typecheck ships compiled JS', () => {

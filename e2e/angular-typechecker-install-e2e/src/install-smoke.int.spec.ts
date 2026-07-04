@@ -14,6 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   buildCleanEnv,
   findWorkspaceRoot,
+  removeTmpDir,
   run,
   sh,
 } from '@workspace/test-util';
@@ -61,7 +62,7 @@ const fixtureDir = join(
 // color:false into the executor options, which additionalProperties:false rejects;
 // 04-02 hand-off). The tmp workspace also gets its own empty .npmrc + a
 // non-existent npm_config_userconfig below so no ancestor config reintroduces it.
-const env = buildCleanEnv();
+const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';
@@ -159,7 +160,7 @@ describe('TEST-05: a clean install of the packed tarball resolves + runs the exe
       expect(bad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
       expect(bad.stdout).not.toContain('infrastructure error');
     } finally {
-      rmSync(tmp, { recursive: true, force: true });
+      removeTmpDir(tmp);
     }
   });
 });
