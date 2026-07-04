@@ -120,20 +120,30 @@ describe('PKG-03: nx release is scoped to angular-typechecker only', () => {
 describe('REL-04: nx release publishes the built dist, not the source tree', () => {
   it('sets nx-release-publish packageRoot to the build outputPath (dist/packages/angular-typechecker)', () => {
     const projectConfig = JSON.parse(readFileSync(projectJsonPath, 'utf8')) as {
-      targets?: Record<string, { options?: { packageRoot?: string } }>;
+      targets?: Record<
+        string,
+        { options?: { packageRoot?: string; outputPath?: string } }
+      >;
     };
 
     // Load-bearing regression guard. `nx release publish` joins
-    // `context.root + (options.packageRoot ?? projectConfig.root)`
-    // (@nx/js release-publish.impl.js:68). With NO packageRoot it falls back to
-    // the project SOURCE root, whose package.json `files: ["src", ...]` globs
-    // `src/**/*.ts` -- so the published tarball would ship raw TypeScript with
-    // zero compiled .js (the exact defect this target fixes). Reverting the fix
-    // deletes this target and fails here instantly -- a pure config read, before
-    // any build/pack/publish -- so a source-vs-dist regression can never ship.
-    expect(
-      projectConfig.targets?.['nx-release-publish']?.options?.packageRoot,
-    ).toBe('dist/packages/angular-typechecker');
+    // `context.root + (options.packageRoot ?? projectConfig.root)` (the @nx/js
+    // release-publish executor). With NO packageRoot it falls back to the project
+    // SOURCE root, whose package.json `files: ["src", ...]` globs `src/**/*.ts`
+    // -- so the published tarball would ship raw TypeScript with zero compiled
+    // .js (the exact defect this target fixes). Reverting the fix deletes this
+    // target and fails here instantly -- a pure config read, before any
+    // build/pack/publish -- so a source-vs-dist regression can never ship.
+    const publishPackageRoot =
+      projectConfig.targets?.['nx-release-publish']?.options?.packageRoot;
+
+    expect(publishPackageRoot).toBe('dist/packages/angular-typechecker');
+    // Assert the INVARIANT, not just the literal: publish MUST pack the same dir
+    // the build emits. A future `outputPath` change that forgot to update
+    // packageRoot would ship stale/empty output but still pass a literal check.
+    expect(publishPackageRoot).toBe(
+      projectConfig.targets?.build?.options?.outputPath,
+    );
   });
 });
 

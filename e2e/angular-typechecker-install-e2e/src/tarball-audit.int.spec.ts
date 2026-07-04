@@ -261,7 +261,7 @@ describe('PKG-02: the packed tarball is publish-correct', () => {
 });
 
 describe('REL-04: the built dist carries the source version through the build', () => {
-  it('publishes the same version the source manifest declares (dist === source)', () => {
+  it('carries the source version into the built dist (dist === source)', () => {
     // `nx release publish` packs from dist (options.packageRoot), so the version
     // that reaches the registry is the DIST manifest's. CI's release job builds
     // off a fresh checkout of the already-bumped tagged commit, and @nx/js:tsc

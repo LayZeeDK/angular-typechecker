@@ -20,9 +20,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
 // REL-04 (highest-fidelity gate): the ONLY spec that exercises the REAL
-// `nx release publish` command end-to-end. tarball-audit + install-smoke pack
-// with `npm pack` from dist DIRECTLY and install the `.tgz` by PATH, so they
-// structurally cannot catch an nx-release-publish `packageRoot` regression -- a
+// `nx release publish` command end-to-end. tarball-audit packs `npm pack` from
+// dist and AUDITS the `.tgz` (publint/attw); install-smoke installs that `.tgz`
+// by PATH -- neither goes through `nx release publish`, so they structurally
+// cannot catch an nx-release-publish `packageRoot` regression -- a
 // reverted fix would pack the SOURCE root and ship raw `.ts`, and those specs
 // would never notice. This spec stands up a local Verdaccio registry, runs the
 // actual `nx release publish --registry <local>` (the packageRoot-driven path),
@@ -59,7 +60,7 @@ const fixtureDir = join(
 const PACKAGE_NAME = 'angular-typechecker';
 const CONSUMER_PROJECT = 'consumer-generator';
 
-// The five compiled runtime files that prove the tree ships JS, not source. If
+// The three compiled runtime files that prove the tree ships JS, not source. If
 // the packageRoot fix regresses, publish would pack `src/**/*.ts` and NONE of
 // these `.js` would exist in the installed tree.
 const REQUIRED_INSTALLED_JS = [
@@ -300,7 +301,23 @@ function createRegistryToken(url: string): Promise<string> {
             return;
           }
 
-          const token = (JSON.parse(data) as { token?: string }).token;
+          // Guard the parse: a 2xx with a non-JSON body would otherwise throw
+          // synchronously inside this 'end' handler -- an uncaught exception that
+          // crashes the vitest worker and leaves this promise unsettled until the
+          // 300000ms hook timeout, instead of a clean reject.
+          let token: string | undefined;
+
+          try {
+            token = (JSON.parse(data) as { token?: string }).token;
+          } catch (parseError) {
+            reject(
+              new Error(
+                `Verdaccio returned a non-JSON registration body: ${(parseError as Error).message}: ${data}`,
+              ),
+            );
+
+            return;
+          }
 
           if (typeof token !== 'string' || token.length === 0) {
             reject(new Error(`Verdaccio returned no token: ${data}`));
@@ -313,6 +330,11 @@ function createRegistryToken(url: string): Promise<string> {
       },
     );
 
+    // Mirror pingOnce's timeout so a hung registration rejects instead of
+    // stalling the beforeAll to its 300000ms cap.
+    registration.setTimeout(10000, () => {
+      registration.destroy(new Error('Verdaccio user registration timed out'));
+    });
     registration.on('error', reject);
     registration.write(body);
     registration.end();
@@ -337,7 +359,7 @@ beforeAll(async () => {
   //    storage (NO proxy) so `npm view` / install never fall through to the real
   //    npmjs copy of the live 0.1.0 -- the round-trip must exercise OUR freshly
   //    built dist. Everything ELSE proxies npmjs so the consumer's Angular / Nx /
-  //    TS deps still resolve. `$all` publish accepts the dummy token as anonymous.
+  //    TS deps still resolve. `$all` publish accepts the minted `ci`-user token (below).
   //    `storage` is relative -> resolved against this config file's directory.
   const configPath = join(registryHome, 'config.yaml');
   const config = [
@@ -428,8 +450,14 @@ afterAll(() => {
 describe('REL-04: nx release publish -> install-by-name -> typecheck ships compiled JS', () => {
   it('publishes to local Verdaccio, installs by name, runs init/configuration/typecheck green, and ships zero .ts source', () => {
     // Load-bearing SAFETY gate: never let the real `nx release publish` reach
-    // registry.npmjs.org. Refuse anything that is not the local Verdaccio URL.
+    // registry.npmjs.org. Two independent guards: (a) the URL we pass via
+    // --registry is the local Verdaccio one, and (b) buildCleanEnv() actually
+    // stripped every inherited npm_config_* -- an inherited npm_config_registry
+    // would outrank --registry and silently retarget the publish at npmjs.
     expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+    expect(Object.keys(env).some((key) => /^npm_config_/i.test(key))).toBe(
+      false,
+    );
 
     // The dist manifest carries `publishConfig.provenance: true` for the CI OIDC
     // release job. Provenance generation only works inside a supported CI with
@@ -453,7 +481,7 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
     // nx-release-publish target's options.packageRoot (dist/packages/...) and
     // runs `npm publish <packageRoot> --registry <verdaccio>`. --first-release
     // skips the pre-publish `npm view` (nothing is published yet). The publish
-    // .npmrc (registry + dummy token) is supplied via npm_config_userconfig so
+    // .npmrc (registry + minted token) is supplied via npm_config_userconfig so
     // the repo .npmrc is not consulted; --registry is MANDATORY (SAFETY above).
     const publishNpmrc = join(registryHome, 'publish.npmrc');
     writeFileSync(publishNpmrc, verdaccioNpmrc());
@@ -477,7 +505,7 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
 
     // Install BY NAME from Verdaccio into a fresh consumer (not by tarball path --
     // this is the registry round-trip install-smoke cannot do). The consumer
-    // .npmrc points npm at Verdaccio (+ dummy token); npm_config_userconfig ->
+    // .npmrc points npm at Verdaccio (+ minted token); npm_config_userconfig ->
     // a nonexistent path so the user ~/.npmrc cannot reintroduce a peer override.
     const consumer = mkdtempSync(join(tmpdir(), 'atc-verdaccio-consumer-'));
 
@@ -508,7 +536,9 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
 
       // (1) The type-check runs GREEN from the installed-by-name package.
       const green = run(consumer, `${CONSUMER_PROJECT}:typecheck`);
-      expect(green.code).toBe(0);
+      // On failure, surface the captured nx stdout+stderr -- otherwise the
+      // most-likely-to-fail assertion shows only a bare `expected 1 to be 0`.
+      expect(green.code, green.stdout).toBe(0);
 
       // (2) The installed tree carries the compiled runtime .js (index + the
       //     generator + the executor) -- proof the packageRoot fix shipped dist.
