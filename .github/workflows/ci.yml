@@ -158,6 +158,12 @@ jobs:
       # install (not a manual PATH edit). The pnpm fixture pins pnpm@11.9.0 (same
       # version pnpm/action-setup provides), so a corepack pnpm shim resolves the
       # identical version -- no clash with the action-setup pnpm below.
+      # NODE COUPLING (reconcile with the job's own "corepack is removed from Node
+      # 25+" note above): this step REQUIRES corepack, which ships through Node 24
+      # (this job's node-version pin) but is REMOVED in Node 25+. If this job's
+      # node-version is ever bumped to >=25, `corepack enable` will not exist --
+      # provision yarn via a pinned setup step (mirroring the pnpm/action-setup
+      # below) or gate this step on the Node major instead.
       - run: corepack enable
       - uses: pnpm/action-setup@008330803749db0355799c700092d9a85fd074e9 # v6.0.9
         with:
