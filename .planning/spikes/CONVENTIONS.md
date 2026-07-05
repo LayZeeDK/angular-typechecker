@@ -56,6 +56,19 @@ question requires otherwise.
 - **Boundary = canonical path-containment.** In/out-of-project is decided by realpath + case-fold
   canonicalization then containment under the project dir (dirname of the solution tsconfig) -- the
   same basis as the diagnostic filter's basePath (D-05/D-06).
+- **NG-code decoding.** Angular encodes `ts.Diagnostic.code` as `-(990000 + ngNumber)` -- NG8002 =
+  `-998002`, NG3004 = `-993004`. Recover with `ngNumber = -code - 990000` (valid when
+  `code < 0 && 990000 < -code < 1000000`). Extended diagnostics are NG81xx (+ NG8011/8021), core
+  template errors NG80xx. Used to assert NG8xxx firing without hardcoding raw codes (spikes 007/008).
+- **Forced peer-conflicting dep -> isolated scratchpad scaffold (user-chosen).** When a spike needs
+  a dependency whose peer range excludes the official stack (e.g. `@storybook/angular@10.4.6` caps
+  Angular <22 / TS ^4.9||^5), install it the way a consumer must (`--legacy-peer-deps`/`--force`,
+  capturing the ERESOLVE first as evidence) in a THROWAWAY npm scaffold under the session scratchpad
+  -- NOT the dev repo's `node_modules`/`package.json`. Pin the exact official stack in the scaffold
+  `package.json`. Run the harness FROM the scaffold (so the forced dep + pinned toolchain resolve),
+  then COMMIT the record only -- `package.json` + `fixture/` + `harness.mjs` + `forensic-log.json` --
+  and document the `npm install` reproduction; the scaffold `node_modules` is never committed
+  (spike 007).
 
 ## Tools & Libraries
 
