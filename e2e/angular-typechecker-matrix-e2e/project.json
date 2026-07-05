@@ -12,6 +12,20 @@
       "options": {
         "reportsDirectory": "coverage/e2e/angular-typechecker-matrix-e2e"
       }
+    },
+    "typecheck-e2e": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/tsconfig.base.json",
+        { "externalDependencies": ["typescript", "vitest", "@nx/vite"] }
+      ],
+      "options": {
+        "command": "tsc --noEmit -p e2e/angular-typechecker-matrix-e2e/tsconfig.spec.json",
+        "cwd": "."
+      }
     }
   }
 }

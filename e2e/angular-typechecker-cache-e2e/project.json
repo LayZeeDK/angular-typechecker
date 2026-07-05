@@ -16,6 +16,27 @@
       "options": {
         "reportsDirectory": "coverage/e2e/angular-typechecker-cache-e2e"
       }
+    },
+    "typecheck-e2e": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/tsconfig.base.json",
+        {
+          "externalDependencies": [
+            "typescript",
+            "vitest",
+            "@nx/vite",
+            "@nx/devkit"
+          ]
+        }
+      ],
+      "options": {
+        "command": "tsc --noEmit -p e2e/angular-typechecker-cache-e2e/tsconfig.spec.json",
+        "cwd": "."
+      }
     }
   }
 }

@@ -13,7 +13,9 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   buildCleanEnv,
+  expectSeededTypecheckTargetDefault,
   findWorkspaceRoot,
+  readTypecheckTargetDefault,
   removeTmpDir,
   run,
   sh,
@@ -136,12 +138,7 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       // would pass for the wrong reason (Pitfall 5). Mirrors nx-add-e2e's
       // before-absent guard so this spec's "from ABSENT" claim stands on its own
       // and does not depend on a sibling spec (WR-02).
-      const before = JSON.parse(readFileSync(join(tmp, 'nx.json'), 'utf8')) as {
-        targetDefaults?: Record<string, unknown>;
-      };
-      expect(
-        before.targetDefaults?.['angular-typechecker:typecheck'],
-      ).toBeUndefined();
+      expect(readTypecheckTargetDefault(tmp)).toBeUndefined();
 
       // Generate the typecheck target. --skipFormat so formatFiles (Prettier) is a
       // no-op (the fixture installs no Prettier). Do NOT pass --output-style=static
@@ -176,22 +173,9 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       expect(tsConfig).not.toMatch(/tsconfig\.(lib|spec)\.json$/);
 
       // GE2E-01(b): `init` (invoked by `configuration`) SEEDED the nx.json
-      // targetDefaults from ABSENT. Assert against the init-seeded shape
-      // (inputs[0] === 'default'), NOT the fixture nx.json blocks -- the fixture
-      // has no such key (D-02). The 'default'-first input is the WALK-02 landmine
-      // invariant: 'production' would exclude *.spec.ts and under-hash the walked
-      // spec leaf (a stale PASS).
-      const nxJson = JSON.parse(readFileSync(join(tmp, 'nx.json'), 'utf8')) as {
-        targetDefaults?: Record<
-          string,
-          { cache?: boolean; outputs?: unknown[]; inputs?: unknown[] }
-        >;
-      };
-      const seeded = nxJson.targetDefaults?.['angular-typechecker:typecheck'];
-      expect(seeded).toBeDefined();
-      expect(seeded?.cache).toBe(true);
-      expect(seeded?.outputs).toEqual([]);
-      expect(seeded?.inputs?.[0]).toBe('default');
+      // targetDefaults from ABSENT -- assert against the init-seeded shape, NOT the
+      // fixture nx.json blocks (the fixture has no such key, D-02).
+      expectSeededTypecheckTargetDefault(tmp);
 
       // GE2E-02 clean: the committed-clean lib + spec leaves type-check green from
       // the installed package via the just-wired target.

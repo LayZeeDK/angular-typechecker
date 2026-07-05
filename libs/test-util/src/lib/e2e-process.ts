@@ -129,6 +129,26 @@ export function sh(
 }
 
 /**
+ * Probe whether `command` runs successfully in `options.cwd` with `options.env`:
+ * runs it via {@link sh} and returns `true` on exit 0, `false` on any throw. Specs
+ * use this as an availability guard for an optional external tool (pnpm, corepack,
+ * a corepack-provisioned yarn) so a host without it skips cleanly instead of
+ * failing later at the real invocation.
+ */
+export function commandSucceeds(
+  command: string,
+  options: { cwd: string; env: NodeJS.ProcessEnv },
+): boolean {
+  try {
+    sh(command, options);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Best-effort recursive teardown of an OS-temp dir. On Windows a lingering nx
  * subprocess (or a just-installed node_modules handle) can hold a dir open past
  * execSync's return, so a bare recursive rmSync EPERMs; the linear backoff may not

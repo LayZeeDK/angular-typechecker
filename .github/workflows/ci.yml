@@ -152,10 +152,28 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # Put the yarn 4 shim on PATH for the nx-add-yarn spec: nx add's child
+      # `yarn add` is a BARE `yarn` invocation, so yarn must resolve on PATH.
+      # Node 24 ships corepack; `corepack enable` is corepack's sanctioned shim
+      # install (not a manual PATH edit). The pnpm fixture pins pnpm@11.9.0 (same
+      # version pnpm/action-setup provides), so a corepack pnpm shim resolves the
+      # identical version -- no clash with the action-setup pnpm below.
+      # NODE COUPLING (reconcile with the job's own "corepack is removed from Node
+      # 25+" note above): this step REQUIRES corepack, which ships through Node 24
+      # (this job's node-version pin) but is REMOVED in Node 25+. If this job's
+      # node-version is ever bumped to >=25, `corepack enable` will not exist --
+      # provision yarn via a pinned setup step (mirroring the pnpm/action-setup
+      # below) or gate this step on the Node major instead.
+      - run: corepack enable
       - uses: pnpm/action-setup@008330803749db0355799c700092d9a85fd074e9 # v6.0.9
         with:
           version: 11.9.0
       - run: npm ci
+      # Static type-check gate for the e2e sources (no -p list: run-many runs the
+      # target for every project that defines it -- only the three e2e projects --
+      # so there is no second -p list to drift and GUARD-01 stays untouched). Runs
+      # BEFORE the multi-minute tarball install so a type error fails fast.
+      - run: npx nx run-many -t typecheck-e2e
       # Cross-project serialization (extends the intra-project D-21 serialization).
       # All three e2e projects `npm pack` the SAME dist artifact
       # (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in their
