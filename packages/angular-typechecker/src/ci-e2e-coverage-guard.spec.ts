@@ -150,3 +150,49 @@ describe('GUARD-01b: the ci.yml e2e job serializes its projects (shared-tarball 
     ).toBe(true);
   });
 });
+
+// GUARD-01c (typecheck-e2e coverage guard). The e2e sources are statically
+// type-checked by `nx run-many -t typecheck-e2e`, which relies on TWO conventions
+// that both fail SILENTLY: `nx run-many -t <target>` with ZERO matching projects
+// EXITS 0. So (axis 1) if an `e2e/*` project drops or renames its `typecheck-e2e`
+// target it silently stops type-checking its own specs, and (axis 2) if the target
+// name is renamed/typo'd in ci.yml the run-many matches zero projects and passes
+// vacuously -- a false green either way. This guard closes both axes so a drop or a
+// rename becomes a loud, LOCATED failure:
+//   (1) EVERY `e2e/*` project (enumerated by the same name===dir convention as
+//       GUARD-01) defines a `typecheck-e2e` target; a missing one names the project.
+//   (2) The ci.yml `e2e` job actually RUNS `nx run-many -t typecheck-e2e`.
+// Like GUARD-01/01b it is a cheap READ-ONLY filesystem/text check (reads each
+// e2e/*/project.json + ci.yml and asserts; NEVER edits either) asserted with
+// string/regex, no YAML parser, riding the existing 6-cell `test` matrix. It PASSES
+// as-is today (all three e2e projects define the target; ci.yml runs it).
+describe('GUARD-01c: every e2e project defines typecheck-e2e and the ci.yml e2e job runs it', () => {
+  it('every e2e/* project defines a typecheck-e2e target', () => {
+    for (const project of enumerateE2eProjects(workspaceRoot)) {
+      const projectJson = JSON.parse(
+        readFileSync(
+          join(workspaceRoot, 'e2e', project, 'project.json'),
+          'utf8',
+        ),
+      ) as { targets?: Record<string, unknown> };
+
+      expect(
+        projectJson.targets?.['typecheck-e2e'],
+        `GUARD-01c: e2e/${project} does not define a \`typecheck-e2e\` target -- it silently stops type-checking its specs while \`nx run-many -t typecheck-e2e\` still exits 0 (run-many with zero matches is a no-op green).`,
+      ).toBeDefined();
+    }
+  });
+
+  it('the ci.yml e2e job runs `nx run-many -t typecheck-e2e`', () => {
+    const ci = readFileSync(
+      join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
+      'utf8',
+    );
+    const e2eBlock = extractE2eJobLines(ci).join('\n');
+
+    expect(
+      /\brun-many\s+-t\s+typecheck-e2e\b/.test(e2eBlock),
+      'GUARD-01c: the ci.yml `e2e` job must run `nx run-many -t typecheck-e2e`. A rename/typo of the target name here would match zero projects and pass vacuously (run-many with zero matches exits 0), silently skipping the e2e static type-check gate.',
+    ).toBe(true);
+  });
+});
