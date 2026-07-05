@@ -80,6 +80,15 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. An imported dependency project's internal error and `node_modules` diagnostics are NOT reported (isolation preserved).
   4. A clean Layout-B host reports `suppressedInGraph == 0`, both suppression counts appear in stdout AND the structured result, and `suppressedInGraph > 0` yields a non-clean coverage-incomplete outcome.
   5. No Layout-A regression; the boundary is a pure `keep(diagnostic, inputSet, options)` shared by the walk and single-leaf paths; `git grep` shows it references zero ngtsc/component-registry internals.
+**Plans:** 7 plans (4 waves)
+Plans:
+- [ ] 17-01-PLAN.md — Pure boundary `keep()` + dual-identity membership + split counter + branch 4a (filter-diagnostics.ts) [wave 1]
+- [ ] 17-02-PLAN.md — Surface declared rootName paths from the walk (walk-references.ts) [wave 1]
+- [ ] 17-03-PLAN.md — Thread inputTs union + replace suppressedCount with the split-counter CoreResult fields (run-typecheck.ts) [wave 2]
+- [ ] 17-04-PLAN.md — Late-bound coverage-incomplete verdict + outcome discriminant + exit-code wiring (evaluate-result.ts, exit-codes.ts) [wave 3]
+- [ ] 17-05-PLAN.md — Executor renders both suppressed counts + coverage-incomplete notice (executor.ts) [wave 3]
+- [ ] 17-06-PLAN.md — Layout A + Layout B minimum integration proof of the 5 success criteria (fixtures + integration specs) [wave 4]
+- [ ] 17-07-PLAN.md — D-09a MANDATORY tripwire fixtures + FM-9 drift probe [wave 4]
 
 ### Phase 18: Packaged-tarball e2e + docs
 **Goal**: The SHIPPED artifact (not just the local build) is proven to catch a planted story type error via `nx typecheck` on generator-scaffolded Storybook fixtures, and the README/changelog state the exact coverage claim and caveats.
@@ -94,7 +103,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ### Phase 19: Stretch -- Layout C / non-TS story formats / strict mode
 **Goal**: Optionally extend beyond the minimums (Layout C beyond the guard, `.mdx`/`.tsx` type-check, an opt-in strict mode that FAILS on `suppressedInGraph > 0`) only if warranted after Phases 16-18.
 **Depends on**: Phase 18
-**Requirements**: SB-08
 **Success Criteria** (what must be TRUE):
   1. A decision is recorded for Layout C support beyond the no-silent-pass guard.
   2. Any item actually shipped carries a negative test.
@@ -121,6 +129,6 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 14. configuration + init generators, nx add | v0.1.0 | 3/3 | Complete | 2026-07-02 |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
-| 17. Input-set-membership boundary + layout support | v0.1.2 | 0/? | Not started | -- |
+| 17. Input-set-membership boundary + layout support | v0.1.2 | 0/7 | Not started | -- |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 0/? | Not started | -- |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
