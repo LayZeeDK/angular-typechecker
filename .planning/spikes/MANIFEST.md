@@ -80,3 +80,41 @@ Design decisions that emerged / are locked as spikes progress. Non-negotiable fo
 _Build order: risk order (aggregation -> boundary -> cost -> D-03a split -> caching). Aggregation
 runs first as the make-or-break gate; a NO-GO there kills the idea before the rest. Spike # follows
 run order; the Obj column maps each back to the idea's original 1-5 numbering._
+
+---
+
+## Idea 2 -- v0.1.2 Storybook type-check gate (Phase 16, SB-05)
+
+Resolve the hard GO/NO-GO gates (G1-G5) that decide whether the centralized Storybook-host
+layout (Layout B, the Nx "one-storybook-for-all" recipe) is type-checkable on the OFFICIAL
+stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3, `@storybook/angular@10.4.6` force-installed) --
+so the milestone commits to Layout B ONLY on evidence, or ships Layout A alone with Layout B
+documented "not yet supported". Full gate detail + decision tree:
+`.planning/research/v0.1.2-storybook/board/CONSENSUS.md` (P16 spike section). Governing charter:
+**never a silent false pass**. Build order = risk order (G2 -> G3 -> G4 -> G1 -> G5); G2/G3/G4
+are the kill gates, G1/G5 select the shipping branch. User directive: build G2 first, then reassess.
+
+### Requirements emerging from this idea
+
+- **G2 = YES (Spike 006):** a Layout-B host's widened cross-project `.storybook/tsconfig.json`
+  `include` globs DO materialize the aggregated `*.stories.ts`/`*.component.ts` as the leaf's
+  `parsed.rootNames` (declared inputs) on the official stack. The input-set-membership boundary
+  primitive is viable for Layout B.
+- **Program-roots superset (Spike 006):** `program.getTsProgram().getRootFileNames()` = the
+  declared `readConfiguration().rootNames` PLUS one synthetic `<root>.ngtypecheck.ts` shim per
+  root. Phase 17 keys `inputTs` on the DECLARED set (or tolerates + never treats a shim path as a
+  real first-party source when computing `suppressedInGraph`).
+- **Declared-vs-import-only (Spike 006):** only files the host `include` glob DECLARES become
+  rootNames; an aggregated file reached ONLY via import is a SourceFile but not a rootName ->
+  keep-rule (c) would suppress it. Reinforces D3 (check the WHOLE declared set, never a
+  `*.stories.ts` allowlist; a stories-only host glob leaves aggregated components import-only).
+
+### Spikes (Idea 2)
+
+| # | Gate(s) | Type | Validates | Verdict | Tags |
+|---|---------|------|-----------|---------|------|
+| 006 | G2 (HARD prereq) | standard | widened cross-project `.storybook/tsconfig.json` include globs materialize as the leaf's `parsed.rootNames` (declared inputs, not merely imports) on the official Angular 22.0.4 / TS 6.0.3 stack | **VALIDATED (G2 = YES)** | storybook, layout-b, rootnames, boundary, gate, engine |
+| 007 | G3, G4 | standard | forced `@storybook/angular@10.4.6` compiles via `performCompilation` (no infra fail) + clean story passes clean (G3); NG8xxx fire on stories/aggregated components, proven POSITIVELY / RED (G4) | PENDING (needs isolated SB10 scaffold) | storybook, sb10, ng8xxx, gate, engine |
+| 008 | G1, G5 | standard | external `templateUrl` `.html` NG8002 attribution to component `.ts` vs `.html` (G1); if `.html`, a STABLE public ownership signal (e.g. `relatedInformation`) back to the component `.ts` without ngtsc internals (G5) | PENDING | storybook, external-template, attribution, gate, engine |
+
+_Build order: G2 -> (G3, G4) -> (G1, G5), risk order. G2 first per user directive; reassess before 007._
