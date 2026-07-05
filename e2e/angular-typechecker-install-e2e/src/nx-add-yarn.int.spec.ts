@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, inject, it } from 'vitest';
 import {
   buildCleanEnv,
+  commandSucceeds,
   findWorkspaceRoot,
+  readTypecheckTargetDefault,
   removeTmpDir,
   sh,
 } from '@workspace/test-util';
@@ -44,17 +46,10 @@ const fixtureDir = join(
 const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Availability guard: yarn 4 is corepack-delivered, so probe corepack.
-function isAvailable(command: string): boolean {
-  try {
-    sh(command, { cwd: workspaceRoot, env });
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-const corepackAvailable = isAvailable('corepack --version');
+const corepackAvailable = commandSucceeds('corepack --version', {
+  cwd: workspaceRoot,
+  env,
+});
 
 describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck targetDefaults', () => {
   it.skipIf(!corepackAvailable)(
@@ -109,14 +104,7 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
 
         // Seeded-from-absent BASELINE (parity with the npm spec): the key must be
         // undefined BEFORE `nx add` so the post-assert is non-vacuous.
-        const before = JSON.parse(
-          readFileSync(join(tmp, 'nx.json'), 'utf8'),
-        ) as {
-          targetDefaults?: Record<string, unknown>;
-        };
-        expect(
-          before.targetDefaults?.['angular-typechecker:typecheck'],
-        ).toBeUndefined();
+        expect(readTypecheckTargetDefault(tmp)).toBeUndefined();
 
         // Put the bare `yarn` shim on PATH (corepack's sanctioned install) so nx
         // add's child `yarn add` resolves, then provision node_modules + the nx
@@ -139,15 +127,7 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
         });
 
         // init SEEDED the key (absent -> present, WALK-02 shape).
-        const nxJson = JSON.parse(
-          readFileSync(join(tmp, 'nx.json'), 'utf8'),
-        ) as {
-          targetDefaults?: Record<
-            string,
-            { cache?: boolean; outputs?: unknown[]; inputs?: unknown[] }
-          >;
-        };
-        const seeded = nxJson.targetDefaults?.['angular-typechecker:typecheck'];
+        const seeded = readTypecheckTargetDefault(tmp);
         expect(seeded).toBeDefined();
         expect(seeded?.cache).toBe(true);
         expect(seeded?.outputs).toEqual([]);

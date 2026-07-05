@@ -1,10 +1,4 @@
-import {
-  cpSync,
-  existsSync,
-  mkdtempSync,
-  readdirSync,
-  writeFileSync,
-} from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
@@ -17,6 +11,7 @@ import {
   removeTmpDir,
   run,
   sh,
+  writeVerdaccioNpmrc,
 } from '@workspace/test-util';
 
 // REL-04 (highest-fidelity gate): the ONLY spec that exercises the REAL
@@ -109,11 +104,7 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
     try {
       cpSync(fixtureDir, consumer, { recursive: true });
 
-      const nerfDart = `//${new URL(verdaccioUrl).host}/`;
-      writeFileSync(
-        join(consumer, '.npmrc'),
-        `registry=${verdaccioUrl}\n${nerfDart}:_authToken="${verdaccioToken}"\n`,
-      );
+      writeVerdaccioNpmrc(consumer, verdaccioUrl, verdaccioToken);
 
       sh(`npm install --save-dev ${PACKAGE_NAME}`, {
         cwd: consumer,

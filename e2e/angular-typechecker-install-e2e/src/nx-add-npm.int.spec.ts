@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,8 +7,10 @@ import { describe, expect, inject, it } from 'vitest';
 import {
   buildCleanEnv,
   findWorkspaceRoot,
+  readTypecheckTargetDefault,
   removeTmpDir,
   sh,
+  writeVerdaccioNpmrc,
 } from '@workspace/test-util';
 
 // NX-ADD-NPM: the REAL `nx add angular-typechecker` on an npm workspace at local
@@ -66,21 +68,12 @@ describe('NX-ADD-NPM: real `nx add` on an npm workspace seeds the typecheck targ
 
       // Point npm at Verdaccio (registry + minted bearer via the nerf-dart auth
       // line), same shape as verdaccio-publish.int.spec.ts.
-      const nerfDart = `//${new URL(verdaccioUrl).host}/`;
-      writeFileSync(
-        join(tmp, '.npmrc'),
-        `registry=${verdaccioUrl}\n${nerfDart}:_authToken="${verdaccioToken}"\n`,
-      );
+      writeVerdaccioNpmrc(tmp, verdaccioUrl, verdaccioToken);
 
       // Seeded-from-absent BASELINE: the key must be undefined BEFORE `nx add`, so
       // the post-assert is non-vacuous (a pre-declared key would make init's
       // whole-entry ??= skip seeding and pass for the wrong reason).
-      const before = JSON.parse(readFileSync(join(tmp, 'nx.json'), 'utf8')) as {
-        targetDefaults?: Record<string, unknown>;
-      };
-      expect(
-        before.targetDefaults?.['angular-typechecker:typecheck'],
-      ).toBeUndefined();
+      expect(readTypecheckTargetDefault(tmp)).toBeUndefined();
 
       // Provision the fixture's own deps + the nx binary + a package-lock.json (so
       // detectPackageManager -> npm). npm_config_userconfig -> a nonexistent path
@@ -100,13 +93,7 @@ describe('NX-ADD-NPM: real `nx add` on an npm workspace seeds the typecheck targ
       // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first
       // input is the load-bearing invariant: 'production' would exclude *.spec.ts
       // and under-hash the walked spec leaf (a stale PASS).
-      const nxJson = JSON.parse(readFileSync(join(tmp, 'nx.json'), 'utf8')) as {
-        targetDefaults?: Record<
-          string,
-          { cache?: boolean; outputs?: unknown[]; inputs?: unknown[] }
-        >;
-      };
-      const seeded = nxJson.targetDefaults?.['angular-typechecker:typecheck'];
+      const seeded = readTypecheckTargetDefault(tmp);
       expect(seeded).toBeDefined();
       expect(seeded?.cache).toBe(true);
       expect(seeded?.outputs).toEqual([]);

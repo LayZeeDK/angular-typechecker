@@ -6,9 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, inject, it } from 'vitest';
 import {
   buildCleanEnv,
+  commandSucceeds,
   findWorkspaceRoot,
+  readTypecheckTargetDefault,
   removeTmpDir,
   sh,
+  writeVerdaccioNpmrc,
 } from '@workspace/test-util';
 
 // NX-ADD-PNPM: the REAL `nx add angular-typechecker` on a pnpm 11 workspace at
@@ -70,17 +73,10 @@ const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Availability guard: probe pnpm reachability so a host without pnpm skips cleanly
 // (CI provisions pnpm 11.9.0 on PATH via pnpm/action-setup).
-function isAvailable(command: string): boolean {
-  try {
-    sh(command, { cwd: workspaceRoot, env });
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-const pnpmAvailable = isAvailable('pnpm --version');
+const pnpmAvailable = commandSucceeds('pnpm --version', {
+  cwd: workspaceRoot,
+  env,
+});
 
 describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck targetDefaults', () => {
   it.skipIf(!pnpmAvailable)(
@@ -122,11 +118,7 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
 
         // Point pnpm at Verdaccio (registry + minted bearer via the nerf-dart auth
         // line). pnpm reads .npmrc natively; http localhost is fine for pnpm.
-        const nerfDart = `//${new URL(verdaccioUrl).host}/`;
-        writeFileSync(
-          join(tmp, '.npmrc'),
-          `registry=${verdaccioUrl}\n${nerfDart}:_authToken="${verdaccioToken}"\n`,
-        );
+        writeVerdaccioNpmrc(tmp, verdaccioUrl, verdaccioToken);
 
         const pnpmEnv = {
           ...env,
@@ -136,14 +128,7 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
         // Seeded-from-absent BASELINE: the key must be undefined BEFORE `nx add`, so
         // the post-assert is non-vacuous (a pre-declared key would make init's
         // whole-entry ??= skip seeding and pass for the wrong reason).
-        const before = JSON.parse(
-          readFileSync(join(tmp, 'nx.json'), 'utf8'),
-        ) as {
-          targetDefaults?: Record<string, unknown>;
-        };
-        expect(
-          before.targetDefaults?.['angular-typechecker:typecheck'],
-        ).toBeUndefined();
+        expect(readTypecheckTargetDefault(tmp)).toBeUndefined();
 
         // Provision the tree + the nx binary + a pnpm-lock.yaml (so
         // detectPackageManager -> pnpm). With allowBuilds satisfying the gate this
@@ -161,15 +146,7 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
         // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first
         // input is the load-bearing invariant: 'production' would exclude *.spec.ts
         // and under-hash the walked spec leaf (a stale PASS).
-        const nxJson = JSON.parse(
-          readFileSync(join(tmp, 'nx.json'), 'utf8'),
-        ) as {
-          targetDefaults?: Record<
-            string,
-            { cache?: boolean; outputs?: unknown[]; inputs?: unknown[] }
-          >;
-        };
-        const seeded = nxJson.targetDefaults?.['angular-typechecker:typecheck'];
+        const seeded = readTypecheckTargetDefault(tmp);
         expect(seeded).toBeDefined();
         expect(seeded?.cache).toBe(true);
         expect(seeded?.outputs).toEqual([]);
