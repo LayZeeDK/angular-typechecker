@@ -57,6 +57,20 @@ evidence-backed by the roadmap/spike; residual plan-time details are flagged.
   it would corrupt `suppressedInGraph`). Canonicalize `inputTs` AND diagnostic files
   with the SAME existing canonicalizer (realpath -> slash -> case-fold) or
   symlink/junction cases break (T8).
+  - **DUAL-IDENTITY membership (LOCKED, board-verified):** store each declared rootName
+    under BOTH a `raw` form (slash + case-fold, NO realpath — never throws) AND a `full`
+    form (realpath + slash + case-fold, when realpath succeeds); a diagnostic file matches
+    if EITHER of its forms hits EITHER stored form. Verified against installed
+    `typescript@6.0.3` + `@angular/compiler-cli@22.0.4`: for a declared root
+    `SourceFile.fileName === rootName` byte-for-byte pre-realpath (`readConfiguration`
+    rootNames come from `parseJsonConfigFileContent().fileNames` via
+    `getNormalizedAbsolutePath`, no realpath; `findSourceFileWorker` sets
+    `file.fileName = normalizePath(rootName)`), so a declared file dropped from `inputTs`
+    by a TRANSIENT realpath throw is RECOVERED via the `raw` match → KEPT and reported as
+    a real error (not coverage-incomplete). A raw collision between a transitive dep and a
+    declared root is impossible (path is identity) and, even if it occurred, is fail-safe
+    (over-report). This is an UNDOCUMENTED TS invariant → guard with the fixture tripwires
+    in D-09.
 - **D-03:** keep-rule branches (per diagnostic `d`, canonical file `F`, `base` =
   solution/host tsconfig dir):
   (a) `d` file-less OR `F` unresolvable -> KEEP (existing fail-safe);
@@ -71,6 +85,20 @@ evidence-backed by the roadmap/spike; residual plan-time details are flagged.
   dependency's external-template error -> isolation). If an `.html` diagnostic has NO
   `.ts` `relatedInformation` (unmappable; not observed in the spike) -> **default-KEEP**
   (over-report safe; never a false pass).
+- **D-04a (LOCKED, board-verified — do NOT collapse to pure `.ts`-membership):** the
+  keep-rule MUST RETAIN clause (c)'s "OR under `base`" (narrowed to the host/solution dir,
+  NOT the workspace root) AND branch (d)/4a. Verified against `@angular/compiler-cli`
+  `makeTemplateDiagnostic`: Angular attaches template diagnostics to files that are NOT
+  declared rootNames — an external `templateUrl` `.html`, an indirect inline template's
+  synthetic `"<component.ts> (X template)"` name — and `.ngtypecheck.ts` shims are not
+  rootNames either. Input-set membership ALONE would misclassify a clean host's OWN
+  external/indirect-template NG8xxx as out-of-graph → false coverage-incomplete OR (worse)
+  a suppressed external-template ERROR = a false pass. The (narrowed) base-dir clause keeps
+  the host's own `.html`/shim/indirect-template diagnostics; branch-4a handles the
+  CROSS-PROJECT aggregated external template. A base-kept non-rootName first-party
+  diagnostic is classified **in-graph / kept — NEVER counted as suppressed-out-of-graph**.
+  Narrow-scope precondition: point `typecheck` at the host solution tsconfig, not a root
+  tsconfig, so clause (c) does not leak a dependency's codeframe (SB-07 caveat).
 
 ### Split suppressed counter + coverage-incomplete verdict (SB-04)
 
@@ -80,22 +108,49 @@ evidence-backed by the roadmap/spike; residual plan-time details are flagged.
   NOR file-less). Surface BOTH counts in the structured `CoreResult` AND loudly in
   executor stdout. A correctly-classified supported layout has
   `suppressedInGraph == 0` BY CONSTRUCTION.
-- **D-06 (direction AUTO-LOCKED; shape flagged for planning):** `suppressedInGraph > 0`
-  yields a distinct **non-clean coverage-incomplete outcome** — the charter is "never a
-  silent false pass," so the executor MUST NOT report a clean / `success: true` when a
-  first-party diagnostic was dropped. Guard with canonicalization symmetry (T8) so it
-  cannot spuriously fire on a supported layout.
-  - **RESIDUAL for research + planning:** the exact operational shape. Recommendation:
-    gate it in the PURE core (so both the Nx executor and the deferred CLI inherit one
-    rule); for the Nx path map coverage-incomplete to `success: false`
-    (`evaluate-result.ts`); decide whether the deferred CLI gets a DISTINCT exit code vs
-    reusing `1`, ratified against `exit-codes.ts` at plan time. Current scheme:
-    `0` clean / `1` type-error / `2` infra; `toExitCode` has NO live consumer yet (CLI
-    is deferred scaffold), so the CLI code choice is low-risk and additive.
-- **D-07 (flagged for planning):** `suppressedCount` is a shipped public `CoreResult`
-  field. Recommendation: KEEP it (= `suppressedThirdParty + suppressedInGraph`) alongside
-  the two new fields for an additive / non-breaking 0.x change; planner to confirm vs
-  a clean replacement.
+- **D-06 (LOCKED 2026-07-05 via a 3-board advisory process — "hardened R1-plus"):**
+  `suppressedInGraph > 0` yields a distinct **non-clean coverage-incomplete outcome**
+  (a third verdict state, NOT folded into `errorCount`). **HARD by default** (charter:
+  never a silent false pass; a surface-only-green default cannot be made charter-safe
+  because the rare unrecoverable declared-file drop is, by construction, the residue of
+  failed membership detection and is not separately guardable). Full authoritative design
+  + provenance: `17-DECISION-input-set-boundary.md`. The load-bearing points the planner
+  MUST implement:
+  - **Late-bound severity split (do NOT bake the warning decision in `core`).** Carry
+    PER-CATEGORY counts on `CoreResult`: `suppressedInGraphErrorCount` +
+    `suppressedInGraphWarningCount` (Suggestion/Message are ALWAYS excluded — provably
+    cannot fail any gate). `finalize()` does not receive `maxWarnings`, so the Warning
+    decision MUST be gated inside `evaluateResult` with the SAME `maxWarnings` the reported
+    set uses: fail iff `errorCount > 0` OR `suppressedInGraphErrorCount > 0` OR
+    (`gatesWarnings` AND `suppressedInGraphWarningCount > 0`). Baking "warnings never count"
+    in core is a SILENT FALSE PASS under `maxWarnings: 0` (verified against
+    `evaluate-result.ts`).
+  - **Wire the counter into BOTH `evaluateResult` AND `toExitCode`.** Today neither reads
+    any suppressed count — an unwired field is "surface-only by accident" (a live silent
+    pass once the CLI ships). Return an `outcome` discriminant
+    (`clean | type-error | coverage-incomplete | warnings-exceeded`). Coverage-incomplete
+    maps to `success: false` / exit `1` (reuse ngc `0/1/2` parity; a distinct CLI exit
+    code is NOT worth breaking parity — agents read the structured `outcome`).
+  - **Fold `templateCheckAborted` (NG3004) into coverage-incomplete (FM-9).** A
+    whole-program TCB-generation Fatal aborts shim generation for ALL files, so survivors'
+    NG8xxx are NEVER produced → nothing to suppress → the counter is blind. The existing
+    `detectTemplateCheckAborted` (`run-typecheck.ts`) is the signal; make it verdict-
+    affecting.
+  - **Feed the walk zero-rootNames first-party leaf into coverage-incomplete, not
+    advisory-only.** A referenced first-party leaf that silently resolves to zero files
+    (`walk-references.ts` `reason: 'zero-root-names'`) compiles nothing → a clean sibling
+    makes the whole solution read clean = the milestone's own value failing silently. Do
+    NOT leave it advisory-only (the all-empty / references-only cases stay 90001-guarded).
+- **D-07 (LOCKED):** replace the single `suppressedCount` with `suppressedThirdParty`
+  (node_modules; quiet; NEVER affects the verdict — this is what preserves isolation) +
+  the two per-category `suppressedInGraph*` fields, PLUS an advisory
+  `suppressedInGraphFiles: readonly string[]` (distinct dropped first-party paths, PURE
+  detection rendered by the adapter — names files, NOT the dependency's error text, so
+  content-isolation holds; mirrors the existing `skippedReferences` / `templateCheckAborted`
+  pattern). `includeDeps: true` zeroes all suppressed counters (coverage-incomplete cannot
+  fire). The new total is intentionally LOWER than the old `suppressedCount` (the input-set
+  keep now retains the aggregated cross-project declared files the directory rule dropped —
+  that IS the milestone fix), so do not assert carry-over.
 
 ### Layout support + Phase-17 test scope (SB-01, SB-03)
 
@@ -118,6 +173,20 @@ evidence-backed by the roadmap/spike; residual plan-time details are flagged.
   regression).
   The FULL T1-T11 acceptance matrix, packaged-tarball e2e, and docs are Phase 18
   (SB-06/SB-07) — do NOT pull them forward.
+- **D-09a (MANDATORY tripwire fixtures added by the board — Phase 17, guarding the
+  undocumented invariants the design rests on):**
+  (i) a CLEAN host that uses an EXTERNAL `.html` template AND an indirect-mapped inline
+  template asserts `suppressedInGraph == 0` (guards the D-04a template-attribution
+  invariant — the one that would otherwise silently suppress a real external-template
+  error);
+  (ii) a declared-root's own failing diagnostic is KEPT + reported on a case-INSENSITIVE
+  FS, a case-SENSITIVE FS, AND through a symlink/junction (guards the D-02 dual-identity
+  invariant); the same fixture asserts a genuine transitive dep is NOT kept;
+  (iii) a `.ngtypecheck.ts` shim diagnostic and an external-template diagnostic are never
+  silently dropped;
+  (iv) the FM-9 drift probe: a new/other TCB-generation Fatal (beyond NG3004) trips LOUD
+  (extend the existing RES-02 / HARD-01 drift tests). These are version-pinned to
+  Angular 22.0.4 / TS 6.0.3.
 
 ### Claude's Discretion (for research + planning)
 - Exact module location + signature of `keep()` (extend `filter-diagnostics.ts` vs a new
@@ -125,8 +194,21 @@ evidence-backed by the roadmap/spike; residual plan-time details are flagged.
   is the obvious choice).
 - Exactly how `walk-references.ts` surfaces each leaf's declared rootNames (it currently
   holds `result.program` and discards everything but the count).
-- Exact stdout wording/format for the two counts (loud is the requirement).
-- The D-06 exit-code shape and the D-07 field-retention question (both flagged above).
+- Exact stdout wording/format for the counts + `suppressedInGraphFiles` list (loud is the
+  requirement; the split verdict `outcome` is the machine-readable channel).
+- Exact module location + signature of the late-bound severity gate in `evaluate-result.ts`
+  and the per-category fields on `CoreResult` (shapes are locked in D-06/D-07; naming is
+  discretion).
+
+### Spec amendment required (flagged; not a code change)
+- **Criterion 4 wording** ("A clean Layout-B host reports `suppressedInGraph == 0`") is
+  under-defined and latently contradicts criterion 3. Amend "clean host" to mean
+  **declared-surface-clean AND `suppressedInGraph == 0`** (the three-state model:
+  clean / coverage-incomplete / type-error), and clarify criterion 3 as CONTENT isolation
+  (the dependency's error text/codeframe is never surfaced) — NOT verdict isolation (a
+  dropped first-party diagnostic still flips coverage-incomplete). Apply via the roadmap
+  edit tool (`gsd-phase`), NOT a direct ROADMAP.md write. Non-blocking for planning: the
+  hardened design already satisfies criterion 4 under this reading.
 
 </decisions>
 
@@ -135,6 +217,14 @@ evidence-backed by the roadmap/spike; residual plan-time details are flagged.
 
 **Downstream agents (researcher, planner, executor) MUST read these before planning
 or implementing.**
+
+### Locked verdict/counter design (READ FIRST — resolves D-06/D-07)
+- `.planning/phases/17-input-set-membership-boundary-layout-support/17-DECISION-input-set-boundary.md`
+  — the 3-board advisory process + source-verified findings + the authoritative "hardened
+  R1-plus" design (dual-identity membership, late-bound severity split, FM-9 fold, keep-rule
+  retain base/4a, zero-rootNames-leaf coverage, tripwire fixtures, HARD default). Supersedes
+  any looser reading of the blueprint's `suppressedInGraph` definition on the transitive-dep
+  question.
 
 ### Phase-17 implementation blueprint (READ FIRST)
 - `.claude/skills/spike-findings-angular-typechecker/references/storybook-input-set-boundary.md`
