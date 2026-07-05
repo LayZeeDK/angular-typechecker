@@ -165,7 +165,7 @@ jobs:
       # provision yarn via a pinned setup step (mirroring the pnpm/action-setup
       # below) or gate this step on the Node major instead.
       - run: corepack enable
-      - uses: pnpm/action-setup@008330803749db0355799c700092d9a85fd074e9 # v6.0.9
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 11.9.0
       - run: npm ci
