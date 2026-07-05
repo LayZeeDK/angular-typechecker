@@ -64,11 +64,12 @@ Two layouts, both Nx-official:
   centralized Storybook host (Layout B, the Nx `one-storybook-for-all` recipe) via SB-02 -- a broken
   aggregated story (including one using an external `templateUrl` template) FAILS the verdict; a clean
   host passes; an imported dependency project's own internal error is NOT reported (isolation);
-  `node_modules` diagnostics are NOT reported. Gated on the SB-05 spike.
+  `node_modules` diagnostics are NOT reported. Gated on the SB-05 spike (gate PASSED 2026-07-05 = GO;
+  external-template branch 4a).
 
 ### Gate spike, validation, docs
 
-- [ ] **SB-05**: A gating spike (Phase 16) on the OFFICIAL stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3,
+- [x] **SB-05** (RESOLVED 2026-07-05, Phase 16 spikes 006-008 -- GO): A gating spike (Phase 16) on the OFFICIAL stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3,
   `@storybook/angular@10.4.6` force-installed) resolves the hard GO/NO-GO gates before Layout B may be
   claimed supported: **G2** widened files materialize as the storybook leaf's `parsed.rootNames`;
   **G3** forced SB10 compiles via `performCompilation` with no infra failure AND a clean story passes
@@ -78,6 +79,13 @@ Two layouts, both Nx-official:
   owning-component->template map (only from a STABLE public signal) vs the keep-all-external-template
   fallback. If G2/G3/G4 fail, Layout A still ships and Layout B is documented "not yet supported
   (blocked upstream by the `@storybook/angular` peer range)" with the SB-04 guard fail-safing.
+  **RESOLVED = GO:** G2 = YES (widened cross-project include -> `readConfiguration().rootNames`;
+  `program.getRootFileNames()` adds `.ngtypecheck.ts` shims -> key `inputTs` on the declared set);
+  G3 = YES (forced SB10 compiles, clean-clean; its 48 TS6 `.d.ts` errors are node_modules-suppressed
+  -- D4 confirmed); G4 = YES positively (NG8002 + NG8102 fire RED in-project); G1 = html + G5 = PASS
+  -> external-template branch **4a** (map `.html` -> owning rootName `.ts` via public
+  `relatedInformation`; default-keep the unmappable edge). Records: `.planning/spikes/006-008` +
+  `spike-findings-angular-typechecker` skill. No gate forced the Layout-A-only fallback.
 
 - [ ] **SB-06**: Validate with negative tests as the acceptance gate (a broken input flips the verdict
   to FAIL), per layout, on the official stack: a pure unit test on the keep-rule (synthetic
