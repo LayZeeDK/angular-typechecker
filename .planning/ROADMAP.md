@@ -60,50 +60,70 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ## Phase Details
 
 ### Phase 16: Storybook type-check gate spike (GATED, GO/NO-GO)
+
 **Goal**: A reproducible, recorded spike resolves whether the centralized Storybook-host layout (Layout B) is type-checkable on the officially supported stack, so the milestone commits to Layout B only on evidence -- or ships Layout A alone with Layout B documented "not yet supported".
 **Depends on**: Nothing within v0.1.2 (runs first; builds on the shipped walk engine)
 **Requirements**: SB-05
 **Status**: COMPLETE 2026-07-05 -- VERDICT = **GO** (spikes 006-008; records in `.planning/spikes/` + the `spike-findings-angular-typechecker` skill). G2/G3/G4 all YES; G1 = html + G5 = PASS -> external-template branch **4a**. All four success criteria met. Layout B ships in Phase 17.
 **Success Criteria** (what must be TRUE):
+
   1. Each of G1-G5 is resolved with a recorded, reproducible result on the official stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3, `@storybook/angular@10.4.6` force-installed): G1 external-template diagnostic attribution (component `.ts` vs `.html`); G2 widened Layout-B files materialize as the storybook leaf's `parsed.rootNames`; G3 forced SB10 compiles via `performCompilation` and a clean story passes clean; G4 NG8xxx fire on stories/aggregated components (proven POSITIVELY); G5 owning-component->external-template map from a stable public signal vs the keep-all-external-template fallback.
   2. A documented GO/NO-GO verdict for Layout B, reviewed at the 16->17 gate (NO-GO on G2/G3/G4 -> ship Layout A only, document Layout B "not yet supported (blocked upstream by the `@storybook/angular` peer range)").
   3. The SB-02(d) external-template branch and the SB-05 owning-map-vs-fallback choice are selected by the recorded evidence, not assumed.
   4. A written spike record exists under `.planning/spikes/`.
 
 ### Phase 17: Input-set-membership boundary + layout support
+
 **Goal**: `nx typecheck` type-checks `*.stories.ts` (and the whole `.storybook/` tsconfig-declared surface) for both the per-project scaffold (Layout A) and the centralized host (Layout B) without ever silently passing a dropped diagnostic, via one boundary-filter correctness fix.
 **Depends on**: Phase 16 (GO verdict + the selected external-template branch)
 **Requirements**: SB-02, SB-04, SB-01, SB-03
 **Success Criteria** (what must be TRUE):
+
   1. A broken `*.stories.ts` FAILS the verdict and a clean one PASSES, under BOTH Layout A and Layout B.
   2. An aggregated external-`templateUrl` NG8002 FAILS with the `.html`/component codeframe (the kill-shot case), per the Phase-16 branch.
   3. An imported dependency project's internal error and `node_modules` diagnostics are NOT reported (isolation preserved).
   4. A clean Layout-B host reports `suppressedInGraph == 0`, both suppression counts appear in stdout AND the structured result, and `suppressedInGraph > 0` yields a non-clean coverage-incomplete outcome.
   5. No Layout-A regression; the boundary is a pure `keep(diagnostic, inputSet, options)` shared by the walk and single-leaf paths; `git grep` shows it references zero ngtsc/component-registry internals.
+
 **Plans:** 7 plans (4 waves)
 Plans:
+**Wave 1**
+
 - [ ] 17-01-PLAN.md — Pure boundary `keep()` + dual-identity membership + split counter + branch 4a (filter-diagnostics.ts) [wave 1]
 - [ ] 17-02-PLAN.md — Surface declared rootName paths from the walk (walk-references.ts) [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 17-03-PLAN.md — Thread inputTs union + replace suppressedCount with the split-counter CoreResult fields (run-typecheck.ts) [wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 17-04-PLAN.md — Late-bound coverage-incomplete verdict + outcome discriminant + exit-code wiring (evaluate-result.ts, exit-codes.ts) [wave 3]
 - [ ] 17-05-PLAN.md — Executor renders both suppressed counts + coverage-incomplete notice (executor.ts) [wave 3]
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 17-06-PLAN.md — Layout A + Layout B minimum integration proof of the 5 success criteria (fixtures + integration specs) [wave 4]
 - [ ] 17-07-PLAN.md — D-09a MANDATORY tripwire fixtures + FM-9 drift probe [wave 4]
 
 ### Phase 18: Packaged-tarball e2e + docs
+
 **Goal**: The SHIPPED artifact (not just the local build) is proven to catch a planted story type error via `nx typecheck` on generator-scaffolded Storybook fixtures, and the README/changelog state the exact coverage claim and caveats.
 **Depends on**: Phase 17
 **Requirements**: SB-06, SB-07
 **Success Criteria** (what must be TRUE):
+
   1. The packaged tarball, installed into a generator-scaffolded Layout-A project (and Layout B if GO), catches a planted `*.stories.ts` error via `nx add` + `nx g angular-typechecker:configuration` + `nx typecheck`.
   2. A workspace `paths`-aliased aggregated import compiles clean (no spurious TS2307).
   3. `.mdx` (never checked) and `.tsx`-without-`jsx` gaps emit a loud "not type-checked" notice (verdict may stay green).
   4. README + changelog carry the exact MUST/MUST-NOT/caveat coverage statement and the false-pass -> true-fail (green->red) callout.
 
 ### Phase 19: Stretch -- Layout C / non-TS story formats / strict mode
+
 **Goal**: Optionally extend beyond the minimums (Layout C beyond the guard, `.mdx`/`.tsx` type-check, an opt-in strict mode that FAILS on `suppressedInGraph > 0`) only if warranted after Phases 16-18.
 **Depends on**: Phase 18
 **Success Criteria** (what must be TRUE):
+
   1. A decision is recorded for Layout C support beyond the no-silent-pass guard.
   2. Any item actually shipped carries a negative test.
 
