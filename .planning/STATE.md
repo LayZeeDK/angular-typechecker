@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
-status: planning
-stopped_at: "Phase 16 (Storybook gate spike) COMPLETE via /gsd-spike (spikes 006-008, all VALIDATED): VERDICT = GO -- Layout B supportable on the official stack; external-template branch 4a locked. Findings packaged into the spike-findings-angular-typechecker skill. Next: /gsd-plan-phase 17."
-last_updated: "2026-07-05"
-last_activity: 2026-07-05
+status: Phase 16 GO/NO-GO gate resolved = GO. Layout B supportable on the official stack;
+stopped_at: Phase 17 context gathered
+last_updated: "2026-07-05T20:30:18.546Z"
+last_activity: 2026-07-05 -- ran Phase 16 gate spikes 006-008 (all VALIDATED), packaged findings
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 0
   total_plans: 0
-  completed_plans: 0
-  percent: 25
+  completed_plans: 1
+  percent: 0
 ---
 
 # Project State
@@ -66,12 +66,15 @@ archives under `.planning/milestones/`.
   empirics).** Phase 16 spikes 006-008 confirmed G2/G3/G4 all YES and selected external-template
   branch 4a (G1 = html + G5 = PASS). Layout B IS supportable; no fallback to Layout-A-only. See the
   Decisions section above and `.planning/spikes/`.
+
 - **v0.1.2 external constraint:** `@storybook/angular@10.4.6` peer-caps Angular at `<22.0.0` / TS at
   `^4.9||^5`, so installing Storybook on Angular 22 needs `--legacy-peer-deps`/`--force`. Documented,
   never gated (D4). `nx add`/pnpm can hit `ERR_PNPM_IGNORED_BUILDS` (see [[nx-add-fails-on-pnpm-workspaces]]).
+
 - **CARRIED FORWARD (dev-repo only):** `.npmrc legacy-peer-deps=true` is required in this dev repo
   because `@nx/angular@23.0.1` caps Angular tooling peers at `< 22.0.0` while the locked stack is
   Angular 22. It does NOT reach consumers. Revisit when a stable `@nx/angular` admits Angular 22.
+
 - **PROCESS DEBT (not a code blocker):** the `audit-open` quick-task scanner bug (bare `<dir>/SUMMARY.md`
   vs `<id>-SUMMARY.md`) recurred at v0.0.3 and v0.1.0 closes; and "close requirement statuses at phase
   verification" has recurred. Both want a mechanical gate before the next milestone close.
@@ -105,14 +108,14 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-05 -- ran the Phase 16 gate spike via `/gsd-spike`. First diagnosed a
+Last session: 2026-07-05T20:30:18.538Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
 isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
 packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
 complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Phase 16 gate = GO (Layout B supportable; external-template branch 4a); Phase 16 recorded
+Stopped at: Phase 17 context gathered
 complete. Reviewed at the 16->17 gate.
 Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
 implementation blueprint is in the spike-findings skill's
