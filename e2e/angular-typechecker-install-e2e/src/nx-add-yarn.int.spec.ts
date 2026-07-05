@@ -7,6 +7,7 @@ import { describe, expect, inject, it } from 'vitest';
 import {
   buildCleanEnv,
   commandSucceeds,
+  expectSeededTypecheckTargetDefault,
   findWorkspaceRoot,
   readTypecheckTargetDefault,
   removeTmpDir,
@@ -27,6 +28,11 @@ import {
 // not a globally-cached npmjs copy. Runs SEQUENTIALLY on the main tree under the
 // serialized vitest.config.mts + the shared globalSetup; consumes that registry
 // via inject(). Skips cleanly when corepack/yarn is unavailable.
+
+// The corepack-pinned yarn 4 version, used BOTH to probe availability (corepack
+// fetches + verifies exactly this version) and to pin `packageManager` -- one
+// literal so the probe and the pin can never skew.
+const YARN_VERSION = '4.17.0';
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -50,10 +56,13 @@ const env = buildCleanEnv({ stripAllNpmConfig: true });
 // --version`. A host with corepack but no network to fetch yarn 4.17.0 now SKIPS
 // cleanly (honoring the docstring) instead of hard-failing later at
 // `corepack yarn install`.
-const corepackAvailable = commandSucceeds('corepack yarn@4.17.0 --version', {
-  cwd: workspaceRoot,
-  env,
-});
+const corepackAvailable = commandSucceeds(
+  `corepack yarn@${YARN_VERSION} --version`,
+  {
+    cwd: workspaceRoot,
+    env,
+  },
+);
 
 describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck targetDefaults', () => {
   it.skipIf(!corepackAvailable)(
@@ -74,7 +83,7 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
         const packageJson = JSON.parse(
           readFileSync(packageJsonPath, 'utf8'),
         ) as { packageManager?: string };
-        packageJson.packageManager = 'yarn@4.17.0';
+        packageJson.packageManager = `yarn@${YARN_VERSION}`;
         writeFileSync(
           packageJsonPath,
           `${JSON.stringify(packageJson, null, 2)}\n`,
@@ -131,11 +140,7 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
         });
 
         // init SEEDED the key (absent -> present, WALK-02 shape).
-        const seeded = readTypecheckTargetDefault(tmp);
-        expect(seeded).toBeDefined();
-        expect(seeded?.cache).toBe(true);
-        expect(seeded?.outputs).toEqual([]);
-        expect(seeded?.inputs?.[0]).toBe('default');
+        expectSeededTypecheckTargetDefault(tmp);
       } finally {
         removeTmpDir(tmp);
       }

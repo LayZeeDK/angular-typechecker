@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, inject, it } from 'vitest';
 import {
   buildCleanEnv,
+  expectSeededTypecheckTargetDefault,
   findWorkspaceRoot,
   readTypecheckTargetDefault,
   removeTmpDir,
@@ -90,14 +91,8 @@ describe('NX-ADD-NPM: real `nx add` on an npm workspace seeds the typecheck targ
       // build-script gate so it succeeds) -> runs the internal init generator.
       sh('npx nx add angular-typechecker', { cwd: tmp, env: npmEnv });
 
-      // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first
-      // input is the load-bearing invariant: 'production' would exclude *.spec.ts
-      // and under-hash the walked spec leaf (a stale PASS).
-      const seeded = readTypecheckTargetDefault(tmp);
-      expect(seeded).toBeDefined();
-      expect(seeded?.cache).toBe(true);
-      expect(seeded?.outputs).toEqual([]);
-      expect(seeded?.inputs?.[0]).toBe('default');
+      // init SEEDED the key (absent -> present, WALK-02 shape).
+      expectSeededTypecheckTargetDefault(tmp);
     } finally {
       removeTmpDir(tmp);
     }

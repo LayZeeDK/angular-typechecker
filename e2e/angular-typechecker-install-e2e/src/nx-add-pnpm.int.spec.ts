@@ -7,6 +7,7 @@ import { describe, expect, inject, it } from 'vitest';
 import {
   buildCleanEnv,
   commandSucceeds,
+  expectSeededTypecheckTargetDefault,
   findWorkspaceRoot,
   readTypecheckTargetDefault,
   removeTmpDir,
@@ -55,6 +56,9 @@ import {
 // via inject(). Skips cleanly when pnpm is unavailable, and ASSERTS the effective
 // pnpm is 11 at runtime (the build-script gate it exercises exists only on pnpm 11,
 // so a <11 host must fail loudly rather than pass with the workaround untested).
+
+// keep in sync with ci.yml pnpm/action-setup version
+const PNPM_VERSION = '11.9.0';
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -112,7 +116,7 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
         ) as {
           packageManager?: string;
         };
-        packageJson.packageManager = 'pnpm@11.9.0';
+        packageJson.packageManager = `pnpm@${PNPM_VERSION}`;
         writeFileSync(
           packageJsonPath,
           `${JSON.stringify(packageJson, null, 2)}\n`,
@@ -158,14 +162,8 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
         // check entirely).
         sh('npx nx add angular-typechecker', { cwd: tmp, env: pnpmEnv });
 
-        // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first
-        // input is the load-bearing invariant: 'production' would exclude *.spec.ts
-        // and under-hash the walked spec leaf (a stale PASS).
-        const seeded = readTypecheckTargetDefault(tmp);
-        expect(seeded).toBeDefined();
-        expect(seeded?.cache).toBe(true);
-        expect(seeded?.outputs).toEqual([]);
-        expect(seeded?.inputs?.[0]).toBe('default');
+        // init SEEDED the key (absent -> present, WALK-02 shape).
+        expectSeededTypecheckTargetDefault(tmp);
       } finally {
         removeTmpDir(tmp);
       }

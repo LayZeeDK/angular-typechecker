@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { URL } from 'node:url';
 
+import { expect } from 'vitest';
+
 /**
  * Write a Verdaccio-targeting `.npmrc` into `dir`: a `registry=<url>` line plus the
  * nerf-dart `//<host>/:_authToken="<token>"` auth line for that registry's host.
@@ -46,4 +48,22 @@ export function readTypecheckTargetDefault(
   };
 
   return nxJson.targetDefaults?.['angular-typechecker:typecheck'];
+}
+
+/**
+ * Assert the `init`-seeded `angular-typechecker:typecheck` targetDefaults entry in
+ * `<tmpDir>/nx.json` has the WALK-02 shape: `cache: true`, empty `outputs`, and --
+ * the load-bearing invariant -- `'default'` as its FIRST input. The `'default'`-first
+ * input is what keeps `*.spec.ts` in the hash; a `'production'`-first input would
+ * exclude the spec files and under-hash the walked spec leaf (a stale PASS). Lives
+ * here ONCE so the nx-add + generator install-e2e specs share a single seeded-shape
+ * assertion instead of a byte-identical copy each.
+ */
+export function expectSeededTypecheckTargetDefault(tmpDir: string): void {
+  const seeded = readTypecheckTargetDefault(tmpDir);
+
+  expect(seeded).toBeDefined();
+  expect(seeded?.cache).toBe(true);
+  expect(seeded?.outputs).toEqual([]);
+  expect(seeded?.inputs?.[0]).toBe('default');
 }

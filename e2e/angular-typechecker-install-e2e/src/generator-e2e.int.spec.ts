@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   buildCleanEnv,
+  expectSeededTypecheckTargetDefault,
   findWorkspaceRoot,
   readTypecheckTargetDefault,
   removeTmpDir,
@@ -172,16 +173,9 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       expect(tsConfig).not.toMatch(/tsconfig\.(lib|spec)\.json$/);
 
       // GE2E-01(b): `init` (invoked by `configuration`) SEEDED the nx.json
-      // targetDefaults from ABSENT. Assert against the init-seeded shape
-      // (inputs[0] === 'default'), NOT the fixture nx.json blocks -- the fixture
-      // has no such key (D-02). The 'default'-first input is the WALK-02 landmine
-      // invariant: 'production' would exclude *.spec.ts and under-hash the walked
-      // spec leaf (a stale PASS).
-      const seeded = readTypecheckTargetDefault(tmp);
-      expect(seeded).toBeDefined();
-      expect(seeded?.cache).toBe(true);
-      expect(seeded?.outputs).toEqual([]);
-      expect(seeded?.inputs?.[0]).toBe('default');
+      // targetDefaults from ABSENT -- assert against the init-seeded shape, NOT the
+      // fixture nx.json blocks (the fixture has no such key, D-02).
+      expectSeededTypecheckTargetDefault(tmp);
 
       // GE2E-02 clean: the committed-clean lib + spec leaves type-check green from
       // the installed package via the just-wired target.

@@ -8,6 +8,7 @@ export {
   type RunResult,
 } from './lib/e2e-process';
 export {
+  expectSeededTypecheckTargetDefault,
   readTypecheckTargetDefault,
   writeVerdaccioNpmrc,
   type TypecheckTargetDefault,

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   buildCleanEnv,
+  expectSeededTypecheckTargetDefault,
   findWorkspaceRoot,
   readTypecheckTargetDefault,
   removeTmpDir,
@@ -115,14 +116,8 @@ describe("GE2E-03: nx add's init path seeds nx.json targetDefaults from absent",
         env,
       });
 
-      // init SEEDED the key (absent -> present, WALK-02 shape). The 'default'-first
-      // input is the load-bearing invariant: 'production' would exclude *.spec.ts
-      // and under-hash the walked spec leaf (a stale PASS).
-      const seeded = readTypecheckTargetDefault(tmp);
-      expect(seeded).toBeDefined();
-      expect(seeded?.cache).toBe(true);
-      expect(seeded?.outputs).toEqual([]);
-      expect(seeded?.inputs?.[0]).toBe('default');
+      // init SEEDED the key (absent -> present, WALK-02 shape).
+      expectSeededTypecheckTargetDefault(tmp);
     } finally {
       removeTmpDir(tmp);
     }
