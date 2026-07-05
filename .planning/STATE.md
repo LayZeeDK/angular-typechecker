@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: planning
-stopped_at: "v0.1.2 milestone opened and scoped (SB-01..08, phases 16-19). Scope + decisions hardened by a 6-lens Opus advisory board (2 rounds, consensus). No phase planned yet -- next is /gsd-plan-phase 16 (the gate spike)."
+stopped_at: "Phase 16 (Storybook gate spike) COMPLETE via /gsd-spike (spikes 006-008, all VALIDATED): VERDICT = GO -- Layout B supportable on the official stack; external-template branch 4a locked. Findings packaged into the spike-findings-angular-typechecker skill. Next: /gsd-plan-phase 17."
 last_updated: "2026-07-05"
 last_activity: 2026-07-05
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 25
 ---
 
 # Project State
@@ -21,15 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** v0.1.2 -- Storybook story type-checking. Next: `/gsd-plan-phase 16` (the gate spike).
+**Current focus:** v0.1.2 -- Storybook story type-checking. Phase 16 gate spike COMPLETE (GO). Next: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support).
 
 ## Current Position
 
-Milestone: v0.1.2 (Storybook story type-checking) -- planning.
-Phase: Not started.
+Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
+Phase: 16 complete (gate spike, run via /gsd-spike; no PLAN.md -- a spike phase). Next: 17.
 Plan: --
-Status: Requirements + roadmap defined; phase 16 not yet planned.
-Last activity: 2026-07-05 -- milestone opened; scope hardened by the advisory board.
+Status: Phase 16 GO/NO-GO gate resolved = GO. Layout B supportable on the official stack;
+external-template branch 4a locked (relatedInformation ownership signal).
+Last activity: 2026-07-05 -- ran Phase 16 gate spikes 006-008 (all VALIDATED), packaged findings
+into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
 Requirements: `.planning/REQUIREMENTS.md` (SB-01..08).
 Roadmap: `.planning/ROADMAP.md` (phases 16-19; v0.0.1 + v0.0.3 + v0.1.0 collapsed to SHIPPED).
@@ -45,16 +47,25 @@ Headline: this milestone is ONE input-set-membership boundary correctness fix (n
 code); Layout A + Layout B both minimum; never-false-pass enforced via a split suppression counter;
 external-template coverage G1-gated with a no-ngtsc-internals rule; a hard GO/NO-GO Phase-16 spike.
 
+**Phase 16 GATE RESOLVED 2026-07-05 = GO** (spikes 006-008, all VALIDATED; records in
+`.planning/spikes/` + the `spike-findings-angular-typechecker` skill; blueprint in that skill's
+`references/storybook-input-set-boundary.md`): G2 = YES (widened cross-project include ->
+`readConfiguration().rootNames`; key `inputTs` on the declared set, NOT
+`program.getRootFileNames()` which adds `.ngtypecheck.ts` shims); G3 = YES (forced
+`@storybook/angular@10.4.6` via `--legacy-peer-deps` compiles; its 48 TS6 `.d.ts` errors are
+node_modules-suppressed -- D4 confirmed); G4 = YES positively (NG8002 + NG8102 fire RED in-project);
+G1 = html + G5 = PASS -> external-template branch **4a** (map `.html` -> owning rootName `.ts` via
+public `relatedInformation`; default-keep the unmappable edge). Phase 17 ships Layout A + Layout B.
+
 Prior milestone decisions (v0.0.1 + v0.0.3 + v0.1.0): PROJECT.md Key Decisions + the per-milestone
 archives under `.planning/milestones/`.
 
 ### Blockers/Concerns
 
-- **v0.1.2 GATE (spike-resolvable, not a blocker yet):** Layout B support rests on unverified empirics
-  on the official stack -- G2 (widened files materialize as the storybook leaf's `parsed.rootNames`),
-  G3 (forced `@storybook/angular@10.4.6` compiles via `performCompilation`; a clean story passes clean),
-  G4 (NG8xxx fire on stories). Phase 16 resolves these as GO/NO-GO; a NO ships Layout A + documents
-  Layout B "not yet supported".
+- **v0.1.2 GATE -- RESOLVED 2026-07-05 = GO (was: Layout B rested on unverified official-stack
+  empirics).** Phase 16 spikes 006-008 confirmed G2/G3/G4 all YES and selected external-template
+  branch 4a (G1 = html + G5 = PASS). Layout B IS supportable; no fallback to Layout-A-only. See the
+  Decisions section above and `.planning/spikes/`.
 - **v0.1.2 external constraint:** `@storybook/angular@10.4.6` peer-caps Angular at `<22.0.0` / TS at
   `^4.9||^5`, so installing Storybook on Angular 22 needs `--legacy-peer-deps`/`--force`. Documented,
   never gated (D4). `nx add`/pnpm can hit `ERR_PNPM_IGNORED_BUILDS` (see [[nx-add-fails-on-pnpm-workspaces]]).
@@ -94,13 +105,18 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-05 -- opened milestone v0.1.2 via `/gsd-new-milestone`. Ran bespoke research
-(NX-SCAFFOLD / OSS-EXAMPLES / CENTRALIZED-HOST) then a 6-lens Opus advisory board (2 rounds) to decide
-and harden the requirements/decisions; wrote PROJECT.md (Current Milestone + Key Decisions), a fresh
-REQUIREMENTS.md (SB-01..08), ROADMAP.md (phases 16-19), and this STATE.md. Committed on branch
-`gsd/v0.1.2-storybook`.
-Stopped at: milestone artifacts written + committed; Layout-B support pending the Phase-16 GO/NO-GO spike.
-Next step: open a PR for `gsd/v0.1.2-storybook` into `main` (main is PR-only) carrying the `.planning/`
-milestone artifacts, then `/gsd-plan-phase 16` (the gate spike). The throwaway scaffold workspace lives
-under the session scratchpad (not committed); the OSS reference clones are under D:/projects/github/
-(radix-ng/primitives, zeckaissue/*, brandonroberts/*, bitwarden/clients -- not committed).
+Last session: 2026-07-05 -- ran the Phase 16 gate spike via `/gsd-spike`. First diagnosed a
+`/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
+against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
+memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
+isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
+packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
+complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
+Stopped at: Phase 16 gate = GO (Layout B supportable; external-template branch 4a); Phase 16 recorded
+complete. Reviewed at the 16->17 gate.
+Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
+implementation blueprint is in the spike-findings skill's
+`references/storybook-input-set-boundary.md`. NOTE: the forced-SB10 scaffold lives in the session
+scratchpad (not committed); an eventual PR for `gsd/v0.1.2-storybook` into `main` (PR-only) carries
+the `.planning/` + `.claude/skills/` artifacts. OSS reference clones under D:/projects/github/
+(radix-ng/primitives et al.) are not committed.
