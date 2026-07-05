@@ -257,16 +257,25 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-05 -- addressed a 7-finding code review on PR #24 (3 commits:
-`2dc2475` extract shared e2e helpers [commandSucceeds / writeVerdaccioNpmrc /
-readTypecheckTargetDefault]; `6e1ff21` require pnpm 11 + real yarn 4 provisioning in the
-nx-add guards; `ba22ebf` add `@nx/js` to the typecheck-e2e cache inputs + document the
-corepack Node coupling). All 7 findings fixed; verified authoritatively (tsc exit 0,
-typecheck-e2e all 3 green, install-e2e 32/32, test-util green, lint + format clean). The
-`new-diagnostics` TS2304 "Cannot find writeFileSync" burst during that refactor was STALE
-LSP (tsc + a usage audit both clean). PRIOR: `/gsd-quick --research --analyze` (quick task
-260705-1wo) resolved the e2e `tsconfig.spec.json` `inject()`->never gap + added a
-`typecheck-e2e` CI gate.
+Last session: 2026-07-05 -- addressed TWO code-review rounds on PR #24.
+Round 2 (3 commits: `683330c` GUARD-01c [asserts every e2e project defines + ci.yml runs
+`typecheck-e2e` -- run-many with 0 matches exits 0, a silent-green axis]; `1ebc3b4` hash
+`@nx/vite` [all 3] + `@nx/devkit` [cache-e2e] in the typecheck-e2e cache inputs; `918a08d`
+extract `expectSeededTypecheckTargetDefault` [5 specs] + pin `YARN_VERSION`/`PNPM_VERSION`).
+Addressed M1+M2+Q1+Q4; DEFERRED Q3 (audit REFUTED its premise -- cache-e2e config
+`testTimeout` is 180000, not 300000, so per-`it` 300000 there is intentional, not droppable),
+Q2 (nx-add-e2e header already states its offline uniqueness), L1/L2/NIT (optional/out-of-scope).
+Round 1 (3 commits `2dc2475`/`6e1ff21`/`ba22ebf`): extract shared e2e helpers [commandSucceeds
+/ writeVerdaccioNpmrc / readTypecheckTargetDefault]; require pnpm 11 + real yarn 4 provisioning
+in the guards; add `@nx/js` to the cache inputs + document the corepack Node coupling.
+All findings across both rounds verified authoritatively (tsc exit 0, typecheck-e2e 3/3 green,
+plugin 254 tests incl. GUARD-01c, install-e2e 32/32, test-util green, lint + format clean).
+NOTE: BOTH rounds triggered a stale-LSP `new-diagnostics` burst (round 1 TS2304 "cannot find
+writeFileSync"; round 2 TS6133 "never read" + a pre-existing TS1470 import.meta-under-CJS
+false positive) -- each time tsc + a usage-count grep proved the code clean; the IDE tsserver
+just lags after multi-file refactors (CLAUDE.md documents this). PRIOR: `/gsd-quick
+--research --analyze` (260705-1wo) resolved the e2e `tsconfig.spec.json` `inject()`->never gap
++ added the `typecheck-e2e` CI gate.
 Stopped at: 260705-1wo complete + verified (5/5), STACKED on the same branch after 260704-wnq
 (real `nx add` e2e coverage for npm+pnpm+yarn, verified 6/6). Branch `test/nx-add-e2e-pnpm-yarn`
 (off `origin/main` @ 2cab5ac; does NOT carry local `main`'s WIP handoff commit 7a767ca).
