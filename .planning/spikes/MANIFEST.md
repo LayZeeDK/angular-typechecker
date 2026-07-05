@@ -126,6 +126,15 @@ are the kill gates, G1/G5 select the shipping branch. User directive: build G2 f
 |---|---------|------|-----------|---------|------|
 | 006 | G2 (HARD prereq) | standard | widened cross-project `.storybook/tsconfig.json` include globs materialize as the leaf's `parsed.rootNames` (declared inputs, not merely imports) on the official Angular 22.0.4 / TS 6.0.3 stack | **VALIDATED (G2 = YES)** | storybook, layout-b, rootnames, boundary, gate, engine |
 | 007 | G3, G4 | standard | forced `@storybook/angular@10.4.6` compiles via `performCompilation` (no infra fail) + clean story passes clean, SB10 `.d.ts` errors node_modules-suppressed (G3); NG8002 core + NG8102 extended fire RED in-project (G4, positive) | **VALIDATED (G3=YES, G4=YES)** | storybook, sb10, ng8xxx, gate, engine |
-| 008 | G1, G5 | standard | external `templateUrl` `.html` NG8002 attribution to component `.ts` vs `.html` (G1); if `.html`, a STABLE public ownership signal (e.g. `relatedInformation`) back to the component `.ts` without ngtsc internals (G5) | PENDING | storybook, external-template, attribution, gate, engine |
+| 008 | G1, G5 | standard | external `templateUrl` `.html` NG8002+NG8102 attribute to the `.html` (G1 = html); both carry `relatedInformation` -> owning component `.ts` ("occurs in the template of component X"), a stable public signal (G5 = PASS 4a) | **VALIDATED (G1=html, G5=PASS 4a)** | storybook, external-template, attribution, relatedInformation, gate, engine |
 
-_Build order: G2 -> (G3, G4) -> (G1, G5), risk order. G2 first per user directive; reassess before 007._
+_Build order: G2 -> (G3, G4) -> (G1, G5), risk order. G2 first per user directive; reassessed; then 007, then 008._
+
+### Idea-2 GO/NO-GO verdict (Phase-16 gate)
+
+**GO -- Layout B IS supportable on the official stack.** All three HARD kill gates pass
+(G2 = YES rootNames, G3 = YES forced-SB10 compiles + clean-clean, G4 = YES NG8xxx fire RED), and
+the selectors resolve to **D2(d) branch 4a** (G1 = html + G5 = PASS: map external `.html` ->
+owning rootName component `.ts` via public `relatedInformation`). Phase 17 ships Layout A + Layout B
+with the input-set-membership boundary and the 4a external-template branch. NO gate forced the
+Layout-A-only fallback. Reviewed at the 16->17 handoff before planning Phase 17.
