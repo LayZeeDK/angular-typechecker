@@ -5,6 +5,7 @@
 - [SHIPPED] **v0.0.1** -- Phases 1-7 (incl. inserted 5.1) -- shipped 2026-06-29. Complete Angular type-check (TS + template + extended NG8xxx), no-emit, decoupled from build/test, as a cacheable Nx executor published to npm. Full detail: `.planning/milestones/v0.0.1-ROADMAP.md`.
 - [SHIPPED] **v0.0.3** -- Phases 8-11 -- shipped 2026-06-30. Engine hardening: closed correctness/completeness holes, made diagnostic gathering resilient instead of all-or-nothing, made Angular-version drift fail loudly, and adopted `fallow` as a green-on-adoption CI quality gate. Verified against stable Angular 22.0.4; NO `NgtscProgram` migration, NO new feature surfaces. Full detail: `.planning/milestones/v0.0.3-ROADMAP.md`.
 - [SHIPPED] **v0.1.0** -- Phases 12-15 (incl. inserted 13.1) -- shipped 2026-07-02. Reference-walking engine, the typecheck executor rename, and the configuration + init generator suite. Ships the spike-validated reference-walking engine mode (WALK) and the complete 18-member extended-diagnostic catalog + enum-completeness tripwire; the BREAKING executor rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` that drives the 0.0.3 -> 0.1.0 minor bump; the `configuration` generator wiring ONE minimal `typecheck` target at the solution `tsconfig.json`, a standalone `init` generator that seeds `nx.json` targetDefaults, and `nx add angular-typechecker` support; and the folded generator + `nx add` e2e plus a CI `-p` set-equality guard. Full detail: `.planning/milestones/v0.1.0-ROADMAP.md`.
+- [IN PROGRESS] **v0.1.2** -- Phases 16-19 -- Storybook story type-checking. One boundary-filter correctness fix (directory-containment -> compiler **input-set membership**) so `typecheck` targets check `*.stories.ts` and the whole `.storybook/` tsconfig-declared surface across the two Nx-official layouts (per-project scaffold + centralized host), proven against the shipped tarball on the supported stack, with no silent false pass. Scope + decisions hardened by a 6-lens Opus advisory board (record: `.planning/research/v0.1.2-storybook/board/CONSENSUS.md`). Requirements: `.planning/REQUIREMENTS.md` (SB-01..08). (v0.1.1 was a packaging hotfix; no v0.1.x roadmap phases between 15 and 16.)
 
 ## Phases
 
@@ -49,6 +50,17 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 </details>
 
+### v0.1.2 -- Storybook story type-checking (Phases 16-19) -- IN PROGRESS
+
+- [ ] Phase 16: Storybook type-check gate spike (GATED, GO/NO-GO) (0/? plans) -- SB-05. On the official stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3, `@storybook/angular@10.4.6` force-installed): resolve G1 (external-template diagnostic attribution: component `.ts` vs `.html`), G2 (widened Layout-B files materialize as the storybook leaf's `parsed.rootNames`), G3 (forced SB10 compiles via `performCompilation`, clean story passes clean), G4 (NG8xxx fire on stories/aggregated components -- proven POSITIVELY), G5 (owning-component->external-template map from a stable public signal vs keep-all-external-template fallback). GO -> Phase 17; NO-GO on G2/G3/G4 -> ship Layout A only, document Layout B "not yet supported".
+  - Success criteria: (1) each of G1-G5 resolved with a recorded, reproducible result; (2) a documented GO/NO-GO verdict for Layout B; (3) the SB-02(d) external-template branch and the SB-05 owning-map-vs-fallback choice are selected by evidence; (4) a written spike record under `.planning/spikes/`.
+- [ ] Phase 17: Input-set-membership boundary + layout support (0/? plans) -- SB-02, SB-04, SB-01, SB-03. Replace directory-containment with a pure `keep(diagnostic, inputSet, options)` boundary (walk surfaces rootName paths; walk + single-leaf share one semantics; zero ngtsc internals); split + surface the suppressed counts with the `suppressedInGraph`>0 coverage-incomplete floor; deliver Layout A (regression) and Layout B (aggregated cross-project stories incl. external templates) with unit + integration fixtures.
+  - Success criteria: (1) a broken `*.stories.ts` FAILS and a clean one PASSES under BOTH layouts; (2) an aggregated external-`templateUrl` NG8002 FAILS with the `.html`/component codeframe; (3) an imported dependency's internal error and `node_modules` diagnostics are NOT reported; (4) a clean Layout-B host reports `suppressedInGraph == 0` and both counts appear in stdout AND the structured result; (5) no Layout-A regression; `git grep` shows the boundary references zero ngtsc/component-registry internals.
+- [ ] Phase 18: Packaged-tarball e2e + docs (0/? plans) -- SB-06, SB-07. Extend the existing install/tarball e2e to `nx add` + `nx g angular-typechecker:configuration` + `nx typecheck` on generator-scaffolded Storybook fixtures (Layout A required; Layout B if GO); ship the exact README/changelog coverage claim + caveats + green->red callout.
+  - Success criteria: (1) the SHIPPED tarball catches a planted `*.stories.ts` error via `nx typecheck` on a generator-scaffolded Layout-A project (and Layout B if GO); (2) `paths`-alias aggregated imports compile clean; (3) `.mdx`/`.tsx` gaps emit a loud notice; (4) README/changelog carry the exact MUST/MUST-NOT/caveat coverage statement and the false-pass->true-fail callout.
+- [ ] Phase 19: Stretch -- Layout C / non-TS story formats / strict mode (0/? plans, DEFERRABLE) -- SB-08. Only if warranted after 16-18; otherwise carried forward.
+  - Success criteria: (1) a decision recorded for Layout C support beyond the guard; (2) any shipped item has a negative test.
+
 ## Progress
 
 | Phase             | Milestone | Plans Complete | Status   | Completed  |
@@ -70,3 +82,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 13.1 Rename angular-typecheck executor to typecheck (INSERTED) | v0.1.0 | 1/1 | Complete | 2026-07-01 |
 | 14. configuration + init generators, nx add | v0.1.0 | 3/3 | Complete | 2026-07-02 |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
+| 16. Storybook type-check gate spike (GATED) | v0.1.2 | 0/? | Not started | -- |
+| 17. Input-set-membership boundary + layout support | v0.1.2 | 0/? | Not started | -- |
+| 18. Packaged-tarball e2e + docs | v0.1.2 | 0/? | Not started | -- |
+| 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
