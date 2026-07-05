@@ -20,7 +20,7 @@
         "default",
         "^default",
         "{workspaceRoot}/tsconfig.base.json",
-        { "externalDependencies": ["typescript", "vitest"] }
+        { "externalDependencies": ["typescript", "vitest", "@nx/vite"] }
       ],
       "options": {
         "command": "tsc --noEmit -p e2e/angular-typechecker-matrix-e2e/tsconfig.spec.json",
