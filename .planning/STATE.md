@@ -257,8 +257,16 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-05 -- `/gsd-quick --research --analyze` (quick task 260705-1wo):
-resolved the e2e `tsconfig.spec.json` `inject()`->never gap + added a `typecheck-e2e` CI gate.
+Last session: 2026-07-05 -- addressed a 7-finding code review on PR #24 (3 commits:
+`2dc2475` extract shared e2e helpers [commandSucceeds / writeVerdaccioNpmrc /
+readTypecheckTargetDefault]; `6e1ff21` require pnpm 11 + real yarn 4 provisioning in the
+nx-add guards; `ba22ebf` add `@nx/js` to the typecheck-e2e cache inputs + document the
+corepack Node coupling). All 7 findings fixed; verified authoritatively (tsc exit 0,
+typecheck-e2e all 3 green, install-e2e 32/32, test-util green, lint + format clean). The
+`new-diagnostics` TS2304 "Cannot find writeFileSync" burst during that refactor was STALE
+LSP (tsc + a usage audit both clean). PRIOR: `/gsd-quick --research --analyze` (quick task
+260705-1wo) resolved the e2e `tsconfig.spec.json` `inject()`->never gap + added a
+`typecheck-e2e` CI gate.
 Stopped at: 260705-1wo complete + verified (5/5), STACKED on the same branch after 260704-wnq
 (real `nx add` e2e coverage for npm+pnpm+yarn, verified 6/6). Branch `test/nx-add-e2e-pnpm-yarn`
 (off `origin/main` @ 2cab5ac; does NOT carry local `main`'s WIP handoff commit 7a767ca).
