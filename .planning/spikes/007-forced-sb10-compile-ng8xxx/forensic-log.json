@@ -1,0 +1,121 @@
+{
+  "spike": "007-forced-sb10-compile-ng8xxx",
+  "gates": [
+    "G3",
+    "G4"
+  ],
+  "environment": {
+    "node": "v24.18.0",
+    "typescript": "6.0.3",
+    "@angular/compiler-cli": "22.0.4",
+    "@angular/core": "22.0.4",
+    "@storybook/angular": "10.4.6",
+    "storybook": "10.4.6",
+    "platform": "win32"
+  },
+  "install": "npm install --legacy-peer-deps (ERESOLVE: @storybook/angular@10.4.6 peer @angular-devkit/build-angular >=18 <22 -> @21.2.18 peer @angular/compiler-cli@^21 vs official 22.0.4)",
+  "scenarios": {
+    "cleanSkipLib": {
+      "tsconfig": "C:/Users/LARSGY~1/AppData/Local/Temp/claude/D--projects-github-LayZeeDK-angular-typechecker/85eb2dc6-3642-416d-9112-c9e985455f5f/scratchpad/sb007/fixture/clean/tsconfig.skiplib.json",
+      "threw": null,
+      "infra": null,
+      "rootNamesCount": 4,
+      "rawCount": 0,
+      "suppressedCount": 0,
+      "suppressedNodeModules": 0,
+      "inProject": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "cleanLibCheck": {
+      "tsconfig": "C:/Users/LARSGY~1/AppData/Local/Temp/claude/D--projects-github-LayZeeDK-angular-typechecker/85eb2dc6-3642-416d-9112-c9e985455f5f/scratchpad/sb007/fixture/clean/tsconfig.libcheck.json",
+      "threw": null,
+      "infra": null,
+      "rootNamesCount": 4,
+      "rawCount": 48,
+      "suppressedCount": 48,
+      "suppressedNodeModules": 48,
+      "inProject": [],
+      "errorCount": 0,
+      "warningCount": 0
+    },
+    "brokenCore": {
+      "tsconfig": "C:/Users/LARSGY~1/AppData/Local/Temp/claude/D--projects-github-LayZeeDK-angular-typechecker/85eb2dc6-3642-416d-9112-c9e985455f5f/scratchpad/sb007/fixture/broken-core/tsconfig.json",
+      "threw": null,
+      "infra": null,
+      "rootNamesCount": 2,
+      "rawCount": 2,
+      "suppressedCount": 0,
+      "suppressedNodeModules": 0,
+      "inProject": [
+        {
+          "code": -998002,
+          "ng": 8002,
+          "category": "Error",
+          "file": "broken-core/bad.component.ts",
+          "message": "Can't bind to 'nonExistentProp' since it isn't a known property of 'div'."
+        }
+      ],
+      "errorCount": 1,
+      "warningCount": 0
+    },
+    "brokenExtended": {
+      "tsconfig": "C:/Users/LARSGY~1/AppData/Local/Temp/claude/D--projects-github-LayZeeDK-angular-typechecker/85eb2dc6-3642-416d-9112-c9e985455f5f/scratchpad/sb007/fixture/broken-extended/tsconfig.json",
+      "threw": null,
+      "infra": null,
+      "rootNamesCount": 2,
+      "rawCount": 2,
+      "suppressedCount": 0,
+      "suppressedNodeModules": 0,
+      "inProject": [
+        {
+          "code": -998102,
+          "ng": 8102,
+          "category": "Error",
+          "file": "broken-extended/ext.component.ts",
+          "message": "NG8102: The left side of this nullish coalescing operation does not include 'null' or 'undefined' in its type, therefore the '??' operator c"
+        }
+      ],
+      "errorCount": 1,
+      "warningCount": 0
+    }
+  },
+  "assertions": [
+    {
+      "id": "G3-a1 no-infra-failure (skipLibCheck)",
+      "pass": true,
+      "detail": "performCompilation ran, no UNKNOWN_ERROR_CODE 500"
+    },
+    {
+      "id": "G3-a2 clean-story-clean (skipLibCheck)",
+      "pass": true,
+      "detail": "0 in-project diagnostic(s); 0 node_modules suppressed"
+    },
+    {
+      "id": "G3-b1 no-infra-failure (libCheck)",
+      "pass": true,
+      "detail": "performCompilation ran, no UNKNOWN_ERROR_CODE 500"
+    },
+    {
+      "id": "G3-b2 no-in-project-leak (libCheck)",
+      "pass": true,
+      "detail": "0 in-project diagnostic(s); 48 suppressed (48 node_modules) -- SB10 .d.ts noise stays out-of-project"
+    },
+    {
+      "id": "G4-core NG80xx-error-fires",
+      "pass": true,
+      "detail": "in-project NG80xx errors: [\"NG8002\"]"
+    },
+    {
+      "id": "G4-ext NG81xx-extended-fires",
+      "pass": true,
+      "detail": "in-project extended diags: [\"NG8102/Error\"]"
+    },
+    {
+      "id": "G4-ext promoted-to-error",
+      "pass": true,
+      "detail": "extendedDiagnostics.defaultCategory:\"error\" promoted 1 extended diag(s) to Error (RED)"
+    }
+  ],
+  "verdict": "VALIDATED -- G3 = YES (forced SB10 compiles, clean stays clean) & G4 = YES (NG8xxx fire RED)"
+}

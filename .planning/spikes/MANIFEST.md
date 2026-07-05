@@ -108,13 +108,24 @@ are the kill gates, G1/G5 select the shipping branch. User directive: build G2 f
   rootNames; an aggregated file reached ONLY via import is a SourceFile but not a rootName ->
   keep-rule (c) would suppress it. Reinforces D3 (check the WHOLE declared set, never a
   `*.stories.ts` allowlist; a stories-only host glob leaves aggregated components import-only).
+- **G3 = YES + G4 = YES (Spike 007):** forced `@storybook/angular@10.4.6` (installed
+  `--legacy-peer-deps` -- peer-caps Angular <22/TS ^4.9||^5, the real D4 conflict) compiles via
+  `performCompilation` on the official stack with NO infra failure; a clean story passes clean.
+- **D4 confirmed (Spike 007):** under `skipLibCheck:false`, forced-SB10 `.d.ts` produce 48
+  diagnostics -- ALL `node_modules`-attributed and suppressed, ZERO leak in-project. Forced-SB10
+  `.d.ts` errors can never cause a false FAIL; docs-only, no runtime version gate (D4/D6). The 48
+  checked `.d.ts` + zero in-project TS2307/TS2305 also prove the SB10 type surface genuinely
+  resolved under TS6.
+- **NG8xxx fire on the forced stack (Spike 007, G4 positive):** NG8002 (core template) and NG8102
+  (extended, promoted to error via `defaultCategory`) both fire RED in-project on aggregated
+  components -- the "complete type-check incl. NG8xxx" claim is honest on green (SB-07).
 
 ### Spikes (Idea 2)
 
 | # | Gate(s) | Type | Validates | Verdict | Tags |
 |---|---------|------|-----------|---------|------|
 | 006 | G2 (HARD prereq) | standard | widened cross-project `.storybook/tsconfig.json` include globs materialize as the leaf's `parsed.rootNames` (declared inputs, not merely imports) on the official Angular 22.0.4 / TS 6.0.3 stack | **VALIDATED (G2 = YES)** | storybook, layout-b, rootnames, boundary, gate, engine |
-| 007 | G3, G4 | standard | forced `@storybook/angular@10.4.6` compiles via `performCompilation` (no infra fail) + clean story passes clean (G3); NG8xxx fire on stories/aggregated components, proven POSITIVELY / RED (G4) | PENDING (needs isolated SB10 scaffold) | storybook, sb10, ng8xxx, gate, engine |
+| 007 | G3, G4 | standard | forced `@storybook/angular@10.4.6` compiles via `performCompilation` (no infra fail) + clean story passes clean, SB10 `.d.ts` errors node_modules-suppressed (G3); NG8002 core + NG8102 extended fire RED in-project (G4, positive) | **VALIDATED (G3=YES, G4=YES)** | storybook, sb10, ng8xxx, gate, engine |
 | 008 | G1, G5 | standard | external `templateUrl` `.html` NG8002 attribution to component `.ts` vs `.html` (G1); if `.html`, a STABLE public ownership signal (e.g. `relatedInformation`) back to the component `.ts` without ngtsc internals (G5) | PENDING | storybook, external-template, attribution, gate, engine |
 
 _Build order: G2 -> (G3, G4) -> (G1, G5), risk order. G2 first per user directive; reassess before 007._

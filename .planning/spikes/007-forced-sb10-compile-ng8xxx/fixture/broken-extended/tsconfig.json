@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "skipLibCheck": true },
+  "angularCompilerOptions": {
+    "strictTemplates": true,
+    "extendedDiagnostics": { "defaultCategory": "error" }
+  },
+  "include": ["*.ts"]
+}

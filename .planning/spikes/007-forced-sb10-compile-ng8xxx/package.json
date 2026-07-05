@@ -1,0 +1,18 @@
+{
+  "name": "sb007-forced-sb10-scaffold",
+  "private": true,
+  "description": "Spike 007 (G3/G4): forced @storybook/angular@10.4.6 on the official Angular 22.0.4 / TS 6.0.3 stack. Peer range of @storybook/angular is >=18 <22 for Angular and ^4.9||^5 for TS, so this install REQUIRES --legacy-peer-deps/--force (the real consumer path, D4).",
+  "dependencies": {
+    "@angular/animations": "22.0.4",
+    "@angular/common": "22.0.4",
+    "@angular/compiler": "22.0.4",
+    "@angular/compiler-cli": "22.0.4",
+    "@angular/core": "22.0.4",
+    "@angular/platform-browser": "22.0.4",
+    "@storybook/angular": "10.4.6",
+    "rxjs": "7.8.2",
+    "storybook": "10.4.6",
+    "typescript": "6.0.3",
+    "zone.js": "0.15.1"
+  }
+}
