@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
-import type { GlobalSetupContext } from 'vitest/node';
+import type { TestProject } from 'vitest/node';
 import { buildCleanEnv, findWorkspaceRoot, sh } from '@workspace/test-util';
 
 // Shared vitest globalSetup for the angular-typechecker-install-e2e project. It
@@ -65,7 +65,7 @@ async function mintCiToken(registryUrl: string): Promise<string> {
   return body.token;
 }
 
-export default async function ({ provide }: GlobalSetupContext) {
+export default async function ({ provide }: TestProject) {
   const root = findWorkspaceRoot(__dirname);
 
   // The setup-verdaccio generator put the local-registry target on the root project,
