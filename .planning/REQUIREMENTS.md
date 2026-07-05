@@ -129,7 +129,7 @@ Two layouts, both Nx-official:
 | SB-05 (gate spike) | 16 |
 | SB-02, SB-04 (engine) | 17 |
 | SB-01, SB-03 (layout support) | 17 |
-| SB-06 (validation) | 17-18 |
+| SB-06 (validation) | 18 |
 | SB-07 (docs) | 18 |
 | SB-08 (stretch) | 19 (deferrable) |
 
