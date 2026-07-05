@@ -45,8 +45,12 @@ const fixtureDir = join(
 // npm config, but the strip keeps the nested nx invocations clean.
 const env = buildCleanEnv({ stripAllNpmConfig: true });
 
-// Availability guard: yarn 4 is corepack-delivered, so probe corepack.
-const corepackAvailable = commandSucceeds('corepack --version', {
+// Availability guard: yarn 4 is corepack-delivered, so probe ACTUAL yarn 4.17.0
+// provisioning (corepack fetches + verifies the pinned yarn), not a bare `corepack
+// --version`. A host with corepack but no network to fetch yarn 4.17.0 now SKIPS
+// cleanly (honoring the docstring) instead of hard-failing later at
+// `corepack yarn install`.
+const corepackAvailable = commandSucceeds('corepack yarn@4.17.0 --version', {
   cwd: workspaceRoot,
   env,
 });

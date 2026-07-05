@@ -52,7 +52,9 @@ import {
 //
 // Runs SEQUENTIALLY on the main tree under the serialized vitest.config.mts + the
 // shared globalSetup (which builds + publishes dist once); consumes that registry
-// via inject(). Skips cleanly when pnpm is unavailable.
+// via inject(). Skips cleanly when pnpm is unavailable, and ASSERTS the effective
+// pnpm is 11 at runtime (the build-script gate it exercises exists only on pnpm 11,
+// so a <11 host must fail loudly rather than pass with the workaround untested).
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -134,6 +136,19 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
         // detectPackageManager -> pnpm). With allowBuilds satisfying the gate this
         // exits 0.
         sh('pnpm install', { cwd: tmp, env: pnpmEnv });
+
+        // Assert the EFFECTIVE pnpm the tmp workspace resolves to is pnpm 11 -- the
+        // major whose build-script gate this spec exists to exercise. A host whose
+        // effective pnpm is <11 (gate never fires) would otherwise PASS with the
+        // workaround untested (a false green); this fails loudly instead.
+        const pnpmVersion = sh('pnpm --version', {
+          cwd: tmp,
+          env: pnpmEnv,
+        }).trim();
+        expect(
+          Number(pnpmVersion.split('.')[0]),
+          `nx-add-pnpm must run under pnpm 11 to exercise the build-script gate (got ${pnpmVersion}); enable corepack so the packageManager pin routes, or install pnpm 11`,
+        ).toBe(11);
 
         // The REAL command: nx detects pnpm -> `pnpm add -Dw
         // angular-typechecker@latest` (resolved from Verdaccio; the build gate is
