@@ -13,3 +13,19 @@
 # This excludes ONLY the fixtures subdir -- the angular-typechecker-matrix-e2e project
 # itself (its `test` target) stays in the graph.
 e2e/angular-typechecker-matrix-e2e/fixtures/
+
+# 19-02: stop the MAIN Nx graph from discovering the Storybook Composition fixture's
+# THREE projects (lib-buttons, lib-cards, storybook-host).
+#
+# Same rationale as the matrix-e2e block above: this is a multi-project consumer
+# workspace exercised ONLY from inside the angular-typechecker-install-e2e spec
+# (storybook-composition.int.spec.ts copies it to a per-run tmp dir and runs the
+# executor by its PUBLISHED id). It must NOT be a member of THIS repo's graph for TWO
+# reasons: (1) its `storybook-host` project name COLLIDES with consumer-storybook-b's
+# `storybook-host` (nx errors: "projects defined in multiple locations"); and (2) each
+# composed lib PRE-COMMITS an `angular-typechecker:typecheck` target (the Composition
+# topology needs them committed, not generated at test time), so an unscoped
+# `nx run-many -t typecheck` in the dev workspace would sweep them in with dev-root
+# tsConfig paths that do not resolve. The tmp-copied workspace has no such collision
+# and still discovers all three projects.
+e2e/angular-typechecker-install-e2e/fixtures/consumer-storybook-composition/

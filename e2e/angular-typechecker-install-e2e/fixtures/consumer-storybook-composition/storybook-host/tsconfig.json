@@ -1,0 +1,4 @@
+{
+  "files": [],
+  "references": [{ "path": "./.storybook/tsconfig.json" }]
+}
