@@ -150,6 +150,59 @@ describe('evaluateResult', () => {
     ).toEqual({ success: true, outcome: 'clean' });
   });
 
+  // --- D-19-01: opt-in strict mode escalates a dropped in-graph WARNING to a HARD
+  // FAIL. A1 (19-RESEARCH) ratified: the ONLY observable FLIP is the dropped in-graph
+  // WARNING with maxWarnings UNSET -- which passes clean today (line 143 above). The
+  // dropped in-graph ERROR case already fails by default (line 97), so strict cannot
+  // FLIP it; that case is the regression guard below, not the FLIP demonstration.
+  it('strict escalates a dropped in-graph WARNING (maxWarnings unset) to coverage-incomplete; default stays clean (D-19-01 FLIP)', () => {
+    const dropped = {
+      errorCount: 0,
+      warningCount: 0,
+      suppressedInGraphWarningCount: 1,
+    };
+
+    // default (strict off): CLEAN -- the current behavior locked at line 143.
+    expect(evaluateResult(dropped)).toEqual({
+      success: true,
+      outcome: 'clean',
+    });
+
+    // strict on: the same dropped in-graph warning now FAILS coverage-incomplete.
+    expect(evaluateResult(dropped, { strict: true })).toEqual({
+      success: false,
+      outcome: 'coverage-incomplete',
+    });
+  });
+
+  it('strict does NOT change the error case -- a dropped in-graph ERROR fails either way (D-19-01 regression guard)', () => {
+    const droppedError = {
+      errorCount: 0,
+      warningCount: 0,
+      suppressedInGraphErrorCount: 1,
+    };
+
+    // A1: the error case already fails by default; strict cannot loosen it.
+    expect(evaluateResult(droppedError).outcome).toBe('coverage-incomplete');
+    expect(evaluateResult(droppedError, { strict: true }).outcome).toBe(
+      'coverage-incomplete',
+    );
+  });
+
+  it('strict does NOT falsely escalate a fully-clean result -- all suppressed counts 0 stays clean (D-19-01)', () => {
+    expect(
+      evaluateResult(
+        {
+          errorCount: 0,
+          warningCount: 0,
+          suppressedInGraphErrorCount: 0,
+          suppressedInGraphWarningCount: 0,
+        },
+        { strict: true },
+      ),
+    ).toEqual({ success: true, outcome: 'clean' });
+  });
+
   // --- D-01 (Phase 18, T11): the notTypeCheckedDeclaredFiles advisory NEVER flips
   // the verdict (Pitfall 2). The field is DELIBERATELY absent from EvaluateInput, so
   // it is introduced via a variable (excess-property checks fire only on fresh
