@@ -461,7 +461,7 @@ describe('typecheckExecutor (D-01/D-04)', () => {
   // D-01 (Phase 18, T11): the adapter renders the core's pure
   // notTypeCheckedDeclaredFiles as ONE loud "not type-checked" advisory naming the
   // declared file -- the render gate the structural git grep cannot prove fires.
-  it('D-01 T11: emits a loud logger.warn with the "not type-checked" advisory naming the file when notTypeCheckedDeclaredFiles is non-empty', async () => {
+  it('D-01 T11: emits a loud logger.warn with the softened "may not be fully type-checked" advisory naming the file when notTypeCheckedDeclaredFiles is non-empty (WR-01)', async () => {
     mocks.runTypecheck.mockResolvedValue(
       notTypeCheckedCoreResult(['/ws/libs/x/docs.mdx']),
     );
@@ -471,11 +471,17 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     const result = await executor(options, context);
 
     // ADVISORY only: the verdict stays green, and the notice names the consumer's
-    // OWN declared file with the "not type-checked" advisory text.
+    // OWN declared file. WR-01: the wording is softened to "may not be fully
+    // type-checked" and must distinguish a JSX-free .tsx (still fully checked) from
+    // a file that is never checked -- it must NOT claim a fully-checked file is
+    // "not type-checked".
     expect(result).toEqual({ success: true });
     expect(mocks.loggerWarn).toHaveBeenCalledOnce();
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
-      expect.stringContaining('not type-checked'),
+      expect.stringContaining('may not be fully type-checked'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('with no JSX is still fully checked'),
     );
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
       expect.stringContaining('/ws/libs/x/docs.mdx'),

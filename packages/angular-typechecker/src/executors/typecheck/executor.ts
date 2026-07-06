@@ -146,8 +146,9 @@ export default async function typecheckExecutor(
 
     // D-01 (Phase 18, T11): surface the loud "not type-checked" advisory for
     // declared-but-uncheckable files -- BEFORE renderReport so it is not buried
-    // under a codeframe dump. `.mdx` is NEVER type-checked; a `.tsx` is only checked
-    // when compilerOptions.jsx is set. Names the consumer's OWN declared files (from
+    // under a codeframe dump. `.mdx` is NEVER type-checked; JSX in a `.tsx` is only
+    // checked when compilerOptions.jsx is set (a `.tsx` with no JSX is still fully
+    // checked). Names the consumer's OWN declared files (from
     // the pure notTypeCheckedDeclaredFiles) ONLY, never dependency error text -- the
     // isolation rule mirrors suppressedInGraphFiles. Core sets the field only when
     // non-empty (mapping [] -> undefined), so the optional-chained length check is
@@ -155,9 +156,10 @@ export default async function typecheckExecutor(
     // this field).
     if (result.notTypeCheckedDeclaredFiles?.length) {
       logger.warn(
-        `angular-typechecker: ${result.notTypeCheckedDeclaredFiles.length} declared file(s) are ` +
-          `not type-checked -- .mdx is never type-checked, and .tsx is only checked when ` +
-          `compilerOptions.jsx is set. This is ADVISORY: the verdict is unchanged. ` +
+        `angular-typechecker: ${result.notTypeCheckedDeclaredFiles.length} declared file(s) may not ` +
+          `be fully type-checked -- .mdx is never type-checked, and JSX in a .tsx is only checked ` +
+          `when compilerOptions.jsx is set (a .tsx with no JSX is still fully checked; JSX under an ` +
+          `unset jsx reports TS17004). This is ADVISORY: the verdict is unchanged. ` +
           `File(s): ${result.notTypeCheckedDeclaredFiles.join(', ')}.`,
       );
     }
