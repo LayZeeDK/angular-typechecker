@@ -603,7 +603,7 @@ supported public-API mechanism (present in TS 6.0.3), superseding any hand-rolle
 | A3 | The `nx add` (Verdaccio) path is the intended criterion-1 install, reconciling D-02/D-02a's "install the freshly-packed tarball" wording with criterion 1's "via nx add". | RQ3 / Open Q1 | If the planner prefers the direct-tarball (`npm install <tgz>`) path, the spec shape changes (add a `beforeAll` pack) but the proof is equivalent. |
 | A4 | The `@nx/angular:storybook-configuration` generator's Layout-A `.storybook/tsconfig.json` `include` is `.ts`-oriented (may or may not declare `.mdx`); the T11 `.mdx` case likely needs an explicit `.mdx` in the fixture's include to demonstrate. | RQ2/RQ3 | If the generated config already globs `.mdx`, the fixture is simpler; if not, the fixture adds an explicit `.mdx` + include entry. Confirm when producing the committed fixture. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Criterion-1 install path (Verdaccio `nx add` vs direct tarball).** D-02/D-02a say "install the freshly-
    packed tarball" and "reuse the harness verbatim" (the `generator-e2e` pack pattern), while criterion 1
@@ -612,18 +612,21 @@ supported public-API mechanism (present in TS 6.0.3), superseding any hand-rolle
      `generator-e2e` uses `npm install <tgz>`.
    - Recommendation: use the Verdaccio `nx add` path (most literal criterion-1 proof); note the tarball
      alternative. Planner picks one.
+   - **RESOLVED:** plan 18-04 chose the Verdaccio `nx add` install path (the most literal criterion-1 proof).
 
 2. **T10 explicit assertion vs redundancy.** `fixtures/layout-b-host` IS the "host with only the `.storybook`
    leaf" shape and `layout-b.integration.spec.ts` already proves a story error fails with `rootNamesCount>0`
    (implicitly not-90001).
    - Recommendation: add ONE explicit assertion that `ZERO_ROOT_NAMES` (90001) is absent to the existing
      layout-b flow for traceability, OR mark T10 covered-by-T2. Low-risk either way.
+   - **RESOLVED:** plan 18-02 adds the explicit no-`ZERO_ROOT_NAMES` (90001) assertion to the Layout-B flow.
 
 3. **T5 exact residual.** The generic node_modules suppression is pure-tier covered; the `includeDeps`
    integration test is on a first-party sibling, not node_modules.
    - Recommendation: verify `run-typecheck.integration.spec.ts` / `filter-diagnostics.spec.ts` for a
      node_modules-attributed `suppressedThirdParty>0` case before writing; add a thin one if genuinely
      missing. The Storybook-specific SB10 suppression is proven implicitly by the e2e clean-story pass.
+   - **RESOLVED:** plan 18-02 verifies the existing node_modules `suppressedThirdParty>0` coverage and adds a thin residual T5 case only if genuinely missing (verify-then-extend).
 
 ## Sources
 

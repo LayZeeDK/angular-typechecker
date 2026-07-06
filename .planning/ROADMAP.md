@@ -118,6 +118,22 @@ Plans:
   3. `.mdx` (never checked) and `.tsx`-without-`jsx` gaps emit a loud "not type-checked" notice (verdict may stay green).
   4. README + changelog carry the exact MUST/MUST-NOT/caveat coverage statement and the false-pass -> true-fail (green->red) callout.
 
+**Plans:** 5 plans (0/5 complete)
+Plans:
+**Wave 1**
+
+- [ ] 18-01-PLAN.md - D-01 net-new "not type-checked" advisory: pure detector + CoreResult field on walk + direct paths + executor render + green-verdict negative test [wave 1]
+- [ ] 18-02-PLAN.md - Residual boundary-semantics integration: T9 (paths-alias, criterion 2), T6 (story-less guard), T5 (node_modules suppression), T10 (host-only-.storybook) [wave 1]
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 18-03-PLAN.md - T11 integration proof: declared .mdx (+ JSX-free .tsx) fires the notice, verdict stays clean [wave 2]
+- [ ] 18-04-PLAN.md - Packaged-tarball Storybook e2e (criterion 1): shipped artifact catches a planted story error on Layout A + B via nx add + nx g configuration + nx typecheck [wave 2]
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 18-05-PLAN.md - Docs (SB-07): README ## Storybook coverage claim + Limitations WR-01 fix + CoreResult comment + curated CHANGELOG 0.1.2 green->red callout (prose only, no release cut) [wave 3]
+
 ### Phase 19: Stretch -- Layout C / non-TS story formats / strict mode
 
 **Goal**: Optionally extend beyond the minimums (Layout C beyond the guard, `.mdx`/`.tsx` type-check, an opt-in strict mode that FAILS on `suppressedInGraph > 0`) only if warranted after Phases 16-18.
@@ -150,5 +166,5 @@ Plans:
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
 | 17. Input-set-membership boundary + layout support | v0.1.2 | 7/7 | Complete    | 2026-07-06 |
-| 18. Packaged-tarball e2e + docs | v0.1.2 | 0/? | Not started | -- |
+| 18. Packaged-tarball e2e + docs | v0.1.2 | 0/5 | Planned | -- |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
