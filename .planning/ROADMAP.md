@@ -55,7 +55,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] **Phase 16: Storybook type-check gate spike (GATED, GO/NO-GO)** - Resolve G1-G5 on the official stack (forced `@storybook/angular@10.4.6`) to decide, on evidence, whether the centralized-host layout (Layout B) is type-checkable; produces the GO/NO-GO verdict reviewed at the 16->17 gate. (SB-05) -- **DONE 2026-07-05 via spikes 006-008: VERDICT = GO** (G2/G3/G4 all YES; G1=html + G5=PASS -> external-template branch 4a). Layout B ships in Phase 17.
 - [x] **Phase 17: Input-set-membership boundary + layout support** - Replace directory-containment with a pure `keep(diagnostic, inputSet, options)` boundary; split + surface suppressed counts (coverage-incomplete floor); deliver Layout A (regression) and Layout B (aggregated cross-project stories incl. external templates). (SB-02, SB-04, SB-01, SB-03) (completed 2026-07-06)
 - [x] **Phase 18: Packaged-tarball e2e + docs** - Prove the SHIPPED artifact catches a planted story error via `nx add` + `nx g configuration` + `nx typecheck` on generator-scaffolded Storybook fixtures; ship the coverage claim + caveats + green->red changelog callout. (SB-06, SB-07) (completed 2026-07-06)
-- [ ] **Phase 19: Stretch -- Layout C / non-TS story formats / strict mode** - Only if warranted after 16-18; otherwise carried forward. (SB-08, DEFERRABLE)
+- [x] **Phase 19: Stretch -- Layout C / non-TS story formats / strict mode** - Only if warranted after 16-18; otherwise carried forward. (SB-08, DEFERRABLE) (completed 2026-07-06)
 
 ## Phase Details
 
@@ -143,7 +143,7 @@ Plans:
   1. A decision is recorded for Layout C support beyond the no-silent-pass guard.
   2. Any item actually shipped carries a negative test.
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 
@@ -154,7 +154,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 19-03-PLAN.md -- Docs (D-10): README ## Storybook Composition section + MUST/MUST-NOT coverage claim + Layout C note + Angular-CLI planned caveat + content tripwire; and the 19-DECISIONS.md "not warranted" record for Layout C-beyond-guard + .mdx/.tsx-beyond-advisory (criterion 1) [wave 2]
+- [x] 19-03-PLAN.md -- Docs (D-10): README ## Storybook Composition section + MUST/MUST-NOT coverage claim + Layout C note + Angular-CLI planned caveat + content tripwire; and the 19-DECISIONS.md "not warranted" record for Layout C-beyond-guard + .mdx/.tsx-beyond-advisory (criterion 1) [wave 2]
 
 ## Progress
 
@@ -180,4 +180,4 @@ Plans:
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
 | 17. Input-set-membership boundary + layout support | v0.1.2 | 7/7 | Complete    | 2026-07-06 |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 5/5 | Complete    | 2026-07-06 |
-| 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 2/3 | In Progress|  |
+| 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 3/3 | Complete   | 2026-07-06 |

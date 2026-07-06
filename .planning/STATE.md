@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: executing
-stopped_at: "Phase 19 context gathered (stretch scope locked: ship strict mode + Composition; defer Layout C/mdx-tsx; OSS verify manual)"
-last_updated: "2026-07-06T22:50:16.142Z"
-last_activity: 2026-07-06 -- Phase 19 execution started
+stopped_at: "Completed 19-03-PLAN.md (phase 19: all 3 plans executed)"
+last_updated: "2026-07-06T23:50:04.964Z"
+last_activity: 2026-07-06
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 15
   percent: 50
 ---
 
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
 Phase: 19 (stretch-layout-c-non-ts-story-formats-strict-mode) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 19
+Plan: 3 of 3
+Status: Ready to execute
 external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-06 -- Phase 19 execution started
+Last activity: 2026-07-06
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
 Requirements: `.planning/REQUIREMENTS.md` (SB-01..08).
@@ -64,6 +64,8 @@ archives under `.planning/milestones/`.
 - [Phase 18]: 18-03: T11 integration proof of D-01 notTypeCheckedDeclaredFiles; fixed .mdx enumeration (ScriptKind.Deferred, was Unknown -> zero .mdx); verdict stays green with a JSX-free .tsx
 - [Phase 18]: 18-04: packaged-tarball Storybook criterion-1 e2e (Verdaccio nx add) proves the SHIPPED artifact catches planted story errors on Layout A (TS2322) + Layout B (aggregated TS2345 + external-template NG8002); clean baselines exit 0, no ERR_REQUIRE_ESM/infra error. B-03 preserved by installing angular-typechecker BEFORE Storybook (nx add forwards no flags) so the override-free peer check runs against a Storybook-free tree; only @storybook/angular used --legacy-peer-deps. Known-local out-of-scope: nx-add-yarn ECONNREFUSED (corepack-yarn vs Verdaccio).
 - [Phase 18]: 18-05: SB-07 docs -- README ## Storybook section (exact coverage claim + caveats), Limitations WR-01 fix (zero-input in-project leaf is coverage-incomplete, not advisory-skip), CoreResult comment gains notTypeCheckedDeclaredFiles, curated CHANGELOG 0.1.2 with green->red false-pass to true-fail callout; prose only, no release cut (D-05).
+- [Phase 19]: 19-03: README ## Storybook Composition coverage claim rests on per-project typecheck + Nx ^typecheck fan-out (implicitDependencies), NOT Storybook's any-typed refs (19-02 finding); a content tripwire (storybook-docs.spec.ts) locks it
+- [Phase 19]: 19-03: recorded Layout-C-beyond-guard and .mdx/.tsx-beyond-advisory as 'not warranted' (19-DECISIONS.md), closing phase-19 success criterion 1
 
 ### Blockers/Concerns
 
@@ -113,14 +115,14 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-06T21:53:53.139Z
+Last session: 2026-07-06T23:50:04.956Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
 isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
 packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
 complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Phase 19 context gathered (stretch scope locked: ship strict mode + Composition; defer Layout C/mdx-tsx; OSS verify manual)
+Stopped at: Completed 19-03-PLAN.md (phase 19: all 3 plans executed)
 complete. Reviewed at the 16->17 gate.
 Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
 implementation blueprint is in the spike-findings skill's
