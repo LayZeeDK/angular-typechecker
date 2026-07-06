@@ -62,7 +62,9 @@ No breaking change; additive-only (0.x semver, `feat` -> patch 0.1.1 -> 0.1.2).
   `https://ds.example.com` are unmappable; fragile -- ports/async/env; redundant with the graph;
   charter-coupling to Storybook config -- board D4 "no coupling to Storybook packages").
 - **D-05 (`dependsOn: ["^typecheck"]` DX = docs recipe + test, NOT generators).** The "one command
-  checks the composed set" DX ships as a recipe in `docs/*.md` + an automated test that exercises it.
+  checks the composed set" DX ships as a recipe in the `README.md ## Storybook` section (RESOLVED
+  2026-07-07: no `docs/` dir exists; README is the shipped consumer doc where the SB-07 coverage claim
+  already lives -- keeping the whole Storybook story in one place) + an automated test that exercises it.
   NOT wired into `init`/`configuration` generators, because `^typecheck` fans out to ALL dependencies
   unconditionally -- as a generator default it would silently change every consumer's typecheck target
   semantics/graph. (Opt-in generator flag is the fallback if ever wanted turnkey; not now.)
