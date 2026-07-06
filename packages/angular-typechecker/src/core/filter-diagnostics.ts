@@ -338,14 +338,18 @@ function owningComponentTs(diagnostic: ts.Diagnostic): string | undefined {
 }
 
 /**
- * Builds a canonicalizer: realpath FIRST (resolves pnpm `.pnpm/` symlinks to the
- * real location), normalize `\\` to `/`, THEN case-fold only on a
- * case-insensitive filesystem (D-06/Pitfall 3). Results are memoized per input
- * path so a hot run over thousands of components does not re-resolve the same
- * directory repeatedly (a cache, not a `realpath()` syscall per diagnostic).
+ * Shared tail for BOTH canonicalizers (D-06/Pitfall 3): normalize `\\` to `/`, THEN
+ * case-fold only on a case-insensitive filesystem, memoized per input path so a hot
+ * run over thousands of components does not re-transform the same path (a cache, not
+ * a `realpath()` syscall per diagnostic). The `resolve` step is the per-form prefix
+ * the two factories differ by: the FULL canonicalizer resolves symlinks via realpath
+ * (and signals `undefined` when realpath throws -- NOT cached, so a transient EACCES
+ * can resolve on a later call, D-08/RES-03); the RAW canonicalizer resolves via
+ * identity, so it never signals `undefined`.
  */
-export function createCanonicalizer(
-  options: Pick<FilterOptions, 'useCaseSensitiveFileNames' | 'realpath'>,
+function makeMemoizedCanonicalizer(
+  useCaseSensitiveFileNames: boolean,
+  resolve: (filePath: string) => string | undefined,
 ): (filePath: string) => string | undefined {
   const cache = new Map<string, string>();
 
@@ -356,24 +360,16 @@ export function createCanonicalizer(
       return cached;
     }
 
-    let resolved: string;
+    const resolved = resolve(filePath);
 
-    try {
-      resolved = options.realpath(filePath);
-    } catch {
-      // D-08 (RES-03): a throwing realpath (EACCES / permission-denied junction /
-      // broken symlink) must NOT abort the whole type-check pass AND must NOT cause
-      // a false PASS. A throw cannot PROVE the file is out-of-graph, so signal
-      // `undefined` and let the caller KEEP the diagnostic (dual-identity raw-form
-      // recovery + fail-safe bias for a correctness tool). Do NOT cache `undefined`
-      // -- a transient EACCES could resolve on a later call. Silent -- core is PURE.
+    if (resolved === undefined) {
       return undefined;
     }
 
-    const real = resolved.replace(/\\/g, '/');
-    const canonical = options.useCaseSensitiveFileNames
-      ? real
-      : real.toLowerCase();
+    const slashed = resolved.replace(/\\/g, '/');
+    const canonical = useCaseSensitiveFileNames
+      ? slashed
+      : slashed.toLowerCase();
 
     cache.set(filePath, canonical);
 
@@ -382,33 +378,46 @@ export function createCanonicalizer(
 }
 
 /**
- * Builds a RAW canonicalizer: normalize `\\` to `/`, THEN case-fold only on a
- * case-insensitive filesystem -- with NO realpath resolution. It NEVER throws and
- * NEVER returns undefined (D-02): it is how a declared rootName is matched via its
- * pre-realpath identity, so a transient realpath throw on that root still keeps its
- * diagnostics. Same case-fold policy and memoization as `createCanonicalizer`.
+ * Builds the FULL canonicalizer: realpath FIRST (resolves pnpm `.pnpm/` symlinks to
+ * the real location) -- then the shared normalize + case-fold + memoize tail. A
+ * throwing realpath (EACCES / permission-denied junction / broken symlink) must NOT
+ * abort the whole type-check pass AND must NOT cause a false PASS: a throw cannot
+ * PROVE the file is out-of-graph, so it signals `undefined` (via the shared tail) and
+ * the caller KEEPs the diagnostic (dual-identity raw-form recovery + fail-safe bias
+ * for a correctness tool). Silent -- core is PURE.
+ */
+export function createCanonicalizer(
+  options: Pick<FilterOptions, 'useCaseSensitiveFileNames' | 'realpath'>,
+): (filePath: string) => string | undefined {
+  return makeMemoizedCanonicalizer(
+    options.useCaseSensitiveFileNames,
+    (filePath) => {
+      try {
+        return options.realpath(filePath);
+      } catch {
+        return undefined;
+      }
+    },
+  );
+}
+
+/**
+ * Builds the RAW canonicalizer: NO realpath (identity resolve) -- then the SAME
+ * normalize + case-fold + memoize tail. It NEVER throws and NEVER returns undefined
+ * (D-02): it is how a declared rootName is matched via its pre-realpath identity, so
+ * a transient realpath throw on that root still keeps its diagnostics. The identity
+ * resolve never signals `undefined`, so the shared tail never yields `undefined`
+ * here -- narrow the return type back to `string` for the dual-identity invariant.
  */
 function createRawCanonicalizer(
   options: Pick<FilterOptions, 'useCaseSensitiveFileNames'>,
 ): (filePath: string) => string {
-  const cache = new Map<string, string>();
+  const canonicalize = makeMemoizedCanonicalizer(
+    options.useCaseSensitiveFileNames,
+    (filePath) => filePath,
+  );
 
-  return (filePath: string): string => {
-    const cached = cache.get(filePath);
-
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const slashed = filePath.replace(/\\/g, '/');
-    const canonical = options.useCaseSensitiveFileNames
-      ? slashed
-      : slashed.toLowerCase();
-
-    cache.set(filePath, canonical);
-
-    return canonical;
-  };
+  return (filePath: string): string => canonicalize(filePath) as string;
 }
 
 /**
