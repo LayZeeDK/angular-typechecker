@@ -52,6 +52,13 @@ export interface EvaluateOptions {
   // adapter validates the CLI input, and this function refuses to crash or invert
   // the verdict on a malformed number.
   maxWarnings?: number;
+  // D-19-01: opt-in strict mode. When true, a dropped in-graph WARNING forces a
+  // coverage-incomplete verdict regardless of `maxWarnings` (a dropped in-graph
+  // ERROR already fails unconditionally above -- strict does NOT change it). Default
+  // false => current behavior. `strict` can only ADD a fail path, never remove one:
+  // an absent or malformed value reads as false (charter: never a silent false
+  // pass; over-report is the safe direction).
+  strict?: boolean;
 }
 
 // The verdict reads the two ALWAYS-required counts (`errorCount`/`warningCount`)
@@ -78,11 +85,12 @@ type EvaluateInput = Pick<CoreResult, 'errorCount' | 'warningCount'> &
  *   3. `templateCheckAborted` present -> coverage-incomplete (FM-9).
  *   4. a `zero-root-names` skipped reference -> coverage-incomplete.
  *   5. `warningCount > maxWarnings` (when gated) -> warnings-exceeded.
- *   6. a suppressed in-graph warning (when gated) -> coverage-incomplete.
+ *   6. a suppressed in-graph warning (when gated OR `strict`) -> coverage-incomplete.
  *   7. else -> clean.
  * The warning-severity coverage decision (6) is LATE-BOUND with the real
- * `maxWarnings` (D-06). A negative or NaN `maxWarnings` is unset-equivalent
- * (Security V5).
+ * `maxWarnings` (D-06) and ALSO fires under opt-in `strict` (D-19-01): strict
+ * escalates a dropped in-graph WARNING to a hard fail regardless of `maxWarnings`.
+ * A negative or NaN `maxWarnings` is unset-equivalent (Security V5).
  */
 export function evaluateResult(
   result: EvaluateInput,
@@ -111,7 +119,7 @@ export function evaluateResult(
     return { success: false, outcome: 'coverage-incomplete' };
   }
 
-  const { maxWarnings } = options;
+  const { maxWarnings, strict = false } = options;
   const gatesWarnings =
     maxWarnings !== undefined &&
     Number.isFinite(maxWarnings) &&
@@ -124,7 +132,7 @@ export function evaluateResult(
   const suppressedInGraphWarningCount =
     result.suppressedInGraphWarningCount ?? 0;
 
-  if (gatesWarnings && suppressedInGraphWarningCount > 0) {
+  if ((gatesWarnings || strict) && suppressedInGraphWarningCount > 0) {
     return { success: false, outcome: 'coverage-incomplete' };
   }
 

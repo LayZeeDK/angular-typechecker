@@ -24,6 +24,11 @@
       "type": "boolean",
       "default": false,
       "description": "Report only the first error (output brevity) - NOT a speed-up; all diagnostics are still gathered."
+    },
+    "strict": {
+      "type": "boolean",
+      "default": false,
+      "description": "Opt-in strict mode: FAIL when a first-party in-graph diagnostic was dropped (escalates the coverage-incomplete outcome to a hard failure). Default reports coverage-incomplete without failing on a dropped in-graph warning."
     }
   },
   "required": ["tsConfig"],
