@@ -1,0 +1,16 @@
+{
+  "name": "storybook-host",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "storybook-host/.storybook",
+  "projectType": "library",
+  "implicitDependencies": ["lib-buttons", "lib-cards"],
+  "targets": {
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "storybook-host/tsconfig.json"
+      },
+      "dependsOn": ["^typecheck"]
+    }
+  }
+}
