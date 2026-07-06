@@ -53,7 +53,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ### v0.1.2 -- Storybook story type-checking (Phases 16-19) -- IN PROGRESS
 
 - [x] **Phase 16: Storybook type-check gate spike (GATED, GO/NO-GO)** - Resolve G1-G5 on the official stack (forced `@storybook/angular@10.4.6`) to decide, on evidence, whether the centralized-host layout (Layout B) is type-checkable; produces the GO/NO-GO verdict reviewed at the 16->17 gate. (SB-05) -- **DONE 2026-07-05 via spikes 006-008: VERDICT = GO** (G2/G3/G4 all YES; G1=html + G5=PASS -> external-template branch 4a). Layout B ships in Phase 17.
-- [ ] **Phase 17: Input-set-membership boundary + layout support** - Replace directory-containment with a pure `keep(diagnostic, inputSet, options)` boundary; split + surface suppressed counts (coverage-incomplete floor); deliver Layout A (regression) and Layout B (aggregated cross-project stories incl. external templates). (SB-02, SB-04, SB-01, SB-03)
+- [x] **Phase 17: Input-set-membership boundary + layout support** - Replace directory-containment with a pure `keep(diagnostic, inputSet, options)` boundary; split + surface suppressed counts (coverage-incomplete floor); deliver Layout A (regression) and Layout B (aggregated cross-project stories incl. external templates). (SB-02, SB-04, SB-01, SB-03) (completed 2026-07-06)
 - [ ] **Phase 18: Packaged-tarball e2e + docs** - Prove the SHIPPED artifact catches a planted story error via `nx add` + `nx g configuration` + `nx typecheck` on generator-scaffolded Storybook fixtures; ship the coverage claim + caveats + green->red changelog callout. (SB-06, SB-07)
 - [ ] **Phase 19: Stretch -- Layout C / non-TS story formats / strict mode** - Only if warranted after 16-18; otherwise carried forward. (SB-08, DEFERRABLE)
 
@@ -85,7 +85,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   4. A clean Layout-B host reports `suppressedInGraph == 0`, both suppression counts appear in stdout AND the structured result, and `suppressedInGraph > 0` yields a non-clean coverage-incomplete outcome.
   5. No Layout-A regression; the boundary is a pure `keep(diagnostic, inputSet, options)` shared by the walk and single-leaf paths; `git grep` shows it references zero ngtsc/component-registry internals.
 
-**Plans:** 5/7 plans executed
+**Plans:** 7/7 plans complete
 Plans:
 **Wave 1**
 
@@ -103,8 +103,8 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 17-06-PLAN.md — Layout A + Layout B minimum integration proof of the 5 success criteria (fixtures + integration specs) [wave 4]
-- [ ] 17-07-PLAN.md — D-09a MANDATORY tripwire fixtures + FM-9 drift probe [wave 4]
+- [x] 17-06-PLAN.md — Layout A + Layout B minimum integration proof of the 5 success criteria (fixtures + integration specs) [wave 4]
+- [x] 17-07-PLAN.md — D-09a MANDATORY tripwire fixtures + FM-9 drift probe [wave 4]
 
 ### Phase 18: Packaged-tarball e2e + docs
 
@@ -149,6 +149,6 @@ Plans:
 | 14. configuration + init generators, nx add | v0.1.0 | 3/3 | Complete | 2026-07-02 |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
-| 17. Input-set-membership boundary + layout support | v0.1.2 | 5/7 | In Progress|  |
+| 17. Input-set-membership boundary + layout support | v0.1.2 | 7/7 | Complete   | 2026-07-06 |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 0/? | Not started | -- |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
