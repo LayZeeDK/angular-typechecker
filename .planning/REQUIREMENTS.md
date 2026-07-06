@@ -34,7 +34,7 @@ Two layouts, both Nx-official:
 
 ### Engine -- input-set-membership boundary (the version-bumping `feat`)
 
-- [ ] **SB-02**: Replace the walk's directory-containment diagnostic filter with a pure
+- [x] **SB-02**: Replace the walk's directory-containment diagnostic filter with a pure
   `keep(diagnostic, inputSet, options) -> boolean` keyed on **compiler input-set membership**, and
   route BOTH the walk and the direct single-leaf path through it (one boundary semantics). The walk
   surfaces each walked leaf's rootName PATHS (it already holds `result.program`; today it discards
@@ -45,7 +45,7 @@ Two layouts, both Nx-official:
   with the SAME canonicalizer (realpath -> slash -> case-fold). Additive: no Layout-A regression; the
   boundary filter references ZERO ngtsc/component-registry internals (structural `git grep` gate).
 
-- [ ] **SB-04**: Split the currently-silent suppressed count into `suppressedThirdParty`
+- [x] **SB-04**: Split the currently-silent suppressed count into `suppressedThirdParty`
   (`node_modules`, expected/quiet) and `suppressedInGraph` (a compiled first-party source was dropped).
   Surface BOTH in executor stdout AND the structured result (CI gates on exit code; agents on the
   structured verdict). `suppressedInGraph > 0` yields a distinct non-clean **coverage-incomplete**
@@ -55,12 +55,12 @@ Two layouts, both Nx-official:
 
 ### Layout support (minimums)
 
-- [ ] **SB-01**: `nx typecheck` type-checks `*.stories.ts` under the per-project default scaffold
+- [x] **SB-01**: `nx typecheck` type-checks `*.stories.ts` under the per-project default scaffold
   (Layout A), for both application and library projects, with zero consumer tsconfig edits -- real
   story type errors AND Angular template/extended (NG8xxx) diagnostics surface; a clean story passes.
   (Covered by the existing walk; delivered as a regression fixture + docs.)
 
-- [ ] **SB-03**: `nx typecheck` type-checks the aggregated cross-project stories/components of a
+- [x] **SB-03**: `nx typecheck` type-checks the aggregated cross-project stories/components of a
   centralized Storybook host (Layout B, the Nx `one-storybook-for-all` recipe) via SB-02 -- a broken
   aggregated story (including one using an external `templateUrl` template) FAILS the verdict; a clean
   host passes; an imported dependency project's own internal error is NOT reported (isolation);
