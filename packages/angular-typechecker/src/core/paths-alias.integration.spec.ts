@@ -47,9 +47,9 @@ describe('paths-alias: aggregated story imports a sibling via a workspace alias 
     // (TS2307) diagnostic appears. This is the DX landmine assertion -- a naive
     // setup that dropped the alias would emit TS2307 on a workspace that resolves
     // fine.
-    expect(result.diagnostics.every((diagnostic) => diagnostic.code !== TS2307)).toBe(
-      true,
-    );
+    expect(
+      result.diagnostics.every((diagnostic) => diagnostic.code !== TS2307),
+    ).toBe(true);
 
     // The whole run is clean: the aliased sibling is well-typed and the story has
     // no errors, so the verdict is a genuine clean pass.
