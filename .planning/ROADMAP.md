@@ -85,7 +85,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   4. A clean Layout-B host reports `suppressedInGraph == 0`, both suppression counts appear in stdout AND the structured result, and `suppressedInGraph > 0` yields a non-clean coverage-incomplete outcome.
   5. No Layout-A regression; the boundary is a pure `keep(diagnostic, inputSet, options)` shared by the walk and single-leaf paths; `git grep` shows it references zero ngtsc/component-registry internals.
 
-**Plans:** 3/7 plans executed
+**Plans:** 5/7 plans executed
 Plans:
 **Wave 1**
 
@@ -98,8 +98,8 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 17-04-PLAN.md — Late-bound coverage-incomplete verdict + outcome discriminant + exit-code wiring (evaluate-result.ts, exit-codes.ts) [wave 3]
-- [ ] 17-05-PLAN.md — Executor renders both suppressed counts + coverage-incomplete notice (executor.ts) [wave 3]
+- [x] 17-04-PLAN.md — Late-bound coverage-incomplete verdict + outcome discriminant + exit-code wiring (evaluate-result.ts, exit-codes.ts) [wave 3]
+- [x] 17-05-PLAN.md — Executor renders both suppressed counts + coverage-incomplete notice (executor.ts) [wave 3]
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -149,6 +149,6 @@ Plans:
 | 14. configuration + init generators, nx add | v0.1.0 | 3/3 | Complete | 2026-07-02 |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
-| 17. Input-set-membership boundary + layout support | v0.1.2 | 3/7 | In Progress|  |
+| 17. Input-set-membership boundary + layout support | v0.1.2 | 5/7 | In Progress|  |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 0/? | Not started | -- |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
