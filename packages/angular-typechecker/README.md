@@ -177,12 +177,13 @@ should fail.
 
 ## Executor options
 
-| Option        | Type    | Default    | Description                                                                                                      |
-| ------------- | ------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                   |
-| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).         |
-| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone. |
-| `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                |
+| Option        | Type    | Default    | Description                                                                                                                                                                                 |
+| ------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                                                                                              |
+| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).                                                                                    |
+| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone.                                                                            |
+| `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                                                                                           |
+| `strict`      | boolean | `false`    | Opt-in: fail when a first-party in-graph diagnostic was dropped (escalates the coverage-incomplete outcome to a hard failure). It only adds a fail path; it never turns a fail into a pass. |
 
 By default the check is scoped to the project in isolation. When it imports a
 non-buildable (local) library, that library's sources sit outside the project's
@@ -381,6 +382,38 @@ is also why the order does not matter: the target stores `tsConfig: <solution>`
 and reads `references[]` at execute time, so adding Storybook after you wire
 `typecheck` yields coverage on the next run with no re-generation.
 
+### Storybook Composition
+
+Storybook Composition is a multi-project TOPOLOGY, not a tsconfig layout. Each
+composed project AND the composing host are ordinary per-project Layout A
+projects, so nothing new happens in the engine: point each project's `typecheck`
+target at its own solution `tsconfig.json` and its stories are checked exactly as
+above. The host's `.storybook/main.ts` (including its `refs` object) is
+type-checked as ordinary TypeScript, so a genuine TypeScript error there is
+reported. Note that `@storybook/angular` types `StorybookConfig['refs']` as
+`any`, so a mistyped `refs` value is caught only when you type it against your own
+ref shape -- Storybook's own type does not catch it.
+
+Coverage of the whole composed set is the per-project `typecheck` target plus the
+Nx project graph, never a walk of the `refs` URLs. Run the set with
+`nx run-many -t typecheck` or `nx affected -t typecheck`, or add
+`dependsOn: ["^typecheck"]` to the host's `typecheck` target so
+`nx typecheck <host>` checks its upstream dependencies first. The graph edge --
+`implicitDependencies` on the host, matching the projects it composes, NEVER the
+ref URL -- is the source of truth for what the fan-out reaches.
+
+The coverage claim, stated precisely: each composed project's declared TypeScript
+surface is type-checked when a `typecheck` target points at that project's
+solution `tsconfig.json`, and `nx run-many` / `affected` covers the set. What it
+does NOT claim: we do NOT verify that composed `refs` resolve, are reachable, or
+deploy -- those are runtime URLs, not TypeScript.
+
+The opt-in `strict` executor option (default `false`) escalates a
+coverage-incomplete outcome -- a dropped in-graph diagnostic (`suppressedInGraph`
+greater than `0`) that would otherwise leave the verdict clean -- to a hard
+failure. It only ever adds a fail path; it never turns a failing verdict into a
+pass.
+
 **What this does not claim.** It does not cover every Storybook file, it is not a
 guarantee of exhaustive Storybook checking, and it does not ensure Storybook builds
 or runs -- it is a type-check of the declared TypeScript surface, nothing more.
@@ -400,9 +433,18 @@ Caveats:
 - **Point at the solution `tsconfig.json`, not a leaf.** Pointing the target at a
   leaf `tsconfig.app.json` / `tsconfig.lib.json` excludes the stories the solution
   config's references reach.
-- **Layout C (a flat root tsconfig with no `references[]`) is not a supported
-  Storybook layout.** It never silently passes -- an empty or story-less config is
-  guarded -- but it is out of scope for v0.1.2.
+- **Layout C (a flat root tsconfig with no `references[]`) is not a
+  committed-supported Storybook layout, but it never silently passes.** Pointed at
+  a flat tsconfig directly, the check takes the direct single-leaf path and
+  type-checks the stories that config's `include` declares; an empty or story-less
+  config (zero declared inputs) is guarded, so it never reports a clean pass with
+  zero checked stories. Committed support beyond this guard is out of scope for
+  v0.1.2 (see [Limitations](#limitations)).
+- **The Angular CLI Storybook shape is not yet covered, planned for a future
+  milestone.** `ng add @storybook/angular` (the Angular CLI layout, even inside an
+  Nx workspace) wires a base `tsconfig.json` plus per-target leaf tsconfigs through
+  `angular.json`, with no solution tsconfig and no `references[]` for the walk to
+  follow. This is a planned addition, not an unsupported configuration.
 - **Installing Storybook on Angular 22 needs a peer override.**
   `@storybook/angular@10.4.6` peer-caps Angular at `>=18 <22` / TypeScript
   `^4.9 || ^5`, so `--legacy-peer-deps` (or `--force`) is required to install it on
