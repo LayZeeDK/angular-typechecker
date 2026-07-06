@@ -2,6 +2,67 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.1.2 (2026-07-06)
+
+Storybook story type-checking. The `typecheck` target now checks the whole surface
+a Storybook tsconfig declares -- your `*.stories.ts`, `.storybook/main.ts` and
+`preview.ts`, and, for the centralized-host recipe, the aggregated
+`*.component.ts`/`*.directive.ts`/`*.ts` its `include` reaches -- across both the
+per-project scaffold (Layout A) and the centralized host (Layout B). Under the
+hood this is one input-set-membership boundary correctness fix, not
+Storybook-specific machinery: the plugin still ships zero Storybook coupling.
+
+> **Behavior change (a correctness fix, not a regression):** existing
+> centralized-host (Layout B) Storybook builds that previously passed by SILENTLY
+> dropping aggregated cross-project diagnostics will now FAIL when those aggregated
+> stories or components have real type or template errors. This is a false-pass ->
+> true-fail CORRECTION (permitted under 0.x semver), not a break. If a build newly
+> goes RED, read the newly reported diagnostics as the errors that were there all
+> along.
+
+### Features
+
+- **Input-set-membership boundary** -- the project-in-isolation boundary filter
+  now decides what to check by compiler input-set membership (the files the
+  tsconfig declares) instead of a directory-containment proxy. A centralized
+  Storybook host that aggregates stories and components from across the workspace
+  is now checked completely, closing a silent false pass.
+- **Declared-but-uncheckable advisory** -- a new `notTypeCheckedDeclaredFiles`
+  field on the programmatic `CoreResult`, surfaced as a loud executor notice, names
+  declared files the type-check cannot cover (`.mdx` is never type-checked; a
+  `.tsx` is checked only when `compilerOptions.jsx` is set). Advisory only -- it
+  never changes the verdict.
+- **Split coverage counters** -- suppressed diagnostics are now reported split into
+  expected `node_modules` suppressions (quiet) and first-party in-graph
+  suppressions (loud), so a dropped first-party diagnostic is always visible and
+  forces a non-clean coverage-incomplete verdict instead of a silent pass.
+
+### Fixes
+
+- **Zero-input in-project leaf is coverage-incomplete** -- a referenced in-project
+  leaf that resolves to zero input files (an empty config, or a
+  references-only/solution tsconfig whose inner projects are not walked) now yields
+  a non-clean coverage-incomplete verdict instead of an advisory-only skip. Only
+  out-of-project, duplicate, and self references remain advisory.
+
+### Internal
+
+- Added a packaged-tarball Storybook end-to-end test: it installs the published
+  tarball into a fresh Nx workspace with a generator-shaped Storybook project
+  (Layout A and Layout B), wires the target, and asserts a planted story error is
+  caught -- proving the shipped artifact, not just the local build.
+- Added in-repo integration fixtures for the residual boundary-semantics matrix
+  (workspace `paths`-alias aggregated imports, story-less/flat configs, and a
+  declared `.mdx`).
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
+- Node `^22.22.3 || ^24.15.0 || ^26.0.0`
+- No new dependency; the plugin still ships zero Storybook coupling. Installing
+  `@storybook/angular` on Angular 22 needs `--legacy-peer-deps` / `--force`; see the
+  README Storybook section.
+
 ## 0.1.1 (2026-07-04)
 
 Critical packaging fix. Every prior release (0.0.1 through 0.1.0) published the
@@ -166,6 +227,7 @@ angular-typechecker is an Nx plugin that runs the _complete_ Angular compiler ty
 
 See the [README](./packages/angular-typechecker/README.md) for wiring the `angular-typecheck` target into a project.
 
+[0.1.2]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.2
 [0.1.1]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.1
 [0.1.0]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.0
 [0.0.3]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.3

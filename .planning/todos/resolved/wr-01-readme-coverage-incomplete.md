@@ -1,7 +1,9 @@
 ---
-status: pending
+status: resolved
 resolves_phase: 18
 created: 2026-07-06
+resolved: 2026-07-06
+resolved_by: 18-05 (README Limitations rewrite + Storybook coverage claim)
 source: 17-REVIEW.md (WR-01)
 ---
 
