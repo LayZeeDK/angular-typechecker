@@ -51,7 +51,20 @@
   // `packages/angular-typechecker/src/**` importers), and @nx/dependency-checks
   // (ESLint, error-tier, maxWarnings:0) independently gates the published
   // package.json against an undeclared/errant dependency.
-  "ignoreDependencies": ["@angular/core"],
+  // FAL-04 (v0.1.2 Phase 18): two more fixture-ONLY imports, same package-level
+  // `unlisted-dependencies` false positive as @angular/core (a per-glob override
+  // cannot suppress it -- verified 2026-07-02). Neither is a real repo dependency:
+  //   - `@org/button`: a workspace `paths`-alias import in the Layout-B paths-alias
+  //     fixture (fixtures/layout-b-paths-alias-*), resolved via tsconfig `paths`, not
+  //     node_modules -- it exists to prove criterion-2 (a paths-aliased aggregated
+  //     import compiles clean, no spurious TS2307).
+  //   - `@storybook/angular`: imported by the committed Storybook e2e/story fixtures
+  //     (e2e/**/fixtures/consumer-storybook-*, fixtures/not-type-checked-*); it is
+  //     FORCE-INSTALLED into a throwaway tmp workspace at e2e runtime (D4), never a
+  //     product/dev dependency of this repo (the published plugin ships zero
+  //     Storybook coupling). No shipped code imports either; the published
+  //     package.json is independently gated by @nx/dependency-checks.
+  "ignoreDependencies": ["@angular/core", "@org/button", "@storybook/angular"],
 
   "rules": {
     // D-06: the dev/tooling deps (ESLint flat-config plugins, swc register,
@@ -128,6 +141,14 @@
       "rules": {
         "unrendered-components": "off",
         "unused-component-inputs": "off",
+        // FAL-05 (v0.1.2 Phase 18): fixture assets declared ONLY via a tsconfig
+        // `include` (e.g. the T11 `not-type-checked-mdx/src/intro.mdx`, reachable
+        // via `.storybook/tsconfig.json` include, never the import graph) are
+        // reported `unused-files`. Same config-only-reachability class as the spec
+        // `unused-files` off (FAL-03) and the drift-tripwire entry points -- fixtures
+        // are test scaffolding, not product code. Scope it off for fixture globs only;
+        // non-fixture product files stay gated for `unused-files`.
+        "unused-files": "off",
       },
     },
   ],
