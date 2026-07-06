@@ -16,5 +16,5 @@
   "angularCompilerOptions": {
     "strictTemplates": true
   },
-  "files": ["main.component.ts", "../dependency-lib/dependency.ts"]
+  "files": ["main.component.ts"]
 }

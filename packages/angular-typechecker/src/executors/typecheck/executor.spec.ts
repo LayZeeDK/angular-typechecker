@@ -70,7 +70,10 @@ function coreResult(errorCount: number): CoreResult {
     diagnostics: [],
     errorCount,
     warningCount: 0,
-    suppressedCount: 0,
+    suppressedThirdParty: 0,
+    suppressedInGraphErrorCount: 0,
+    suppressedInGraphWarningCount: 0,
+    suppressedInGraphFiles: [],
     durationMs: 1,
   };
 }
