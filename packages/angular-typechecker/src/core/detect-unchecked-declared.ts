@@ -76,7 +76,15 @@ export function detectUncheckedDeclaredFiles(
         {
           extension: 'mdx',
           isMixedContent: false,
-          scriptKind: ts.ScriptKind.Unknown,
+          // `ScriptKind.Deferred` -- NOT `Unknown`. Only a non-`Unknown`,
+          // non-mixed-content extra extension is added to the supported-extension
+          // set `parseJsonConfigFileContent`'s wildcard reader uses, so `.mdx`
+          // surfaces in `fileNames` for BOTH an extensionless (`**/*`) and an
+          // explicit (`**/*.mdx`) include glob. With `Unknown` the enumeration
+          // silently returns zero `.mdx` (verified against typescript@6.0.3);
+          // `Deferred` is the canonical value for a plugin-handled extension
+          // (the same value tsserver uses for `.vue` etc.).
+          scriptKind: ts.ScriptKind.Deferred,
         },
       ],
     )
