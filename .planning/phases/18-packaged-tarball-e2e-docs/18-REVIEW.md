@@ -14,10 +14,31 @@ findings:
   warning: 1
   info: 2
   total: 3
-status: issues_found
+status: resolved
+fixes_applied: 2026-07-06
+findings_outcome:
+  - id: WR-01
+    severity: warning
+    outcome: fixed
+    commit: 58c3dad
+    note: "Softened the executor advisory wording ('may not be fully type-checked'; a .tsx with no JSX is still fully checked; JSX under unset jsx reports TS17004). Verdict untouched. executor.spec.ts assertion updated."
+  - id: IN-01
+    severity: info
+    outcome: fixed
+    commit: 5807fa1
+    note: "Deduped aggregated notTypeCheckedDeclaredFiles across surviving walk leaves via a Set (walk-references.ts). Raw diagnostic union untouched."
+  - id: IN-02
+    severity: info
+    outcome: fixed
+    commit: b770f72
+    note: "Guarded the readConfigFile .config ?? {} fallback: skip .mdx enumeration when a leaf config read yields no config, avoiding a latent whole-tree **/* scan (detect-unchecked-declared.ts)."
 ---
 
 # Phase 18: Code Review Report
+
+> **Fixes applied 2026-07-06 (`/gsd:code-review 18 --fix --all`):** all 3 findings resolved
+> (WR-01 `58c3dad`, IN-01 `5807fa1`, IN-02 `b770f72`). `nx test` (323/44), `build`, `lint`,
+> `format:check` all green; core purity + green-verdict preserved.
 
 **Reviewed:** 2026-07-06T00:00:00Z
 **Depth:** standard
