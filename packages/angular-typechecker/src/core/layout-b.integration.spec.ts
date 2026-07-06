@@ -5,7 +5,7 @@ import type ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
-import { NG } from './diagnostic-codes';
+import { NG, ZERO_ROOT_NAMES_DIAGNOSTIC_CODE } from './diagnostic-codes';
 import { evaluateResult } from './evaluate-result';
 import { runTypecheck } from './run-typecheck';
 
@@ -67,6 +67,17 @@ describe('layout-b: broken host -- aggregated story + external-template kill-sho
     // The host references only `./.storybook/tsconfig.json`, whose widened include
     // materialized the aggregated story + component as declared rootNames.
     expect(result.rootNamesCount).toBeGreaterThan(0);
+
+    // T10 (Phase 18, plan 18-02): this host references ONLY the `.storybook` leaf
+    // (no app/lib leaf), yet the widened include gave it a non-empty input set, so
+    // the failure is a REAL story error -- NOT the empty-project ZERO_ROOT_NAMES
+    // (90001) guard. Assert 90001 is absent for "not empty-project 90001"
+    // traceability (the failure is a type error, not a coverage guard).
+    expect(
+      result.diagnostics.every(
+        (diagnostic) => diagnostic.code !== ZERO_ROOT_NAMES_DIAGNOSTIC_CODE,
+      ),
+    ).toBe(true);
 
     // criterion 1(B): the aggregated, OUT-OF-HOST-DIR broken story's TS2322 is
     // reported (input-set membership kept the aggregated rootName) and the verdict
