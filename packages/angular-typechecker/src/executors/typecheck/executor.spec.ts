@@ -121,6 +121,21 @@ function suppressedCoreResult(
   };
 }
 
+// D-01 (Phase 18, T11 adapter render): a CoreResult carrying the NON-EMPTY
+// notTypeCheckedDeclaredFiles the adapter must turn into ONE loud logger.warn with
+// the "not type-checked" advisory, naming the consumer's OWN declared file(s). Core
+// sets the field only when non-empty (mapping [] -> undefined), so the
+// optional-chained length check alone gates the notice. errorCount 0 so the verdict
+// stays green (the field is ADVISORY, never verdict-affecting).
+function notTypeCheckedCoreResult(
+  notTypeCheckedDeclaredFiles: readonly string[],
+): CoreResult {
+  return {
+    ...coreResult(0),
+    notTypeCheckedDeclaredFiles,
+  };
+}
+
 const context = { root: '/ws' } as ExecutorContext;
 const options = { tsConfig: 'libs/x/tsconfig.lib.json' };
 
@@ -441,6 +456,41 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
       expect.stringContaining('verdict is unchanged'),
     );
+  });
+
+  // D-01 (Phase 18, T11): the adapter renders the core's pure
+  // notTypeCheckedDeclaredFiles as ONE loud "not type-checked" advisory naming the
+  // declared file -- the render gate the structural git grep cannot prove fires.
+  it('D-01 T11: emits a loud logger.warn with the "not type-checked" advisory naming the file when notTypeCheckedDeclaredFiles is non-empty', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      notTypeCheckedCoreResult(['/ws/libs/x/docs.mdx']),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    const result = await executor(options, context);
+
+    // ADVISORY only: the verdict stays green, and the notice names the consumer's
+    // OWN declared file with the "not type-checked" advisory text.
+    expect(result).toEqual({ success: true });
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('not type-checked'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/x/docs.mdx'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('D-01 T11: does NOT warn when notTypeCheckedDeclaredFiles is undefined (no false positive)', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
   });
 
   it('catches a TypecheckInfrastructureError -> logger.error + { success: false } (D-01)', async () => {

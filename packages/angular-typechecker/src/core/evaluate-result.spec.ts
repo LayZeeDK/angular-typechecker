@@ -150,6 +150,40 @@ describe('evaluateResult', () => {
     ).toEqual({ success: true, outcome: 'clean' });
   });
 
+  // --- D-01 (Phase 18, T11): the notTypeCheckedDeclaredFiles advisory NEVER flips
+  // the verdict (Pitfall 2). The field is DELIBERATELY absent from EvaluateInput, so
+  // it is introduced via a variable (excess-property checks fire only on fresh
+  // object literals passed directly) to prove it cannot enter the verdict. This
+  // tripwire locks it against a future accidental wiring into the verdict.
+  it('stays clean when notTypeCheckedDeclaredFiles is non-empty and errorCount 0 -- the D-01 advisory NEVER flips the verdict', () => {
+    const withUncheckedDeclared = {
+      errorCount: 0,
+      warningCount: 0,
+      notTypeCheckedDeclaredFiles: ['/ws/libs/x/docs.mdx'],
+    };
+
+    expect(evaluateResult(withUncheckedDeclared)).toEqual({
+      success: true,
+      outcome: 'clean',
+    });
+  });
+
+  it('stays clean on a non-empty notTypeCheckedDeclaredFiles even under maxWarnings 0 (D-01 advisory)', () => {
+    const withUncheckedDeclared = {
+      errorCount: 0,
+      warningCount: 0,
+      notTypeCheckedDeclaredFiles: [
+        '/ws/libs/x/docs.mdx',
+        '/ws/libs/x/legacy.tsx',
+      ],
+    };
+
+    expect(evaluateResult(withUncheckedDeclared, { maxWarnings: 0 })).toEqual({
+      success: true,
+      outcome: 'clean',
+    });
+  });
+
   it('a Suggestion/Message-only drop (all counts 0) stays clean even under maxWarnings 0', () => {
     expect(
       evaluateResult(
