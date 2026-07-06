@@ -1,10 +1,13 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
-import { runTypecheck } from './run-typecheck';
+import { TCB_GENERATION_FATAL_DIAGNOSTIC_CODE } from './diagnostic-codes';
+import { evaluateResult } from './evaluate-result';
+import { detectTemplateCheckAborted, runTypecheck } from './run-typecheck';
 
 // RES-02 -- REAL-compiler multi-file fault-isolation proof against
 // fixtures/fault-isolation/ (authored by 09-01). The gatherer now gathers the
@@ -192,5 +195,76 @@ describe('runTypecheck templateCheckAborted is UNSET on ordinary runs (RES-02 re
     expect(
       result.diagnostics.some((diagnostic) => diagnostic.code === NG(8001)),
     ).toBe(true);
+  });
+});
+
+// D-09a(iv) / FM-9 MANDATORY drift probe (Phase 17 board). Two guards, proven
+// against the REAL poison fixture and version-pinned to Angular 22.0.4 / TS 6.0.3:
+// (1) the whole-program TCB-generation abort is now VERDICT-AFFECTING (17-04), no
+// longer advisory-only; (2) the recognized TCB-generation fatal-code surface is
+// EXACTLY NG3004, so a future Angular Fatal beyond NG3004 trips LOUD instead of
+// silently leaving a coverage gap. Mirrors the existing RES-02 real-fixture idiom.
+//
+// PLAN-DEVIATION NOTE (Rule 1): the plan's literal assertion "evaluateResult(result)
+// -> outcome === 'coverage-incomplete'" against the poison fixture is impossible --
+// the poison run has errorCount > 0 (the NG3004 Fatal + the survivor's TS2322 are
+// real reported errors), and evaluate-result.ts step 1 makes `type-error` WIN the
+// label over `coverage-incomplete`. The honest FM-9 proof feeds the fixture's REAL
+// abort signal into an isolated evaluate input (errorCount 0) so the fold is proven
+// verdict-affecting without the error-count confound.
+describe('runTypecheck FM-9 TCB-abort drift probe (D-09a iv)', () => {
+  it('the TCB abort is verdict-affecting AND the recognized fatal-code surface is pinned to NG3004', async () => {
+    const result = await runTypecheck({ tsConfigPath: faultIsolationTsConfig });
+
+    // The real compiler produced the whole-program TCB-generation abort.
+    expect(result.templateCheckAborted).toBeDefined();
+
+    // The poison run NEVER reads clean: its full verdict fails. The LABEL is
+    // `type-error` (not coverage-incomplete) because the NG3004 Fatal and the
+    // survivor's TS2322 are real reported errors that WIN the label -- errors are
+    // the loudest signal (evaluate-result.ts step 1).
+    expect(evaluateResult(result).success).toBe(false);
+
+    // FM-9 (17-04) is now VERDICT-AFFECTING, not advisory-only: the SAME abort
+    // signal the real fixture produced drives a `coverage-incomplete` verdict when
+    // it is the ONLY failure (errorCount 0). A regression that unwired the FM-9
+    // fold would flip this to a silent clean pass on a run whose survivors'
+    // template diagnostics were suppressed by the abort.
+    expect(
+      evaluateResult({
+        errorCount: 0,
+        warningCount: 0,
+        templateCheckAborted: result.templateCheckAborted,
+      }),
+    ).toEqual({ success: false, outcome: 'coverage-incomplete' });
+
+    // VERSION PIN (Angular 22.0.4 / TS 6.0.3): the real compiler's TCB-generation
+    // Fatal is EXACTLY IMPORT_GENERATION_FAILURE (NG3004). If a future Angular
+    // renumbers it or introduces a NEW TCB-generation Fatal, this equality breaks
+    // LOUD -- update TCB_GENERATION_FATAL_DIAGNOSTIC_CODE, this probe, AND the
+    // extended-catalog drift tests so coverage-incompleteness is never silently
+    // missed.
+    expect(result.templateCheckAborted?.code).toBe(
+      TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
+    );
+    expect(TCB_GENERATION_FATAL_DIAGNOSTIC_CODE).toBe(NG(3004));
+
+    // The detector recognizes NG3004 and ONLY NG3004: the sibling structural codes
+    // NG3001 (SYMBOL_NOT_EXPORTED) / NG3003 (IMPORT_CYCLE_DETECTED) are
+    // analysis-phase Fatals that do NOT abort shared TCB-generation shim priming,
+    // so they must NOT trip the abort notice.
+    const ERROR_CATEGORY = 1 as ts.DiagnosticCategory;
+    const synthetic = (code: number): ts.Diagnostic => ({
+      category: ERROR_CATEGORY,
+      code,
+      file: { fileName: '/ws/app/x.component.ts' } as ts.SourceFile,
+      start: undefined,
+      length: undefined,
+      messageText: 'synthesized',
+    });
+
+    expect(detectTemplateCheckAborted([synthetic(NG(3004))])).toBeDefined();
+    expect(detectTemplateCheckAborted([synthetic(NG(3001))])).toBeUndefined();
+    expect(detectTemplateCheckAborted([synthetic(NG(3003))])).toBeUndefined();
   });
 });
