@@ -143,6 +143,19 @@ Plans:
   1. A decision is recorded for Layout C support beyond the no-silent-pass guard.
   2. Any item actually shipped carries a negative test.
 
+**Plans:** 3 plans
+
+Plans:
+
+**Wave 1**
+
+- [ ] 19-01-PLAN.md -- Opt-in strict mode: strict option threaded schema -> normalizeOptions -> evaluateResult (the (gatesWarnings || strict) gate) + the dropped-in-graph-WARNING FLIP test + error-case regression guard [wave 1]
+- [ ] 19-02-PLAN.md -- Storybook Composition (ZERO engine code): synthetic-hybrid fixture (2 Layout-A libs + composing host with refs + implicitDependencies + dependsOn:['^typecheck']) + a negative-test e2e spec in the existing install-e2e project [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 19-03-PLAN.md -- Docs (D-10): README ## Storybook Composition section + MUST/MUST-NOT coverage claim + Layout C note + Angular-CLI planned caveat + content tripwire; and the 19-DECISIONS.md "not warranted" record for Layout C-beyond-guard + .mdx/.tsx-beyond-advisory (criterion 1) [wave 2]
+
 ## Progress
 
 | Phase             | Milestone | Plans Complete | Status   | Completed  |
