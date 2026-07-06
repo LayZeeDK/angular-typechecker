@@ -37,6 +37,7 @@ run everywhere the editor is not.
 - [Continuous integration](#continuous-integration)
 - [Programmatic API](#programmatic-api)
 - [How it compares](#how-it-compares)
+- [Storybook](#storybook)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
 - [License](#license)
@@ -309,7 +310,8 @@ try {
   //   errorCount, warningCount, suppressedThirdParty, suppressedInGraphErrorCount,
   //   suppressedInGraphWarningCount, suppressedInGraphFiles: readonly string[],
   //   durationMs, templateCheckAborted?,
-  //   skippedReferences?: readonly SkippedReference[] }
+  //   skippedReferences?: readonly SkippedReference[],
+  //   notTypeCheckedDeclaredFiles?: readonly string[] }
   process.exitCode = result.errorCount > 0 ? 1 : 0;
 } catch (error) {
   if (error instanceof TypecheckInfrastructureError) {
@@ -347,6 +349,71 @@ cost of an Angular build, see Brandon Roberts' [Angular Compilation, Type-Checki
 and Build Bottlenecks](https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f)
 (2026).
 
+## Storybook
+
+angular-typechecker type-checks Storybook stories with no extra configuration,
+because Storybook's TypeScript files are just more inputs the project's tsconfig
+declares. There is no Storybook-specific option, version gate, or `*.stories.ts`
+selector -- the tool has zero Storybook coupling.
+
+v0.1.2 runs the complete Angular type-check (TypeScript + template type-check +
+NG8xxx, no emit) on the TypeScript files the Storybook tsconfig declares -- your
+`*.stories.ts`, `.storybook/main.ts`/`preview.ts`, and (centralized host) the
+aggregated `*.component.ts`/`*.directive.ts`/`*.ts` its `include` reaches --
+provided the `typecheck` target points at the project's SOLUTION `tsconfig.json`
+(the top-level config with `references[]`, not a leaf). A green verdict means
+every such file type-checked clean.
+
+Two Nx Storybook layouts are supported, both verified on the official stack (Nx
+23.0.1 / Angular 22.0.4 / TypeScript 6.0.3 / `@storybook/angular@10.4.6`):
+
+- **Layout A (per-project scaffold)** -- `nx g @nx/angular:storybook-configuration`
+  injects a `.storybook/tsconfig.json` into the project's `references[]`; the walk
+  visits it and checks the stories.
+- **Layout B (centralized host, the official Nx "one Storybook for all projects"
+  recipe)** -- a host project whose `.storybook/tsconfig.json` `include` aggregates
+  stories and components from across the workspace; the walk checks that whole
+  declared surface.
+
+The enabling condition for both is pointing the target at the solution
+`tsconfig.json`, not a leaf; the `configuration` generator already does this. It
+is also why the order does not matter: the target stores `tsConfig: <solution>`
+and reads `references[]` at execute time, so adding Storybook after you wire
+`typecheck` yields coverage on the next run with no re-generation.
+
+**What this does not claim.** It does not cover every Storybook file, it is not a
+guarantee of exhaustive Storybook checking, and it does not ensure Storybook builds
+or runs -- it is a type-check of the declared TypeScript surface, nothing more.
+Layouts not proven on the official stack are not supported (see the caveats below
+and [Limitations](#limitations)).
+
+Caveats:
+
+- **`.mdx` is never type-checked**, and a `.tsx` story is checked only when the
+  resolved `compilerOptions.jsx` is set. Declared-but-uncheckable files of either
+  kind surface as a loud advisory notice that does not change the verdict; see
+  `notTypeCheckedDeclaredFiles` under [Programmatic API](#programmatic-api).
+- **External `templateUrl` diagnostics** (for example an `NG8002` in an aggregated
+  component's `.html`) are attributed to the `.html` by the compiler and kept by
+  mapping them back to the owning component `.ts` through the compiler's public
+  `relatedInformation`; an unmappable resource is kept, never dropped.
+- **Point at the solution `tsconfig.json`, not a leaf.** Pointing the target at a
+  leaf `tsconfig.app.json` / `tsconfig.lib.json` excludes the stories the solution
+  config's references reach.
+- **Layout C (a flat root tsconfig with no `references[]`) is not a supported
+  Storybook layout.** It never silently passes -- an empty or story-less config is
+  guarded -- but it is out of scope for v0.1.2.
+- **Installing Storybook on Angular 22 needs a peer override.**
+  `@storybook/angular@10.4.6` peer-caps Angular at `>=18 <22` / TypeScript
+  `^4.9 || ^5`, so `--legacy-peer-deps` (or `--force`) is required to install it on
+  Angular 22.0.4 / TypeScript 6.0.3; on pnpm, `nx add` can hit
+  `ERR_PNPM_IGNORED_BUILDS`. This is a Storybook install constraint, not an
+  angular-typechecker one -- the tool applies no runtime version gate. That forced
+  `@storybook/angular@10.4.6` emits 48 TypeScript 6 `.d.ts` errors, but they are
+  `node_modules`-attributed and suppressed, so they never leak into your verdict.
+  Genuine TypeScript 6 errors in your own `main.ts`/`preview.ts` are real and
+  reported.
+
 ## Limitations
 
 - angular-typechecker is 0.x (pre-1.0). Breaking changes are allowed in minor
@@ -356,9 +423,12 @@ and Build Bottlenecks](https://brandonroberts.dev/blog/posts/angular-compilation
   and NG8xxx diagnostics until it is fixed. The run warns loudly about the
   incompleteness and still exits non-zero, so it never passes silently.
 - The reference walk is single-level. It checks the solution tsconfig's direct
-  in-project leaves; references that are out-of-project, empty, or themselves
-  solution tsconfigs are skipped with an advisory warning and do not change the
-  verdict. Point `tsConfig` at a leaf directly for those.
+  in-project leaves. A referenced in-project leaf that resolves to zero input
+  files -- an empty config, or a references-only/solution tsconfig whose inner
+  projects are not themselves walked -- yields a non-clean coverage-incomplete
+  verdict, so missing coverage is never a silent pass. Only out-of-project,
+  duplicate, and self references stay advisory: they are skipped with a warning and
+  do not change the verdict. Point `tsConfig` at a leaf directly for those.
 - `includeDeps` defaults to `false` (project-in-isolation) for speed and boundary
   hygiene, so type errors in a non-buildable local dependency are not reported
   unless you opt in (see [Executor options](#executor-options)).
