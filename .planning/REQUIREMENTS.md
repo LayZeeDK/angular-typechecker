@@ -87,7 +87,7 @@ Two layouts, both Nx-official:
   `relatedInformation`; default-keep the unmappable edge). Records: `.planning/spikes/006-008` +
   `spike-findings-angular-typechecker` skill. No gate forced the Layout-A-only fallback.
 
-- [ ] **SB-06**: Validate with negative tests as the acceptance gate (a broken input flips the verdict
+- [x] **SB-06**: Validate with negative tests as the acceptance gate (a broken input flips the verdict
   to FAIL), per layout, on the official stack: a pure unit test on the keep-rule (synthetic
   diagnostics + input set); in-repo integration fixtures built with the REAL Nx generators (Layout A
   via `nx g @nx/angular:storybook-configuration`; Layout B via the generator + the documented recipe

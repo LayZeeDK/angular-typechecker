@@ -166,5 +166,5 @@ Plans:
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
 | 17. Input-set-membership boundary + layout support | v0.1.2 | 7/7 | Complete    | 2026-07-06 |
-| 18. Packaged-tarball e2e + docs | v0.1.2 | 5/5 | Complete   | 2026-07-06 |
+| 18. Packaged-tarball e2e + docs | v0.1.2 | 5/5 | Complete    | 2026-07-06 |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
