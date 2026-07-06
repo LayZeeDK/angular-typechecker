@@ -296,8 +296,19 @@ checkout's stale tree.
   in the wave has returned, the orchestrator removes each worktree's `node_modules` junction
   LINK-ONLY before `git worktree remove`:
   ```bash
-  cmd //c "rmdir <ABS-PATH-TO-WORKTREE>\node_modules"   # removes the junction link, NOT its target
-  # POSIX symlink: rm <abs-path-to-worktree>/node_modules   (removes the link, not the target)
+  # Git Bash orchestrator (the primary path in this repo): unlink the junction LINK-ONLY with a
+  # NON-recursive `rm`. A `mklink /J` junction surfaces in Git Bash as a symlink (`ls -ld` shows
+  # `lrwxrwxrwx ... -> <target>`), and `rm <link>` removes the link WITHOUT following it into the
+  # main checkout's deps. Then assert it is gone before `git worktree remove`:
+  rm "<ABS-PATH-TO-WORKTREE>/node_modules"              # link-only unlink; NO -r
+  test ! -e "<ABS-PATH-TO-WORKTREE>/node_modules" || { echo "FATAL: junction still present"; exit 1; }
+  # DO NOT use `cmd //c "rmdir <win-path>\node_modules"` from Git Bash: it was observed to FAIL
+  # with "path not found" -- MSYS mangles the Windows backslash path/quoting passed to cmd.exe
+  # before cmd runs (NOT a cmd.exe or junction problem: native `rmdir <win-path>` on a junction,
+  # without /s, removes the link and leaves the target intact). Verified in Phase 17 -- all four
+  # wave teardowns used `rm <link>` and the main node_modules held at its baseline count.
+  # From a real cmd.exe / PowerShell shell, `rmdir <win-path>\node_modules` (WITHOUT /s) is the
+  # equivalent link-only removal.
   ```
   Target the specific worktree's path explicitly: teardown is orchestrator-owned and the
   orchestrator's CWD is the MAIN checkout, so a bare relative `node_modules` would resolve to
