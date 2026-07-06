@@ -64,6 +64,7 @@ Property guaranteed in every branch: no real error on a checked file is dropped.
 ### 3. Split the suppressed counter (SB-04, the charter floor)
 
 Split the currently-silent `suppressedCount` into:
+
 - `suppressedThirdParty` = `node_modules` suppressions (expected, INFO).
 - `suppressedInGraph` = a compiled first-party source dropped (NEITHER `node_modules` NOR file-less).
 

@@ -19,6 +19,7 @@ Spike sessions wrapped: 2026-07-01 (001-005), 2026-07-05 (006-008).
 ## Requirements (non-negotiable design decisions)
 
 ### v0.1.2 Storybook boundary (Phase 16 gate = GO)
+
 - Charter: **never a silent false pass**; over-report (false FAIL) is the safe direction.
 - Replace directory-containment with a pure `keep(diagnostic, inputSet, options) -> boolean` keyed
   on compiler **input-set membership**; route BOTH the walk and the direct single-leaf path through
@@ -35,18 +36,20 @@ Spike sessions wrapped: 2026-07-01 (001-005), 2026-07-05 (006-008).
   docs-only (D4).
 
 ### v0.1.0 reference-walk engine (shipped)
+
 - Union-then-single-`finalize`; dedupe identity = `ts.sortAndDeduplicateDiagnostics`; counts explicit
   by category; walk skips out-of-project refs (skip-with-notice); D-03a three-way split at
   `rootNames === 0`; walk Nx inputs use the `default` named input; benchmark with Vitest `bench`.
-</requirements>
+  </requirements>
 
 <findings_index>
+
 ## Feature Areas
 
-| Area | Reference | Key Finding |
-|------|-----------|-------------|
+| Area                                                  | Reference                                  | Key Finding                                                                                                                                       |
+| ----------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Storybook input-set boundary (v0.1.2, Phase 17 build) | references/storybook-input-set-boundary.md | GATE = GO. Layout B type-checkable on the official stack; ship the input-set `keep()` + branch 4a (relatedInformation ownership) + split counter. |
-| Reference-walk engine (v0.1.0, shipped foundation) | references/reference-walk-engine.md | The shipped walk the boundary builds on; its rootName-surfacing feeds the new keep-rule. |
+| Reference-walk engine (v0.1.0, shipped foundation)    | references/reference-walk-engine.md        | The shipped walk the boundary builds on; its rootName-surfacing feeds the new keep-rule.                                                          |
 
 ## Source Files
 
@@ -67,4 +70,4 @@ there). Reproduction of the forced-SB10 spike (007) is documented in its README 
 - 006-layout-b-rootnames
 - 007-forced-sb10-compile-ng8xxx
 - 008-external-template-attribution
-</metadata>
+  </metadata>

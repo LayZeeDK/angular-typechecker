@@ -140,10 +140,10 @@ function installStorybookAndTypechecker(
 
   // (4) Wire the ONE typecheck target on the project's solution tsconfig.json.
   // --skipFormat: the fixture installs no Prettier.
-  sh(
-    `npx nx g angular-typechecker:configuration ${project} --skipFormat`,
-    { cwd: tmp, env: npmEnv },
-  );
+  sh(`npx nx g angular-typechecker:configuration ${project} --skipFormat`, {
+    cwd: tmp,
+    env: npmEnv,
+  });
 }
 
 describe('SB-06 criterion 1: the SHIPPED tarball catches a planted Storybook story error', () => {
