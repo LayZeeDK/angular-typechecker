@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import type ts from 'typescript';
 
 import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
+import { detectUncheckedDeclaredFiles } from './detect-unchecked-declared';
 import {
   REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE,
   synthesizeFilelessError,
@@ -55,6 +56,14 @@ export interface WalkResult {
   // skipped/out-of-project/zero-root-names/not-found leaf `continue`s before the
   // surviving-leaf tail, so it contributes ZERO paths here (T-17-06).
   rootNamePaths: readonly string[];
+  // D-01 (Phase 18, T11): the UNION of every SURVIVING leaf's declared-but-
+  // uncheckable files (`.mdx` always; `.tsx` when the resolved `jsx` is unset /
+  // `None`). Aggregated in the SAME surviving-leaf tail as `rootNamePaths` (AFTER
+  // every skip/not-found/zero-root-names `continue`), so a skipped/out-of-project
+  // leaf contributes ZERO paths here (Pitfall 7). Empty array when nothing is
+  // uncheckable; `runTypecheck` maps `[]` -> `undefined` on `CoreResult`. ADVISORY
+  // only -- these paths NEVER change the verdict.
+  notTypeCheckedDeclaredFiles: readonly string[];
   // References skipped (out-of-project / zero-root-names / self-reference /
   // duplicate) or reclassified (not-found -> 90002) during the walk. Empty array
   // when every reference walked cleanly; `runTypecheck` maps `[]` -> `undefined`
@@ -119,6 +128,7 @@ export async function walkReferences(
   const rawDiagnostics: ts.Diagnostic[] = [];
   const skippedReferences: SkippedReference[] = [];
   const rootNamePaths: string[] = [];
+  const notTypeCheckedDeclaredFiles: string[] = [];
   const seenCanonicalLeaves = new Set<string>();
   let rootNamesCount = 0;
 
@@ -266,9 +276,23 @@ export async function walkReferences(
     // zero-root-names `continue`, so an out-of-project or non-surviving leaf
     // contributes nothing (T-17-06).
     rootNamePaths.push(...parsed.rootNames);
+    // D-01 (Phase 18, T11): this surviving leaf's declared-but-uncheckable files
+    // (`.mdx` always; `.tsx` when `jsx` is unset / `None`). Aggregated HERE, in the
+    // surviving-leaf tail beside `rootNamePaths.push` and AFTER every skip
+    // `continue`, so an out-of-project / zero-root-names / not-found leaf
+    // contributes nothing (Pitfall 7). The loop already holds `parsed` + `leafPath`.
+    notTypeCheckedDeclaredFiles.push(
+      ...detectUncheckedDeclaredFiles(ts, parsed, leafPath),
+    );
   }
 
-  return { rawDiagnostics, rootNamesCount, skippedReferences, rootNamePaths };
+  return {
+    rawDiagnostics,
+    rootNamesCount,
+    skippedReferences,
+    rootNamePaths,
+    notTypeCheckedDeclaredFiles,
+  };
 }
 
 /**

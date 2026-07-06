@@ -4,6 +4,7 @@ import type ts from 'typescript';
 
 import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
+import { detectUncheckedDeclaredFiles } from './detect-unchecked-declared';
 import {
   synthesizeFilelessError,
   TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
@@ -97,6 +98,17 @@ export interface CoreResult {
   // loud, path-named `logger.warn` advisory. ADVISORY only -- recording a skip
   // NEVER changes the verdict. Additive/non-breaking (0.x semver).
   skippedReferences?: readonly SkippedReference[];
+  // D-01 (Phase 18, T11): declared-but-uncheckable files -- files a consumer's
+  // tsconfig DECLARES that the type-check cannot cover (`.mdx` is NEVER checked;
+  // a `.tsx` is checked only when the resolved `compilerOptions.jsx` is set).
+  // Present (and NON-EMPTY) only when at least one such file is declared on a
+  // SURVIVING leaf (walk path) or the direct single leaf; `undefined` otherwise --
+  // core maps the empty array `[]` -> `undefined` so consumers branch on presence,
+  // exactly like `skippedReferences`. PURE detection (detect-unchecked-declared.ts,
+  // no `console`/`process`); the executor adapter renders the loud `logger.warn`.
+  // ADVISORY only -- these paths NEVER change the verdict (deliberately NOT read by
+  // `evaluateResult`). Additive/non-breaking (0.x semver).
+  notTypeCheckedDeclaredFiles?: readonly string[];
 }
 
 /**
@@ -322,7 +334,18 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
           ),
         );
 
-        return { ...result, ...skipped };
+        // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-
+        // uncheckable files via the SAME `[]` -> `undefined` conditional-spread
+        // idiom as `skipped`. Sourced from the walk's surviving-leaf aggregation
+        // (Pitfall 7), so only surviving leaves contribute.
+        const notTypeChecked =
+          walk.notTypeCheckedDeclaredFiles.length > 0
+            ? {
+                notTypeCheckedDeclaredFiles: walk.notTypeCheckedDeclaredFiles,
+              }
+            : {};
+
+        return { ...result, ...skipped, ...notTypeChecked };
       }
 
       // References present but 0 in-project leaves (every reference skipped /
@@ -411,7 +434,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // every file in-project and defeat the filter. The live program host supplies
   // `useCaseSensitiveFileNames()` so the case-fold mirrors how diagnostics were
   // produced (RESEARCH D-05/D-06).
-  return finalize(
+  const directResult = finalize(
     ts,
     options.tsConfigPath,
     parsed.rootNames.length,
@@ -425,6 +448,22 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
       parsed.rootNames,
     ),
   );
+
+  // D-01 (Phase 18, T11): the direct single-leaf path computes its declared-but-
+  // uncheckable files from its OWN `parsed` + leaf tsconfig path, attached via the
+  // SAME `[]` -> `undefined` conditional-spread idiom as the walk path above.
+  const notTypeCheckedDeclaredFiles = detectUncheckedDeclaredFiles(
+    ts,
+    parsed,
+    options.tsConfigPath,
+  );
+
+  return {
+    ...directResult,
+    ...(notTypeCheckedDeclaredFiles.length > 0
+      ? { notTypeCheckedDeclaredFiles }
+      : {}),
+  };
 }
 
 /**
