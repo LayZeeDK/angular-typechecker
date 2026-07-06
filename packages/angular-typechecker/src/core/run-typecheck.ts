@@ -289,91 +289,14 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     // `hasProjectReferences` is the SAME predicate `synthesizeZeroRootNamesDiagnostic`
     // uses (below), so the branch classification and the guard message agree.
     if (hasProjectReferences(parsed)) {
-      const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
-
-      // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
-      // union -- whether returned by a surviving leaf's performCompilation OR
-      // raised by an EXISTING leaf's config resolution (walk-references.ts) -- is
-      // an INFRASTRUCTURE failure, never a type error. Re-throw it here exactly as
-      // the direct single-leaf path does below (the walk stays pure and free of the
-      // run-typecheck import cycle), so `errorCount` never counts a compiler crash
-      // and the leaf-vs-solution entry points stay consistent. The synthesized
-      // not-found code is 90002 (NOT 500), so a genuine missing reference is not
-      // caught here -- it stays a counted 90002 and the run resolves.
-      throwIfInfrastructureFailure(ng, ts, walk.rawDiagnostics);
-
-      // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
-      // adapter's presence check is sufficient; mirror the templateCheckAborted
-      // conditional-spread idiom in `finalize`.
-      const skipped =
-        walk.skippedReferences.length > 0
-          ? { skippedReferences: walk.skippedReferences }
-          : {};
-
-      if (walk.rootNamesCount > 0) {
-        // >=1 in-project leaf walked: feed the RAW union into the SAME single
-        // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
-        // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
-        // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
-        // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
-        // available here (the walk owns and discards each leaf's Program), so the
-        // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
-        // Program used -- matching the direct path's `realpath` fallback.
-        const result = finalize(
-          ts,
-          options.tsConfigPath,
-          walk.rootNamesCount,
-          [...configDiagnostics, ...walk.rawDiagnostics],
-          start,
-          buildFinalizeFilter(
-            ts,
-            parsed,
-            options,
-            ts.sys.useCaseSensitiveFileNames,
-            walk.rootNamePaths,
-          ),
-        );
-
-        // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-
-        // uncheckable files via the SAME `[]` -> `undefined` conditional-spread
-        // idiom as `skipped`. Sourced from the walk's surviving-leaf aggregation
-        // (Pitfall 7), so only surviving leaves contribute.
-        const notTypeChecked =
-          walk.notTypeCheckedDeclaredFiles.length > 0
-            ? {
-                notTypeCheckedDeclaredFiles: walk.notTypeCheckedDeclaredFiles,
-              }
-            : {};
-
-        return { ...result, ...skipped, ...notTypeChecked };
-      }
-
-      // References present but 0 in-project leaves (every reference skipped /
-      // reclassified). If the walk produced counted diagnostics -- the actionable
-      // 90002 "referenced tsconfig not found" Errors, one per not-found leaf --
-      // finalize the UNION so those SPECIFIC, path-named diagnostics are reported
-      // (I-1). Collapsing N broken references into one generic 90001, whose message
-      // ("references are not consulted ... point the tsConfig at a leaf that lists
-      // files") is simply WRONG for the all-not-found case, would misdescribe the
-      // cause. Only when the union is EMPTY -- every reference was boundary-skipped
-      // / zero-root-names / self-reference / duplicate, so nothing was counted --
-      // do we synthesize the none-in-project 90001 guard, keeping the verdict a
-      // deterministic non-zero signal. Every diagnostic here is file-less (no
-      // surviving leaf ran, and the infra-500 case already re-threw above), so no
-      // boundary filter is needed.
-      const guardDiagnostics =
-        walk.rawDiagnostics.length > 0
-          ? walk.rawDiagnostics
-          : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
-      const result = finalize(
+      return handleSolutionWalk(
+        ng,
         ts,
-        options.tsConfigPath,
-        0,
-        [...configDiagnostics, ...guardDiagnostics],
+        parsed,
+        options,
+        configDiagnostics,
         start,
       );
-
-      return { ...result, ...skipped };
     }
 
     // No references (empty project): UNCHANGED. No Program on this path: nothing
@@ -464,6 +387,112 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
       ? { notTypeCheckedDeclaredFiles }
       : {}),
   };
+}
+
+/**
+ * D-03a (Phase 13): the references-present arm of the zero-rootNames branch,
+ * extracted VERBATIM from `runTypecheck` so the entry function stays under the
+ * cognitive-complexity budget. PURE core (no `console`/`process`); uses only the
+ * module-scoped helpers `walkReferences`, `throwIfInfrastructureFailure`,
+ * `finalize`, and `buildFinalizeFilter`. A solution-style / references-only
+ * config splits two ways: >=1 in-project leaf walked (finalize the raw union) vs
+ * 0 in-project leaves (finalize the counted not-found 90002s, else synthesize the
+ * none-in-project 90001 guard). Both paths attach `skippedReferences` via the same
+ * `[]` -> `undefined` conditional-spread idiom.
+ */
+async function handleSolutionWalk(
+  ng: CompilerCli,
+  ts: typeof import('typescript'),
+  parsed: ParsedConfiguration,
+  options: CoreOptions,
+  configDiagnostics: readonly ts.Diagnostic[],
+  start: number,
+): Promise<CoreResult> {
+  const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
+
+  // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
+  // union -- whether returned by a surviving leaf's performCompilation OR
+  // raised by an EXISTING leaf's config resolution (walk-references.ts) -- is
+  // an INFRASTRUCTURE failure, never a type error. Re-throw it here exactly as
+  // the direct single-leaf path does (the walk stays pure and free of the
+  // run-typecheck import cycle), so `errorCount` never counts a compiler crash
+  // and the leaf-vs-solution entry points stay consistent. The synthesized
+  // not-found code is 90002 (NOT 500), so a genuine missing reference is not
+  // caught here -- it stays a counted 90002 and the run resolves.
+  throwIfInfrastructureFailure(ng, ts, walk.rawDiagnostics);
+
+  // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
+  // adapter's presence check is sufficient; mirror the templateCheckAborted
+  // conditional-spread idiom in `finalize`.
+  const skipped =
+    walk.skippedReferences.length > 0
+      ? { skippedReferences: walk.skippedReferences }
+      : {};
+
+  if (walk.rootNamesCount > 0) {
+    // >=1 in-project leaf walked: feed the RAW union into the SAME single
+    // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
+    // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
+    // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
+    // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
+    // available here (the walk owns and discards each leaf's Program), so the
+    // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
+    // Program used -- matching the direct path's `realpath` fallback.
+    const result = finalize(
+      ts,
+      options.tsConfigPath,
+      walk.rootNamesCount,
+      [...configDiagnostics, ...walk.rawDiagnostics],
+      start,
+      buildFinalizeFilter(
+        ts,
+        parsed,
+        options,
+        ts.sys.useCaseSensitiveFileNames,
+        walk.rootNamePaths,
+      ),
+    );
+
+    // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-
+    // uncheckable files via the SAME `[]` -> `undefined` conditional-spread
+    // idiom as `skipped`. Sourced from the walk's surviving-leaf aggregation
+    // (Pitfall 7), so only surviving leaves contribute.
+    const notTypeChecked =
+      walk.notTypeCheckedDeclaredFiles.length > 0
+        ? {
+            notTypeCheckedDeclaredFiles: walk.notTypeCheckedDeclaredFiles,
+          }
+        : {};
+
+    return { ...result, ...skipped, ...notTypeChecked };
+  }
+
+  // References present but 0 in-project leaves (every reference skipped /
+  // reclassified). If the walk produced counted diagnostics -- the actionable
+  // 90002 "referenced tsconfig not found" Errors, one per not-found leaf --
+  // finalize the UNION so those SPECIFIC, path-named diagnostics are reported
+  // (I-1). Collapsing N broken references into one generic 90001, whose message
+  // ("references are not consulted ... point the tsConfig at a leaf that lists
+  // files") is simply WRONG for the all-not-found case, would misdescribe the
+  // cause. Only when the union is EMPTY -- every reference was boundary-skipped
+  // / zero-root-names / self-reference / duplicate, so nothing was counted --
+  // do we synthesize the none-in-project 90001 guard, keeping the verdict a
+  // deterministic non-zero signal. Every diagnostic here is file-less (no
+  // surviving leaf ran, and the infra-500 case already re-threw above), so no
+  // boundary filter is needed.
+  const guardDiagnostics =
+    walk.rawDiagnostics.length > 0
+      ? walk.rawDiagnostics
+      : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
+  const result = finalize(
+    ts,
+    options.tsConfigPath,
+    0,
+    [...configDiagnostics, ...guardDiagnostics],
+    start,
+  );
+
+  return { ...result, ...skipped };
 }
 
 /**
