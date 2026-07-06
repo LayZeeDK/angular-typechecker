@@ -213,16 +213,19 @@ export async function walkReferences(
       continue;
     }
 
-    // D-03b (DECISION, I-5): a resolved leaf with no input files contributes 0 and
-    // is recorded as an ADVISORY skip -- on its own it does NOT fail the verdict.
-    // This is DELIBERATELY asymmetric with the direct single-leaf path (where a
-    // zero-rootNames config is a hard 90001): inside a walk a leaf may legitimately
-    // match no files yet (e.g. a spec leaf before any *.spec.ts exists), and failing
-    // the WHOLE solution for that would be a false negative. Mitigations keep it
-    // honest -- the loud per-reference logger.warn (executor) surfaces the skip, a
-    // SIBLING leaf's real errors still fail the verdict, and if EVERY leaf is
-    // skipped the none-in-project 90001 guard fires (run-typecheck.ts), so an
-    // all-empty solution is never a silent PASS.
+    // D-06 (DECISION, supersedes the earlier D-03b advisory-only treatment): a
+    // resolved leaf with no input files contributes 0 and is recorded here with
+    // reason 'zero-root-names'. It is NOT advisory-only for the verdict --
+    // evaluateResult (17-04) folds a zero-rootNames first-party leaf into a
+    // non-clean coverage-incomplete outcome, so a leaf that legitimately matches
+    // no files yet (e.g. a spec leaf before any *.spec.ts exists) surfaces as
+    // INCOMPLETE COVERAGE rather than a silent PASS. This stays asymmetric with the
+    // direct single-leaf path (a hard 90001 error there vs the distinct
+    // coverage-incomplete outcome here), but both now fail the verdict. Mitigations
+    // still apply -- the loud per-reference logger.warn (executor) surfaces the
+    // skip, a SIBLING leaf's real errors also fail, and if EVERY leaf is skipped the
+    // none-in-project 90001 guard fires (run-typecheck.ts), so an all-empty
+    // solution is never a silent PASS.
     //
     // LIMITATION (C7): the walk is single-level (D-03). A referenced leaf that is
     // ITSELF a solution/references-only tsconfig has zero root names of its own, so

@@ -134,11 +134,13 @@ export default async function typecheckExecutor(
       result.suppressedInGraphWarningCount > 0
     ) {
       logger.warn(
-        `angular-typechecker: this run's coverage is INCOMPLETE and the verdict is ` +
-          `NOT clean -- ${result.suppressedInGraphErrorCount} error(s) and ` +
+        `angular-typechecker: this run's coverage is INCOMPLETE -- ` +
+          `${result.suppressedInGraphErrorCount} error(s) and ` +
           `${result.suppressedInGraphWarningCount} warning(s) on first-party files were ` +
-          `dropped by the project boundary. A real diagnostic on a checked file may have ` +
-          `been suppressed. Dropped file(s): ${result.suppressedInGraphFiles.join(', ')}.`,
+          `dropped by the project boundary. In-graph errors force a non-clean ` +
+          `(coverage-incomplete) verdict; dropped warnings affect the verdict only when ` +
+          `they exceed maxWarnings. A real diagnostic on a checked file may have been ` +
+          `suppressed. Dropped file(s): ${result.suppressedInGraphFiles.join(', ')}.`,
       );
     }
 

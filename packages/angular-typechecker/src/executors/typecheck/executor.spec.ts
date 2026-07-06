@@ -398,6 +398,13 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     expect(mocks.loggerWarn).toHaveBeenCalledWith(
       expect.stringContaining('/ws/libs/dep/src/warn-only.ts'),
     );
+    // WR-03: the notice must NOT over-claim a non-clean verdict. It prints from the
+    // suppressed counts BEFORE evaluateResult decides, so it cannot assert the
+    // verdict -- when only in-graph WARNINGS drop and maxWarnings is unset the run
+    // stays clean/exit 0.
+    expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+      expect.stringContaining('NOT clean'),
+    );
   });
 
   it('SB-04: a clean result (all suppressed fields 0) emits NEITHER the info nor the coverage-incomplete warn', async () => {
