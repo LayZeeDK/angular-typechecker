@@ -19,9 +19,9 @@ export interface CoreOptions {
   tsConfigPath: string;
   // D-07: project-boundary filter switch. Default false excludes out-of-project
   // + node_modules diagnostics from the reported set; true folds them back in
-  // (and resets `suppressedCount` to 0). Orthogonal to the consumer's
-  // `skipLibCheck` (which governs whether node_modules `.d.ts` diagnostics are
-  // even produced).
+  // (and resets all suppressed counters to 0 / empty). Orthogonal to the
+  // consumer's `skipLibCheck` (which governs whether node_modules `.d.ts`
+  // diagnostics are even produced).
   includeDeps?: boolean;
   // D-08: the formatter's relativization base for CI annotation paths.
   // `runTypecheck` IGNORES it -- it is consumed ONLY by `formatReport` (plan
@@ -52,9 +52,20 @@ export interface CoreResult {
   // D-01/D-02: category === Warning (explicit, NOT total - errorCount),
   // counted POST-filter on the sorted set.
   warningCount: number;
-  // D-02: count of excluded out-of-project + node_modules diagnostics. 0 on the
-  // zero-rootNames guard path (no Program) and whenever `includeDeps` is true.
-  suppressedCount: number;
+  // D-05/D-07: split suppressed counters (replacing the prior single silent
+  // `suppressedCount`). `suppressedThirdParty` counts node_modules suppressions
+  // (quiet -- NEVER affects the verdict, preserving dependency isolation). The
+  // per-category in-graph counters count SUPPRESSED first-party (non-node_modules)
+  // Error/Warning diagnostics -- the milestone's core correctness signal: an
+  // out-of-project first-party diagnostic the boundary used to drop SILENTLY is
+  // now COUNTED as in-graph (feeding the 17-04 coverage-incomplete gate).
+  // `suppressedInGraphFiles` carries their distinct canonical paths (advisory).
+  // All four are 0 / [] on the zero-rootNames guard path (no Program) and
+  // whenever `includeDeps` is true.
+  suppressedThirdParty: number;
+  suppressedInGraphErrorCount: number;
+  suppressedInGraphWarningCount: number;
+  suppressedInGraphFiles: readonly string[];
   durationMs: number;
   // RES-02 (reframe; 09-RES-02-DECISION.md, Option A): set when a TCB-generation
   // `FatalDiagnosticError` (IMPORT_GENERATION_FAILURE, NG3004 -- the ONLY Fatal
@@ -158,16 +169,19 @@ function hasProjectReferences(parsed: ParsedConfiguration): boolean {
 
 /**
  * Builds the project-boundary `FinalizeFilter` shared by the walk (>=1 in-project
- * leaf) path and the direct single-leaf path. Only `useCaseSensitiveFileNames`
- * differs between the two callers (the walk reuses `ts.sys`; the direct path reads
- * it off the live Program host), so it is the one parameter; `basePath`,
- * `includeDeps`, and `realpath` are identical.
+ * leaf) path and the direct single-leaf path. Two things differ between the two
+ * callers, so both are parameters: `useCaseSensitiveFileNames` (the walk reuses
+ * `ts.sys`; the direct path reads it off the live Program host) and `inputTs`
+ * (the walk passes the union `walk.rootNamePaths`; the direct path passes the
+ * single leaf's `parsed.rootNames`). `basePath`, `includeDeps`, and `realpath`
+ * are identical.
  */
 function buildFinalizeFilter(
   ts: typeof import('typescript'),
   parsed: ParsedConfiguration,
   options: CoreOptions,
   useCaseSensitiveFileNames: boolean,
+  inputTs: readonly string[],
 ): FinalizeFilter {
   return {
     basePath: resolveFilterBasePath(
@@ -176,6 +190,7 @@ function buildFinalizeFilter(
     ),
     includeDeps: options.includeDeps ?? false,
     useCaseSensitiveFileNames,
+    inputTs,
     realpath: (filePath: string): string =>
       ts.sys.realpath?.(filePath) ?? filePath,
   };
@@ -303,6 +318,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
             parsed,
             options,
             ts.sys.useCaseSensitiveFileNames,
+            walk.rootNamePaths,
           ),
         );
 
@@ -339,8 +355,8 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 
     // No references (empty project): UNCHANGED. No Program on this path: nothing
     // to filter (the single guard diagnostic is file-less and would never be
-    // filtered anyway), so `suppressedCount` is 0 and `finalize` runs with
-    // `filter` omitted.
+    // filtered anyway), so all suppressed counters are 0 / empty and `finalize`
+    // runs with `filter` omitted.
     const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
 
     return finalize(
@@ -406,6 +422,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
       parsed,
       options,
       result.program.getTsProgram().useCaseSensitiveFileNames(),
+      parsed.rootNames,
     ),
   );
 }
@@ -462,7 +479,8 @@ function synthesizeZeroRootNamesDiagnostic(
 /**
  * The per-call inputs the project-boundary filter needs, sourced from the live
  * Program host + the parsed config. Omitted on the zero-rootNames guard path
- * (no Program), where `suppressedCount` is 0 and nothing is filtered.
+ * (no Program), where all suppressed counters are 0 / empty and nothing is
+ * filtered.
  */
 interface FinalizeFilter {
   // D-05: in-project baseline = the leaf tsconfig's `basePath`.
@@ -471,6 +489,10 @@ interface FinalizeFilter {
   includeDeps: boolean;
   // D-06: from `result.program.getTsProgram().useCaseSensitiveFileNames()`.
   useCaseSensitiveFileNames: boolean;
+  // D-02: the DECLARED rootName `.ts` paths whose union is the input set. The
+  // walk path threads `walk.rootNamePaths`; the direct path threads
+  // `parsed.rootNames`.
+  inputTs: readonly string[];
   // D-06: symlink resolution (pnpm `.pnpm/`); `ts.sys.realpath` in production.
   realpath: (filePath: string) => string;
 }
@@ -480,8 +502,8 @@ interface FinalizeFilter {
  * first excludes out-of-project + node_modules diagnostics (D-06). The kept set
  * is then sorted + deduped via `ts.sortAndDeduplicateDiagnostics` (D-09)
  * UNCONDITIONALLY -- including the zero-rootNames guard path (no `filter`, where
- * diagnostics pass through unfiltered with `suppressedCount: 0`) -- so the
- * reported order is deterministic on every path (IN-01/IN-05). Error and Warning
+ * diagnostics pass through unfiltered with all suppressed counters 0 / empty) --
+ * so the reported order is deterministic on every path (IN-01/IN-05). Error and Warning
  * categories are then counted EXPLICITLY (D-01) on that POST-filter, sorted set,
  * never by subtracting errors from the total. Suggestion + Message categories
  * stay in `diagnostics` but are not counted, preserving the invariant
@@ -504,7 +526,10 @@ function finalize(
   filter?: FinalizeFilter,
 ): CoreResult {
   let kept: readonly ts.Diagnostic[] = diagnostics;
-  let suppressedCount = 0;
+  let suppressedThirdParty = 0;
+  let suppressedInGraphErrorCount = 0;
+  let suppressedInGraphWarningCount = 0;
+  let suppressedInGraphFiles: readonly string[] = [];
 
   if (filter !== undefined) {
     const filtered = filterDiagnostics(diagnostics, {
@@ -512,10 +537,14 @@ function finalize(
       includeDeps: filter.includeDeps,
       useCaseSensitiveFileNames: filter.useCaseSensitiveFileNames,
       realpath: filter.realpath,
+      inputTs: filter.inputTs,
     });
 
     kept = filtered.kept;
-    suppressedCount = filtered.suppressedCount;
+    suppressedThirdParty = filtered.suppressedThirdParty;
+    suppressedInGraphErrorCount = filtered.suppressedInGraphErrorCount;
+    suppressedInGraphWarningCount = filtered.suppressedInGraphWarningCount;
+    suppressedInGraphFiles = filtered.suppressedInGraphFiles;
   }
 
   // D-09 / IN-01 / IN-05: sort + dedup the kept set UNCONDITIONALLY before
@@ -553,7 +582,10 @@ function finalize(
     diagnostics: reported,
     errorCount,
     warningCount,
-    suppressedCount,
+    suppressedThirdParty,
+    suppressedInGraphErrorCount,
+    suppressedInGraphWarningCount,
+    suppressedInGraphFiles,
     durationMs: performance.now() - start,
     ...(templateCheckAborted !== undefined ? { templateCheckAborted } : {}),
   };

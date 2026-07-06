@@ -306,8 +306,10 @@ const options: CoreOptions = {
 try {
   const result: CoreResult = await runTypecheck(options);
   // result: { tsConfigPath, rootNamesCount, diagnostics: readonly ts.Diagnostic[],
-  //   errorCount, warningCount, suppressedCount, durationMs,
-  //   templateCheckAborted?, skippedReferences?: readonly SkippedReference[] }
+  //   errorCount, warningCount, suppressedThirdParty, suppressedInGraphErrorCount,
+  //   suppressedInGraphWarningCount, suppressedInGraphFiles: readonly string[],
+  //   durationMs, templateCheckAborted?,
+  //   skippedReferences?: readonly SkippedReference[] }
   process.exitCode = result.errorCount > 0 ? 1 : 0;
 } catch (error) {
   if (error instanceof TypecheckInfrastructureError) {
