@@ -143,14 +143,14 @@ Plans:
   1. A decision is recorded for Layout C support beyond the no-silent-pass guard.
   2. Any item actually shipped carries a negative test.
 
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
 
 **Wave 1**
 
-- [ ] 19-01-PLAN.md -- Opt-in strict mode: strict option threaded schema -> normalizeOptions -> evaluateResult (the (gatesWarnings || strict) gate) + the dropped-in-graph-WARNING FLIP test + error-case regression guard [wave 1]
-- [ ] 19-02-PLAN.md -- Storybook Composition (ZERO engine code): synthetic-hybrid fixture (2 Layout-A libs + composing host with refs + implicitDependencies + dependsOn:['^typecheck']) + a negative-test e2e spec in the existing install-e2e project [wave 1]
+- [x] 19-01-PLAN.md -- Opt-in strict mode: strict option threaded schema -> normalizeOptions -> evaluateResult (the (gatesWarnings || strict) gate) + the dropped-in-graph-WARNING FLIP test + error-case regression guard [wave 1]
+- [x] 19-02-PLAN.md -- Storybook Composition (ZERO engine code): synthetic-hybrid fixture (2 Layout-A libs + composing host with refs + implicitDependencies + dependsOn:['^typecheck']) + a negative-test e2e spec in the existing install-e2e project [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -180,4 +180,4 @@ Plans:
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
 | 17. Input-set-membership boundary + layout support | v0.1.2 | 7/7 | Complete    | 2026-07-06 |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 5/5 | Complete    | 2026-07-06 |
-| 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
+| 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 2/3 | In Progress|  |

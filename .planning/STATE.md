@@ -4,8 +4,8 @@ milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: executing
 stopped_at: "Phase 19 context gathered (stretch scope locked: ship strict mode + Composition; defer Layout C/mdx-tsx; OSS verify manual)"
-last_updated: "2026-07-06T22:33:37.452Z"
-last_activity: 2026-07-06 -- Phase 19 planning complete
+last_updated: "2026-07-06T22:50:16.142Z"
+last_activity: 2026-07-06 -- Phase 19 execution started
 progress:
   total_phases: 4
   completed_phases: 2
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 19 — stretch    layout c / non ts story formats / strict mode
+**Current focus:** Phase 19 — stretch-layout-c-non-ts-story-formats-strict-mode
 
 ## Current Position
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 19
-Plan: Not started
-Status: Ready to execute
+Phase: 19 (stretch-layout-c-non-ts-story-formats-strict-mode) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 19
 external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-06 -- Phase 19 planning complete
+Last activity: 2026-07-06 -- Phase 19 execution started
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
 Requirements: `.planning/REQUIREMENTS.md` (SB-01..08).
