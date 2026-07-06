@@ -120,54 +120,71 @@ export function filterDiagnostics(
   };
 
   const kept: ts.Diagnostic[] = [];
-  let suppressedThirdParty = 0;
-  let suppressedInGraphErrorCount = 0;
-  let suppressedInGraphWarningCount = 0;
-  const suppressedInGraphFiles = new Set<string>();
+  const suppressed = {
+    thirdParty: 0,
+    inGraphErrorCount: 0,
+    inGraphWarningCount: 0,
+    files: new Set<string>(),
+  };
 
   for (const diagnostic of diagnostics) {
     if (keep(diagnostic, inputSet, keepOptions)) {
       kept.push(diagnostic);
-
-      continue;
-    }
-
-    // Suppressed. A suppressed diagnostic always has a resolved, non-empty file
-    // (keep()'s fail-safe branches keep every file-less/unresolvable case), so
-    // `canonicalFile` is defined here. Bucket node_modules (quiet third-party) vs
-    // first-party in-graph (verdict-affecting) using the memoized full form -- no
-    // second realpath syscall (createCanonicalizer memoizes).
-    const file = diagnostic.file;
-    const canonicalFile =
-      file === undefined ? undefined : canonicalizeFull(file.fileName);
-
-    if (canonicalFile !== undefined && isNodeModulesPath(canonicalFile)) {
-      suppressedThirdParty++;
-
-      continue;
-    }
-
-    // Per-category split (D-05): Suggestion (2) / Message (3) are ALWAYS excluded
-    // from the counts (provably cannot fail any gate); only Error/Warning count.
-    // The Warning decision is late-bound in `evaluateResult`, so core just counts.
-    if (diagnostic.category === 1 /* ts.DiagnosticCategory.Error */) {
-      suppressedInGraphErrorCount++;
-    } else if (diagnostic.category === 0 /* ts.DiagnosticCategory.Warning */) {
-      suppressedInGraphWarningCount++;
-    }
-
-    if (canonicalFile !== undefined) {
-      suppressedInGraphFiles.add(canonicalFile);
+    } else {
+      tallySuppressed(diagnostic, canonicalizeFull, suppressed);
     }
   }
 
   return {
     kept,
-    suppressedThirdParty,
-    suppressedInGraphErrorCount,
-    suppressedInGraphWarningCount,
-    suppressedInGraphFiles: [...suppressedInGraphFiles],
+    suppressedThirdParty: suppressed.thirdParty,
+    suppressedInGraphErrorCount: suppressed.inGraphErrorCount,
+    suppressedInGraphWarningCount: suppressed.inGraphWarningCount,
+    suppressedInGraphFiles: [...suppressed.files],
   };
+}
+
+/**
+ * Buckets a SUPPRESSED diagnostic into the accumulator (pure relocation of the
+ * suppressed-branch tail out of the `filterDiagnostics` loop). A suppressed
+ * diagnostic always has a resolved, non-empty file (keep()'s fail-safe branches
+ * keep every file-less/unresolvable case), so `canonicalFile` is defined here.
+ * Bucket node_modules (quiet third-party) vs first-party in-graph
+ * (verdict-affecting) using the memoized full form -- no second realpath syscall
+ * (createCanonicalizer memoizes).
+ */
+function tallySuppressed(
+  diagnostic: ts.Diagnostic,
+  canonicalizeFull: (filePath: string) => string | undefined,
+  acc: {
+    thirdParty: number;
+    inGraphErrorCount: number;
+    inGraphWarningCount: number;
+    files: Set<string>;
+  },
+): void {
+  const file = diagnostic.file;
+  const canonicalFile =
+    file === undefined ? undefined : canonicalizeFull(file.fileName);
+
+  if (canonicalFile !== undefined && isNodeModulesPath(canonicalFile)) {
+    acc.thirdParty++;
+
+    return;
+  }
+
+  // Per-category split (D-05): Suggestion (2) / Message (3) are ALWAYS excluded
+  // from the counts (provably cannot fail any gate); only Error/Warning count.
+  // The Warning decision is late-bound in `evaluateResult`, so core just counts.
+  if (diagnostic.category === 1 /* ts.DiagnosticCategory.Error */) {
+    acc.inGraphErrorCount++;
+  } else if (diagnostic.category === 0 /* ts.DiagnosticCategory.Warning */) {
+    acc.inGraphWarningCount++;
+  }
+
+  if (canonicalFile !== undefined) {
+    acc.files.add(canonicalFile);
+  }
 }
 
 /**
