@@ -101,7 +101,7 @@ Two layouts, both Nx-official:
   `./.storybook/tsconfig.json`) fails on a story error; T11 `.mdx` present -> loud "not type-checked"
   notice (verdict may stay green), `.tsx` without `jsx` -> same.
 
-- [ ] **SB-07**: README + changelog document the exact coverage claim and caveats: the complete Angular
+- [x] **SB-07**: README + changelog document the exact coverage claim and caveats: the complete Angular
   type-check runs on the TypeScript files the Storybook tsconfig declares (stories, `main.ts`/`preview.ts`,
   and a host's aggregated `*.component.ts`/`*.directive.ts`/`*.ts`) PROVIDED the `typecheck` target
   points at the solution `tsconfig.json`; MUST NOT claim "all Storybook files" / "complete Storybook
