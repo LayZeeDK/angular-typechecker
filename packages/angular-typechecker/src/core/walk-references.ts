@@ -46,6 +46,15 @@ export interface WalkResult {
   // Sum of `parsed.rootNames.length` across WALKED (surviving) leaves. A
   // skipped/broken leaf contributes 0 (L-3 / Pitfall 5).
   rootNamesCount: number;
+  // The UNION of every SURVIVING leaf's DECLARED `readConfiguration().rootNames`
+  // `.ts` paths (D-02) -- the raw declared set, NEVER
+  // `program.getTsProgram().getRootFileNames()` (which adds a synthetic
+  // `<root>.ngtypecheck.ts` shim per root that would corrupt the input set).
+  // `run-typecheck.ts` (plan 17-03) builds the `inputTs` membership set from
+  // this to route the input-set-membership boundary filter. A
+  // skipped/out-of-project/zero-root-names/not-found leaf `continue`s before the
+  // surviving-leaf tail, so it contributes ZERO paths here (T-17-06).
+  rootNamePaths: readonly string[];
   // References skipped (out-of-project / zero-root-names / self-reference /
   // duplicate) or reclassified (not-found -> 90002) during the walk. Empty array
   // when every reference walked cleanly; `runTypecheck` maps `[]` -> `undefined`
@@ -109,6 +118,7 @@ export async function walkReferences(
 
   const rawDiagnostics: ts.Diagnostic[] = [];
   const skippedReferences: SkippedReference[] = [];
+  const rootNamePaths: string[] = [];
   const seenCanonicalLeaves = new Set<string>();
   let rootNamesCount = 0;
 
@@ -246,9 +256,16 @@ export async function walkReferences(
     rawDiagnostics.push(...parsed.errors);
     rawDiagnostics.push(...result.diagnostics);
     rootNamesCount += parsed.rootNames.length;
+    // D-02: surface this surviving leaf's DECLARED rootName paths (the exact
+    // `readConfiguration().rootNames` the loop already holds -- NEVER derived
+    // from a Program, so no `.ngtypecheck.ts` shim enters the input set). This
+    // push lives in the surviving-leaf tail AFTER every skip/not-found/
+    // zero-root-names `continue`, so an out-of-project or non-surviving leaf
+    // contributes nothing (T-17-06).
+    rootNamePaths.push(...parsed.rootNames);
   }
 
-  return { rawDiagnostics, rootNamesCount, skippedReferences };
+  return { rawDiagnostics, rootNamesCount, skippedReferences, rootNamePaths };
 }
 
 /**
