@@ -62,11 +62,22 @@ export function detectUncheckedDeclaredFiles(
     parsed.options.jsx,
   );
 
-  const configJson =
-    ts.readConfigFile(leafTsConfigPath, ts.sys.readFile).config ?? {};
+  // IN-02: a failed / unparseable config read yields `config === undefined`. Do
+  // NOT fall back to `{}` -- `parseJsonConfigFileContent({}, ...)` defaults
+  // `include` to `["**/*"]` and would enumerate the ENTIRE leaf directory tree for
+  // `.mdx`, a silent whole-tree over-enumeration. With no reliable include set,
+  // report only the `.tsx` set. (Latent today: the caller reaches here only after
+  // `ng.readConfiguration` on the same path already parsed it, but this guard keeps
+  // a future precondition-loosening refactor from regressing into a whole-tree scan.)
+  const readResult = ts.readConfigFile(leafTsConfigPath, ts.sys.readFile);
+
+  if (readResult.config === undefined) {
+    return tsxWithoutJsx;
+  }
+
   const declaredMdx = ts
     .parseJsonConfigFileContent(
-      configJson,
+      readResult.config,
       ts.sys,
       dirname(leafTsConfigPath),
       /* existingOptions */ undefined,
