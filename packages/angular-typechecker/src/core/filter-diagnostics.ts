@@ -337,7 +337,7 @@ export function createCanonicalizer(
  * pre-realpath identity, so a transient realpath throw on that root still keeps its
  * diagnostics. Same case-fold policy and memoization as `createCanonicalizer`.
  */
-export function createRawCanonicalizer(
+function createRawCanonicalizer(
   options: Pick<FilterOptions, 'useCaseSensitiveFileNames'>,
 ): (filePath: string) => string {
   const cache = new Map<string, string>();
