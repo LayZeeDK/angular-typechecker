@@ -16,7 +16,8 @@ import type ts from 'typescript';
  * matched if EITHER of its forms hits EITHER stored form. This RECOVERS a
  * declared root whose realpath transiently throws (matched via `raw`) so a real
  * error on a declared file is never silently dropped (charter: a declared root is
- * never dropped; board-verified against typescript@6.0.3 + @angular/compiler-cli@22.0.4).
+ * never dropped; board-verified against the installed TypeScript 6.0.3 + Angular
+ * 22.0.4 compiler sources).
  *
  * D-04a: membership ALONE would misclassify a clean host's OWN external `.html`
  * template, indirect-inline synthetic name, or `.ngtypecheck.ts` shim (none are
@@ -28,7 +29,8 @@ import type ts from 'typescript';
  * component `.ts` via the diagnostic's public `ts.Diagnostic.relatedInformation`
  * and KEEPs iff that owner is in `inputTs`. An unmappable `.html` (no `.ts`
  * relatedInformation) DEFAULT-KEEPs (over-report safe; never a false pass). ZERO
- * ngtsc/component-registry internals are read -- enforced by a structural gate.
+ * compiler-internal (component-registry / template-type-checker) APIs are read --
+ * enforced by the structural gate spec.
  *
  * D-05/D-07: the prior single silent `suppressedCount` is REPLACED by
  * `suppressedThirdParty` (node_modules; quiet; NEVER affects the verdict -- this
@@ -169,8 +171,8 @@ export function filterDiagnostics(
 }
 
 /**
- * Pure boundary decision. Reads ONLY public `ts.Diagnostic` fields (zero ngtsc
- * internals). Branches are evaluated in the ORDER below; dual-identity membership
+ * Pure boundary decision. Reads ONLY public `ts.Diagnostic` fields (zero
+ * compiler-internal APIs). Branches are evaluated in the ORDER below; dual-identity membership
  * is checked BEFORE node_modules so a declared root is never dropped (D-02 charter;
  * equivalent to the research b-before-c order for real inputs since a rootName is
  * never under node_modules).
@@ -260,7 +262,9 @@ function isMember(
   rawForm: string,
   fullForm: string | undefined,
 ): boolean {
-  return inputSet.has(rawForm) || (fullForm !== undefined && inputSet.has(fullForm));
+  return (
+    inputSet.has(rawForm) || (fullForm !== undefined && inputSet.has(fullForm))
+  );
 }
 
 /**
