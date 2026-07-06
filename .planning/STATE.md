@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: executing
-stopped_at: Phase 18 context gathered
-last_updated: "2026-07-06T11:34:39.902Z"
-last_activity: 2026-07-06 -- Phase 18 planning complete
+stopped_at: Completed 18-01-PLAN.md
+last_updated: "2026-07-06T11:53:01.467Z"
+last_activity: 2026-07-06
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
   percent: 25
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 18 — packaged tarball e2e + docs
+**Current focus:** Phase 18 — Packaged-tarball e2e + docs
 
 ## Current Position
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 18
-Plan: Not started
+Phase: 18 (Packaged-tarball e2e + docs) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
 external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-06 -- Phase 18 planning complete
+Last activity: 2026-07-06
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
 Requirements: `.planning/REQUIREMENTS.md` (SB-01..08).
@@ -59,6 +59,8 @@ public `relatedInformation`; default-keep the unmappable edge). Phase 17 ships L
 
 Prior milestone decisions (v0.0.1 + v0.0.3 + v0.1.0): PROJECT.md Key Decisions + the per-milestone
 archives under `.planning/milestones/`.
+
+- [Phase 18]: 18-01: added advisory CoreResult.notTypeCheckedDeclaredFiles (.mdx always; .tsx when jsx unset/None) rendered as one executor logger.warn; verdict stays green (evaluate-result unchanged, negative test locks it)
 
 ### Blockers/Concerns
 
@@ -108,14 +110,14 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-06T10:04:14.155Z
+Last session: 2026-07-06T11:53:00.896Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
 isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
 packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
 complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Phase 18 context gathered
+Stopped at: Completed 18-01-PLAN.md
 complete. Reviewed at the 16->17 gate.
 Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
 implementation blueprint is in the spike-findings skill's

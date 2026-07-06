@@ -112,6 +112,11 @@ None - no external service configuration required.
 - The T11 engine half is complete. Plan 18-03 adds the in-repo integration fixture (a declared `.mdx` and/or JSX-free `.tsx` with `jsx` unset) proving the notice fires end-to-end AND the verdict stays clean (Assumption A1/A2 verification).
 - Plan 18-05 (README) must add `notTypeCheckedDeclaredFiles?: readonly string[]` to the Programmatic-API `CoreResult` shape comment and the `.mdx`/`.tsx` caveats.
 
+## Self-Check: PASSED
+
+- All created files present on disk (detector, detector spec, SUMMARY).
+- All task commits present in git log (`ba0aadc`, `7a794ad`, `9bbcd80`, `e41a205`, `25e8c09`, `f200322`).
+
 ---
 *Phase: 18-packaged-tarball-e2e-docs*
 *Completed: 2026-07-06*
