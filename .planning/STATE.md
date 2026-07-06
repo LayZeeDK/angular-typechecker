@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: executing
-stopped_at: Completed 18-02-PLAN.md
-last_updated: "2026-07-06T12:06:52.631Z"
+stopped_at: Completed 18-03-PLAN.md (T11 not-type-checked advisory integration proof; fixed .mdx enumeration).
+last_updated: "2026-07-06T12:20:36.191Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
   percent: 25
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
 Phase: 18 (Packaged-tarball e2e + docs) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 external-template branch 4a locked (relatedInformation ownership signal).
 Last activity: 2026-07-06
@@ -61,6 +61,7 @@ Prior milestone decisions (v0.0.1 + v0.0.3 + v0.1.0): PROJECT.md Key Decisions +
 archives under `.planning/milestones/`.
 
 - [Phase 18]: 18-01: added advisory CoreResult.notTypeCheckedDeclaredFiles (.mdx always; .tsx when jsx unset/None) rendered as one executor logger.warn; verdict stays green (evaluate-result unchanged, negative test locks it)
+- [Phase 18]: 18-03: T11 integration proof of D-01 notTypeCheckedDeclaredFiles; fixed .mdx enumeration (ScriptKind.Deferred, was Unknown -> zero .mdx); verdict stays green with a JSX-free .tsx
 
 ### Blockers/Concerns
 
@@ -110,7 +111,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-06T12:06:28.247Z
+Last session: 2026-07-06T12:19:51.198Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
