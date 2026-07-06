@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
       maxWarnings: undefined,
       failFast: false,
       color: false,
+      strict: false,
     })),
     loggerError: vi.fn(),
     loggerInfo: vi.fn(),
@@ -152,6 +153,7 @@ describe('typecheckExecutor (D-01/D-04)', () => {
       maxWarnings: undefined,
       failFast: false,
       color: false,
+      strict: false,
     });
   });
 
@@ -169,6 +171,7 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     expect(result).toEqual({ success: true });
     expect(mocks.evaluateResult).toHaveBeenCalledWith(coreResult(0), {
       maxWarnings: undefined,
+      strict: false,
     });
   });
 

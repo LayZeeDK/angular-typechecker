@@ -41,10 +41,8 @@ export default async function typecheckExecutor(
   options: TypecheckExecutorOptions,
   context: ExecutorContext,
 ): Promise<{ success: boolean }> {
-  const { coreOptions, maxWarnings, failFast, color } = normalizeOptions(
-    options,
-    context,
-  );
+  const { coreOptions, maxWarnings, failFast, color, strict } =
+    normalizeOptions(options, context);
 
   try {
     const result = await runTypecheck(coreOptions);
@@ -70,7 +68,7 @@ export default async function typecheckExecutor(
     // The authoritative verdict lives in evaluateResult (plan 17-04); the adapter
     // reads ONLY `.success` and maps it to Nx's `{ success }`, so any extra
     // structured fields evaluateResult may carry never leak into the return.
-    const { success } = evaluateResult(result, { maxWarnings });
+    const { success } = evaluateResult(result, { maxWarnings, strict });
 
     return { success };
   } catch (error) {

@@ -14,7 +14,7 @@ import type { TypecheckExecutorOptions } from './schema';
  * - `coreOptions` carries only what the engine needs: an ABSOLUTE `tsConfigPath`,
  *   the `includeDeps` boundary switch, and the `pathBase` (workspace root) the
  *   formatter uses for CI annotation paths.
- * - `maxWarnings` is the verdict-only quality gate (consumed by `evaluateResult`).
+ * - `maxWarnings` + `strict` are verdict-only knobs (consumed by `evaluateResult`).
  * - `failFast` + `color` are reporter-only (consumed by `renderReport`).
  */
 export interface NormalizedOptions {
@@ -22,6 +22,7 @@ export interface NormalizedOptions {
   maxWarnings?: number;
   failFast: boolean;
   color: boolean;
+  strict: boolean;
 }
 
 /**
@@ -35,8 +36,10 @@ export interface NormalizedOptions {
  *
  * `maxWarnings` is forwarded AS-IS (no `?? 0`): `evaluateResult` defensively
  * treats undefined / negative / NaN as unset (EXE-05), so a `default: 0` footgun
- * is avoided. `color` is derived from the TTY here so the core stays
- * `process`-free (D-04 / Phase-3 D-11).
+ * is avoided. `strict` IS defaulted to a concrete boolean (`options.strict ?? false`,
+ * mirroring `failFast`) because `evaluateResult` reads it as a plain boolean (D-19-01).
+ * `color` is derived from the TTY here so the core stays `process`-free
+ * (D-04 / Phase-3 D-11).
  */
 export function normalizeOptions(
   options: TypecheckExecutorOptions,
@@ -55,5 +58,6 @@ export function normalizeOptions(
     maxWarnings: options.maxWarnings,
     failFast: options.failFast ?? false,
     color: process.stdout.isTTY === true,
+    strict: options.strict ?? false,
   };
 }
