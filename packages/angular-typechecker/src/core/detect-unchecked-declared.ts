@@ -11,8 +11,8 @@ import type { ParsedConfiguration } from './compiler-cli-types';
  * `compilerOptions.jsx` is set (unset / `None` leaves it uncheckable). This mirrors
  * the shipped `detectTemplateCheckAborted` / `skippedReferences` pure-detector
  * shape: a `readonly`-returning function set on `CoreResult`, rendered by the Nx
- * executor adapter (the ONLY tier that logs). Core is PURE -- no `console` /
- * `process`; `ts.sys` + `ts.parseJsonConfigFileContent` are permitted here
+ * executor adapter (the ONLY tier that logs). Core is PURE -- no logging or Node
+ * runtime globals; `ts.sys` + `ts.parseJsonConfigFileContent` are permitted here
  * (walk-references.ts already reads via `ts.sys`).
  */
 
@@ -50,7 +50,7 @@ export function detectTsxWithoutJsx(
  * extension, then filter `fileNames` for `.mdx`. The enumeration is include-driven:
  * a `.storybook/tsconfig.json` whose `include` is `.ts`-only reports zero `.mdx`,
  * which is correct (nothing declared, nothing to warn about). Pure: `ts.sys` is the
- * same host the walk already uses; no `console` / `process`.
+ * same host the walk already uses; no logging or Node runtime globals.
  */
 export function detectUncheckedDeclaredFiles(
   ts: typeof import('typescript'),
@@ -72,7 +72,13 @@ export function detectUncheckedDeclaredFiles(
       /* existingOptions */ undefined,
       leafTsConfigPath,
       /* resolutionStack */ undefined,
-      [{ extension: 'mdx', isMixedContent: false, scriptKind: ts.ScriptKind.Unknown }],
+      [
+        {
+          extension: 'mdx',
+          isMixedContent: false,
+          scriptKind: ts.ScriptKind.Unknown,
+        },
+      ],
     )
     .fileNames.filter((name) => name.endsWith('.mdx'));
 
