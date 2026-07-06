@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: planning
-stopped_at: Completed 18-02-PLAN.md (T9/T6/T10 residual boundary-semantics fixtures; T5 verified pre-covered).
-last_updated: "2026-07-06T14:35:22.527Z"
+stopped_at: "Phase 19 context gathered (stretch scope locked: ship strict mode + Composition; defer Layout C/mdx-tsx; OSS verify manual)"
+last_updated: "2026-07-06T21:53:53.148Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 4
@@ -113,14 +113,14 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-06T13:56:02.520Z
+Last session: 2026-07-06T21:53:53.139Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
 isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
 packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
 complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Completed 18-02-PLAN.md (T9/T6/T10 residual boundary-semantics fixtures; T5 verified pre-covered).
+Stopped at: Phase 19 context gathered (stretch scope locked: ship strict mode + Composition; defer Layout C/mdx-tsx; OSS verify manual)
 complete. Reviewed at the 16->17 gate.
 Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
 implementation blueprint is in the spike-findings skill's
