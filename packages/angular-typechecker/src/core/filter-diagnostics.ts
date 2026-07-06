@@ -82,6 +82,30 @@ export interface FilterResult {
 }
 
 /**
+ * Internal keep-decision (perf): `keep()` returns the classification it already
+ * computed so the suppressed branch reuses that canonical file + node_modules test
+ * instead of RE-running `canonicalizeFull` / `isNodeModulesPath` on the same file.
+ * Not exported -- `filterDiagnostics` (kept vs the two suppressed buckets) is the
+ * only consumer:
+ *   - `keep`        -> retained in the in-graph set.
+ *   - `third-party` -> node_modules-segment suppression (quiet; NEVER the verdict).
+ *   - `in-graph`    -> first-party suppression, carrying the canonical file `keep()`
+ *                      already resolved (verdict-affecting; listed in the advisory set).
+ */
+type KeepDecision =
+  | { readonly kind: 'keep' }
+  | { readonly kind: 'third-party' }
+  | { readonly kind: 'in-graph'; readonly canonicalFile: string };
+
+/** The two suppressed variants of `KeepDecision` (what `tallySuppressed` buckets). */
+type SuppressedDecision = Exclude<KeepDecision, { readonly kind: 'keep' }>;
+
+// Shared singletons for the two data-free decisions: most diagnostics KEEP, so this
+// avoids re-allocating an identical object per diagnostic in a hot run.
+const KEEP: KeepDecision = { kind: 'keep' };
+const THIRD_PARTY: KeepDecision = { kind: 'third-party' };
+
+/**
  * Partitions `diagnostics` into the in-graph set + the split suppressed counters,
  * on dual-identity input-set membership (D-02) plus the narrowed base clause
  * (D-04a) and external-template branch 4a (D-04).
@@ -128,10 +152,12 @@ export function filterDiagnostics(
   };
 
   for (const diagnostic of diagnostics) {
-    if (keep(diagnostic, inputSet, keepOptions)) {
+    const decision = keep(diagnostic, inputSet, keepOptions);
+
+    if (decision.kind === 'keep') {
       kept.push(diagnostic);
     } else {
-      tallySuppressed(diagnostic, canonicalizeFull, suppressed);
+      tallySuppressed(diagnostic, decision, suppressed);
     }
   }
 
@@ -145,17 +171,16 @@ export function filterDiagnostics(
 }
 
 /**
- * Buckets a SUPPRESSED diagnostic into the accumulator (pure relocation of the
- * suppressed-branch tail out of the `filterDiagnostics` loop). A suppressed
- * diagnostic always has a resolved, non-empty file (keep()'s fail-safe branches
- * keep every file-less/unresolvable case), so `canonicalFile` is defined here.
- * Bucket node_modules (quiet third-party) vs first-party in-graph
- * (verdict-affecting) using the memoized full form -- no second realpath syscall
- * (createCanonicalizer memoizes).
+ * Buckets a SUPPRESSED diagnostic into the accumulator from the classification
+ * `keep()` ALREADY computed -- no re-run of `canonicalizeFull` / `isNodeModulesPath`
+ * on the same file. `third-party` is the quiet node_modules bucket; `in-graph`
+ * carries the canonical file `keep()` resolved (a suppressed diagnostic always has a
+ * resolved, non-empty file -- keep()'s fail-safe branches KEEP every
+ * file-less/unresolvable case) and splits it per category.
  */
 function tallySuppressed(
   diagnostic: ts.Diagnostic,
-  canonicalizeFull: (filePath: string) => string | undefined,
+  decision: SuppressedDecision,
   acc: {
     thirdParty: number;
     inGraphErrorCount: number;
@@ -163,11 +188,7 @@ function tallySuppressed(
     files: Set<string>;
   },
 ): void {
-  const file = diagnostic.file;
-  const canonicalFile =
-    file === undefined ? undefined : canonicalizeFull(file.fileName);
-
-  if (canonicalFile !== undefined && isNodeModulesPath(canonicalFile)) {
+  if (decision.kind === 'third-party') {
     acc.thirdParty++;
 
     return;
@@ -182,9 +203,7 @@ function tallySuppressed(
     acc.inGraphWarningCount++;
   }
 
-  if (canonicalFile !== undefined) {
-    acc.files.add(canonicalFile);
-  }
+  acc.files.add(decision.canonicalFile);
 }
 
 /**
@@ -208,43 +227,52 @@ export function keep(
     canonicalBase: string | undefined;
     includeDeps: boolean;
   },
-): boolean {
+): KeepDecision {
   // D-07 fold-back: the boundary filter is OFF -- keep everything.
   if (options.includeDeps) {
-    return true;
+    return KEEP;
   }
 
   // (a) file-less OR present-but-empty fileName -> KEEP (fail-safe, D-06/COR-03).
   if (diagnostic.file === undefined || diagnostic.file.fileName === '') {
-    return true;
+    return KEEP;
   }
 
   const fileName = diagnostic.file.fileName;
   const rawForm = options.canonicalizeRaw(fileName);
+
+  // DUAL-IDENTITY membership FIRST (D-02): a declared root is never dropped. The
+  // RAW check runs BEFORE the realpath: raw never throws and never calls realpath,
+  // and a declared root is stored under BOTH forms, so a raw hit is authoritative --
+  // `fullForm` (a realpath syscall) is computed only when the raw check misses.
+  if (inputSet.has(rawForm)) {
+    return KEEP;
+  }
+
   const fullForm = options.canonicalizeFull(fileName);
 
-  // DUAL-IDENTITY membership FIRST (D-02): a declared root is never dropped. A
-  // rootName whose realpath transiently throws is still matched via its raw form.
-  if (isMember(inputSet, rawForm, fullForm)) {
-    return true;
+  // Full-form membership completes the dual-identity check (D-02): recovers a
+  // rootName reached via a symlink/junction whose realpathed form is what is stored.
+  if (fullForm !== undefined && inputSet.has(fullForm)) {
+    return KEEP;
   }
 
   // (a') realpath threw AND not matched by raw membership -> KEEP (RES-03 fail-safe:
   // a throw cannot PROVE the file is out-of-graph).
   if (fullForm === undefined) {
-    return true;
+    return KEEP;
   }
 
-  // (b) node_modules SEGMENT -> SUPPRESS (dependency noise isolation).
+  // (b) node_modules SEGMENT -> SUPPRESS third-party (dependency noise isolation).
   if (isNodeModulesPath(fullForm)) {
-    return false;
+    return THIRD_PARTY;
   }
 
   // (c) under the narrowed solution/host base -> KEEP (D-04a: the host's OWN inline
   // templates, external `.html`, indirect-inline synthetic names, `.ngtypecheck.ts`
   // shims -- none are declared rootNames but all are first-party).
   if (isUnderDir(fullForm, options.canonicalBase)) {
-    return true;
+    return KEEP;
   }
 
   // Reached: resolved, non-node_modules, NOT a declared root, NOT under base.
@@ -253,7 +281,7 @@ export function keep(
   // `relatedInformation`, so a blanket else-> 4a would default-KEEP it and break
   // isolation.
   if (fullForm.endsWith('.ts') || fullForm.endsWith('.tsx')) {
-    return false;
+    return { kind: 'in-graph', canonicalFile: fullForm };
   }
 
   // (d)/4a: a non-`.ts` external-template resource (e.g. `.html`). Resolve the
@@ -263,14 +291,20 @@ export function keep(
 
   if (owner === undefined) {
     // Unmappable (no `.ts` relatedInformation) -> default-KEEP (over-report safe).
-    return true;
+    return KEEP;
   }
 
-  return isMember(
-    inputSet,
-    options.canonicalizeRaw(owner),
-    options.canonicalizeFull(owner),
-  );
+  if (
+    isMember(
+      inputSet,
+      options.canonicalizeRaw(owner),
+      options.canonicalizeFull(owner),
+    )
+  ) {
+    return KEEP;
+  }
+
+  return { kind: 'in-graph', canonicalFile: fullForm };
 }
 
 /** Dual-identity membership: either the raw or (when defined) full form hits the set. */

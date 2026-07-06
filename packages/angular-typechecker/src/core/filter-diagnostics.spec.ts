@@ -556,15 +556,17 @@ describe('keep', () => {
   it('includeDeps: true -> KEEP everything (fold-back)', () => {
     expect(
       keep(diag('/ws/dep/x.ts'), new Set(), keepOptions({ includeDeps: true })),
-    ).toBe(true);
+    ).toEqual({ kind: 'keep' });
   });
 
   it('branch (a): file-less -> KEEP', () => {
-    expect(keep(diag(undefined), new Set(), keepOptions())).toBe(true);
+    expect(keep(diag(undefined), new Set(), keepOptions())).toEqual({
+      kind: 'keep',
+    });
   });
 
   it('branch (a): present-but-empty fileName -> KEEP', () => {
-    expect(keep(diag(''), new Set(), keepOptions())).toBe(true);
+    expect(keep(diag(''), new Set(), keepOptions())).toEqual({ kind: 'keep' });
   });
 
   it('membership (raw): a declared rootName is KEPT', () => {
@@ -576,7 +578,7 @@ describe('keep', () => {
         set,
         keepOptions({ canonicalBase: '/ws/other' }),
       ),
-    ).toBe(true);
+    ).toEqual({ kind: 'keep' });
   });
 
   it("branch (a'): canonicalizeFull returns undefined (realpath threw) -> KEEP", () => {
@@ -586,29 +588,29 @@ describe('keep', () => {
         new Set(),
         keepOptions({ canonicalizeFull: () => undefined }),
       ),
-    ).toBe(true);
+    ).toEqual({ kind: 'keep' });
   });
 
-  it('branch (b): node_modules segment -> SUPPRESS', () => {
+  it('branch (b): node_modules segment -> SUPPRESS third-party', () => {
     expect(
       keep(diag('/ws/proj/node_modules/pkg/i.d.ts'), new Set(), keepOptions()),
-    ).toBe(false);
+    ).toEqual({ kind: 'third-party' });
   });
 
   it('branch (c): under base -> KEEP', () => {
-    expect(keep(diag('/ws/proj/src/a.ts'), new Set(), keepOptions())).toBe(
-      true,
-    );
+    expect(keep(diag('/ws/proj/src/a.ts'), new Set(), keepOptions())).toEqual({
+      kind: 'keep',
+    });
   });
 
-  it('branch else: dependency .ts (not member, not under base) -> SUPPRESS', () => {
+  it('branch else: dependency .ts (not member, not under base) -> SUPPRESS in-graph, carrying its canonical file', () => {
     expect(
       keep(
         diag('/ws/dep/lib.ts'),
         new Set(),
         keepOptions({ canonicalBase: '/ws/host' }),
       ),
-    ).toBe(false);
+    ).toEqual({ kind: 'in-graph', canonicalFile: '/ws/dep/lib.ts' });
   });
 
   it('branch 4a: .html owner .ts in set -> KEEP', () => {
@@ -620,17 +622,17 @@ describe('keep', () => {
         set,
         keepOptions({ canonicalBase: '/ws/host' }),
       ),
-    ).toBe(true);
+    ).toEqual({ kind: 'keep' });
   });
 
-  it('branch 4a: .html owner .ts NOT in set -> SUPPRESS', () => {
+  it('branch 4a: .html owner .ts NOT in set -> SUPPRESS in-graph, carrying the .html canonical file', () => {
     expect(
       keep(
         diag('/ws/dep/c.html', { relatedFiles: ['/ws/dep/c.ts'] }),
         new Set(),
         keepOptions({ canonicalBase: '/ws/host' }),
       ),
-    ).toBe(false);
+    ).toEqual({ kind: 'in-graph', canonicalFile: '/ws/dep/c.html' });
   });
 
   it('branch 4a: unmappable .html (no .ts relatedInformation) -> default-KEEP', () => {
@@ -640,6 +642,6 @@ describe('keep', () => {
         new Set(),
         keepOptions({ canonicalBase: '/ws/host' }),
       ),
-    ).toBe(true);
+    ).toEqual({ kind: 'keep' });
   });
 });
