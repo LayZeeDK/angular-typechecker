@@ -100,6 +100,27 @@ function skippedRefsCoreResult(
   };
 }
 
+// SB-04 (17-05 adapter render): a CoreResult carrying the split suppressed counts
+// the adapter must render loudly -- INFO for expected node_modules third-party
+// suppressions, WARN (naming the dropped files from suppressedInGraphFiles, NEVER
+// their error text) for a first-party in-graph drop (coverage-incomplete).
+function suppressedCoreResult(
+  overrides: Partial<
+    Pick<
+      CoreResult,
+      | 'suppressedThirdParty'
+      | 'suppressedInGraphErrorCount'
+      | 'suppressedInGraphWarningCount'
+      | 'suppressedInGraphFiles'
+    >
+  >,
+): CoreResult {
+  return {
+    ...coreResult(0),
+    ...overrides,
+  };
+}
+
 const context = { root: '/ws' } as ExecutorContext;
 const options = { tsConfig: 'libs/x/tsconfig.lib.json' };
 
@@ -306,6 +327,113 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     expect(result).toEqual({ success: true });
     expect(mocks.loggerWarn).toHaveBeenCalledOnce();
     expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  // SB-04 (17-05): the adapter renders the two split suppressed counts LOUDLY from
+  // the PURE structured CoreResult fields -- INFO for expected node_modules
+  // suppressions, WARN (naming the dropped files, never their error text) for a
+  // first-party in-graph drop -- and stays silent on a clean result.
+  it('SB-04: emits a logger.info for expected node_modules third-party suppressions', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({ suppressedThirdParty: 3 }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerInfo).toHaveBeenCalledOnce();
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      expect.stringContaining('node_modules'),
+    );
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      expect.stringContaining('includeDeps'),
+    );
+    // Expected suppressions are advisory INFO, NEVER the coverage-incomplete WARN.
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  it('SB-04: emits a coverage-incomplete logger.warn naming the dropped file for an in-graph suppression', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({
+        suppressedInGraphErrorCount: 1,
+        suppressedInGraphFiles: ['/ws/libs/dep/src/broken.ts'],
+      }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    // Names the dropped FILE and states the coverage is INCOMPLETE...
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/dep/src/broken.ts'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('INCOMPLETE'),
+    );
+    // ...but NEVER leaks the dependency's error MESSAGE text (T-17-13 content
+    // isolation): the adapter renders from suppressedInGraphFiles (paths only), so
+    // a typical diagnostic message fragment can never appear in the notice.
+    expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+      expect.stringContaining('is not assignable'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('SB-04: also fires the coverage-incomplete warn when only in-graph WARNINGS were dropped', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({
+        suppressedInGraphWarningCount: 2,
+        suppressedInGraphFiles: ['/ws/libs/dep/src/warn-only.ts'],
+      }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/dep/src/warn-only.ts'),
+    );
+  });
+
+  it('SB-04: a clean result (all suppressed fields 0) emits NEITHER the info nor the coverage-incomplete warn', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerInfo).not.toHaveBeenCalled();
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  it('SB-04: the zero-root-names skippedReferences notice no longer claims the verdict is unchanged', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      skippedRefsCoreResult([
+        {
+          referencePath: '/ws/fixtures/solution-style/tsconfig.inner.json',
+          reason: 'zero-root-names',
+        },
+      ]),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    // The zero-root-names reason now warns about coverage-incompleteness instead of
+    // the old "verdict is unchanged" advisory wording.
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('coverage-incomplete'),
+    );
+    expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+      expect.stringContaining('verdict is unchanged'),
+    );
   });
 
   it('catches a TypecheckInfrastructureError -> logger.error + { success: false } (D-01)', async () => {
