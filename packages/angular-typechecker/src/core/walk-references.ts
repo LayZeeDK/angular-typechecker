@@ -60,9 +60,11 @@ export interface WalkResult {
   // uncheckable files (`.mdx` always; `.tsx` when the resolved `jsx` is unset /
   // `None`). Aggregated in the SAME surviving-leaf tail as `rootNamePaths` (AFTER
   // every skip/not-found/zero-root-names `continue`), so a skipped/out-of-project
-  // leaf contributes ZERO paths here (Pitfall 7). Empty array when nothing is
-  // uncheckable; `runTypecheck` maps `[]` -> `undefined` on `CoreResult`. ADVISORY
-  // only -- these paths NEVER change the verdict.
+  // leaf contributes ZERO paths here (Pitfall 7). Deduped across leaves (IN-01) so
+  // a file two surviving leaves both declare (overlapping `include` globs) is
+  // surfaced once. Empty array when nothing is uncheckable; `runTypecheck` maps
+  // `[]` -> `undefined` on `CoreResult`. ADVISORY only -- these paths NEVER change
+  // the verdict.
   notTypeCheckedDeclaredFiles: readonly string[];
   // References skipped (out-of-project / zero-root-names / self-reference /
   // duplicate) or reclassified (not-found -> 90002) during the walk. Empty array
@@ -291,7 +293,12 @@ export async function walkReferences(
     rootNamesCount,
     skippedReferences,
     rootNamePaths,
-    notTypeCheckedDeclaredFiles,
+    // IN-01: dedupe the cross-leaf union so an `.mdx`/`.tsx` declared by two
+    // surviving leaves (overlapping `include` globs) is surfaced ONCE, not repeated
+    // in the executor's advisory (which joins this set verbatim). The diagnostics
+    // union stays raw -- `finalize` owns diagnostic dedupe -- this is the advisory
+    // display set only.
+    notTypeCheckedDeclaredFiles: [...new Set(notTypeCheckedDeclaredFiles)],
   };
 }
 
