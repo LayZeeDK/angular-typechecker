@@ -4,8 +4,8 @@ milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: executing
 stopped_at: Phase 17 context gathered
-last_updated: "2026-07-05T22:40:33.789Z"
-last_activity: 2026-07-05 -- Phase 17 planning complete
+last_updated: "2026-07-06T06:23:39.080Z"
+last_activity: 2026-07-06 -- Phase 17 execution started
 progress:
   total_phases: 4
   completed_phases: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** v0.1.2 -- Storybook story type-checking. Phase 16 gate spike COMPLETE (GO). Next: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support).
+**Current focus:** Phase 17 — input-set-membership-boundary-layout-support
 
 ## Current Position
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 16 complete (gate spike, run via /gsd-spike; no PLAN.md -- a spike phase). Next: 17.
-Plan: --
-Status: Ready to execute
+Phase: 17 (input-set-membership-boundary-layout-support) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 17
 external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-05 -- Phase 17 planning complete
+Last activity: 2026-07-06 -- Phase 17 execution started
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
 Requirements: `.planning/REQUIREMENTS.md` (SB-01..08).

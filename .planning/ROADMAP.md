@@ -85,16 +85,16 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   4. A clean Layout-B host reports `suppressedInGraph == 0`, both suppression counts appear in stdout AND the structured result, and `suppressedInGraph > 0` yields a non-clean coverage-incomplete outcome.
   5. No Layout-A regression; the boundary is a pure `keep(diagnostic, inputSet, options)` shared by the walk and single-leaf paths; `git grep` shows it references zero ngtsc/component-registry internals.
 
-**Plans:** 7 plans (4 waves)
+**Plans:** 3/7 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 17-01-PLAN.md — Pure boundary `keep()` + dual-identity membership + split counter + branch 4a (filter-diagnostics.ts) [wave 1]
-- [ ] 17-02-PLAN.md — Surface declared rootName paths from the walk (walk-references.ts) [wave 1]
+- [x] 17-01-PLAN.md — Pure boundary `keep()` + dual-identity membership + split counter + branch 4a (filter-diagnostics.ts) [wave 1]
+- [x] 17-02-PLAN.md — Surface declared rootName paths from the walk (walk-references.ts) [wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 17-03-PLAN.md — Thread inputTs union + replace suppressedCount with the split-counter CoreResult fields (run-typecheck.ts) [wave 2]
+- [x] 17-03-PLAN.md — Thread inputTs union + replace suppressedCount with the split-counter CoreResult fields (run-typecheck.ts) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -149,6 +149,6 @@ Plans:
 | 14. configuration + init generators, nx add | v0.1.0 | 3/3 | Complete | 2026-07-02 |
 | 15. Generator e2e + CI self-audit guard | v0.1.0 | 2/2 | Complete | 2026-07-02 |
 | 16. Storybook type-check gate spike (GATED) | v0.1.2 | spike 006-008 | Complete (GO) | 2026-07-05 |
-| 17. Input-set-membership boundary + layout support | v0.1.2 | 0/7 | Not started | -- |
+| 17. Input-set-membership boundary + layout support | v0.1.2 | 3/7 | In Progress|  |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 0/? | Not started | -- |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 0/? | Not started | -- |
