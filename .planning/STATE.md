@@ -1,48 +1,40 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1.2
+milestone: v0.2.0
 milestone_name: Storybook story type-checking
-status: completed
+status: Awaiting next milestone
 stopped_at: "Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)"
-last_updated: "2026-07-07T15:33:03.337Z"
-last_activity: 2026-07-07
+last_updated: "2026-07-07T19:17:53.352Z"
+last_activity: 2026-07-07 — Milestone v0.2.0 completed and archived
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 5
   total_plans: 20
-  completed_plans: 21
-  percent: 60
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
+See: .planning/PROJECT.md (updated 2026-07-07 -- v0.2.0 milestone CLOSED)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone complete
+**Current focus:** v0.2.0 closed + audited PASSED; the v0.2.0 npm publish is the pending human-gated Release-PR, then `/gsd-new-milestone`.
 
 ## Current Position
 
-Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 20
-Plan: Not started
-Status: Milestone complete
-external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-07
-into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
-
-Requirements: `.planning/REQUIREMENTS.md` (SB-01..09).
-Roadmap: `.planning/ROADMAP.md` (phases 16-20; v0.0.1 + v0.0.3 + v0.1.0 collapsed to SHIPPED).
-Board record: `.planning/research/v0.1.2-storybook/board/` (FACTS.md, ROUND-1-SYNTHESIS.md, CONSENSUS.md).
-Research: `.planning/research/v0.1.2-storybook/` (NX-SCAFFOLD.md, OSS-EXAMPLES.md, CENTRALIZED-HOST.md).
+Phase: Milestone v0.2.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-07 — Milestone v0.2.0 completed and archived
 
 ## Accumulated Context
 
 ### Decisions
 
-v0.1.2 decisions are logged in PROJECT.md Key Decisions and detailed in the board CONSENSUS.md.
+v0.2.0 decisions are logged in PROJECT.md Key Decisions and detailed in the board CONSENSUS.md.
 Headline: this milestone is ONE input-set-membership boundary correctness fix (not Storybook-specific
 code); Layout A + Layout B both minimum; never-false-pass enforced via a split suppression counter;
 external-template coverage G1-gated with a no-ngtsc-internals rule; a hard GO/NO-GO Phase-16 spike.
@@ -63,25 +55,25 @@ archives under `.planning/milestones/`.
 - [Phase 18]: 18-01: added advisory CoreResult.notTypeCheckedDeclaredFiles (.mdx always; .tsx when jsx unset/None) rendered as one executor logger.warn; verdict stays green (evaluate-result unchanged, negative test locks it)
 - [Phase 18]: 18-03: T11 integration proof of D-01 notTypeCheckedDeclaredFiles; fixed .mdx enumeration (ScriptKind.Deferred, was Unknown -> zero .mdx); verdict stays green with a JSX-free .tsx
 - [Phase 18]: 18-04: packaged-tarball Storybook criterion-1 e2e (Verdaccio nx add) proves the SHIPPED artifact catches planted story errors on Layout A (TS2322) + Layout B (aggregated TS2345 + external-template NG8002); clean baselines exit 0, no ERR_REQUIRE_ESM/infra error. B-03 preserved by installing angular-typechecker BEFORE Storybook (nx add forwards no flags) so the override-free peer check runs against a Storybook-free tree; only @storybook/angular used --legacy-peer-deps. Known-local out-of-scope: nx-add-yarn ECONNREFUSED (corepack-yarn vs Verdaccio).
-- [Phase 18]: 18-05: SB-07 docs -- README ## Storybook section (exact coverage claim + caveats), Limitations WR-01 fix (zero-input in-project leaf is coverage-incomplete, not advisory-skip), CoreResult comment gains notTypeCheckedDeclaredFiles, curated CHANGELOG 0.1.2 with green->red false-pass to true-fail callout; prose only, no release cut (D-05).
+- [Phase 18]: 18-05: SB-07 docs -- README ## Storybook section (exact coverage claim + caveats), Limitations WR-01 fix (zero-input in-project leaf is coverage-incomplete, not advisory-skip), CoreResult comment gains notTypeCheckedDeclaredFiles, curated CHANGELOG 0.2.0 with green->red false-pass to true-fail callout; prose only, no release cut (D-05).
 - [Phase 19]: 19-03: README ## Storybook Composition coverage claim rests on per-project typecheck + Nx ^typecheck fan-out (implicitDependencies), NOT Storybook's any-typed refs (19-02 finding); a content tripwire (storybook-docs.spec.ts) locks it
 - [Phase 19]: 19-03: recorded Layout-C-beyond-guard and .mdx/.tsx-beyond-advisory as 'not warranted' (19-DECISIONS.md), closing phase-19 success criterion 1
 - [Phase 20]: 20-01: added advisory CoreResult.bundlerQueryImports (deduped+sorted ?query TS2307 specifiers) via a pure detector over the POST-filter kept set at the single finalize seam (zero walk threading); verdict-neutral (evaluate-result untouched + D-05 tripwire); baseline leg fires+keeps the TS2307 / vite-client leg self-gates, proven by a hermetic real-compiler fixture. Signal 2 engine half only -- executor render (20-02) + README (20-03) remain; SB-09 not closed until phase verification.
 - [Phase 20]: 20-02: executor half of Signal 2 (D-04) -- warnBundlerQueryImports renders CoreResult.bundlerQueryImports as ONE logger.warn (count + "types": ["vite/client"] fix + ADVISORY-not-suppressed + specifiers), the fifth advisory notice, fired after warnNotTypeChecked; self-gating on field presence (D-03), verdict untouched (evaluateResult never reads it), content-isolated to the consumer's own specifiers; both doc-comments bumped four->five
-- [Phase 20]: README Vite caveat restructured to lead with the vite/client fix; both SB-09 signals folded into the curated 0.1.2 CHANGELOG (prose only, no release cut, package.json stays 0.1.1)
+- [Phase 20]: README Vite caveat restructured to lead with the vite/client fix; both SB-09 signals folded into the curated 0.2.0 CHANGELOG (prose only, no release cut, package.json stays 0.1.1)
 
 ### Roadmap Evolution
 
-- Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010. BOTH signals in scope for v0.1.2 (user-committed 2026-07-07): the `vite/client` README recipe (docs) AND the `?query` detection advisory (engine + executor). Reopens v0.1.2 beyond its passed milestone audit.
+- Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010. BOTH signals in scope for v0.2.0 (user-committed 2026-07-07): the `vite/client` README recipe (docs) AND the `?query` detection advisory (engine + executor). Reopens v0.2.0 beyond its passed milestone audit.
 
 ### Blockers/Concerns
 
-- **v0.1.2 GATE -- RESOLVED 2026-07-05 = GO (was: Layout B rested on unverified official-stack
+- **v0.2.0 GATE -- RESOLVED 2026-07-05 = GO (was: Layout B rested on unverified official-stack
   empirics).** Phase 16 spikes 006-008 confirmed G2/G3/G4 all YES and selected external-template
   branch 4a (G1 = html + G5 = PASS). Layout B IS supportable; no fallback to Layout-A-only. See the
   Decisions section above and `.planning/spikes/`.
 
-- **v0.1.2 external constraint:** `@storybook/angular@10.4.6` peer-caps Angular at `<22.0.0` / TS at
+- **v0.2.0 external constraint:** `@storybook/angular@10.4.6` peer-caps Angular at `<22.0.0` / TS at
   `^4.9||^5`, so installing Storybook on Angular 22 needs `--legacy-peer-deps`/`--force`. Documented,
   never gated (D4). `nx add`/pnpm can hit `ERR_PNPM_IGNORED_BUILDS` (see [[nx-add-fails-on-pnpm-workspaces]]).
 
@@ -110,7 +102,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Storybook (v0.1.2 stretch) | SB-08: Layout C beyond the guard; `.mdx`/`.tsx` type-check; opt-in strict mode failing on `suppressedInGraph>0` | Deferred (stretch; deferrable Phase 19) | v0.1.2 requirements definition |
+| Storybook (v0.2.0 stretch) | SB-08: Layout C beyond the guard; `.mdx`/`.tsx` type-check; opt-in strict mode failing on `suppressedInGraph>0` | Deferred (stretch; deferrable Phase 19) | v0.2.0 requirements definition |
 | FsTree testing | FSTREE-01: bespoke real-disk `createFsTree`/`flushFsTreeChanges` helpers | Deferred (board Option A) | v0.0.4 requirements definition |
 | Generator surface | GEN-FUT-01 (Angular CLI `angular.json`) / GEN-FUT-02 (`ng add` Angular CLI schematic) | Deferred (later milestone) | v0.0.4 requirements definition |
 | Engine / performance | WALK-FUT-01 (`createNodesV2` per-leaf targets) / WALK-FUT-02 (`NgtscProgram` incremental) | Deferred (additive) | v0.0.4 re-scope |
@@ -122,18 +114,21 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-07T14:13:24.089Z
-`/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
-against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
-memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
-isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
-packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
-complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)
-complete. Reviewed at the 16->17 gate.
-Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
-implementation blueprint is in the spike-findings skill's
-`references/storybook-input-set-boundary.md`. NOTE: the forced-SB10 scaffold lives in the session
-scratchpad (not committed); an eventual PR for `gsd/v0.1.2-storybook` into `main` (PR-only) carries
-the `.planning/` + `.claude/skills/` artifacts. OSS reference clones under D:/projects/github/
-(radix-ng/primitives et al.) are not committed.
+Last session: 2026-07-07 -- ran `/gsd-audit-milestone v0.2.0` (PASSED 9/9 requirements, 5/5 phases,
+9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
+ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
+one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed
+REQUIREMENTS.md, added the 7 bare quick-task `SUMMARY.md` markers (audit-open workaround, 3rd close).
+Milestone-close committed on `release/0.2.0`; `main` held at origin (PR-only).
+Stopped at: v0.2.0 Release-PR -- version cut + curated end-user-facing CHANGELOG on `release/0.2.0`,
+PR opened into `main`. Merge, `angular-typechecker@0.2.0` tag on the merge commit, and OIDC npm
+publish are the pending HUMAN-GATED steps (AGENTS.md; never agent-approved).
+Next step: human merges the Release-PR once `ci` is green, tags the merge commit
+`angular-typechecker@0.2.0`, pushes the tag (fires `release.yml` -> OIDC publish, approve the
+`npm-publish` environment), and creates the GitHub Release from the curated CHANGELOG section. Then
+`/gsd-new-milestone`. OSS reference clones under D:/projects/github/ (radix-ng/primitives et al.) are
+not committed.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
