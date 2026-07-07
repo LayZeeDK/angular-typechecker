@@ -5,7 +5,7 @@
 - [SHIPPED] **v0.0.1** -- Phases 1-7 (incl. inserted 5.1) -- shipped 2026-06-29. Complete Angular type-check (TS + template + extended NG8xxx), no-emit, decoupled from build/test, as a cacheable Nx executor published to npm. Full detail: `.planning/milestones/v0.0.1-ROADMAP.md`.
 - [SHIPPED] **v0.0.3** -- Phases 8-11 -- shipped 2026-06-30. Engine hardening: closed correctness/completeness holes, made diagnostic gathering resilient instead of all-or-nothing, made Angular-version drift fail loudly, and adopted `fallow` as a green-on-adoption CI quality gate. Verified against stable Angular 22.0.4; NO `NgtscProgram` migration, NO new feature surfaces. Full detail: `.planning/milestones/v0.0.3-ROADMAP.md`.
 - [SHIPPED] **v0.1.0** -- Phases 12-15 (incl. inserted 13.1) -- shipped 2026-07-02. Reference-walking engine, the typecheck executor rename, and the configuration + init generator suite. Ships the spike-validated reference-walking engine mode (WALK) and the complete 18-member extended-diagnostic catalog + enum-completeness tripwire; the BREAKING executor rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck` that drives the 0.0.3 -> 0.1.0 minor bump; the `configuration` generator wiring ONE minimal `typecheck` target at the solution `tsconfig.json`, a standalone `init` generator that seeds `nx.json` targetDefaults, and `nx add angular-typechecker` support; and the folded generator + `nx add` e2e plus a CI `-p` set-equality guard. Full detail: `.planning/milestones/v0.1.0-ROADMAP.md`.
-- [IN PROGRESS] **v0.1.2** -- Phases 16-19 -- Storybook story type-checking. One boundary-filter correctness fix (directory-containment -> compiler **input-set membership**) so `typecheck` targets check `*.stories.ts` and the whole `.storybook/` tsconfig-declared surface across the two Nx-official layouts (per-project scaffold + centralized host), proven against the shipped tarball on the supported stack, with no silent false pass. Scope + decisions hardened by a 6-lens Opus advisory board (record: `.planning/research/v0.1.2-storybook/board/CONSENSUS.md`). Requirements: `.planning/REQUIREMENTS.md` (SB-01..08). (v0.1.1 was a packaging hotfix; no v0.1.x roadmap phases between 15 and 16.)
+- [IN PROGRESS] **v0.1.2** -- Phases 16-20 -- Storybook story type-checking. One boundary-filter correctness fix (directory-containment -> compiler **input-set membership**) so `typecheck` targets check `*.stories.ts` and the whole `.storybook/` tsconfig-declared surface across the two Nx-official layouts (per-project scaffold + centralized host), proven against the shipped tarball on the supported stack, with no silent false pass. Scope + decisions hardened by a 6-lens Opus advisory board (record: `.planning/research/v0.1.2-storybook/board/CONSENSUS.md`). Phase 20 adds Vite/Analog query-import guidance (SB-09), a follow-up surfaced by the Phase-19 OSS real-repo UAT + spikes 009-010. Requirements: `.planning/REQUIREMENTS.md` (SB-01..09). (v0.1.1 was a packaging hotfix; no v0.1.x roadmap phases between 15 and 16.)
 
 ## Phases
 
@@ -50,12 +50,13 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 </details>
 
-### v0.1.2 -- Storybook story type-checking (Phases 16-19) -- IN PROGRESS
+### v0.1.2 -- Storybook story type-checking (Phases 16-20) -- IN PROGRESS
 
 - [x] **Phase 16: Storybook type-check gate spike (GATED, GO/NO-GO)** - Resolve G1-G5 on the official stack (forced `@storybook/angular@10.4.6`) to decide, on evidence, whether the centralized-host layout (Layout B) is type-checkable; produces the GO/NO-GO verdict reviewed at the 16->17 gate. (SB-05) -- **DONE 2026-07-05 via spikes 006-008: VERDICT = GO** (G2/G3/G4 all YES; G1=html + G5=PASS -> external-template branch 4a). Layout B ships in Phase 17.
 - [x] **Phase 17: Input-set-membership boundary + layout support** - Replace directory-containment with a pure `keep(diagnostic, inputSet, options)` boundary; split + surface suppressed counts (coverage-incomplete floor); deliver Layout A (regression) and Layout B (aggregated cross-project stories incl. external templates). (SB-02, SB-04, SB-01, SB-03) (completed 2026-07-06)
 - [x] **Phase 18: Packaged-tarball e2e + docs** - Prove the SHIPPED artifact catches a planted story error via `nx add` + `nx g configuration` + `nx typecheck` on generator-scaffolded Storybook fixtures; ship the coverage claim + caveats + green->red changelog callout. (SB-06, SB-07) (completed 2026-07-06)
 - [x] **Phase 19: Stretch -- Layout C / non-TS story formats / strict mode** - Only if warranted after 16-18; otherwise carried forward. (SB-08, DEFERRABLE) (completed 2026-07-06)
+- [ ] **Phase 20: Vite/Analog Storybook query-import guidance** - Strengthen the README Storybook caveat to LEAD with the proven fix (`"types": ["vite/client"]` on the checked tsconfig; hand `declare module '*?query'` fallback) for Vite/Analog `?raw`/`?url`/`?worker`/`?inline` imports reporting `TS2307`; optionally add a verdict-neutral `?query` detection advisory. Never auto-suppress `?query` `TS2307`. Follow-up from the Phase-19 OSS UAT + spikes 009-010. (SB-09)
 
 ## Phase Details
 
@@ -181,3 +182,36 @@ Plans:
 | 17. Input-set-membership boundary + layout support | v0.1.2 | 7/7 | Complete    | 2026-07-06 |
 | 18. Packaged-tarball e2e + docs | v0.1.2 | 5/5 | Complete    | 2026-07-06 |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.1.2 | 3/3 | Complete    | 2026-07-07 |
+
+### Phase 20: Vite/Analog Storybook query-import guidance -- vite/client README recipe + optional TS2307 ?query advisory
+
+**Goal:** Give consumers a clear, proven path when angular-typechecker (correctly) reports `TS2307`
+on Vite/Analog Storybook import queries (`?raw`/`?url`/`?worker`/`?inline`, virtual modules) -- WITHOUT
+weakening the never-a-silent-false-pass charter.
+
+**Requirements**: SB-09
+
+**Depends on:** Phase 19
+
+**Success criteria:**
+- **Signal 1 (required, docs-only, no engine change):** the README `## Storybook` caveat LEADS with
+  the recommended fix -- add `"types": ["vite/client"]` to the checked tsconfig -- and names the hand
+  `declare module '*?query'` `.d.ts` as the no-`vite`-dependency fallback. Wording is honest about the
+  one wildcard blind spot (a `?query` import of a missing base resolves through the wildcard) and that
+  the diagnostics are never auto-suppressed. Grounded in spike 009 (radix-ng 227 `?query` `TS2307` -> 0,
+  no-false-pass preserved).
+- **Signal 2 (optional DX):** IF built, a verdict-neutral detection advisory (beside
+  `notTypeCheckedDeclaredFiles`) that flags unresolved `TS2307` whose module specifier contains a `?`
+  bundler query -- builder-agnostic (no Storybook/framework coupling), self-gating (silent once
+  resolved), and NEVER suppressing a diagnostic. Grounded in spike 010. May be split to a later
+  milestone during planning if the docs-only slice ships first.
+- **Charter guard:** a test proves a plain missing module (no `?`) still fails `TS2307` and that no
+  `?query` `TS2307` is ever auto-suppressed.
+
+**Blueprint:** `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`
+(spikes 009-010); origin `.planning/phases/19-stretch-layout-c-non-ts-story-formats-strict-mode/19-UAT.md`.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 20 to break down)

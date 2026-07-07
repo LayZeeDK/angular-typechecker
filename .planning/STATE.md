@@ -26,15 +26,15 @@ See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 ## Current Position
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 19
+Phase: 20 (added 2026-07-07, not yet planned; Phases 16-19 complete)
 Plan: Not started
-Status: Milestone complete
+Status: Phase 20 added (SB-09 Vite/Analog query-import guidance) -- v0.1.2 reopened for this follow-up; run /gsd-plan-phase 20
 external-template branch 4a locked (relatedInformation ownership signal).
 Last activity: 2026-07-07
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
-Requirements: `.planning/REQUIREMENTS.md` (SB-01..08).
-Roadmap: `.planning/ROADMAP.md` (phases 16-19; v0.0.1 + v0.0.3 + v0.1.0 collapsed to SHIPPED).
+Requirements: `.planning/REQUIREMENTS.md` (SB-01..09).
+Roadmap: `.planning/ROADMAP.md` (phases 16-20; v0.0.1 + v0.0.3 + v0.1.0 collapsed to SHIPPED).
 Board record: `.planning/research/v0.1.2-storybook/board/` (FACTS.md, ROUND-1-SYNTHESIS.md, CONSENSUS.md).
 Research: `.planning/research/v0.1.2-storybook/` (NX-SCAFFOLD.md, OSS-EXAMPLES.md, CENTRALIZED-HOST.md).
 
@@ -66,6 +66,10 @@ archives under `.planning/milestones/`.
 - [Phase 18]: 18-05: SB-07 docs -- README ## Storybook section (exact coverage claim + caveats), Limitations WR-01 fix (zero-input in-project leaf is coverage-incomplete, not advisory-skip), CoreResult comment gains notTypeCheckedDeclaredFiles, curated CHANGELOG 0.1.2 with green->red false-pass to true-fail callout; prose only, no release cut (D-05).
 - [Phase 19]: 19-03: README ## Storybook Composition coverage claim rests on per-project typecheck + Nx ^typecheck fan-out (implicitDependencies), NOT Storybook's any-typed refs (19-02 finding); a content tripwire (storybook-docs.spec.ts) locks it
 - [Phase 19]: 19-03: recorded Layout-C-beyond-guard and .mdx/.tsx-beyond-advisory as 'not warranted' (19-DECISIONS.md), closing phase-19 success criterion 1
+
+### Roadmap Evolution
+
+- Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010 -- the `vite/client` README recipe (required, docs-only) + an optional `?query` detection advisory. Reopens v0.1.2 beyond its passed milestone audit.
 
 ### Blockers/Concerns
 

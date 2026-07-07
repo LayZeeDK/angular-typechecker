@@ -111,6 +111,17 @@ Two layouts, both Nx-official:
   (`--legacy-peer-deps`/`--force`; `nx add`/pnpm can hit `ERR_PNPM_IGNORED_BUILDS`). The green->red flip
   on existing Layout-B builds is a loud changelog callout (a false-pass -> true-fail correction, not a
   regression).
+- [ ] **SB-09**: Vite/Analog Storybook query-import guidance (follow-up from the Phase-19 OSS UAT +
+  spikes 009-010). The complete ngc check correctly surfaces `TS2307` on Vite import queries
+  (`?raw`/`?url`/`?worker`/`?inline`, virtual modules) because a story is a declared rootName
+  (in-project). **Signal 1 (required, docs-only):** the README Storybook caveat MUST lead with the
+  proven fix -- add `"types": ["vite/client"]` to the checked tsconfig (a hand `declare module '*?query'`
+  `.d.ts` is the no-`vite`-dependency fallback). Proven: radix-ng 227 `?query` `TS2307` -> 0, with
+  no-false-pass preserved (plain missing modules still fail; misuse still `TS2322`). **Signal 2
+  (optional DX):** a verdict-neutral detection advisory alongside `notTypeCheckedDeclaredFiles` that
+  flags unresolved `TS2307` whose specifier contains a `?` bundler query (builder-agnostic, no
+  Storybook coupling, self-gating, never suppresses). **Charter constraint:** MUST NOT auto-suppress
+  `?query` `TS2307`. Blueprint: `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`.
 
 ## Future Requirements (deferred, not abandoned)
 
@@ -140,6 +151,7 @@ Two layouts, both Nx-official:
 | SB-06 (validation) | 18 |
 | SB-07 (docs) | 18 |
 | SB-08 (stretch) | 19 (deferrable) |
+| SB-09 (Vite/Analog query-imports) | 20 |
 
 Full board rationale, decision tree, spike gate detail, and the exact release claim:
 `research/v0.1.2-storybook/board/CONSENSUS.md`.
