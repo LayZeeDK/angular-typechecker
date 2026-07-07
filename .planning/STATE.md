@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
-status: milestone_complete
-stopped_at: Milestone complete (Phase 20 was final phase)
-last_updated: 2026-07-07T14:36:57.119Z
+status: completed
+stopped_at: "Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)"
+last_updated: "2026-07-07T15:33:03.337Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 5
