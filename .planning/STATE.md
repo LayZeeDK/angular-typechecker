@@ -69,7 +69,7 @@ archives under `.planning/milestones/`.
 
 ### Roadmap Evolution
 
-- Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010 -- the `vite/client` README recipe (required, docs-only) + an optional `?query` detection advisory. Reopens v0.1.2 beyond its passed milestone audit.
+- Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010. BOTH signals in scope for v0.1.2 (user-committed 2026-07-07): the `vite/client` README recipe (docs) AND the `?query` detection advisory (engine + executor). Reopens v0.1.2 beyond its passed milestone audit.
 
 ### Blockers/Concerns
 

@@ -118,10 +118,10 @@ Two layouts, both Nx-official:
   proven fix -- add `"types": ["vite/client"]` to the checked tsconfig (a hand `declare module '*?query'`
   `.d.ts` is the no-`vite`-dependency fallback). Proven: radix-ng 227 `?query` `TS2307` -> 0, with
   no-false-pass preserved (plain missing modules still fail; misuse still `TS2322`). **Signal 2
-  (optional DX):** a verdict-neutral detection advisory alongside `notTypeCheckedDeclaredFiles` that
-  flags unresolved `TS2307` whose specifier contains a `?` bundler query (builder-agnostic, no
-  Storybook coupling, self-gating, never suppresses). **Charter constraint:** MUST NOT auto-suppress
-  `?query` `TS2307`. Blueprint: `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`.
+  (IN SCOPE for Phase 20 -- both signals committed to v0.1.2, 2026-07-07):** a verdict-neutral
+  detection advisory alongside `notTypeCheckedDeclaredFiles` that flags unresolved `TS2307` whose
+  specifier contains a `?` bundler query (builder-agnostic, no Storybook coupling, self-gating, never
+  suppresses). **Charter constraint:** MUST NOT auto-suppress `?query` `TS2307`. Blueprint: `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`.
 
 ## Future Requirements (deferred, not abandoned)
 

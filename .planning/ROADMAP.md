@@ -56,7 +56,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] **Phase 17: Input-set-membership boundary + layout support** - Replace directory-containment with a pure `keep(diagnostic, inputSet, options)` boundary; split + surface suppressed counts (coverage-incomplete floor); deliver Layout A (regression) and Layout B (aggregated cross-project stories incl. external templates). (SB-02, SB-04, SB-01, SB-03) (completed 2026-07-06)
 - [x] **Phase 18: Packaged-tarball e2e + docs** - Prove the SHIPPED artifact catches a planted story error via `nx add` + `nx g configuration` + `nx typecheck` on generator-scaffolded Storybook fixtures; ship the coverage claim + caveats + green->red changelog callout. (SB-06, SB-07) (completed 2026-07-06)
 - [x] **Phase 19: Stretch -- Layout C / non-TS story formats / strict mode** - Only if warranted after 16-18; otherwise carried forward. (SB-08, DEFERRABLE) (completed 2026-07-06)
-- [ ] **Phase 20: Vite/Analog Storybook query-import guidance** - Strengthen the README Storybook caveat to LEAD with the proven fix (`"types": ["vite/client"]` on the checked tsconfig; hand `declare module '*?query'` fallback) for Vite/Analog `?raw`/`?url`/`?worker`/`?inline` imports reporting `TS2307`; optionally add a verdict-neutral `?query` detection advisory. Never auto-suppress `?query` `TS2307`. Follow-up from the Phase-19 OSS UAT + spikes 009-010. (SB-09)
+- [ ] **Phase 20: Vite/Analog Storybook query-import guidance** - Strengthen the README Storybook caveat to LEAD with the proven fix (`"types": ["vite/client"]` on the checked tsconfig; hand `declare module '*?query'` fallback) for Vite/Analog `?raw`/`?url`/`?worker`/`?inline` imports reporting `TS2307`, AND add a verdict-neutral `?query` detection advisory. Both signals in scope for v0.1.2. Never auto-suppress `?query` `TS2307`. Follow-up from the Phase-19 OSS UAT + spikes 009-010. (SB-09)
 
 ## Phase Details
 
@@ -200,11 +200,12 @@ weakening the never-a-silent-false-pass charter.
   one wildcard blind spot (a `?query` import of a missing base resolves through the wildcard) and that
   the diagnostics are never auto-suppressed. Grounded in spike 009 (radix-ng 227 `?query` `TS2307` -> 0,
   no-false-pass preserved).
-- **Signal 2 (optional DX):** IF built, a verdict-neutral detection advisory (beside
-  `notTypeCheckedDeclaredFiles`) that flags unresolved `TS2307` whose module specifier contains a `?`
-  bundler query -- builder-agnostic (no Storybook/framework coupling), self-gating (silent once
-  resolved), and NEVER suppressing a diagnostic. Grounded in spike 010. May be split to a later
-  milestone during planning if the docs-only slice ships first.
+- **Signal 2 (in scope for Phase 20 -- user committed both signals 2026-07-07):** a verdict-neutral
+  detection advisory (beside `notTypeCheckedDeclaredFiles`) that flags unresolved `TS2307` whose module
+  specifier contains a `?` bundler query -- builder-agnostic (no Storybook/framework coupling),
+  self-gating (silent once resolved), and NEVER suppressing a diagnostic. Grounded in spike 010. This
+  is an ENGINE + executor change (a new advisory surfaced in the executor output + structured result),
+  built and shipped together with Signal 1 in v0.1.2 -- NOT deferred.
 - **Charter guard:** a test proves a plain missing module (no `?`) still fails `TS2307` and that no
   `?query` `TS2307` is ever auto-suppressed.
 
