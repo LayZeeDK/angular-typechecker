@@ -15,7 +15,7 @@ import type { TypecheckExecutorOptions } from './schema';
 /**
  * The complete Nx executor adapter (D-01) -- the only tier (with
  * normalize-options) that references @nx/devkit. It composes the
- * framework-agnostic core: normalizeOptions -> runTypecheck -> the four advisory
+ * framework-agnostic core: normalizeOptions -> runTypecheck -> the five advisory
  * warn*(result) notices -> renderReport (raw stdout) -> evaluateResult ->
  * { success }.
  *
@@ -29,9 +29,9 @@ import type { TypecheckExecutorOptions } from './schema';
  * a type-checker that silently swallows an unknown failure and reports success is
  * worse than none.
  *
- * The four warn*(result) helpers surface the core's PURE structured advisory
+ * The five warn*(result) helpers surface the core's PURE structured advisory
  * fields (templateCheckAborted / skippedReferences / the split suppressed counts /
- * notTypeCheckedDeclaredFiles) as @nx/devkit `logger` notices BEFORE the report so
+ * notTypeCheckedDeclaredFiles / bundlerQueryImports) as @nx/devkit `logger` notices BEFORE the report so
  * they cannot be lost below a long codeframe dump. This is the detection(core)-vs-
  * rendering(adapter) split: core only COUNTS + records paths; the adapter is the
  * only tier that touches `logger`. All are additive signalling that NEVER touch
@@ -54,6 +54,7 @@ export default async function typecheckExecutor(
     warnSkippedReferences(result);
     warnSuppressed(result);
     warnNotTypeChecked(result);
+    warnBundlerQueryImports(result);
 
     const report = await renderReport(result, {
       pathBase: coreOptions.pathBase,
@@ -227,5 +228,32 @@ function warnNotTypeChecked(result: CoreResult): void {
       `when compilerOptions.jsx is set (a .tsx with no JSX is still fully checked; JSX under an ` +
       `unset jsx reports TS17004). This is ADVISORY: the verdict is unchanged. ` +
       `File(s): ${result.notTypeCheckedDeclaredFiles.join(', ')}.`,
+  );
+}
+
+/**
+ * SB-09 D-04 (Phase 20): surface the loud bundler-query-import advisory. An
+ * unresolved TS2307 whose module specifier contains a bundler (Vite/Analog) query
+ * suffix (e.g. ?raw/?url/?worker/?inline) looks like a Vite/Analog import the
+ * consumer can resolve with `"types": ["vite/client"]`. Names the consumer's OWN
+ * specifiers (from the pure bundlerQueryImports, read off the POST-boundary-filter
+ * kept set) ONLY, never dependency error text -- the isolation rule mirrors
+ * notTypeCheckedDeclaredFiles / suppressedInGraphFiles. Core sets the field only
+ * when non-empty (mapping [] -> undefined), so the optional-chained length check is
+ * sufficient (self-gating -- D-03). ADVISORY ONLY: the verdict is unchanged and the
+ * TS2307 are NOT suppressed -- a missing module can be a real bug (evaluateResult
+ * never reads this field).
+ */
+function warnBundlerQueryImports(result: CoreResult): void {
+  if (!result.bundlerQueryImports?.length) {
+    return;
+  }
+
+  logger.warn(
+    `angular-typechecker: ${result.bundlerQueryImports.length} unresolved import(s) use a bundler ` +
+      `query suffix (e.g. ?raw/?url/?worker/?inline) -- these look like Vite/Analog imports. Add ` +
+      `"types": ["vite/client"] to the checked tsconfig (or an ambient 'declare module' shim) to ` +
+      `resolve them. This is ADVISORY: the TS2307 are NOT suppressed (a missing module can be a ` +
+      `real bug). Specifier(s): ${result.bundlerQueryImports.join(', ')}.`,
   );
 }
