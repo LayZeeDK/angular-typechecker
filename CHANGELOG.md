@@ -32,6 +32,13 @@ Storybook-specific machinery: the plugin still ships zero Storybook coupling.
   declared files the type-check cannot cover (`.mdx` is never type-checked; a
   `.tsx` is checked only when `compilerOptions.jsx` is set). Advisory only -- it
   never changes the verdict.
+- **Bundler-query import advisory** -- a new `bundlerQueryImports` field on the
+  programmatic `CoreResult`, surfaced as a loud executor notice, flags unresolved
+  `TS2307` whose module specifier carries a `?` bundler query (Vite/Analog
+  `?raw`/`?url`/`?worker`/`?inline`, virtual modules) and recommends adding
+  `"types": ["vite/client"]` to the checked tsconfig. Verdict-neutral and
+  self-gating (it falls silent once the imports resolve) -- it NEVER suppresses the
+  diagnostic, because a missing module can be a genuine error.
 - **Split coverage counters** -- suppressed diagnostics are now reported split into
   expected `node_modules` suppressions (quiet) and first-party in-graph
   suppressions (loud), so a dropped first-party diagnostic is always visible and
@@ -62,6 +69,11 @@ Storybook-specific machinery: the plugin still ships zero Storybook coupling.
 - No new dependency; the plugin still ships zero Storybook coupling. Installing
   `@storybook/angular` on Angular 22 needs `--legacy-peer-deps` / `--force`; see the
   README Storybook section.
+- Vite/Analog Storybook `?query` imports (`?raw`/`?url`/`?worker`/`?inline`, virtual
+  modules) report `TS2307` under the full Angular check. The README Storybook caveat
+  now LEADS with the fix -- add `"types": ["vite/client"]` to the checked tsconfig, or
+  a hand `declare module '*?query'` ambient shim in a `.d.ts` as the no-`vite`
+  fallback. The diagnostics are never auto-suppressed.
 
 ## 0.1.1 (2026-07-04)
 
