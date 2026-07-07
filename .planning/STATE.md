@@ -4,13 +4,13 @@ milestone: v0.1.2
 milestone_name: Storybook story type-checking
 status: executing
 stopped_at: Phase 20 context gathered
-last_updated: "2026-07-07T12:58:59.865Z"
-last_activity: 2026-07-07 -- Phase 20 planning complete
+last_updated: "2026-07-07T13:23:28.103Z"
+last_activity: 2026-07-07
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 17
   percent: 60
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone complete
+**Current focus:** Phase 20 — vite-analog-storybook-query-import-guidance-vite-client-read
 
 ## Current Position
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 20 (added 2026-07-07, not yet planned; Phases 16-19 complete)
-Plan: Not started
+Phase: 20 (vite-analog-storybook-query-import-guidance-vite-client-read) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
 external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-07 -- Phase 20 planning complete
+Last activity: 2026-07-07
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
 
 Requirements: `.planning/REQUIREMENTS.md` (SB-01..09).
@@ -66,6 +66,7 @@ archives under `.planning/milestones/`.
 - [Phase 18]: 18-05: SB-07 docs -- README ## Storybook section (exact coverage claim + caveats), Limitations WR-01 fix (zero-input in-project leaf is coverage-incomplete, not advisory-skip), CoreResult comment gains notTypeCheckedDeclaredFiles, curated CHANGELOG 0.1.2 with green->red false-pass to true-fail callout; prose only, no release cut (D-05).
 - [Phase 19]: 19-03: README ## Storybook Composition coverage claim rests on per-project typecheck + Nx ^typecheck fan-out (implicitDependencies), NOT Storybook's any-typed refs (19-02 finding); a content tripwire (storybook-docs.spec.ts) locks it
 - [Phase 19]: 19-03: recorded Layout-C-beyond-guard and .mdx/.tsx-beyond-advisory as 'not warranted' (19-DECISIONS.md), closing phase-19 success criterion 1
+- [Phase 20]: 20-01: added advisory CoreResult.bundlerQueryImports (deduped+sorted ?query TS2307 specifiers) via a pure detector over the POST-filter kept set at the single finalize seam (zero walk threading); verdict-neutral (evaluate-result untouched + D-05 tripwire); baseline leg fires+keeps the TS2307 / vite-client leg self-gates, proven by a hermetic real-compiler fixture. Signal 2 engine half only -- executor render (20-02) + README (20-03) remain; SB-09 not closed until phase verification.
 
 ### Roadmap Evolution
 
@@ -119,7 +120,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-07T12:15:14.593Z
+Last session: 2026-07-07T13:22:57.578Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
