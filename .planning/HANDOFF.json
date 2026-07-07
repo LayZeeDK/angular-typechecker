@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-07T14:58:09.852Z",
+  "phase": "20",
+  "phase_name": "vite-analog-storybook-query-import-guidance-vite-client-read",
+  "phase_dir": ".planning/phases/20-vite-analog-storybook-query-import-guidance-vite-client-read",
+  "plan": 5,
+  "task": 0,
+  "total_tasks": 5,
+  "status": "paused",
+  "summary": "Phase 20 (SB-09) is CODE-COMPLETE and VERIFIED (5/5 plans; VERIFICATION passed 6/6; phase.complete done). Both user-added hard gates met: Gate A (PR #27, all required CI green) and Gate B (real radix-ng/primitives tarball verify: 226 ?query TS2307 + advisory -> 0 with vite/client; plain-missing still fails). Paused before the remaining GSD closure audits. This is the LAST phase of milestone v0.1.2 (Phases 16-20).",
+  "completed_tasks": [
+    {"id": 1, "name": "20-01 Signal 2 engine: detectBundlerQueryImports + CoreResult.bundlerQueryImports at the finalize seam + fixture + unit/tripwire/integration", "status": "done"},
+    {"id": 2, "name": "20-02 Signal 2 executor: warnBundlerQueryImports (5th advisory, self-gating) + tests", "status": "done"},
+    {"id": 3, "name": "20-03 Signal 1 docs: README leads with vite/client + CHANGELOG fold", "status": "done"},
+    {"id": 4, "name": "20-04 Gate A: local gates green -> push -> PR #27 open -> all required CI GREEN", "status": "done"},
+    {"id": 5, "name": "20-05 Gate B: real radix-ng/primitives tarball verify (autonomous, per user)", "status": "done"},
+    {"id": 6, "name": "verify_phase_goal (gsd-verifier) -> 20-VERIFICATION.md passed 6/6", "status": "done"},
+    {"id": 7, "name": "phase.complete (ROADMAP [x], STATE advanced, REQUIREMENTS SB-09 traceability)", "status": "done"}
+  ],
+  "remaining_tasks": [
+    {"id": 1, "name": "/gsd-code-review 20 (code_review_gate -- advisory, pre-merge review of the phase source)", "status": "not_started"},
+    {"id": 2, "name": "/gsd-secure-phase 20 (verify PLAN threat_model mitigations -> 20-SECURITY.md; security_enforcement ON, ASVS L1, block on high)", "status": "not_started"},
+    {"id": 3, "name": "/gsd-validate-phase 20 (Nyquist: fill Task IDs, generate/verify tests -> 20-VALIDATION.md nyquist_compliant true)", "status": "not_started"},
+    {"id": 4, "name": "/gsd-extract-learnings 20 (LAST -- only after secure AND validate are clean; then bridge to global store per CLAUDE.md if features.global_learnings)", "status": "not_started"},
+    {"id": 5, "name": "Push branch -> update PR #27 with the new closure commits -> re-confirm required CI green", "status": "not_started"},
+    {"id": 6, "name": "[HUMAN] Merge PR #27 into main (PR-only ruleset; agent self-merge needs explicit user OK)", "status": "not_started"},
+    {"id": 7, "name": "[HUMAN] Cut + publish v0.1.2 (approve npm-publish environment); then /gsd-complete-milestone for v0.1.2", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Merge PR #27 into main", "context": "main is PR-only (empty-bypass ruleset); an agent self-merge needs explicit user OK. NEVER auto-merge.", "blocking": true},
+    {"action": "Cut + publish v0.1.2 and approve the npm-publish environment/deployment gate", "context": "D-11 + never-approve-deployments HARD rule -- deployment/environment approval is human-only. Then close the milestone.", "blocking": true}
+  ],
+  "decisions": [
+    {"decision": "Executed all 5 plans SEQUENTIALLY on the main checkout (no worktree isolation)", "rationale": "AGENTS.md 'single-plan wave: skip worktrees'; Waves 1/3/4 single-plan, Wave 2 tiny + one docs-only; executors need real node_modules for nx test; avoids the worktree node_modules junction dance.", "phase": "20"},
+    {"decision": "Ran Gate B autonomously (D-10's human-only default overridden by explicit user instruction)", "rationale": "Gate B is a verification (not a deployment approval), so it does not touch never-approve-deployments. Merge/release stay human-gated.", "phase": "20"},
+    {"decision": "Deferred code-review/secure/validate/extract to a fresh /clear'd session", "rationale": "Context heavy after 9 subagents + the Gate B run; CLAUDE.md requires only that verification is completed before yielding (done). extract-learnings must run LAST after secure+validate are clean.", "phase": "20"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Run /gsd-code-review 20, then /gsd-secure-phase 20, then /gsd-validate-phase 20, then (only if both are clean) /gsd-extract-learnings 20. Then push to update PR #27 and re-confirm green CI. Merge + release are human-gated.",
+  "context_notes": "Branch gsd/v0.1.2-storybook-story-type-checking. PR #27 = the v0.1.2 release PR (phases 16-20) into main. The engine is additive/low-risk (a pure diagnostic detector + one executor logger.warn + docs); it cleared CodeQL + fallow + the full test matrix + e2e in CI, so secure/validate blockers are unlikely -- but if either surfaces a BLOCKER treat it as a gap (/gsd-plan-phase 20 --gaps) before extract-learnings. The closure audits ADD commits (SECURITY.md, VALIDATION updates + generated tests, LEARNINGS.md), so push the branch to update PR #27 AFTER the audits and re-confirm CI green BEFORE the human merges. Gate B evidence: 20-05-SUMMARY.md + memory oss-real-repo-verification (incl. the pnpm version-mismatch overlay workaround for installing the local tarball into radix-ng)."
+}
