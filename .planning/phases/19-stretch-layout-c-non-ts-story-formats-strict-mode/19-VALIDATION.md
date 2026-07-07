@@ -1,17 +1,17 @@
 ---
 phase: 19
 slug: stretch-layout-c-non-ts-story-formats-strict-mode
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-07
+updated: 2026-07-07
 ---
 
 # Phase 19 -- Validation Strategy
 
 > Per-phase validation contract for feedback sampling during execution.
-> Draft skeleton; the per-task map is filled by the Nyquist auditor during
-> /gsd-validate-phase (post-execution).
+> Per-task map filled by the post-execution Nyquist audit (/gsd-validate-phase).
 
 ---
 
@@ -38,16 +38,17 @@ created: 2026-07-07
 
 ## Per-Task Verification Map
 
-*Draft -- filled by the Nyquist auditor during /gsd-validate-phase. Expected observables (from RESEARCH.md ## Validation Architecture):*
+*Audited post-execution. Every shipped item has a green automated test; all
+ran green across the CI 6-cell matrix + e2e job (runs 28830318393 / 28831454836).*
 
-| Item shipped | Observable that proves it | Test Type | Automated Command |
-|---|---|---|---|
-| strict-mode gate | a dropped in-graph WARNING passes clean without `strict`, FAILs with `strict:true` (real clean->fail flip; A1) | unit | `nx test angular-typechecker` |
-| strict option surface | schema.json + schema.d.ts + `schema-parity.spec.ts` EXPECTED_KEYS all carry `strict` | unit | `nx test angular-typechecker` |
-| Composition fixture | a broken composed `*.stories.ts` FAILs via its own project target; a clean host passes | e2e | Composition spec in `angular-typechecker-install-e2e` |
-| Composition refs typo | a mistyped host `main.ts` `refs` entry FAILs | e2e | Composition spec |
-| `dependsOn: ["^typecheck"]` recipe | fanning out `typecheck` from the host covers composed projects | e2e/unit | recipe test |
-| Docs | README `## Storybook` carries the Composition section + coverage MUST/MUST-NOT + Layout C note + Angular-CLI planned/deferred caveat | source assertion | grep in a docs spec |
+| Item shipped | Observable that proves it | Test Type | Test file | Status |
+|---|---|---|---|---|
+| strict-mode gate | a dropped in-graph WARNING passes clean without `strict`, FAILs with `strict:true` (real clean->fail flip; A1) | unit | `evaluate-result.spec.ts` (FLIP + ERROR regression guard) | green |
+| strict option surface | schema.json + schema.d.ts + `schema-parity.spec.ts` EXPECTED_KEYS all carry `strict` | unit | `schema-parity.spec.ts` | green |
+| Composition fixture | a broken composed `*.stories.ts` FAILs via its own project target; a clean host passes | e2e | `storybook-composition.int.spec.ts` | green |
+| Composition refs typo | a mistyped host `main.ts` `refs` entry FAILs (via the consumer `CompositionRef` shape, not Storybook's `any`-typed `refs`) | e2e | `storybook-composition.int.spec.ts` | green |
+| `dependsOn: ["^typecheck"]` recipe | fanning out `typecheck` from the host covers composed projects | e2e | `storybook-composition.int.spec.ts` (fan-out scenario) | green |
+| Docs | README `## Storybook` carries the Composition section + coverage MUST/MUST-NOT + Layout C note + Angular-CLI planned/deferred caveat | source assertion | `storybook-docs.spec.ts` (content tripwire) | green |
 
 *Status legend (ASCII): pending / green / red / flaky*
 
@@ -55,7 +56,7 @@ created: 2026-07-07
 
 ## Wave 0 Requirements
 
-- Existing infrastructure covers all phase items (Vitest unit + the shared `angular-typechecker-install-e2e` project). No new framework install. The Composition e2e spec is a NEW file inside the EXISTING e2e project (never a new e2e project -- shared-tarball serialization).
+- Existing infrastructure covered all phase items (Vitest unit + the shared `angular-typechecker-install-e2e` project). No new framework install. The Composition e2e spec is a NEW file inside the EXISTING e2e project (never a new e2e project -- shared-tarball serialization).
 
 ---
 
@@ -67,13 +68,29 @@ created: 2026-07-07
 
 ---
 
+## Validation Audit 2026-07-07
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All 6 shipped observables map to an existing green automated test; no MISSING or
+PARTIAL gaps, so no tests were generated. Coverage was cross-confirmed by the
+phase verifier (17/17), the deep code review (0 blockers), and the green CI e2e
+job. The one manual-only item (OSS real-repo tarball spot-check) is informational
+per board D5, not a CI gate.
+
+---
+
 ## Validation Sign-Off
 
-- [ ] All shipped items have an automated verify or Wave 0 dependency
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency acceptable
-- [ ] `nyquist_compliant: true` set in frontmatter (by the auditor)
+- [x] All shipped items have an automated verify or Wave 0 dependency
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency acceptable
+- [x] `nyquist_compliant: true` set in frontmatter (by the auditor)
 
-**Approval:** pending
+**Approval:** nyquist-compliant (2026-07-07)
