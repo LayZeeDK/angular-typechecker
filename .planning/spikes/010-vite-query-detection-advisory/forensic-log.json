@@ -1,0 +1,57 @@
+{
+  "spike": "010",
+  "environment": {
+    "angularCompilerCli": "22.0.4",
+    "typescript": "6.0.3",
+    "node": "v24.18.0"
+  },
+  "baselineAdvisory": {
+    "count": 5,
+    "specifiers": [
+      "./extra?inline",
+      "./ghost.md?raw",
+      "./icon.svg?url",
+      "./snippet.md?raw",
+      "./worklet?worker"
+    ],
+    "allKnown": true,
+    "message": "angular-typechecker: 5 unresolved import(s) use a bundler query suffix (e.g. ?raw/?url/?worker/?inline). These look like Vite/Analog imports; add \"types\": [\"vite/client\"] (or an ambient 'declare module' shim) to the checked tsconfig. This is ADVISORY -- the TS2307 diagnostics are NOT suppressed (a missing module can be real)."
+  },
+  "viteClientAdvisory": null,
+  "basePlainMissing": [
+    "./does-not-exist"
+  ],
+  "assertions": [
+    {
+      "id": "fires-on-baseline",
+      "pass": true,
+      "detail": "advisory present on baseline = true"
+    },
+    {
+      "id": "flags-all-5-query",
+      "pass": true,
+      "detail": "flagged ?query specifiers = 5 (expect 5)"
+    },
+    {
+      "id": "all-known-vite",
+      "pass": true,
+      "detail": "all flagged match a known Vite suffix = true"
+    },
+    {
+      "id": "no-false-positive-plain",
+      "pass": true,
+      "detail": "plain missing './does-not-exist' NOT flagged = true"
+    },
+    {
+      "id": "plain-miss-still-diagnosed",
+      "pass": true,
+      "detail": "plain missing still a TS2307 (never suppressed) = true"
+    },
+    {
+      "id": "self-gated-silent-when-resolved",
+      "pass": true,
+      "detail": "advisory silent once vite/client resolves the queries = true"
+    }
+  ],
+  "verdict": "VALIDATED"
+}

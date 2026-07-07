@@ -171,6 +171,6 @@ module can be real -- the never-a-silent-false-pass charter). Candidates: docume
 | # | Name | Type | Validates | Verdict | Tags |
 |---|------|------|-----------|---------|------|
 | 009 | vite-ambient-shim-resolves-query-imports | comparison | ambient decls (`vite/client` vs hand shim) drop Vite `?query` TS2307 to 0 while a genuine missing module still fails (no-false-pass on resolution) and misuse still errors (no-false-pass on types); validated hermetically + on radix-ng (227->0) | **VALIDATED** | storybook, vite, analog, module-resolution, ts2307, no-false-pass, engine, devex |
-| 010 | vite-query-detection-advisory | standard | can the tool deterministically detect Vite/Analog + unresolved `?query` specifiers to emit an advisory (never auto-suppress), with acceptable false-positive risk | PENDING | storybook, vite, advisory, devex |
+| 010 | vite-query-detection-advisory | standard | a diagnostic-based detector (unresolved TS2307 + `?`-query specifier; NO Storybook/framework coupling) emits an advisory, never suppresses, no false positive on plain missing modules, self-gates silent once resolved | **VALIDATED** | storybook, vite, advisory, detection, no-false-pass, devex |
 
 _Build order: risk order (009 the make-or-break recipe first; 010 the UX advisory second)._
