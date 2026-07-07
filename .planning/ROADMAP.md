@@ -212,7 +212,7 @@ weakening the never-a-silent-false-pass charter.
 **Blueprint:** `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`
 (spikes 009-010); origin `.planning/phases/19-stretch-layout-c-non-ts-story-formats-strict-mode/19-UAT.md`.
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 
@@ -227,7 +227,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 20-04-PLAN.md -- Gate A: local build/test/lint/format gates, push branch, open PR into main, confirm green CI (no merge/release) [wave 3]
+- [x] 20-04-PLAN.md -- Gate A: local build/test/lint/format gates, push branch, open PR into main, confirm green CI (no merge/release) [wave 3]
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
