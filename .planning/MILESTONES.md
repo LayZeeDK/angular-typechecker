@@ -4,6 +4,55 @@ A historical record of shipped versions. For current work see `.planning/ROADMAP
 
 ---
 
+## v0.1.2 -- Storybook story type-checking
+
+**Closed:** 2026-07-07 (phases complete + milestone audit PASSED)
+**Phases:** 16-20, incl. the Phase 16 GO/NO-GO spike (5) | **Plans:** 20 | **Tasks:** 37 | **Commits:** ~204 (since the v0.1.1 hotfix tag)
+**Timeline:** 2026-07-05 -> 2026-07-07 (3 days)
+**Package source:** ~3,636 LOC production TypeScript (`packages/angular-typechecker/src/`, non-test)
+**Published:** PENDING -- version is still `0.1.1` at close; `angular-typechecker@0.1.2` is cut via the human-gated Release-PR flow (AGENTS.md), not by this milestone close.
+
+### Delivered
+
+`nx typecheck` now type-checks Angular Storybook stories (`*.stories.ts`) and the
+whole `.storybook/` tsconfig-declared surface across BOTH Nx-official layouts (the
+per-project scaffold and the centralized host), via ONE boundary-filter correctness
+fix -- directory-containment replaced by compiler **input-set membership** -- with the
+charter guarantee that a dropped first-party diagnostic can never coexist with a green
+verdict. Proven end-to-end against the SHIPPED tarball on the supported stack.
+
+### Key Accomplishments
+
+1. **Layout-B gate spike -- GO (Phase 16, SB-05)** -- a reproducible spike on the official stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3, forced `@storybook/angular@10.4.6`) resolved G1-G5: widened cross-project includes DO materialize as the storybook leaf's declared `rootNames`, forced SB10 compiles cleanly, NG8xxx fire positively, and external-template attribution selects branch **4a** (map an external `.html` diagnostic to its owning component `.ts` via public `ts.Diagnostic.relatedInformation`).
+2. **Input-set-membership boundary + split counters (Phase 17, SB-01/02/03/04)** -- a pure `keep(diagnostic, inputSet, options)` shared by the walk + single-leaf paths (zero ngtsc/component-registry internals), dual-identity (raw + realpath) membership, branch 4a, and a SPLIT suppressed counter (`suppressedThirdParty` quiet vs `suppressedInGraph*` verdict-affecting) whose `suppressedInGraph > 0` yields a non-clean coverage-incomplete outcome -- both layouts proven against the real cold compiler.
+3. **Packaged-tarball Storybook e2e + docs (Phase 18, SB-06/07)** -- the SHIPPED artifact, installed via `nx add` + `nx g configuration` + `nx typecheck`, catches a planted Layout-A `TS2322` and a Layout-B aggregated `TS2345` + external-template `NG8002`; a net-new verdict-neutral `.mdx`/`.tsx`-without-`jsx` "not type-checked" advisory; and the README `## Storybook` exact coverage claim + curated CHANGELOG green->red false-pass-to-true-fail callout.
+4. **Stretch: opt-in strict mode + Storybook Composition (Phase 19, SB-08)** -- a verdict-only `strict` option (defaults false; only ADDS a fail path when a dropped in-graph WARNING would otherwise stay clean) threaded schema -> normalizeOptions -> evaluateResult, and Storybook Composition delivered as a ZERO-engine-code topology (per-project `typecheck` + Nx `^typecheck` fan-out); Layout-C-beyond-guard and `.mdx`/`.tsx`-beyond-advisory recorded "not warranted" (`19-DECISIONS.md`).
+5. **Vite/Analog query-import guidance (Phase 20, SB-09)** -- a pure `detectBundlerQueryImports` over the post-filter kept `TS2307` set feeding a verdict-neutral `CoreResult.bundlerQueryImports` advisory (one executor `logger.warn`, `evaluateResult` never reads it), plus a README caveat that LEADS with the proven `"types": ["vite/client"]` fix; charter guard proves a plain missing module still fails and no `?query` `TS2307` is ever auto-suppressed. Verified on the real radix-ng/primitives repo (Gate B).
+
+### Audit
+
+PASSED (`.planning/milestones/v0.1.2-MILESTONE-AUDIT.md`): 9/9 requirements
+SATISFIED (SB-01..09; SB-08 a conditional stretch dispositioned in `19-DECISIONS.md`),
+5/5 phases (Phase 16 spike GO + phases 17-20 verified `passed`), 9/9 cross-phase
+integration checks WIRED (0 blockers, 0 broken flows, 0 contract inconsistencies,
+opus integration-checker), 4/4 E2E flows complete (Layout A/B tarball + Composition
+fan-out + Vite/Analog Gate-B real-repo), Nyquist COMPLIANT (Phase 16 spike n/a),
+security verified with 0 open threats.
+
+### Known deferred items at close
+
+- **Post-close (human-gated):** the v0.1.2 npm release cut + publish -- version stays `0.1.1` at close; the `angular-typechecker@0.1.2` tag is created on the release merge commit via the AGENTS.md Release-PR flow (OIDC publish behind the `npm-publish` environment).
+- **Tech debt (non-blocking):** `exit-codes.ts` `toExitCode` mirrors only the `suppressedInGraphError` coverage-incomplete trigger (dead scaffold, no live consumer -- the Nx executor uses `evaluateResult`); the local-only `nx-add-yarn` corepack/Verdaccio ECONNREFUSED flake (CI e2e is Linux-only); and the benign `requirements-completed: [SB-08]` frontmatter overstatement.
+- The 7 post-v0.1.1 quick tasks (260703-lp0/p2x/u74/wcg, 260704-mse/wnq, 260705-1wo) were verified + shipped; the close audit initially flagged them "missing" due to the recurring bare-`SUMMARY.md`-vs-`<id>-SUMMARY.md` scanner mismatch (bare markers added at close).
+
+### Archives
+
+- `.planning/milestones/v0.1.2-ROADMAP.md` -- full phase detail
+- `.planning/milestones/v0.1.2-REQUIREMENTS.md` -- requirements with outcomes
+- `.planning/milestones/v0.1.2-MILESTONE-AUDIT.md` -- audit report
+
+---
+
 ## v0.1.0 -- Reference-walking engine, typecheck executor rename, and the configuration + init generator suite
 
 **Shipped:** 2026-07-02

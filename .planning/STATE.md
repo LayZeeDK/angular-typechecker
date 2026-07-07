@@ -2,41 +2,33 @@
 gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
-status: completed
+status: Awaiting next milestone
 stopped_at: "Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)"
-last_updated: "2026-07-07T15:33:03.337Z"
-last_activity: 2026-07-07
+last_updated: "2026-07-07T19:17:53.352Z"
+last_activity: 2026-07-07 — Milestone v0.1.2 completed and archived
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 5
   total_plans: 20
-  completed_plans: 21
-  percent: 60
+  completed_plans: 20
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
+See: .planning/PROJECT.md (updated 2026-07-07 -- v0.1.2 milestone CLOSED)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone complete
+**Current focus:** v0.1.2 closed + audited PASSED; the v0.1.2 npm publish is the pending human-gated Release-PR, then `/gsd-new-milestone`.
 
 ## Current Position
 
-Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 20
-Plan: Not started
-Status: Milestone complete
-external-template branch 4a locked (relatedInformation ownership signal).
-Last activity: 2026-07-07
-into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
-
-Requirements: `.planning/REQUIREMENTS.md` (SB-01..09).
-Roadmap: `.planning/ROADMAP.md` (phases 16-20; v0.0.1 + v0.0.3 + v0.1.0 collapsed to SHIPPED).
-Board record: `.planning/research/v0.1.2-storybook/board/` (FACTS.md, ROUND-1-SYNTHESIS.md, CONSENSUS.md).
-Research: `.planning/research/v0.1.2-storybook/` (NX-SCAFFOLD.md, OSS-EXAMPLES.md, CENTRALIZED-HOST.md).
+Phase: Milestone v0.1.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-07 — Milestone v0.1.2 completed and archived
 
 ## Accumulated Context
 
@@ -122,18 +114,21 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-07T14:13:24.089Z
-`/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
-against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
-memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
-isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
-packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
-complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)
-complete. Reviewed at the 16->17 gate.
-Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
-implementation blueprint is in the spike-findings skill's
-`references/storybook-input-set-boundary.md`. NOTE: the forced-SB10 scaffold lives in the session
-scratchpad (not committed); an eventual PR for `gsd/v0.1.2-storybook` into `main` (PR-only) carries
-the `.planning/` + `.claude/skills/` artifacts. OSS reference clones under D:/projects/github/
-(radix-ng/primitives et al.) are not committed.
+Last session: 2026-07-07 -- ran `/gsd-audit-milestone v0.1.2` (PASSED 9/9 requirements, 5/5 phases,
+9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.1.2`: archived
+ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.1.2-*`, collapsed ROADMAP to a SHIPPED
+one-liner, evolved PROJECT.md (v0.1.2 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed
+REQUIREMENTS.md, added the 7 bare quick-task `SUMMARY.md` markers (audit-open workaround, 3rd close).
+Milestone-close committed on `release/0.1.2`; `main` held at origin (PR-only).
+Stopped at: v0.1.2 Release-PR -- version cut + curated end-user-facing CHANGELOG on `release/0.1.2`,
+PR opened into `main`. Merge, `angular-typechecker@0.1.2` tag on the merge commit, and OIDC npm
+publish are the pending HUMAN-GATED steps (AGENTS.md; never agent-approved).
+Next step: human merges the Release-PR once `ci` is green, tags the merge commit
+`angular-typechecker@0.1.2`, pushes the tag (fires `release.yml` -> OIDC publish, approve the
+`npm-publish` environment), and creates the GitHub Release from the curated CHANGELOG section. Then
+`/gsd-new-milestone`. OSS reference clones under D:/projects/github/ (radix-ng/primitives et al.) are
+not committed.
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
