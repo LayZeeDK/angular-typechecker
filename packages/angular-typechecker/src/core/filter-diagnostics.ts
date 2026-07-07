@@ -447,8 +447,10 @@ function isNodeModulesPath(canonicalFile: string): boolean {
  * TypeScript-compilable SOURCE extensions (D-04a isolation). A resolved,
  * non-node_modules, out-of-base, non-rootName file with one of these is a
  * transitively-imported DEPENDENCY source (not an external-template resource), so
- * `keep()` step (8) suppresses it as in-graph instead of letting it fall through to
- * branch 4a and default-KEEP. Every variant is listed EXPLICITLY: `.tsx`/`.jsx` do
+ * `keep()`'s dependency-source branch (after the node_modules (b) and base (c)
+ * clauses, before external-template branch 4a) suppresses it as in-graph instead of
+ * letting it fall through to 4a and default-KEEP. Every variant is listed
+ * EXPLICITLY: `.tsx`/`.jsx` do
  * NOT end in `.ts`/`.js`, and `.mts`/`.cts`/`.mjs`/`.cjs` share no suffix with
  * `.ts`/`.js`, so `endsWith('.ts')` alone would miss them. `.js`-family sources
  * only reach here under `allowJs`, but if the compiler emitted a diagnostic on one
