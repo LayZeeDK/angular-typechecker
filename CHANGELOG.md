@@ -42,7 +42,11 @@ Storybook-specific machinery: the plugin still ships zero Storybook coupling.
 - **Split coverage counters** -- suppressed diagnostics are now reported split into
   expected `node_modules` suppressions (quiet) and first-party in-graph
   suppressions (loud), so a dropped first-party diagnostic is always visible and
-  forces a non-clean coverage-incomplete verdict instead of a silent pass.
+  forces a non-clean coverage-incomplete verdict instead of a silent pass. On the
+  programmatic `CoreResult` API this replaces the prior single `suppressedCount`
+  field with `suppressedThirdParty`, `suppressedInGraphErrorCount`,
+  `suppressedInGraphWarningCount`, and `suppressedInGraphFiles` (a breaking change
+  for any code reading `result.suppressedCount`; permitted under 0.x semver).
 
 ### Fixes
 

@@ -585,7 +585,10 @@ function synthesizeZeroRootNamesDiagnostic(
  * filtered.
  */
 interface FinalizeFilter {
-  // D-05: in-project baseline = the leaf tsconfig's `basePath`.
+  // D-05: in-project baseline = the CHECKED tsconfig's `basePath` -- the leaf's on
+  // the direct single-leaf path, but the SOLUTION/host tsconfig's on the walk path
+  // (`handleSolutionWalk` builds this filter from the solution `parsed`), matching
+  // the "solution/host tsconfig dir" baseline documented in filter-diagnostics.ts.
   basePath: string;
   // D-07: false (default) excludes out-of-project + node_modules.
   includeDeps: boolean;

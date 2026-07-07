@@ -39,6 +39,15 @@ import type { CoreResult } from './run-typecheck';
 // trigger (errors are the loudest signal); `coverage-incomplete` means a
 // first-party diagnostic was dropped or a leaf checked nothing; `warnings-exceeded`
 // is the existing EXE-05 `--max-warnings` gate; `clean` is a fully-checked pass.
+//
+// CONSUMER STATUS (deliberate): the live Nx executor reads ONLY `.success` from
+// `evaluateResult` (executor.ts) and renders its own richer, per-trigger `logger.warn`
+// notices, so the discriminated LABEL is not consumed on the shipped path today. It is
+// a forward-facing field for the deferred standalone CLI (which needs a machine-readable
+// verdict to map to an exit code -- see `toExitCode`) and structured reporters, and it
+// keeps the pure `evaluate-result.spec.ts` assertions precise about WHICH trigger fired.
+// Do not delete it to chase "unused": that would weaken those assertions and force a
+// re-add when the CLI lands.
 export type Outcome =
   | 'clean'
   | 'type-error'

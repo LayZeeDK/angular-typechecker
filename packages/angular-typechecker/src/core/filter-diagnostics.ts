@@ -264,6 +264,17 @@ export function keep(
   }
 
   // (b) node_modules SEGMENT -> SUPPRESS third-party (dependency noise isolation).
+  // Ordered BEFORE the base clause (c) ON PURPOSE: in the common layout a dependency
+  // lives under a project-LOCAL `node_modules` that IS under `canonicalBase` (e.g.
+  // `/proj/node_modules/dep/x.ts` under base `/proj`), so testing base first would
+  // KEEP every dependency error and defeat isolation. (Gating this on
+  // `!isUnderDir(base)` would reintroduce exactly that regression for any project with
+  // a local, non-hoisted node_modules.) KNOWN EDGE (unsupported layout): if the
+  // CHECKED project's OWN base itself resides inside a `node_modules` dir, a
+  // non-rootName first-party resource (external `.html`, `.ngtypecheck.ts` shim) under
+  // it is suppressed here -- but a declared `.ts`/source rootName is still safe (the
+  // dual-identity membership above runs first). Angular app/lib/`.storybook` tsconfigs
+  // are never rooted inside node_modules, so this does not arise for real targets.
   if (isNodeModulesPath(fullForm)) {
     return THIRD_PARTY;
   }
