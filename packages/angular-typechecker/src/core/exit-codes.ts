@@ -29,35 +29,27 @@ import { TypecheckInfrastructureError } from './run-typecheck';
  * Maps a completed type-check result OR a thrown infrastructure error to the
  * literal ngc-parallel exit code (COR-04 / D-07): `2` for a
  * `TypecheckInfrastructureError` (the compiler failed to run), `1` when
- * `errorCount > 0` (genuine type errors) OR `suppressedInGraphErrorCount > 0`
- * (coverage-incomplete: a first-party in-graph error was dropped, SB-04 / D-06),
- * else `0` (clean). Coverage-incomplete REUSES `1` (Open Question 2 resolution: a
- * distinct code is not worth breaking ngc parity). Pure -- no process side
- * effects; the adapters own `process.exit`. `suppressedInGraphErrorCount` is
- * optional here so the pure unit tier keeps its minimal-literal idiom; an absent
- * count reads as `0` (nothing suppressed).
+ * `errorCount > 0` (genuine type errors), else `0` (clean). Pure -- no process
+ * side effects; the adapters own `process.exit`.
+ *
+ * This is the pure ngc-parity error/infra/clean policy ONLY. It deliberately does
+ * NOT re-derive the coverage-incomplete / warnings-exceeded verdict from raw
+ * counts: that verdict lives in ONE place, `evaluateResult`, which the live Nx
+ * executor already uses. A second, PARTIAL copy here would silently diverge -- a
+ * `templateCheckAborted`- or `zero-root-names`-only run is `coverage-incomplete`
+ * (success:false) in `evaluateResult` but reads clean from raw counts alone. When
+ * the deferred standalone CLI lands it must map `evaluateResult(...)`'s
+ * `success`/`outcome` to an exit code, NOT re-compute the verdict here. `toExitCode`
+ * has no live consumer today; keeping it verdict-free avoids that fork.
  */
 export function toExitCode(
-  input:
-    | (Pick<CoreResult, 'errorCount'> &
-        Partial<Pick<CoreResult, 'suppressedInGraphErrorCount'>>)
-    | TypecheckInfrastructureError,
+  input: Pick<CoreResult, 'errorCount'> | TypecheckInfrastructureError,
 ): 0 | 1 | 2 {
   if (input instanceof TypecheckInfrastructureError) {
     return 2;
   }
 
   if (input.errorCount > 0) {
-    return 1;
-  }
-
-  // ponytail: coverage-incomplete maps to 1 for the suppressed-in-graph-ERROR
-  // trigger only. The maxWarnings-gated suppressed-WARNING case and the
-  // templateCheckAborted / zero-root-names coverage triggers are already enforced
-  // by the LIVE `evaluateResult` path (the Nx executor's sole verdict). Mirror
-  // them here when the deferred CLI gains a live consumer + a maxWarnings option
-  // (`toExitCode` has neither today, so adding them now would be dead code).
-  if ((input.suppressedInGraphErrorCount ?? 0) > 0) {
     return 1;
   }
 
