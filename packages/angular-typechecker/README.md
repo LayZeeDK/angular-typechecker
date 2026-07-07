@@ -177,13 +177,13 @@ should fail.
 
 ## Executor options
 
-| Option        | Type    | Default    | Description                                                                                                                                                                                 |
-| ------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                                                                                              |
-| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).                                                                                    |
-| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone.                                                                            |
-| `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                                                                                           |
-| `strict`      | boolean | `false`    | Opt-in: fail when a first-party in-graph diagnostic was dropped (escalates the coverage-incomplete outcome to a hard failure). It only adds a fail path; it never turns a fail into a pass. |
+| Option        | Type    | Default    | Description                                                                                                                                                                                                   |
+| ------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                                                                                                                |
+| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).                                                                                                      |
+| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone.                                                                                              |
+| `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                                                                                                             |
+| `strict`      | boolean | `false`    | Opt-in: fail when a dropped first-party in-graph warning would otherwise leave the verdict clean, turning it into a coverage-incomplete failure. It only adds a fail path; it never turns a fail into a pass. |
 
 By default the check is scoped to the project in isolation. When it imports a
 non-buildable (local) library, that library's sources sit outside the project's
@@ -408,11 +408,10 @@ solution `tsconfig.json`, and `nx run-many` / `affected` covers the set. What it
 does NOT claim: we do NOT verify that composed `refs` resolve, are reachable, or
 deploy -- those are runtime URLs, not TypeScript.
 
-The opt-in `strict` executor option (default `false`) escalates a
-coverage-incomplete outcome -- a dropped in-graph diagnostic (`suppressedInGraph`
-greater than `0`) that would otherwise leave the verdict clean -- to a hard
-failure. It only ever adds a fail path; it never turns a failing verdict into a
-pass.
+The opt-in `strict` executor option (default `false`) turns a dropped in-graph
+warning (`suppressedInGraph` greater than `0`) -- which by default leaves the
+verdict clean -- into a `coverage-incomplete` failure. It only ever adds a fail
+path; it never turns a failing verdict into a pass.
 
 **What this does not claim.** It does not cover every Storybook file, it is not a
 guarantee of exhaustive Storybook checking, and it does not ensure Storybook builds
