@@ -27,6 +27,13 @@ Storybook-specific machinery: the plugin still ships zero Storybook coupling.
 > but the dropped file is named loudly and the verdict is no longer a false clean. Run
 > each project's own `typecheck` target to see that error reported directly as a
 > `type-error`.
+>
+> A dropped first-party **warning** counts the same way when you gate warnings: with
+> `maxWarnings` set (any value) or the opt-in `strict` option, a dropped in-graph
+> warning that pushes the total over the threshold also yields `coverage-incomplete`
+> (e.g. a workspace library's NG8xxx extended diagnostic, which defaults to Warning,
+> under `maxWarnings: 0`). With no `maxWarnings` and no `strict`, a dropped warning
+> stays advisory -- reported loudly but verdict-neutral, exactly like a reported one.
 
 ### Features
 
