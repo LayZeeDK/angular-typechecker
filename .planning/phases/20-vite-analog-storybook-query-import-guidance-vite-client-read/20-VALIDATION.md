@@ -60,7 +60,7 @@ created: 2026-07-07
 
 - [ ] `src/core/detect-bundler-query-imports.ts` -- the pure detector (source; NOT exported from `index.ts`)
 - [ ] `src/core/detect-bundler-query-imports.spec.ts` -- unit tier (D-02, D-06(a), Pitfall 2, empty-set baseline)
-- [ ] `packages/angular-typechecker/src/fixtures/vite-query-imports/` -- hermetic fixture (mirror spike 009 fixture + `fixtures/not-type-checked-mdx/` layout: `tsconfig.base.json`, a `baseline` tsconfig, and a `vite/client` tsconfig over shared story sources with `?raw`/`?url`/`?worker`/`?inline` + one plain-missing control; optional hand-shim leg)
+- [ ] `fixtures/vite-query-imports/` (workspace-root `fixtures/` dir, resolved via `findWorkspaceRoot` -- same as `fixtures/not-type-checked-mdx/`) -- hermetic fixture: `tsconfig.base.json`, a `baseline` tsconfig, and a `vite/client` tsconfig over shared story sources with `?raw`/`?url`/`?worker`/`?inline` + one plain-missing control; optional hand-shim leg
 - [ ] `src/core/bundler-query-imports.integration.spec.ts` -- real-compiler integration tier
 - [ ] Extend `src/core/evaluate-result.spec.ts` -- verdict-neutrality tripwire
 - [ ] Extend `src/executors/typecheck/executor.spec.ts` -- render + silent-when-undefined

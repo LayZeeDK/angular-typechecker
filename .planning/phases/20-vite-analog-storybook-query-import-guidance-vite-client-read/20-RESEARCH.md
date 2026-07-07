@@ -477,9 +477,10 @@ environment lacks `vite`; not needed here since `vite` is present.
 **No `[ASSUMED]` claims about package identity, compliance, or security standards.** Both assumptions above are
 operational and low-risk, each with a verified mitigation.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Exact hermetic fixture shape (solution-style vs direct-leaf, and which "cleared" leg).**
+   **RESOLVED (locked in 20-01):** direct-leaf, spike-009-style -- `tsconfig.base.json` + a baseline tsconfig + a `vite/client` tsconfig over shared story sources; optional hand-shim leg.
    - What we know: `fixtures/not-type-checked-mdx/` uses a solution `tsconfig.json` + `references[]` ->
      `.storybook/tsconfig.json`; spike 009's fixture uses a direct-leaf tsconfig with `include: ["src/**/*.ts"]`
      and separate `baseline` / `hand-shim` / `vite-client` tsconfigs over the SAME sources.
@@ -490,6 +491,7 @@ operational and low-risk, each with a verified mitigation.
      baseline and "self-gated silent" on vite/client. Optionally add a `hand-shim` leg to demonstrate the fallback.
 
 2. **Whether to also assert the exact specifier list in the integration test or just non-empty + kept.**
+   **RESOLVED (locked in 20-01):** non-empty + kept (errorCount includes the `?query` TS2307) + plain-missing control present-but-not-flagged; no brittle exact-count coupling (exact counts stay in the synthetic unit tier).
    - Recommendation: assert non-empty AND that the `?query` `TS2307` are counted (errorCount includes them) AND
      the plain-missing control is present but NOT flagged. Avoid brittle exact-count coupling to the fixture's
      source content (that is the unit tier's job with synthetic diagnostics).
