@@ -2,101 +2,97 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
-## 0.1.2 (2026-07-06)
+## 0.2.0 (2026-07-07)
 
-Storybook story type-checking. The `typecheck` target now checks the whole surface
-a Storybook tsconfig declares -- your `*.stories.ts`, `.storybook/main.ts` and
-`preview.ts`, and, for the centralized-host recipe, the aggregated
-`*.component.ts`/`*.directive.ts`/`*.ts` its `include` reaches -- across both the
-per-project scaffold (Layout A) and the centralized host (Layout B). Under the
-hood this is one input-set-membership boundary correctness fix, not
-Storybook-specific machinery: the plugin still ships zero Storybook coupling.
+**Storybook story type-checking.** `nx typecheck` now type-checks your Storybook
+stories (`*.stories.ts`), your `.storybook/main.ts` and `preview.ts`, and every
+other file your Storybook `tsconfig` includes. Your stories get the full Angular
+check (TypeScript errors plus template and NG8xxx diagnostics), not just your app
+and libraries. This works whether each project has its own Storybook or you run a
+single central Storybook that pulls in stories and components from across the
+workspace. No configuration and no Storybook-specific option is required, and the
+plugin still has no dependency on Storybook.
 
-> **Behavior change (a correctness fix, not a regression):** existing
-> centralized-host (Layout B) Storybook builds that previously passed by SILENTLY
-> dropping aggregated cross-project diagnostics will now FAIL when those aggregated
-> stories or components have real type or template errors. This is a false-pass ->
-> true-fail CORRECTION (permitted under 0.x semver), not a break. If a build newly
-> goes RED, read the newly reported diagnostics as the errors that were there all
-> along.
+> **Behavior change (a correctness fix, not a regression).** If you run a single
+> central Storybook that pulls in stories and components from other projects, a
+> `typecheck` run that used to pass may now fail. It was previously skipping those
+> pulled-in files and missing real errors in them. A newly failing run is not a new
+> problem: the reported type or template errors were already there; they just
+> weren't being checked. Fix them, or run each project's own `typecheck` to see them
+> reported directly.
 >
-> This is NOT Storybook-specific. Any project that imports an internal (path-mapped /
-> workspace-package) library from source can likewise turn `coverage-incomplete` when
-> a transitively-imported first-party file has a real error that the old
-> directory-containment boundary silently dropped -- the error text stays isolated,
-> but the dropped file is named loudly and the verdict is no longer a false clean. Run
-> each project's own `typecheck` target to see that error reported directly as a
-> `type-error`.
->
-> A dropped first-party **warning** counts the same way when you gate warnings: with
-> `maxWarnings` set (any value) or the opt-in `strict` option, a dropped in-graph
-> warning that pushes the total over the threshold also yields `coverage-incomplete`
-> (e.g. a workspace library's NG8xxx extended diagnostic, which defaults to Warning,
-> under `maxWarnings: 0`). With no `maxWarnings` and no `strict`, a dropped warning
-> stays advisory -- reported loudly but verdict-neutral, exactly like a reported one.
+> This isn't specific to Storybook. Any project that imports an internal workspace
+> library from source (for example through a TypeScript `paths` alias) is now checked
+> the same way. If a pulled-in first-party file has a real error, the run no longer
+> reports a false "clean". Each error stays attributed to the project that owns it,
+> but the run now tells you which file it couldn't fully check and refuses to report
+> a passing result.
 
 ### Features
 
-- **Input-set-membership boundary** -- the project-in-isolation boundary filter
-  now decides what to check by compiler input-set membership (the files the
-  tsconfig declares) instead of a directory-containment proxy. A centralized
-  Storybook host that aggregates stories and components from across the workspace
-  is now checked completely, closing a silent false pass.
-- **Declared-but-uncheckable advisory** -- a new `notTypeCheckedDeclaredFiles`
-  field on the programmatic `CoreResult`, surfaced as a loud executor notice, names
-  declared files the type-check cannot cover (`.mdx` is never type-checked; a
-  `.tsx` is checked only when `compilerOptions.jsx` is set). Advisory only -- it
-  never changes the verdict.
-- **Bundler-query import advisory** -- a new `bundlerQueryImports` field on the
-  programmatic `CoreResult`, surfaced as a loud executor notice, flags unresolved
-  `TS2307` whose module specifier carries a `?` bundler query (Vite/Analog
-  `?raw`/`?url`/`?worker`/`?inline`, virtual modules) and recommends adding
-  `"types": ["vite/client"]` to the checked tsconfig. Verdict-neutral and
-  self-gating (it falls silent once the imports resolve) -- it NEVER suppresses the
-  diagnostic, because a missing module can be a genuine error.
-- **Split coverage counters** -- suppressed diagnostics are now reported split into
-  expected `node_modules` suppressions (quiet) and first-party in-graph
-  suppressions (loud), so a dropped first-party diagnostic is always visible and
-  forces a non-clean coverage-incomplete verdict instead of a silent pass. On the
-  programmatic `CoreResult` API this replaces the prior single `suppressedCount`
-  field with `suppressedThirdParty`, `suppressedInGraphErrorCount`,
-  `suppressedInGraphWarningCount`, and `suppressedInGraphFiles` (a breaking change
-  for any code reading `result.suppressedCount`; permitted under 0.x semver).
-- **Opt-in `strict` executor option** (default `false`) -- a verdict-only knob that
-  fails a run (as `coverage-incomplete`) when a dropped first-party in-graph WARNING
-  would otherwise leave the verdict clean. It only ever ADDS a fail path; it never
-  turns a fail into a pass, and the default is unchanged behavior.
+- Complete Storybook coverage for both setups. Whether your stories live in each
+  project (the default per-project Storybook) or in one central Storybook that
+  aggregates them from across the workspace, `nx typecheck` checks the whole set of
+  files your Storybook `tsconfig` declares. An error in one of those declared files
+  is reported with the correct file and code frame, including a story that uses an
+  external `templateUrl` template. A file reached only through an import (for example
+  a component in another library that the config doesn't include) is instead surfaced
+  as incomplete coverage, as described above.
+- Storybook Composition is supported. When one Storybook embeds other,
+  independently built Storybooks, give each project its own `typecheck` target and
+  use Nx's dependency fan-out (`dependsOn: ["^typecheck"]`) to check a host and
+  everything it composes in one command. A type error in the host's
+  `.storybook/main.ts`, including its `refs`, is reported.
+- A notice for files that can't be type-checked. When your Storybook `tsconfig`
+  includes files the Angular type-check can't cover, `nx typecheck` prints a notice
+  naming them, so you always know which declared files it can't cover. This covers
+  `.mdx` docs (never
+  type-checked) and `.tsx` files (checked only when your `tsconfig` sets
+  `compilerOptions.jsx`). The notice is informational and does not change whether the
+  run passes.
+- Vite and Analog `?query` import guidance. Vite and Analog Storybook imports that
+  use a query suffix (`?raw`, `?url`, `?worker`, `?inline`, and virtual modules)
+  report `TS2307` ("cannot find module") under the full Angular check, because
+  TypeScript doesn't know about those bundler features on its own. `nx typecheck` now
+  prints a notice for these and points you at the one-line fix: add
+  `"types": ["vite/client"]` to the tsconfig you check. If you'd rather not rely on
+  Vite's types, add a `declare module '*?raw'` ambient declaration in a `.d.ts`
+  instead. These errors are never hidden automatically, because a genuinely missing
+  module is a real error.
+- Opt-in `strict` option (default `false`). When set, a run fails if the type-check
+  had to skip a first-party file that produced a warning that would otherwise leave
+  the run green. It only adds a fail path on a real coverage gap; it never turns a
+  fail into a pass, and leaving it off keeps today's behavior.
+- Clearer reporting of skipped diagnostics. `nx typecheck` now separates the
+  diagnostics it expectedly ignores in `node_modules` (quiet) from any first-party
+  file it had to skip (loud, with the files named). A skipped first-party error now
+  fails the run.
 
 ### Fixes
 
-- **Zero-input in-project leaf is coverage-incomplete** -- a referenced in-project
-  leaf that resolves to zero input files (an empty config, or a
-  references-only/solution tsconfig whose inner projects are not walked) now yields
-  a non-clean coverage-incomplete verdict instead of an advisory-only skip. Only
-  out-of-project, duplicate, and self references remain advisory.
+- A referenced project config that resolves to no input files (an empty config, or a
+  solution-style `tsconfig` whose inner projects aren't reached) now fails the run
+  instead of being skipped without failing, so an accidentally-empty target can't
+  report a false pass. Out-of-project, duplicate, and self references are still
+  skipped with a warning (they don't fail the run), as before.
 
-### Internal
+### Breaking (programmatic API only)
 
-- Added a packaged-tarball Storybook end-to-end test: it installs the published
-  tarball into a fresh Nx workspace with a generator-shaped Storybook project
-  (Layout A and Layout B), wires the target, and asserts a planted story error is
-  caught -- proving the shipped artifact, not just the local build.
-- Added in-repo integration fixtures for the residual boundary-semantics matrix
-  (workspace `paths`-alias aggregated imports, story-less/flat configs, and a
-  declared `.mdx`).
+This breaking change is what makes 0.2.0 a minor release rather than a patch: under
+0.x semver, a breaking change bumps the minor.
+
+- If you consume the programmatic `runTypecheck` result (`CoreResult`) directly, the
+  single `suppressedCount` field is replaced by `suppressedThirdParty`,
+  `suppressedInGraphErrorCount`, `suppressedInGraphWarningCount`, and
+  `suppressedInGraphFiles`, and two advisory fields are added
+  (`notTypeCheckedDeclaredFiles` and `bundlerQueryImports`). The `nx typecheck`
+  executor and its output are unaffected. (Breaking changes are permitted under
+  0.x semver.)
 
 ### Compatibility
 
-- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
-- Node `^22.22.3 || ^24.15.0 || ^26.0.0`
-- No new dependency; the plugin still ships zero Storybook coupling. Installing
-  `@storybook/angular` on Angular 22 needs `--legacy-peer-deps` / `--force`; see the
-  README Storybook section.
-- Vite/Analog Storybook `?query` imports (`?raw`/`?url`/`?worker`/`?inline`, virtual
-  modules) report `TS2307` under the full Angular check. The README Storybook caveat
-  now LEADS with the fix -- add `"types": ["vite/client"]` to the checked tsconfig, or
-  a hand `declare module '*?query'` ambient shim in a `.d.ts` as the no-`vite`
-  fallback. The diagnostics are never auto-suppressed.
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`,
+  Node `^22.22.3 || ^24.15.0 || ^26.0.0`. No new runtime dependency.
 
 ## 0.1.1 (2026-07-04)
 
@@ -260,9 +256,7 @@ angular-typechecker is an Nx plugin that runs the _complete_ Angular compiler ty
 - Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`
 - Node `^22.22.3 || ^24.15.0 || ^26.0.0`
 
-See the [README](./packages/angular-typechecker/README.md) for wiring the `angular-typecheck` target into a project.
-
-[0.1.2]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.2
+[0.2.0]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.2.0
 [0.1.1]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.1
 [0.1.0]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.1.0
 [0.0.3]: https://github.com/LayZeeDK/angular-typechecker/releases/tag/angular-typechecker@0.0.3
