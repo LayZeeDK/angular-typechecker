@@ -111,7 +111,7 @@ Two layouts, both Nx-official:
   (`--legacy-peer-deps`/`--force`; `nx add`/pnpm can hit `ERR_PNPM_IGNORED_BUILDS`). The green->red flip
   on existing Layout-B builds is a loud changelog callout (a false-pass -> true-fail correction, not a
   regression).
-- [ ] **SB-09**: Vite/Analog Storybook query-import guidance (follow-up from the Phase-19 OSS UAT +
+- [x] **SB-09**: Vite/Analog Storybook query-import guidance (follow-up from the Phase-19 OSS UAT +
   spikes 009-010). The complete ngc check correctly surfaces `TS2307` on Vite import queries
   (`?raw`/`?url`/`?worker`/`?inline`, virtual modules) because a story is a declared rootName
   (in-project). **Signal 1 (required, docs-only):** the README Storybook caveat MUST lead with the

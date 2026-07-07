@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
-status: executing
-stopped_at: "Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)"
-last_updated: "2026-07-07T14:13:24.098Z"
+status: milestone_complete
+stopped_at: Milestone complete (Phase 20 was final phase)
+last_updated: 2026-07-07T14:36:57.119Z
 last_activity: 2026-07-07
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 20
-  completed_plans: 20
+  completed_plans: 21
   percent: 60
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-05 -- v0.1.2 milestone opened)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 20 — vite-analog-storybook-query-import-guidance-vite-client-read
+**Current focus:** Milestone complete
 
 ## Current Position
 
 Milestone: v0.1.2 (Storybook story type-checking) -- Phase 16 gate spike COMPLETE (GO); Phase 17 next.
-Phase: 20 (vite-analog-storybook-query-import-guidance-vite-client-read) — EXECUTING
-Plan: 5 of 5
-Status: Ready to execute
+Phase: 20
+Plan: Not started
+Status: Milestone complete
 external-template branch 4a locked (relatedInformation ownership signal).
 Last activity: 2026-07-07
 into the spike-findings-angular-typechecker skill, recorded Phase 16 complete.
