@@ -19,6 +19,14 @@ Storybook-specific machinery: the plugin still ships zero Storybook coupling.
 > true-fail CORRECTION (permitted under 0.x semver), not a break. If a build newly
 > goes RED, read the newly reported diagnostics as the errors that were there all
 > along.
+>
+> This is NOT Storybook-specific. Any project that imports an internal (path-mapped /
+> workspace-package) library from source can likewise turn `coverage-incomplete` when
+> a transitively-imported first-party file has a real error that the old
+> directory-containment boundary silently dropped -- the error text stays isolated,
+> but the dropped file is named loudly and the verdict is no longer a false clean. Run
+> each project's own `typecheck` target to see that error reported directly as a
+> `type-error`.
 
 ### Features
 
@@ -47,6 +55,10 @@ Storybook-specific machinery: the plugin still ships zero Storybook coupling.
   field with `suppressedThirdParty`, `suppressedInGraphErrorCount`,
   `suppressedInGraphWarningCount`, and `suppressedInGraphFiles` (a breaking change
   for any code reading `result.suppressedCount`; permitted under 0.x semver).
+- **Opt-in `strict` executor option** (default `false`) -- a verdict-only knob that
+  fails a run (as `coverage-incomplete`) when a dropped first-party in-graph WARNING
+  would otherwise leave the verdict clean. It only ever ADDS a fail path; it never
+  turns a fail into a pass, and the default is unchanged behavior.
 
 ### Fixes
 

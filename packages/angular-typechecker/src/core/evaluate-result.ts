@@ -40,14 +40,17 @@ import type { CoreResult } from './run-typecheck';
 // first-party diagnostic was dropped or a leaf checked nothing; `warnings-exceeded`
 // is the existing EXE-05 `--max-warnings` gate; `clean` is a fully-checked pass.
 //
-// CONSUMER STATUS (deliberate): the live Nx executor reads ONLY `.success` from
-// `evaluateResult` (executor.ts) and renders its own richer, per-trigger `logger.warn`
-// notices, so the discriminated LABEL is not consumed on the shipped path today. It is
-// a forward-facing field for the deferred standalone CLI (which needs a machine-readable
-// verdict to map to an exit code -- see `toExitCode`) and structured reporters, and it
-// keeps the pure `evaluate-result.spec.ts` assertions precise about WHICH trigger fired.
-// Do not delete it to chase "unused": that would weaken those assertions and force a
-// re-add when the CLI lands.
+// CONSUMER STATUS (deliberate): `evaluateResult` is package-INTERNAL (not exported
+// from index.ts), and the live Nx executor consumes only `.success` (executor.ts),
+// rendering its own richer per-trigger `logger.warn` notices. The discriminated
+// `outcome` label is therefore the verdict CLASSIFIER'S test contract first: it lets the
+// pure `evaluate-result.spec.ts` assert WHICH verdict fired (type-error vs
+// coverage-incomplete vs warnings-exceeded vs clean) -- this milestone's subtlest new
+// logic -- instead of a bare pass/fail, so a regression that fires the WRONG verdict is
+// caught. It is also the natural machine-readable form of that verdict for a future
+// structured reporter / the deferred CLI. Keep it: as an internal field it commits
+// nothing public and is free to change, while deleting it would blind the classifier's
+// own tests to the coverage-incomplete distinction this milestone introduced.
 export type Outcome =
   | 'clean'
   | 'type-error'

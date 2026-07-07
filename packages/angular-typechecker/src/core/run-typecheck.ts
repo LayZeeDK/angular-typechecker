@@ -429,13 +429,14 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 /**
  * D-03a (Phase 13): the references-present arm of the zero-rootNames branch,
  * extracted VERBATIM from `runTypecheck` so the entry function stays under the
- * cognitive-complexity budget. PURE core (no `console`/`process`); uses only the
- * module-scoped helpers `walkReferences`, `throwIfInfrastructureFailure`,
- * `finalize`, and `buildFinalizeFilter`. A solution-style / references-only
- * config splits two ways: >=1 in-project leaf walked (finalize the raw union) vs
- * 0 in-project leaves (finalize the counted not-found 90002s, else synthesize the
- * none-in-project 90001 guard). Both paths attach `skippedReferences` via the same
- * `[]` -> `undefined` conditional-spread idiom.
+ * cognitive-complexity budget. PURE core (no `console`/`process`), composed from the
+ * module-scoped helpers (`walkReferences`, `throwIfInfrastructureFailure`,
+ * `finalize`, `buildFinalizeFilter`, `presentIfNonEmpty`, and
+ * `synthesizeZeroRootNamesDiagnostic`). A solution-style / references-only config
+ * splits two ways: >=1 in-project leaf walked (finalize the raw union) vs 0
+ * in-project leaves (finalize the counted not-found 90002s, else synthesize the
+ * none-in-project 90001 guard). Both paths attach `skippedReferences` via
+ * `presentIfNonEmpty` (the `[]` -> `undefined` presence idiom).
  */
 async function handleSolutionWalk(
   ng: CompilerCli,

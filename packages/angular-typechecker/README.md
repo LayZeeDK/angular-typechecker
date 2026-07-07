@@ -186,11 +186,18 @@ should fail.
 | `strict`      | boolean | `false`    | Opt-in: fail when a dropped first-party in-graph warning would otherwise leave the verdict clean, turning it into a coverage-incomplete failure. It only adds a fail path; it never turns a fail into a pass. |
 
 By default the check is scoped to the project in isolation. When it imports a
-non-buildable (local) library, that library's sources sit outside the project's
-tsconfig boundary and their diagnostics are skipped, so a type error you
-introduce in a local dependency would not show up, and a cached pass could hide
-it. Set `includeDeps: true` to fold those out-of-project (and `node_modules`)
-diagnostics back in.
+non-buildable (local) library whose sources are path-mapped into the program, those
+sources sit outside the project's own tsconfig input set. Their diagnostics are not
+reported inline (dependency isolation -- you see your project's errors, not the
+library's error text), but as of 0.1.2 a real error among them is no longer silently
+skipped: it is counted as a dropped first-party (in-graph) diagnostic that names the
+offending file loudly and forces a non-clean `coverage-incomplete` verdict, so a
+cached pass cannot hide it. A consequence worth noting: any project that imports an
+internal (path-mapped / workspace-package) library can go `coverage-incomplete` when
+a transitively-imported first-party source has a real error -- run each project's own
+`typecheck` target to see that error reported directly as a `type-error`. Set
+`includeDeps: true` to fold those out-of-project (and `node_modules`) diagnostics back
+into the report in full.
 
 ## Output
 
