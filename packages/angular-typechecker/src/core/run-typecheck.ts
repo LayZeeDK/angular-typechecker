@@ -225,6 +225,26 @@ function buildFinalizeFilter(
 }
 
 /**
+ * CoreResult advisory-field idiom (Pitfall 7 / T-17-09): an advisory ARRAY field is
+ * PRESENT only when non-empty, so consumers branch on presence (an empty `[]` maps
+ * to an omitted key -> `undefined`). Returns a spreadable single-key object,
+ * collapsing the `values.length > 0 ? { key: values } : {}` ternary that was
+ * otherwise repeated for every array field across `runTypecheck`,
+ * `handleSolutionWalk`, and `finalize`. `K` is constrained to `keyof CoreResult` so
+ * a mistyped key is a compile error. Value-presence fields (e.g.
+ * `templateCheckAborted`) keep their own inline spread -- only the array fields
+ * share this contract.
+ */
+function presentIfNonEmpty<K extends keyof CoreResult, T>(
+  key: K,
+  values: readonly T[],
+): Partial<Record<K, readonly T[]>> {
+  return values.length > 0
+    ? ({ [key]: values } as Partial<Record<K, readonly T[]>>)
+    : {};
+}
+
+/**
  * Runs the complete Angular whole-program type-check for a single tsconfig with
  * no emit, gathering all diagnostic phases unconditionally, and returns a
  * structured result. The config is parsed ONCE and spread into a FRESH `options`
@@ -390,7 +410,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 
   // D-01 (Phase 18, T11): the direct single-leaf path computes its declared-but-
   // uncheckable files from its OWN `parsed` + leaf tsconfig path, attached via the
-  // SAME `[]` -> `undefined` conditional-spread idiom as the walk path above.
+  // SAME `presentIfNonEmpty` idiom as the walk path above.
   const notTypeCheckedDeclaredFiles = detectUncheckedDeclaredFiles(
     ts,
     parsed,
@@ -399,9 +419,10 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
 
   return {
     ...directResult,
-    ...(notTypeCheckedDeclaredFiles.length > 0
-      ? { notTypeCheckedDeclaredFiles }
-      : {}),
+    ...presentIfNonEmpty(
+      'notTypeCheckedDeclaredFiles',
+      notTypeCheckedDeclaredFiles,
+    ),
   };
 }
 
@@ -438,12 +459,11 @@ async function handleSolutionWalk(
   throwIfInfrastructureFailure(ng, ts, walk.rawDiagnostics);
 
   // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
-  // adapter's presence check is sufficient; mirror the templateCheckAborted
-  // conditional-spread idiom in `finalize`.
-  const skipped =
-    walk.skippedReferences.length > 0
-      ? { skippedReferences: walk.skippedReferences }
-      : {};
+  // adapter's presence check is sufficient (`presentIfNonEmpty`).
+  const skipped = presentIfNonEmpty(
+    'skippedReferences',
+    walk.skippedReferences,
+  );
 
   if (walk.rootNamesCount > 0) {
     // >=1 in-project leaf walked: feed the RAW union into the SAME single
@@ -469,16 +489,14 @@ async function handleSolutionWalk(
       ),
     );
 
-    // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-
-    // uncheckable files via the SAME `[]` -> `undefined` conditional-spread
-    // idiom as `skipped`. Sourced from the walk's surviving-leaf aggregation
-    // (Pitfall 7), so only surviving leaves contribute.
-    const notTypeChecked =
-      walk.notTypeCheckedDeclaredFiles.length > 0
-        ? {
-            notTypeCheckedDeclaredFiles: walk.notTypeCheckedDeclaredFiles,
-          }
-        : {};
+    // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-uncheckable
+    // files via the SAME `presentIfNonEmpty` idiom as `skipped`. Sourced from the
+    // walk's surviving-leaf aggregation (Pitfall 7), so only surviving leaves
+    // contribute.
+    const notTypeChecked = presentIfNonEmpty(
+      'notTypeCheckedDeclaredFiles',
+      walk.notTypeCheckedDeclaredFiles,
+    );
 
     return { ...result, ...skipped, ...notTypeChecked };
   }
@@ -682,7 +700,7 @@ function finalize(
     suppressedInGraphFiles,
     durationMs: performance.now() - start,
     ...(templateCheckAborted !== undefined ? { templateCheckAborted } : {}),
-    ...(bundlerQueryImports.length > 0 ? { bundlerQueryImports } : {}),
+    ...presentIfNonEmpty('bundlerQueryImports', bundlerQueryImports),
   };
 }
 
