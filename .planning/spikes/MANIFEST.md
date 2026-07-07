@@ -138,3 +138,39 @@ the selectors resolve to **D2(d) branch 4a** (G1 = html + G5 = PASS: map externa
 owning rootName component `.ts` via public `relatedInformation`). Phase 17 ships Layout A + Layout B
 with the input-set-membership boundary and the 4a external-template branch. NO gate forced the
 Layout-A-only fallback. Reviewed at the 16->17 handoff before planning Phase 17.
+
+---
+
+## Idea 3 -- Vite/Analog Storybook query-import support (post-v0.1.2 UAT follow-up)
+
+The phase-19 OSS real-repo UAT (`.planning/phases/19-.../19-UAT.md`) found `angular-typechecker`
+surfaces ~228 `TS2307` on radix-ng's Vite `?raw` imports. The engine is CORRECT to surface them
+(a story is a declared rootName -> in-project -> kept). The open question: what is the cleanest,
+SAFE consumer-facing resolution for Vite/Analog Storybook stories using Vite query suffixes
+(`?raw`/`?url`/`?worker`/`?inline`/virtual modules), WITHOUT auto-suppressing `TS2307` (a missing
+module can be real -- the never-a-silent-false-pass charter). Candidates: documented recipe
+(`vite/client`) vs a shipped hand shim vs an in-tool detection advisory.
+
+### Requirements emerging from this idea
+
+- **Recommended fix = `"types": ["vite/client"]`** on the checked tsconfig (Spike 009). `vite/client`
+  declares the full query family as wildcard ambient modules; one line zeroes the query `TS2307`
+  (227 -> 0 on radix, 5 -> 0 hermetic). A hand `declare module '*?query'` .d.ts is a fallback but
+  incomplete unless every suffix is enumerated (missed `?inline` in the hermetic test).
+- **No-false-pass PRESERVED by the recipe (Spike 009):** an ambient wildcard satisfies module
+  RESOLUTION for matched specifiers only -- a plain missing module (`./nope`) still fails `TS2307`
+  (verified on radix: 1 pre-existing plain miss kept + a planted plain miss still errored), and the
+  imported value keeps its real type (`?raw` -> `string`, so misuse still `TS2322`). The tool must
+  NEVER auto-suppress `?query` `TS2307`.
+- **Documented limitation (Spike 009):** a `?query` import of a NONEXISTENT base file resolves via
+  the wildcard (TS cannot verify base existence through an ambient wildcard; mirrors Vite's own
+  build-vs-typecheck split). Narrow -- only `?query`-suffixed imports of a missing base.
+
+### Spikes (Idea 3)
+
+| # | Name | Type | Validates | Verdict | Tags |
+|---|------|------|-----------|---------|------|
+| 009 | vite-ambient-shim-resolves-query-imports | comparison | ambient decls (`vite/client` vs hand shim) drop Vite `?query` TS2307 to 0 while a genuine missing module still fails (no-false-pass on resolution) and misuse still errors (no-false-pass on types); validated hermetically + on radix-ng (227->0) | **VALIDATED** | storybook, vite, analog, module-resolution, ts2307, no-false-pass, engine, devex |
+| 010 | vite-query-detection-advisory | standard | can the tool deterministically detect Vite/Analog + unresolved `?query` specifiers to emit an advisory (never auto-suppress), with acceptable false-positive risk | PENDING | storybook, vite, advisory, devex |
+
+_Build order: risk order (009 the make-or-break recipe first; 010 the UX advisory second)._

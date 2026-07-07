@@ -1,0 +1,106 @@
+{
+  "spike": "009",
+  "environment": {
+    "angularCompilerCli": "22.0.4",
+    "typescript": "6.0.3",
+    "node": "v24.18.0"
+  },
+  "results": {
+    "baseline": {
+      "rootNames": 3,
+      "ts2307": {
+        "query": [
+          "./extra?inline",
+          "./ghost.md?raw",
+          "./icon.svg?url",
+          "./snippet.md?raw",
+          "./worklet?worker"
+        ],
+        "plain": [
+          "./does-not-exist"
+        ]
+      },
+      "ts2322": 0
+    },
+    "hand-shim": {
+      "rootNames": 4,
+      "ts2307": {
+        "query": [
+          "./extra?inline"
+        ],
+        "plain": [
+          "./does-not-exist"
+        ]
+      },
+      "ts2322": 1
+    },
+    "vite-client": {
+      "rootNames": 3,
+      "ts2307": {
+        "query": [],
+        "plain": [
+          "./does-not-exist"
+        ]
+      },
+      "ts2322": 1
+    }
+  },
+  "assertions": [
+    {
+      "id": "baseline-query-5",
+      "pass": true,
+      "detail": "baseline query TS2307 = 5 (expect 5)"
+    },
+    {
+      "id": "baseline-plain-1",
+      "pass": true,
+      "detail": "baseline plain TS2307 = 1 (expect 1: ./does-not-exist)"
+    },
+    {
+      "id": "baseline-no-ts2322",
+      "pass": true,
+      "detail": "baseline TS2322 = 0 (expect 0: raw import is 'any' unresolved)"
+    },
+    {
+      "id": "handshim-query-1",
+      "pass": true,
+      "detail": "hand-shim query TS2307 = 1 (expect 1: ./extra?inline undeclared)"
+    },
+    {
+      "id": "handshim-residual-is-inline",
+      "pass": true,
+      "detail": "hand-shim residual = ./extra?inline (expect ?inline)"
+    },
+    {
+      "id": "handshim-plain-still-1",
+      "pass": true,
+      "detail": "hand-shim plain TS2307 = 1 (expect 1: no-false-pass preserved)"
+    },
+    {
+      "id": "handshim-types-real",
+      "pass": true,
+      "detail": "hand-shim TS2322 = 1 (expect 1: ?raw typed string, misuse still errors)"
+    },
+    {
+      "id": "viteclient-query-0",
+      "pass": true,
+      "detail": "vite-client query TS2307 = 0 (expect 0)"
+    },
+    {
+      "id": "viteclient-plain-still-1",
+      "pass": true,
+      "detail": "vite-client plain TS2307 = 1 (expect 1: ./does-not-exist STILL fails -- no-false-pass)"
+    },
+    {
+      "id": "viteclient-types-real",
+      "pass": true,
+      "detail": "vite-client TS2322 = 1 (expect 1: real types, misuse still errors)"
+    },
+    {
+      "id": "blindspot-ghost-resolved",
+      "pass": true,
+      "detail": "ghost.md?raw (missing base) resolved by wildcard in both shims = true (documented blind spot)"
+    }
+  ],
+  "verdict": "VALIDATED"
+}
