@@ -312,7 +312,8 @@ try {
   //   suppressedInGraphWarningCount, suppressedInGraphFiles: readonly string[],
   //   durationMs, templateCheckAborted?,
   //   skippedReferences?: readonly SkippedReference[],
-  //   notTypeCheckedDeclaredFiles?: readonly string[] }
+  //   notTypeCheckedDeclaredFiles?: readonly string[],
+  //   bundlerQueryImports?: readonly string[] }
   process.exitCode = result.errorCount > 0 ? 1 : 0;
 } catch (error) {
   if (error instanceof TypecheckInfrastructureError) {
@@ -429,18 +430,35 @@ Caveats:
   component's `.html`) are attributed to the `.html` by the compiler and kept by
   mapping them back to the owning component `.ts` through the compiler's public
   `relatedInformation`; an unmappable resource is kept, never dropped.
-- **Vite/Analog Storybook import suffixes need ambient declarations.** The tool is
-  builder-agnostic -- it type-checks the tsconfig's declared surface with the Angular
-  compiler regardless of whether Storybook builds with webpack/esbuild
-  (`@storybook/angular`) or Vite (`@analogjs/storybook-angular`). But Vite-specific
-  import queries such as `import src from './x?raw'` (also `?url`, `?worker`, and
-  virtual modules) are not valid TypeScript module specifiers, so the compiler reports
-  `TS2307` on them unless your checked tsconfig provides the matching ambient
-  declarations (a `declare module '*?raw' { const src: string; export default src; }`
-  in a `.d.ts`, or `"vite/client"` in the tsconfig's `types`/`include`). This is
-  standard `tsc`/`ngc` behavior for Vite projects, not specific to angular-typechecker;
-  the tool never silently drops these, because a missing module can also be a genuine
-  error.
+- **Vite/Analog Storybook `?query` imports: add `"types": ["vite/client"]` to the
+  checked tsconfig.** That one line is the fix. It resolves the Vite-specific import
+  queries -- `import src from './x?raw'` (also `?url`, `?worker`, `?inline`, and
+  virtual modules) -- that the Angular compiler otherwise reports as `TS2307`, because
+  `vite/client` declares the whole query family as ambient wildcard modules. It drove
+  one real project's 227 `?query` `TS2307` to 0 with no false pass (plain missing
+  modules and value-type misuse still fail as they should). The tool is
+  builder-agnostic: it type-checks the tsconfig's declared surface with the Angular
+  compiler whether Storybook builds with webpack/esbuild (`@storybook/angular`) or Vite
+  (`@analogjs/storybook-angular`), so the `?query` `TS2307` is standard `tsc`/`ngc`
+  behavior for Vite projects, not specific to angular-typechecker.
+
+  If `vite` is not resolvable in the checked project, the FALLBACK is a hand ambient
+  shim in a `.d.ts` the tsconfig includes
+  (`declare module '*?raw' { const src: string; export default src; }`, one per
+  suffix). This fallback is INCOMPLETE by construction -- it only covers the suffixes
+  you enumerate, so prefer `"vite/client"`.
+
+  One honest blind spot either way: an ambient wildcard (`*?raw`) matches the
+  SPECIFIER, not the file, so a `?query` import of a MISSING base file resolves through
+  the wildcard and will NOT error -- the same build-vs-typecheck split Vite itself has.
+  It is narrow: it only affects `?query`-suffixed imports of a missing base.
+
+  The tool NEVER auto-suppresses these `TS2307` -- a missing module can also be a
+  genuine error. When it sees unresolved `?query` imports it surfaces the deduped
+  specifiers through the `bundlerQueryImports` advisory (see
+  [Programmatic API](#programmatic-api)): a verdict-neutral notice that points you at
+  this same fix and falls silent once the imports resolve.
+
 - **Point at the solution `tsconfig.json`, not a leaf.** Pointing the target at a
   leaf `tsconfig.app.json` / `tsconfig.lib.json` excludes the stories the solution
   config's references reach.
