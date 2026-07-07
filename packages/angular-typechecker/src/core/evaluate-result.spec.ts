@@ -237,6 +237,39 @@ describe('evaluateResult', () => {
     });
   });
 
+  // --- SB-09 (D-05): the bundlerQueryImports advisory NEVER flips the verdict.
+  // The `?query` TS2307 stay COUNTED errors (they drive the verdict via
+  // errorCount); the advisory field only NAMES them. Like
+  // notTypeCheckedDeclaredFiles, the field is DELIBERATELY absent from
+  // EvaluateInput, so it is introduced via a variable (excess-property checks fire
+  // only on fresh object literals) to prove it cannot enter the verdict. This
+  // tripwire locks it against a future accidental wiring into the verdict.
+  it('stays clean when bundlerQueryImports is non-empty and errorCount 0 -- the SB-09 advisory NEVER flips the verdict', () => {
+    const withBundlerQuery = {
+      errorCount: 0,
+      warningCount: 0,
+      bundlerQueryImports: ['./snippet.md?raw'],
+    };
+
+    expect(evaluateResult(withBundlerQuery)).toEqual({
+      success: true,
+      outcome: 'clean',
+    });
+  });
+
+  it('stays clean on a non-empty bundlerQueryImports even under maxWarnings 0 (SB-09 advisory)', () => {
+    const withBundlerQuery = {
+      errorCount: 0,
+      warningCount: 0,
+      bundlerQueryImports: ['./icon.svg?url', './snippet.md?raw'],
+    };
+
+    expect(evaluateResult(withBundlerQuery, { maxWarnings: 0 })).toEqual({
+      success: true,
+      outcome: 'clean',
+    });
+  });
+
   it('a Suggestion/Message-only drop (all counts 0) stays clean even under maxWarnings 0', () => {
     expect(
       evaluateResult(
