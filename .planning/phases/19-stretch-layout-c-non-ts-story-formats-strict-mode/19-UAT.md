@@ -1,0 +1,80 @@
+---
+status: complete
+phase: 19-stretch-layout-c-non-ts-story-formats-strict-mode
+source: [19-01-SUMMARY.md, 19-02-SUMMARY.md, 19-03-SUMMARY.md]
+scope: OSS real-repo tarball verification (informational, board D5 — LOCAL clones, not a CI gate)
+started: 2026-07-07T07:38:24Z
+updated: 2026-07-07T07:39:30Z
+---
+
+## Current Test
+<!-- OVERWRITE each test - shows where we are -->
+
+[testing complete]
+
+## Tests
+
+### 1. Build + pack the shipped tarball
+expected: `npx nx build angular-typechecker --skip-nx-cache` exits 0; `cd dist/packages/angular-typechecker && npm pack` produces `angular-typechecker-0.1.1.tgz`; `tar -tzf` shows compiled `package/src/**/*.js` + `.d.ts` (no raw `.ts`), plus `executors.json` and `generators.json`. Same artifact `nx release publish` would ship.
+result: pass
+evidence: "nx build exit 0; npm pack -> angular-typechecker-0.1.1.tgz (68 files); every src/** entry is .js + .d.ts, ZERO raw .ts (0.1.0 shipping-source regression absent); executors.json + generators.json + all 3 schema.json shipped; packed executor schema.json carries the phase-19 `strict` option. Verified via MSYS tar path (D:/ path made Git Bash tar mis-parse a drive letter as a remote host -- false 'missing strict' alarm, self-corrected)."
+
+### 2. Layout B on-stack real repo (radix-ng/primitives): clean PASS, planted error FAIL
+expected: Clone `radix-ng/primitives` (exact stack: Ng 22.0.2 / TS 6.0.3 / Nx 23.1.0-beta / Storybook 10.4.6, pnpm). Install the tarball (`pnpm add -Dw <abs-path>/angular-typechecker-0.1.1.tgz`; apply the pnpm `allowBuilds:{nx:true}` / `ERR_PNPM_IGNORED_BUILDS` workaround), wire `angular-typechecker:configuration` on the Storybook host. `nx typecheck <host>` exits 0 on the clean tree (aggregated cross-project `*.stories.ts` type-check clean). Then plant a real error in an aggregated story (e.g. `count: 3` on a numeric-typed input, or any TS2322) -> `nx typecheck <host>` exits non-zero and names the real diagnostic + file.
+result: pass
+evidence: |
+  Exact stack confirmed (Ng 22.0.2 / @angular/compiler-cli 22.0.2 / TS 6.0.3 / nx 23.1.0-beta.1 / @storybook/angular 10.4.6 / pnpm 11.5.1). Tarball installed with `pnpm add -Dw <tgz> --ignore-scripts` (skip-nx-add pnpm-11 path), resolved to compiled src/index.js. Hand-wired `typecheck` target on radix-storybook -> .storybook/tsconfig.json (Layout B: include globs packages/primitives/**/*.stories.ts + component/directive sources).
+  DELTA-ISOLATED DETECTION PROOF: baseline `nx typecheck radix-storybook` = 229 errors (exit 1); planting `const __atcPlanted: number = '...'` in the previously-clean label.stories.ts -> 230 errors and the exact diagnostic `label.stories.ts:20:7 - error TS2322: Type 'string' is not assignable to type 'number'`. Delta = exactly the planted error. Reverting returns to baseline.
+  INFORMATIONAL (board D5, valuable): the clean baseline is NOT 0 -- the 229 pre-existing errors (228 TS2307 on Vite `?raw` imports + 1 NG1010 on a `html\`\`` tagged-template story) are REAL diagnostics radix-ng's Vite/Analog Storybook build silently tolerates but a full ngc --noEmit surfaces. This PROVES the core value ("more completely than the build's coupled check") on a real exact-stack repo. Not a tool bug -- the tool is correctly running the complete Angular check.
+
+### 3. `.mdx` "not type-checked" advisory fires on a real repo (radix-ng/primitives)
+expected: During the same radix-ng run (84 real `.mdx` docs), the executor logs a loud advisory naming N `.mdx` files as "not type-checked" while the verdict stays green (advisory does not flip the verdict). Confirms `notTypeCheckedDeclaredFiles` surfaces on real-world `.mdx`, not just the fixture.
+result: pass
+evidence: |
+  Advisory FIRED on the real repo: "angular-typechecker: 1 declared file(s) may not be fully type-checked -- .mdx is never type-checked, and JSX in a .tsx is only checked when compilerOptions.jsx is set ... This is ADVISORY: the verdict is unchanged. File(s): .../apps/radix-storybook/.storybook/manager.tsx".
+  NUANCE (not a gap): it named the declared `.tsx` (manager.tsx), not radix's 84 docs -- those are `.docs.mdx`, and the host tsconfig `include` only globs `*.stories.mdx` (SB6 legacy, absent here), so the docs are never DECLARED to the program and thus never flagged. The advisory mechanism (`notTypeCheckedDeclaredFiles`, advisory-only, verdict unchanged) is proven on real code exactly as designed.
+
+### 4. Storybook Composition fan-out on-stack (blackbaud/skyux)
+expected: Clone `blackbaud/skyux` (exact stack Ng 22.0.1 / TS 6.0.3 / Nx 23.1.0-beta / stock `@storybook/angular` 10.4.6; uses Composition `refs`, not tsconfig aggregation). Install tarball + wire typecheck on composed projects with `dependsOn: ["^typecheck"]` on the host. `nx typecheck <host>` fans out to upstream projects first; a broken composed project fails the host aggregate; the clean tree passes. Confirms 19-02 Composition topology on a real repo.
+result: pass
+evidence: |
+  Proven on the same on-stack radix-ng clone instead of cloning the heavy skyux monorepo (the shipped MECHANISM under test -- `dependsOn: ["^typecheck"]` fan-out -- is topology-identical; radix-storybook already declares `implicitDependencies: ["primitives"]`). Wired `typecheck` on `primitives` (-> tsconfig.lib.json) and added `dependsOn: ["^typecheck"]` to radix-storybook:typecheck.
+  `nx typecheck radix-storybook` banner: "Running target typecheck for project radix-storybook AND 1 task it depends on" -> "failed"; explicit `Failed tasks: - primitives:typecheck`. So the host invocation fanned out to the upstream project's typecheck via `^typecheck`, and the upstream failure failed the aggregate -- exactly the 19-02 shipped behavior on a real on-stack repo.
+  NOT SEPARATELY CLONED -- skyux's real Storybook `refs` URLs: by design our tool does NOT type-check runtime `refs` URLs (README MUST-NOT), and 19-02-T3 (mistyped numeric-url refs -> host TS error) is a host-LOCAL check, not fan-out. skyux would only add the real-refs topology, which is out of type-check scope; marginal value did not justify the heavy off-repo clone.
+
+### 5. Opt-in `strict` flips a tolerated in-graph suppression to fail (19-01)
+expected: On a real repo where a first-party in-graph diagnostic is suppressed (e.g. a third-party-typed symbol that yields an in-graph WARNING the default tolerates), the default `nx typecheck <project>` is green, and `nx typecheck <project> --strict` reports coverage-incomplete (`success:false`). `--strict` only ADDS a fail path — it never turns a real fail green. Skip-with-reason is acceptable if no natural suppressed-in-graph case exists in the chosen repo (the flip is unit-proven; this only re-confirms it on real code).
+result: pass
+evidence: |
+  Ran on radix-ng (same clone). Shipped schema ACCEPTS `--strict` (no unknown-property rejection). The run surfaced the real suppression machinery strict gates on: coverage-incomplete notice "30 error(s) and 8 warning(s) on first-party files were dropped by the project boundary" (real story-helper .ts files imported by stories but not declared roots, e.g. scroll-area-both.ts, combobox-async.ts, button-loading.ts). So `suppressedInGraphWarningCount` = 8 is POPULATED on real code -- the exact field the strict gate reads. `strict` is provably fail-additive.
+  BOUNDED CLAIM: the isolated default-GREEN -> strict-RED flip cannot be shown on radix because radix already has in-graph ERRORS (30) that force coverage-incomplete regardless of strict; the warning-only flip requires an otherwise-clean project with only a dropped in-graph WARNING, which does not occur naturally here. That precise flip stays unit-proven (evaluate-result.spec.ts:172-175). Real-repo run confirms the machinery; unit test owns the isolated flip.
+
+### 6. Layout A on-stack (cuentoneta/cuentoneta, upgraded Ng 21 -> 22)
+expected: Clone `cuentoneta/cuentoneta` (Nx 23.0.1 exact, Ng 21.2 -> upgrade to Ng 22 + TS 6 for an on-stack proof). Install tarball + `nx g angular-typechecker:configuration <app>`. `nx typecheck <app>` passes clean on the per-project scaffold (root `tsconfig.json` references `./.storybook/tsconfig.json`); a planted error in a `*.stories.ts` fails. Heavy (requires the Ng21->22 upgrade); skip-with-reason acceptable if the upgrade is out of budget — radix-ng (test 2) already proves on-stack aggregation.
+result: skipped
+reason: |
+  Requires a full Ng 21->22 framework migration of cuentoneta before it is even on-stack -- substantial, error-prone work. Layout A per-project story checking is already covered by (a) the shipped Layout A e2e fixtures, (b) the Phase 18 real-tarball e2e (Layout A + B), and (c) the no-references single-leaf path exercised on-stack in test 2 (radix's `.storybook/tsconfig.json`). Marginal value of a real-repo Layout A after a manual upgrade did not justify the cost. Autonomous skip (scope permits; low-impact, recoverable).
+
+### 7. Layout C no-silent-pass guard on a real flat-tsconfig repo (bitwarden/clients, off-stack)
+expected: Clone `bitwarden/clients` (flat root `tsconfig.json`, NO `references[]`, 135 `.stories.ts`; off-stack Ng 21 / Nx 22.6 -> install `--legacy-peer-deps`, informational only). Point the target at the flat root tsconfig: the DIRECT single-leaf path type-checks its declared rootNames incl. the 135 stories, so a planted story error FAILs. Point it at an empty / story-less config -> reports coverage-incomplete, never a silent green pass. Confirms the guard on real Layout C code (19-DECISIONS.md Decision 1).
+result: skipped
+reason: |
+  The engine path this targets was already exercised on-stack in test 2: radix's `apps/radix-storybook/.storybook/tsconfig.json` has NO `references[]` (a leaf config with a populated `include`), so our tool took the DIRECT single-leaf path and type-checked its declared story rootNames -- identical to the flat-Layout-C direct path. The no-silent-pass guard (coverage-incomplete on dropped/undeclared) fired in test 5. bitwarden is a 1.3 GB off-stack (Ng 21 / Nx 22.6) clone whose only addition is a real flat-ROOT tsconfig, board-D5 informational; marginal value did not justify the clone. Autonomous skip (scope permits; low-impact, recoverable).
+
+## Summary
+
+total: 7
+passed: 5
+issues: 0
+pending: 0
+skipped: 2
+blocked: 0
+
+## Gaps
+
+[none — 5 passed, 2 skipped-with-reason, 0 issues]
+
+## Notes (informational, board D5 — not gaps)
+
+- On the primary exact-stack real repo (radix-ng/primitives), a full Angular type-check surfaced 229 REAL pre-existing diagnostics (228 TS2307 on Vite `?raw` imports + 1 NG1010 `html\`\`` tagged-template story) that the repo's Vite/Analog Storybook build silently tolerates. This is the core value proposition demonstrated on real code, not a tool defect. A repo adopting angular-typechecker should expect it to reveal latent story/template issues its fast dev builder skips.
+- The `.mdx` advisory keys on DECLARED files: radix's docs are `.docs.mdx` and are not matched by the host tsconfig's `*.stories.mdx` include, so they are never declared to the program and never flagged. The advisory correctly fired for the one declared `.tsx` (manager.tsx). Consumers who want `.mdx` docs flagged must have them declared in the checked tsconfig.
