@@ -212,7 +212,23 @@ weakening the never-a-silent-false-pass charter.
 **Blueprint:** `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`
 (spikes 009-010); origin `.planning/phases/19-stretch-layout-c-non-ts-story-formats-strict-mode/19-UAT.md`.
 
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 20 to break down)
+
+**Wave 1**
+
+- [ ] 20-01-PLAN.md -- Signal 2 engine: pure detect-bundler-query-imports + CoreResult.bundlerQueryImports (single finalize seam) + unit/tripwire/integration tiers + hermetic vite-query fixture [wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 20-02-PLAN.md -- Signal 2 executor render: warnBundlerQueryImports (fifth advisory notice; self-gating) + render/silent tests [wave 2]
+- [ ] 20-03-PLAN.md -- Signal 1 docs: README Vite caveat leads with "types": ["vite/client"] + CoreResult API comment + curated CHANGELOG fold (no release cut) [wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 20-04-PLAN.md -- Gate A: local build/test/lint/format gates, push branch, open PR into main, confirm green CI (no merge/release) [wave 3]
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 20-05-PLAN.md -- Gate B (autonomous:false, human-gated): locally-packed dist tarball verified on radix-ng/primitives (advisory fires; vite/client clears; plain missing still fails) [wave 4]
