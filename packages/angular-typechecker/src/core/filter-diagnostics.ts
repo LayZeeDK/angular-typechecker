@@ -276,11 +276,14 @@ export function keep(
   }
 
   // Reached: resolved, non-node_modules, NOT a declared root, NOT under base.
-  // A `.ts`/`.tsx` here is a transitively-imported DEPENDENCY source -> SUPPRESS
-  // (isolation). Order this BEFORE branch 4a: a dependency `.ts` has no template
-  // `relatedInformation`, so a blanket else-> 4a would default-KEEP it and break
-  // isolation.
-  if (fullForm.endsWith('.ts') || fullForm.endsWith('.tsx')) {
+  // A compilable dependency SOURCE here (`.ts`/`.tsx`/`.mts`/`.cts` and, under
+  // `allowJs`, `.js`/`.jsx`/`.mjs`/`.cjs`) is a transitively-imported DEPENDENCY
+  // -> SUPPRESS (isolation). Order this BEFORE branch 4a: a dependency source has
+  // no template `relatedInformation`, so a blanket else-> 4a would default-KEEP it
+  // -- surfacing a dependency's error as a false `type-error` that blames the
+  // consumer -- and break isolation. Extension-checking `.ts` alone would let a
+  // `.mts`/`.cts`/`.js` dependency slip through to that default-KEEP.
+  if (isDependencySourceFile(fullForm)) {
     return { kind: 'in-graph', canonicalFile: fullForm };
   }
 
@@ -427,6 +430,35 @@ function createRawCanonicalizer(
  */
 function isNodeModulesPath(canonicalFile: string): boolean {
   return canonicalFile.split('/').includes('node_modules');
+}
+
+/**
+ * TypeScript-compilable SOURCE extensions (D-04a isolation). A resolved,
+ * non-node_modules, out-of-base, non-rootName file with one of these is a
+ * transitively-imported DEPENDENCY source (not an external-template resource), so
+ * `keep()` step (8) suppresses it as in-graph instead of letting it fall through to
+ * branch 4a and default-KEEP. Every variant is listed EXPLICITLY: `.tsx`/`.jsx` do
+ * NOT end in `.ts`/`.js`, and `.mts`/`.cts`/`.mjs`/`.cjs` share no suffix with
+ * `.ts`/`.js`, so `endsWith('.ts')` alone would miss them. `.js`-family sources
+ * only reach here under `allowJs`, but if the compiler emitted a diagnostic on one
+ * it WAS being checked, so treating it as a dependency source is correct.
+ * (`.d.ts`/`.d.mts` declaration files end in `.ts`/`.mts`, so they are covered.)
+ */
+const DEPENDENCY_SOURCE_EXTENSIONS = [
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+] as const;
+
+function isDependencySourceFile(canonicalFile: string): boolean {
+  return DEPENDENCY_SOURCE_EXTENSIONS.some((extension) =>
+    canonicalFile.endsWith(extension),
+  );
 }
 
 /**

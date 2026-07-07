@@ -613,6 +613,29 @@ describe('keep', () => {
     ).toEqual({ kind: 'in-graph', canonicalFile: '/ws/dep/lib.ts' });
   });
 
+  // Isolation parity for the other compilable source extensions: a `.mts`/`.cts`/
+  // `.js` dependency (not member, not under base) must SUPPRESS in-graph exactly
+  // like `.ts`, NOT fall through branch 4a to a false default-KEEP that would
+  // surface the dependency's error as a `type-error` blaming the consumer.
+  it('branch else: dependency .mts/.cts/.mjs/.cjs/.js/.jsx source -> SUPPRESS in-graph', () => {
+    for (const dependency of [
+      '/ws/dep/lib.mts',
+      '/ws/dep/lib.cts',
+      '/ws/dep/lib.mjs',
+      '/ws/dep/lib.cjs',
+      '/ws/dep/lib.js',
+      '/ws/dep/lib.jsx',
+    ]) {
+      expect(
+        keep(
+          diag(dependency),
+          new Set(),
+          keepOptions({ canonicalBase: '/ws/host' }),
+        ),
+      ).toEqual({ kind: 'in-graph', canonicalFile: dependency });
+    }
+  });
+
   it('branch 4a: .html owner .ts in set -> KEEP', () => {
     const set = new Set(['/ws/agg/c.ts']);
 
