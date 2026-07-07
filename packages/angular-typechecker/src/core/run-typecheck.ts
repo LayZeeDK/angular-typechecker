@@ -4,6 +4,7 @@ import type ts from 'typescript';
 
 import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
+import { detectBundlerQueryImports } from './detect-bundler-query-imports';
 import { detectUncheckedDeclaredFiles } from './detect-unchecked-declared';
 import {
   synthesizeFilelessError,
@@ -109,6 +110,21 @@ export interface CoreResult {
   // ADVISORY only -- these paths NEVER change the verdict (deliberately NOT read by
   // `evaluateResult`). Additive/non-breaking (0.x semver).
   notTypeCheckedDeclaredFiles?: readonly string[];
+  // SB-09 (D-01/D-02): unresolved bundler-query imports -- the deduped, sorted
+  // module specifiers of kept TS2307 diagnostics whose specifier contains a `?`
+  // (a Vite/Analog bundler query: `?raw` / `?url` / `?worker` / `?inline`,
+  // virtual modules). PURE diagnostic-derived detection (detect-bundler-query-
+  // imports.ts, no `console`/`process`) computed over the POST-filter KEPT set in
+  // `finalize`, so a boundary-filtered node_modules `?query` is never named.
+  // Present (and NON-EMPTY) only when at least one such TS2307 is kept; `undefined`
+  // otherwise -- core maps the empty array `[]` -> `undefined` so consumers branch
+  // on presence, exactly like `notTypeCheckedDeclaredFiles`. ALWAYS-ON + self-gating
+  // (D-03): it falls silent once the consumer adds `"types": ["vite/client"]` (or a
+  // hand `declare module` shim), so no public option is needed. ADVISORY only -- the
+  // underlying TS2307 stay COUNTED errors and drive the verdict as normal; the field
+  // is deliberately NOT read by `evaluateResult` (D-05), so it NEVER flips the
+  // verdict. Additive/non-breaking (0.x semver).
+  bundlerQueryImports?: readonly string[];
 }
 
 /**
@@ -644,6 +660,16 @@ function finalize(
   // such Fatal is present (the common path).
   const templateCheckAborted = detectTemplateCheckAborted(diagnostics);
 
+  // SB-09 (D-02): PURE detection of unresolved bundler-query imports. Unlike
+  // `detectTemplateCheckAborted` above -- which scans the PRE-filter `diagnostics`
+  // arg (a whole-program TCB abort must fire even for an out-of-project poison) --
+  // this scans `reported`, the POST-filter KEPT set (Pitfall 1). D-02 requires it:
+  // the advisory must name ONLY TS2307 the consumer actually SEES and can fix via
+  // their tsconfig; a boundary-filtered node_modules `?query` is dropped from
+  // `reported` and must never be named. The two detectors look alike but have
+  // OPPOSITE scan targets -- a future refactor MUST NOT unify them onto one arg.
+  const bundlerQueryImports = detectBundlerQueryImports(ts, reported);
+
   return {
     tsConfigPath,
     rootNamesCount,
@@ -656,6 +682,7 @@ function finalize(
     suppressedInGraphFiles,
     durationMs: performance.now() - start,
     ...(templateCheckAborted !== undefined ? { templateCheckAborted } : {}),
+    ...(bundlerQueryImports.length > 0 ? { bundlerQueryImports } : {}),
   };
 }
 
