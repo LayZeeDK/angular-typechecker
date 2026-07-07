@@ -148,6 +148,51 @@
 
 ---
 
+## Milestone: v0.2.0 -- Storybook story type-checking
+
+**Closed:** 2026-07-07 (npm publish pending the human-gated Release-PR)
+**Phases:** 5 (16-20, incl. the Phase 16 GO/NO-GO spike) | **Plans:** 20 | **Commits:** ~204 | **Timeline:** 3 days
+
+### What Was Built
+
+- One boundary-filter correctness fix: the diagnostic filter's directory-containment proxy replaced by a pure `keep(diagnostic, inputSet, options)` keyed on compiler input-set membership, shared by the walk + single-leaf paths, so a centralized Storybook host that aggregates cross-project stories/components is now checked completely (closing a live silent false pass) -- with zero Storybook-specific machinery.
+- A SPLIT suppressed counter (`suppressedThirdParty` quiet vs `suppressedInGraph*` loud) whose `suppressedInGraph > 0` yields a verdict-affecting coverage-incomplete outcome -- the never-false-pass charter floor made structural, not a `logger.warn` beside `success:true`.
+- Two verdict-neutral advisories: `notTypeCheckedDeclaredFiles` (`.mdx`/`.tsx`-without-`jsx`) and `bundlerQueryImports` (Vite/Analog `?query` `TS2307`), each surfaced loudly, self-gating, and structurally excluded from the verdict.
+- An opt-in verdict-only `strict` mode (fail-additive; defaults false) and Storybook Composition as a zero-engine-code topology (per-project `typecheck` + Nx `^typecheck` fan-out).
+- Packaged-tarball Storybook e2e proving the SHIPPED artifact catches planted story errors on both layouts via `nx add` + `nx g configuration` + `nx typecheck`, plus a curated end-user-facing README `## Storybook` section + CHANGELOG green->red callout.
+
+### What Worked
+
+- **The gated-spike pattern paid off a FOURTH time.** The Phase 16 GO/NO-GO spike (006-008) resolved the whole Layout-B premise on the official stack (forced `@storybook/angular@10.4.6`) BEFORE any production code -- G2 rootNames materialization, G3 forced-SB10 compile, G4 NG8xxx fire, and the G1/G5 external-template branch selection (4a) -- so the milestone committed to Layout B on evidence, not assumption. Same pattern as v0.0.1/v0.0.3/v0.1.0.
+- **A 6-lens Opus advisory board reframed the milestone before scoping.** The board reframed "Storybook support" as ONE input-set-membership boundary fix (no version gate, no `*.stories.ts` selector, no new public option), which kept the engine change small and Storybook-agnostic and set the never-false-pass charter as the governing constraint.
+- **Verdict-affecting-vs-advisory was decided deliberately.** The suppression floor is verdict-affecting (coverage-incomplete) precisely because a warning beside a green verdict is functionally silent to CI (exit code) and agents (structured verdict); the two genuinely-informational signals (`.mdx`/`.tsx`, `?query`) were kept verdict-neutral -- and each carries a tripwire test proving `evaluateResult` never reads it.
+- **Real-OSS verification caught what synthetic fixtures could not.** The Phase-19 tarball UAT against real Angular 22 repos (radix-ng/primitives et al.) surfaced the Vite/Analog `?query` `TS2307` behavior that became the entire Phase 20 (SB-09); Gate B re-ran the shipped tarball against radix-ng/primitives (226 real `?query` `TS2307`) to confirm the advisory fires, `vite/client` clears, and plain-missing still fails.
+
+### What Was Inefficient
+
+- **The `audit-open` bare-`SUMMARY.md` bug recurred a THIRD time.** v0.0.3 and v0.1.0 both named this GSD scanner bug (reads `<dir>/SUMMARY.md`, but `/gsd-quick` writes `<id>-SUMMARY.md`); it flagged 7 completed quick tasks as "missing" at this close. The bare-marker workaround was applied a third time. Three consecutive closes with the same manual workaround; the fix still belongs upstream in the GSD scanner.
+- **The milestone was re-opened after its own audit passed.** An initial audit closed phases 16-19; then SB-09 (Phase 20) was added from the Phase-19 OSS UAT and both signals committed, requiring a second audit pass over 16-20. Legitimate (real-user-value follow-up on evidence) but it meant auditing the milestone twice.
+- **A stretch requirement's completion was overstated in frontmatter.** All three Phase-19 SUMMARYs carry `requirements-completed: [SB-08]` although two SB-08 sub-items were deliberately deferred ("not warranted"); a benign bookkeeping overstatement, but the same class of requirements-status-hygiene slip logged in prior milestones.
+
+### Patterns Established
+
+- **Verdict-neutral advisory pattern:** surface a real-but-informational signal (declared-uncheckable files, bundler `?query` imports) as a loud executor notice + a structured `CoreResult` field, self-gating (silent once resolved), with a tripwire proving the verdict function never reads it -- so it never becomes a silent false pass OR a spurious fail.
+- **Verdict-affecting floor for dropped first-party diagnostics:** when correctness demands it, a suppression must move the verdict (coverage-incomplete), not just log -- because the only consumers are the exit code and the structured result.
+- **Real-OSS repo verification as a phase-end gate (Gate B):** run the shipped tarball against a real, exact-stack public repo to confirm behavior that in-repo synthetic fixtures cannot exercise.
+
+### Key Lessons
+
+1. **A GSD scanner bug logged across three closes is now a standing tax, not a surprise.** The bare-`SUMMARY.md` audit-open mismatch is fully understood and worked around each time; the standing rule (add bare markers at close) is captured in memory, but the durable fix is upstream.
+2. **Following real-user evidence can reopen a "done" milestone -- and that is correct.** SB-09 did not exist at milestone start; the OSS UAT surfaced it, and shipping it (verdict-neutral, charter-preserving) beat deferring a real consumer pain point. Budget for an audit re-run when a late evidence-driven requirement lands.
+3. **User-facing text is a first-class deliverable, curated separately from internal framing.** The CHANGELOG/README must speak to Angular developers (no "Layout B" / "input-set membership" jargon), distinct from the board/plan vocabulary used internally -- curate at release time.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for all GSD planning/execution/verification agents (per `config.json model_overrides`); the milestone audit's cross-phase integration check ran on Opus.
+- Notable: the Phase-16 spike and the Phase-19 real-OSS UAT were the two highest-leverage spends -- the spike de-risked the entire Layout-B engine change up front, and the UAT surfaced the SB-09 follow-up that a synthetic-fixture-only strategy would have shipped blind to.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -157,6 +202,7 @@
 | v0.0.1 | 8 | 29 | Baseline: gated spike, engine-before-Nx, vertical MVP, Release-PR flow with PR-only `main` |
 | v0.0.3 | 4 | 14 | Evidence-backed deferral (Future Requirements with a multi-lens trail); build-time drift tripwire pattern; requirement-status-lag lesson RECURRED (logged, not yet enforced) |
 | v0.1.0 | 5 (incl. 13.1) | 16 | Spike-gated mid-milestone re-scope (v0.0.4 -> v0.1.0); multi-lens Opus board for testing strategy before writing tests; requirement-status-lag lesson recurred a 3rd time; audit-open quick-task bug recurred a 2nd time |
+| v0.2.0 | 5 (incl. 16 spike) | 20 | 6-lens Opus board reframed "Storybook support" as ONE input-set-membership boundary fix; verdict-neutral advisory pattern + verdict-affecting suppression floor; real-OSS Gate B verification; milestone re-opened post-audit for an evidence-driven follow-up (SB-09); audit-open quick-task bug recurred a 3rd time |
 
 ### Cumulative Quality
 
@@ -165,11 +211,13 @@
 | v0.0.1 | ~1,162 (33 `.ts` files) | 5/5 | 2 (0.0.1, 0.0.2) |
 | v0.0.3 | ~1,777 prod / ~5,263 incl. tests (15 / 41 `.ts` files) | 5/5 (carried) | 1 (0.0.3) |
 | v0.1.0 | ~2,709 prod / ~8,552 incl. tests (22 / 56 `.ts` files) | 5/5 (carried) | 1 (0.1.0) |
+| v0.2.0 | ~3,636 prod (67 `.ts` files incl. tests) | 5/5 (carried) | 0 (publish pending the Release-PR) |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. **Gated spike before committing to an approach** -- confirmed 3x: v0.0.1 Phase 1 (engine viability), v0.0.3 RES-01 (resilience shape), v0.1.0 spikes 001-005 (reference-walking feasibility, drove a mid-milestone re-scope).
 2. **Close requirement statuses at phase verification, not at milestone audit** -- logged in v0.0.1, RECURRED in v0.0.3, RECURRED AGAIN in v0.1.0 (`642d08d`). Three occurrences without enforcement means this needs a mechanical gate, not another note.
-3. **`audit-open`'s bare-`SUMMARY.md` scan is a real, repeatable GSD bug** -- hit at v0.0.3 close, predicted to recur, and did recur at v0.1.0 close. Fix belongs in the GSD scanner (read `<id>-SUMMARY.md`, not a bare `SUMMARY.md`), not in a per-repo workaround.
-4. **Assert built/packed artifacts, not source** -- established v0.0.1, held throughout (tarball-first audits, GATE A byte assertions).
-5. **Evidence-backed deferral over a forced feature** -- established v0.0.3 (REP-RES-02b), reused implicitly in v0.1.0's Future Requirements (FSTREE-01, WALK-FUT-01/02).
+3. **`audit-open`'s bare-`SUMMARY.md` scan is a real, repeatable GSD bug** -- hit at v0.0.3, v0.1.0, AND v0.2.0 closes (3x). Fix belongs in the GSD scanner (read `<id>-SUMMARY.md`, not a bare `SUMMARY.md`), not in a per-repo workaround; the bare-marker workaround is now a standing close-time tax captured in memory.
+4. **Assert built/packed artifacts, not source** -- established v0.0.1, held throughout (tarball-first audits, GATE A byte assertions); extended in v0.2.0 to real-OSS-repo verification (Gate B against radix-ng/primitives), which surfaced the SB-09 follow-up synthetic fixtures would have missed.
+5. **Evidence-backed deferral over a forced feature** -- established v0.0.3 (REP-RES-02b), reused in v0.1.0's Future Requirements (FSTREE-01, WALK-FUT-01/02) and v0.2.0 (SB-08 Layout-C/`.mdx`/`.tsx` recorded "not warranted" with cited rationale).
+6. **User-facing text is a first-class, separately-curated deliverable** -- established v0.2.0: the public CHANGELOG/README speak to Angular developers (no internal "Layout B"/"input-set membership" jargon), curated at release time, distinct from the board/plan vocabulary used in `.planning/`.
