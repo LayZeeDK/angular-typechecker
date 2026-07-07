@@ -140,6 +140,31 @@ describe('evaluateResult', () => {
     ).toEqual({ success: false, outcome: 'coverage-incomplete' });
   });
 
+  // A dropped in-graph warning counts toward maxWarnings EXACTLY like a reported one:
+  // a single drop under a generous maxWarnings is tolerated (no harsher than a
+  // reported warning would be), so the verdict is clean -- the drop is still surfaced
+  // loudly by the executor, just not verdict-affecting here.
+  it('passes clean when reported + dropped in-graph warnings stay within maxWarnings (N>0)', () => {
+    expect(
+      evaluateResult(
+        { errorCount: 0, warningCount: 0, suppressedInGraphWarningCount: 1 },
+        { maxWarnings: 10 },
+      ),
+    ).toEqual({ success: true, outcome: 'clean' });
+  });
+
+  // ...but when reported + dropped TOGETHER exceed maxWarnings, the overflow is
+  // attributable to unseen (dropped) warnings, so it is coverage-incomplete (not the
+  // reported-only warnings-exceeded).
+  it('fails as coverage-incomplete when reported + dropped in-graph warnings exceed maxWarnings (N>0)', () => {
+    expect(
+      evaluateResult(
+        { errorCount: 0, warningCount: 5, suppressedInGraphWarningCount: 1 },
+        { maxWarnings: 5 },
+      ),
+    ).toEqual({ success: false, outcome: 'coverage-incomplete' });
+  });
+
   it('passes clean on a suppressed in-graph warning when maxWarnings is unset -- late-binding proof (D-06)', () => {
     expect(
       evaluateResult({

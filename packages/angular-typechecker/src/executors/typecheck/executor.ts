@@ -200,9 +200,11 @@ function warnSuppressed(result: CoreResult): void {
         `${result.suppressedInGraphErrorCount} error(s) and ` +
         `${result.suppressedInGraphWarningCount} warning(s) on first-party files were ` +
         `dropped by the project boundary. In-graph errors force a non-clean ` +
-        `(coverage-incomplete) verdict; dropped warnings affect the verdict only when ` +
-        `they exceed maxWarnings. A real diagnostic on a checked file may have been ` +
-        `suppressed. Dropped file(s): ${result.suppressedInGraphFiles.join(', ')}.`,
+        `(coverage-incomplete) verdict; dropped in-graph warnings count toward ` +
+        `maxWarnings just like reported warnings (and fail unconditionally under ` +
+        `strict), so with no maxWarnings and no strict they are advisory only. A real ` +
+        `diagnostic on a checked file may have been suppressed. Dropped file(s): ` +
+        `${result.suppressedInGraphFiles.join(', ')}.`,
     );
   }
 }

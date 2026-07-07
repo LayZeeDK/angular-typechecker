@@ -56,10 +56,13 @@ export type Outcome =
 
 export interface EvaluateOptions {
   // EXE-05: undefined => warnings never fail on their own; 0 => ANY warning
-  // fails; n => warnings fail only when `warningCount > n`. A negative or NaN
-  // value is treated defensively as unset (Security V5 / T-03-03): the Phase-4
-  // adapter validates the CLI input, and this function refuses to crash or invert
-  // the verdict on a malformed number.
+  // fails; n => warnings fail only when `warningCount > n`. A dropped in-graph
+  // warning counts toward this SAME tolerance: `warningCount +
+  // suppressedInGraphWarningCount > n` yields `coverage-incomplete` (distinct from
+  // the reported-only `warnings-exceeded`). A negative or NaN value is treated
+  // defensively as unset (Security V5 / T-03-03): the Phase-4 adapter validates the
+  // CLI input, and this function refuses to crash or invert the verdict on a
+  // malformed number.
   maxWarnings?: number;
   // D-19-01: opt-in strict mode. When true, a dropped in-graph WARNING forces a
   // coverage-incomplete verdict regardless of `maxWarnings` (a dropped in-graph
@@ -94,12 +97,18 @@ type EvaluateInput = Pick<CoreResult, 'errorCount' | 'warningCount'> &
  *   3. `templateCheckAborted` present -> coverage-incomplete (FM-9).
  *   4. a `zero-root-names` skipped reference -> coverage-incomplete.
  *   5. `warningCount > maxWarnings` (when gated) -> warnings-exceeded.
- *   6. a suppressed in-graph warning (when gated OR `strict`) -> coverage-incomplete.
- *   7. else -> clean.
+ *   6. `warningCount + suppressedInGraphWarningCount > maxWarnings` (when gated) ->
+ *      coverage-incomplete (dropped in-graph warnings count toward the SAME tolerance
+ *      as reported ones).
+ *   7. any suppressed in-graph warning under opt-in `strict` -> coverage-incomplete.
+ *   8. else -> clean.
  * The warning-severity coverage decision (6) is LATE-BOUND with the real
- * `maxWarnings` (D-06) and ALSO fires under opt-in `strict` (D-19-01): strict
- * escalates a dropped in-graph WARNING to a hard fail regardless of `maxWarnings`.
- * A negative or NaN `maxWarnings` is unset-equivalent (Security V5).
+ * `maxWarnings` (D-06): a dropped in-graph warning is treated exactly like a reported
+ * one against the gate, so `maxWarnings: 0` fails on any drop while a generous
+ * `maxWarnings: N` tolerates a drop the same way it tolerates a reported warning.
+ * `strict` (7) is the separate opt-in that fails on ANY dropped in-graph warning
+ * regardless of `maxWarnings` (D-19-01). A negative or NaN `maxWarnings` is
+ * unset-equivalent (Security V5).
  */
 export function evaluateResult(
   result: EvaluateInput,
@@ -141,7 +150,27 @@ export function evaluateResult(
   const suppressedInGraphWarningCount =
     result.suppressedInGraphWarningCount ?? 0;
 
-  if ((gatesWarnings || strict) && suppressedInGraphWarningCount > 0) {
+  // A dropped in-graph WARNING counts toward `maxWarnings` EXACTLY like a REPORTED
+  // one -- no harsher, no more lenient. coverage-incomplete fires only when the
+  // reported + dropped first-party warnings TOGETHER exceed the tolerance. So
+  // `maxWarnings: 0` still fails on any dropped warning (`0 + n > 0`), preserving the
+  // D-06 no-silent-pass floor, while a generous `maxWarnings: N` no longer fails on a
+  // single dropped warning that a reported warning would have been tolerated at (the
+  // prior `(gatesWarnings || strict)` gate failed on ANY dropped warning at ANY
+  // maxWarnings, treating a dropped warning as strictly harsher than a reported one).
+  // The drop is NEVER silent regardless of this verdict: the executor always logs it
+  // loudly from `suppressedInGraphFiles`.
+  if (
+    gatesWarnings &&
+    result.warningCount + suppressedInGraphWarningCount > maxWarnings
+  ) {
+    return { success: false, outcome: 'coverage-incomplete' };
+  }
+
+  // D-19-01: opt-in `strict` escalates ANY dropped in-graph warning to a hard fail
+  // regardless of `maxWarnings` (the zero-coverage-loss knob) -- it only ever ADDS
+  // this fail path, and reads false when absent/malformed.
+  if (strict && suppressedInGraphWarningCount > 0) {
     return { success: false, outcome: 'coverage-incomplete' };
   }
 
