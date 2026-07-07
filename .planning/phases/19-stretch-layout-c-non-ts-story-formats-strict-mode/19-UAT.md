@@ -4,7 +4,7 @@ phase: 19-stretch-layout-c-non-ts-story-formats-strict-mode
 source: [19-01-SUMMARY.md, 19-02-SUMMARY.md, 19-03-SUMMARY.md]
 scope: OSS real-repo tarball verification (informational, board D5 — LOCAL clones, not a CI gate)
 started: 2026-07-07T07:38:24Z
-updated: 2026-07-07T07:39:30Z
+updated: 2026-07-07T08:20:00Z
 ---
 
 ## Current Test
@@ -61,10 +61,18 @@ result: skipped
 reason: |
   The engine path this targets was already exercised on-stack in test 2: radix's `apps/radix-storybook/.storybook/tsconfig.json` has NO `references[]` (a leaf config with a populated `include`), so our tool took the DIRECT single-leaf path and type-checked its declared story rootNames -- identical to the flat-Layout-C direct path. The no-silent-pass guard (coverage-incomplete on dropped/undeclared) fired in test 5. bitwarden is a 1.3 GB off-stack (Ng 21 / Nx 22.6) clone whose only addition is a real flat-ROOT tsconfig, board-D5 informational; marginal value did not justify the clone. Autonomous skip (scope permits; low-impact, recoverable).
 
+### 8. External `templateUrl` NG8002 kill-shot on a real repo (geonetwork/geonetwork-ui, off-stack)
+expected: On a real repo with external-`templateUrl` components, a bad property binding in an aggregated component's external `.html` is detected as NG8002, KEPT (never dropped), and attributed back to the owning component `.ts` via branch 4a (`relatedInformation`). Radix could not exercise this (headless directives / inline templates only).
+result: pass
+evidence: |
+  geonetwork/geonetwork-ui, TRIPLE off-stack (Angular 20.3.19 / Nx 22.0.4 / TS 5.9.3 / Storybook 9.1) -- board-D5 informational + a robustness probe. Tarball installed via `npm i -D <tgz> --legacy-peer-deps --ignore-scripts`; typecheck wired on `demo` -> apps/demo/.storybook/tsconfig.json (include `../../../libs/**/*` = all component .ts + external .html; no references[] -> direct-leaf path).
+  ROBUSTNESS (informational): the executor RAN CLEANLY against Angular 20's compiler-cli -- NO crash, NO API-incompat -- and produced 71 real diagnostics incl. template errors NG8002 + NG8007. Confirms performCompilation usage is stable across Angular 20-22 (off-stack indicator, not an on-stack guarantee).
+  EXTERNAL-TEMPLATE KILL SHOT (delta-isolated): baseline had a real pre-existing NG8002 at apps/datahub/.../record-actions.component.html (kept, not dropped). Planting `<div [atcPlantedProp]="true"></div>` in the CLEAN external template libs/feature/catalog/.../site-title.component.html (templateUrl component) -> count 71->72 and the exact diagnostic `site-title.component.html:7:6 - error NG8002: Can't bind to 'atcPlantedProp' since it isn't a known property of 'div'`, KEPT and reported with owning-component context. Branch 4a (external .html diagnostic mapped/kept to the owning .ts in the input set) proven on real code. Reverted after.
+
 ## Summary
 
-total: 7
-passed: 5
+total: 8
+passed: 6
 issues: 0
 pending: 0
 skipped: 2
@@ -72,9 +80,12 @@ blocked: 0
 
 ## Gaps
 
-[none — 5 passed, 2 skipped-with-reason, 0 issues]
+[none — 6 passed, 2 skipped-with-reason, 0 issues]
 
 ## Notes (informational, board D5 — not gaps)
 
 - On the primary exact-stack real repo (radix-ng/primitives), a full Angular type-check surfaced 229 REAL pre-existing diagnostics (228 TS2307 on Vite `?raw` imports + 1 NG1010 `html\`\`` tagged-template story) that the repo's Vite/Analog Storybook build silently tolerates. This is the core value proposition demonstrated on real code, not a tool defect. A repo adopting angular-typechecker should expect it to reveal latent story/template issues its fast dev builder skips.
 - The `.mdx` advisory keys on DECLARED files: radix's docs are `.docs.mdx` and are not matched by the host tsconfig's `*.stories.mdx` include, so they are never declared to the program and never flagged. The advisory correctly fired for the one declared `.tsx` (manager.tsx). Consumers who want `.mdx` docs flagged must have them declared in the checked tsconfig.
+- OFF-STACK ROBUSTNESS (test 8): the executor ran cleanly against Angular 20.3.19 / TS 5.9.3 / Nx 22.0.4 (geonetwork-ui) with no crash and correct template diagnostics. Indicates `performCompilation` usage is stable across Angular 20-22; informational only (stable-Angular-22 remains the sole verification target).
+- BUILDER-AGNOSTIC / Vite caveat (undocumented today): angular-typechecker is decoupled from the Storybook builder (stock `@storybook/angular` webpack/esbuild vs `@analogjs/storybook-angular` Vite) -- it type-checks the tsconfig's declared surface via ngc regardless. Consequence surfaced on radix: Vite-only import suffixes (`?raw`, `?url`, ...) are not valid TS module specifiers and report TS2307 unless the consumer adds ambient `declare module '*?raw'` declarations. Expected ngc behavior, not a defect. CANDIDATE: README caveat + Future Requirement (no tracking exists yet).
+- COVERAGE GAP (this UAT): only the DIRECT single-leaf path was exercised on real repos (radix leaf .storybook/tsconfig.json, geonetwork leaf demo/.storybook/tsconfig.json). The solution-tsconfig REFERENCE-WALK path (walk-references.ts, the v0.1.0 primary engine) was NOT hit on a real repo here -- it is covered by the Layout A e2e fixtures + Phase 18 real-tarball e2e. Closable by running cuentoneta (test 6) off-stack (no migration) as a board-D5 informational reference-walk run.
