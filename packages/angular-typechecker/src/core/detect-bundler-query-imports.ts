@@ -23,6 +23,15 @@ import type ts from 'typescript';
  * `?query` TS2307 on a node_modules / out-of-project file the boundary filter
  * dropped is never named here (the consumer cannot see or fix it via their
  * tsconfig). Returns the deduped specifiers, sorted for a deterministic order.
+ *
+ * LOCALE ASSUMPTION: this is the ONE detector that reads the diagnostic message
+ * text rather than being purely code-based -- it parses the specifier out of the
+ * English TS2307 "Cannot find module '{0}'" string. `filter-diagnostics.ts`
+ * deliberately avoids message-text matching as locale-fragile; the trade-off is
+ * accepted here because it is verdict-neutral. Under a non-English compiler
+ * `--locale` the regex misses and this advisory silently returns [] -- the TS2307
+ * still COUNTS and fails the build; only the fix HINT is lost, never a false pass.
+ * English is the default for the headless CI / agent loops this tool targets.
  */
 export function detectBundlerQueryImports(
   ts: typeof import('typescript'),
