@@ -151,6 +151,23 @@
         "unused-files": "off",
       },
     },
+    {
+      // FAL-06 (v0.1.2 Phase 20): the SB-09 charter-guard fixture
+      // (fixtures/vite-query-imports) intentionally imports a plain missing module
+      // `./does-not-exist` as the control proving a no-`?` missing module still FAILs
+      // TS2307 (never flagged/suppressed by the bundler-query advisory). fallow's
+      // `unresolved-imports` (Dependencies) reports it -- a false positive on a
+      // deliberately-broken test import. The type-check charter is enforced by the
+      // fixture's own real-compiler integration spec (which asserts the TS2307
+      // fires), NOT by fallow; scope `unresolved-imports` off for THIS fixture only
+      // (narrow -- other fixtures stay gated). The fixture's `?raw`/`?url`/`?worker`/
+      // `?inline` imports resolve to their real base files, so only the intentional
+      // `./does-not-exist` control is affected.
+      "files": ["fixtures/vite-query-imports/**"],
+      "rules": {
+        "unresolved-imports": "off",
+      },
+    },
   ],
 
   "audit": {
