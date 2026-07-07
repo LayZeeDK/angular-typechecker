@@ -25,7 +25,13 @@ interface ExecutorSchema {
 const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as ExecutorSchema;
 
 // The exact TypecheckExecutorOptions key set (schema.d.ts), sorted.
-const EXPECTED_KEYS = ['failFast', 'includeDeps', 'maxWarnings', 'tsConfig'];
+const EXPECTED_KEYS = [
+  'failFast',
+  'includeDeps',
+  'maxWarnings',
+  'strict',
+  'tsConfig',
+];
 
 describe('schema.json <-> schema.d.ts parity (D-06)', () => {
   it('declares exactly the TypecheckExecutorOptions properties', () => {
@@ -49,5 +55,9 @@ describe('schema.json <-> schema.d.ts parity (D-06)', () => {
   it('defaults includeDeps and failFast to false', () => {
     expect(schema.properties.includeDeps.default).toBe(false);
     expect(schema.properties.failFast.default).toBe(false);
+  });
+
+  it('defaults strict to false (D-19-01: opt-in; absent => current behavior)', () => {
+    expect(schema.properties.strict.default).toBe(false);
   });
 });

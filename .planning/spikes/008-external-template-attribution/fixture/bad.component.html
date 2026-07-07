@@ -1,0 +1,6 @@
+<!-- Two template errors in an EXTERNAL template, per board G1 ("inspect for
+     MULTIPLE categories -- core template TS error AND an NG8xxx"):
+     line 5: NG8002 core template error (binding to an unknown native property).
+     line 6: NG8102 extended diagnostic (nullish-coalescing on a non-nullable). -->
+<div [nonExistentProp]="value"></div>
+<span>{{ label ?? 'fallback' }}</span>

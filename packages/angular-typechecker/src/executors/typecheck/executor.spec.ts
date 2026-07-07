@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
       maxWarnings: undefined,
       failFast: false,
       color: false,
+      strict: false,
     })),
     loggerError: vi.fn(),
     loggerInfo: vi.fn(),
@@ -70,7 +71,10 @@ function coreResult(errorCount: number): CoreResult {
     diagnostics: [],
     errorCount,
     warningCount: 0,
-    suppressedCount: 0,
+    suppressedThirdParty: 0,
+    suppressedInGraphErrorCount: 0,
+    suppressedInGraphWarningCount: 0,
+    suppressedInGraphFiles: [],
     durationMs: 1,
   };
 }
@@ -97,6 +101,54 @@ function skippedRefsCoreResult(
   };
 }
 
+// SB-04 (17-05 adapter render): a CoreResult carrying the split suppressed counts
+// the adapter must render loudly -- INFO for expected node_modules third-party
+// suppressions, WARN (naming the dropped files from suppressedInGraphFiles, NEVER
+// their error text) for a first-party in-graph drop (coverage-incomplete).
+function suppressedCoreResult(
+  overrides: Partial<
+    Pick<
+      CoreResult,
+      | 'suppressedThirdParty'
+      | 'suppressedInGraphErrorCount'
+      | 'suppressedInGraphWarningCount'
+      | 'suppressedInGraphFiles'
+    >
+  >,
+): CoreResult {
+  return {
+    ...coreResult(0),
+    ...overrides,
+  };
+}
+
+// D-01 (Phase 18, T11 adapter render): a CoreResult carrying the NON-EMPTY
+// notTypeCheckedDeclaredFiles the adapter must turn into ONE loud logger.warn with
+// the "not type-checked" advisory, naming the consumer's OWN declared file(s). Core
+// sets the field only when non-empty (mapping [] -> undefined), so the
+// optional-chained length check alone gates the notice. errorCount 0 so the verdict
+// stays green (the field is ADVISORY, never verdict-affecting).
+function notTypeCheckedCoreResult(
+  notTypeCheckedDeclaredFiles: readonly string[],
+): CoreResult {
+  return {
+    ...coreResult(0),
+    notTypeCheckedDeclaredFiles,
+  };
+}
+
+// SB-09 (Phase 20, D-04 adapter render): a CoreResult carrying the NON-EMPTY
+// bundlerQueryImports the adapter must turn into ONE loud logger.warn naming the
+// count, the "types": ["vite/client"] fix, and the consumer's OWN specifiers. The
+// ?query TS2307 are COUNTED errors (errorCount 2), so this builds on coreResult(2)
+// -- the advisory is additive; evaluateResult alone owns the verdict.
+function bundlerQueryCoreResult(specs: readonly string[]): CoreResult {
+  return {
+    ...coreResult(2),
+    bundlerQueryImports: specs,
+  };
+}
+
 const context = { root: '/ws' } as ExecutorContext;
 const options = { tsConfig: 'libs/x/tsconfig.lib.json' };
 
@@ -113,6 +165,7 @@ describe('typecheckExecutor (D-01/D-04)', () => {
       maxWarnings: undefined,
       failFast: false,
       color: false,
+      strict: false,
     });
   });
 
@@ -130,6 +183,7 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     expect(result).toEqual({ success: true });
     expect(mocks.evaluateResult).toHaveBeenCalledWith(coreResult(0), {
       maxWarnings: undefined,
+      strict: false,
     });
   });
 
@@ -303,6 +357,199 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     expect(result).toEqual({ success: true });
     expect(mocks.loggerWarn).toHaveBeenCalledOnce();
     expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  // SB-04 (17-05): the adapter renders the two split suppressed counts LOUDLY from
+  // the PURE structured CoreResult fields -- INFO for expected node_modules
+  // suppressions, WARN (naming the dropped files, never their error text) for a
+  // first-party in-graph drop -- and stays silent on a clean result.
+  it('SB-04: emits a logger.info for expected node_modules third-party suppressions', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({ suppressedThirdParty: 3 }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerInfo).toHaveBeenCalledOnce();
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      expect.stringContaining('node_modules'),
+    );
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      expect.stringContaining('includeDeps'),
+    );
+    // Expected suppressions are advisory INFO, NEVER the coverage-incomplete WARN.
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  it('SB-04: emits a coverage-incomplete logger.warn naming the dropped file for an in-graph suppression', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({
+        suppressedInGraphErrorCount: 1,
+        suppressedInGraphFiles: ['/ws/libs/dep/src/broken.ts'],
+      }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    // Names the dropped FILE and states the coverage is INCOMPLETE...
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/dep/src/broken.ts'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('INCOMPLETE'),
+    );
+    // ...but NEVER leaks the dependency's error MESSAGE text (T-17-13 content
+    // isolation): the adapter renders from suppressedInGraphFiles (paths only), so
+    // a typical diagnostic message fragment can never appear in the notice.
+    expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+      expect.stringContaining('is not assignable'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('SB-04: also fires the coverage-incomplete warn when only in-graph WARNINGS were dropped', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({
+        suppressedInGraphWarningCount: 2,
+        suppressedInGraphFiles: ['/ws/libs/dep/src/warn-only.ts'],
+      }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/dep/src/warn-only.ts'),
+    );
+    // WR-03: the notice must NOT over-claim a non-clean verdict. It prints from the
+    // suppressed counts BEFORE evaluateResult decides, so it cannot assert the
+    // verdict -- when only in-graph WARNINGS drop and maxWarnings is unset the run
+    // stays clean/exit 0.
+    expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+      expect.stringContaining('NOT clean'),
+    );
+  });
+
+  it('SB-04: a clean result (all suppressed fields 0) emits NEITHER the info nor the coverage-incomplete warn', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerInfo).not.toHaveBeenCalled();
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  it('SB-04: the zero-root-names skippedReferences notice no longer claims the verdict is unchanged', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      skippedRefsCoreResult([
+        {
+          referencePath: '/ws/fixtures/solution-style/tsconfig.inner.json',
+          reason: 'zero-root-names',
+        },
+      ]),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    // The zero-root-names reason now warns about coverage-incompleteness instead of
+    // the old "verdict is unchanged" advisory wording.
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('coverage-incomplete'),
+    );
+    expect(mocks.loggerWarn).not.toHaveBeenCalledWith(
+      expect.stringContaining('verdict is unchanged'),
+    );
+  });
+
+  // D-01 (Phase 18, T11): the adapter renders the core's pure
+  // notTypeCheckedDeclaredFiles as ONE loud "not type-checked" advisory naming the
+  // declared file -- the render gate the structural git grep cannot prove fires.
+  it('D-01 T11: emits a loud logger.warn with the softened "may not be fully type-checked" advisory naming the file when notTypeCheckedDeclaredFiles is non-empty (WR-01)', async () => {
+    mocks.runTypecheck.mockResolvedValue(
+      notTypeCheckedCoreResult(['/ws/libs/x/docs.mdx']),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    const result = await executor(options, context);
+
+    // ADVISORY only: the verdict stays green, and the notice names the consumer's
+    // OWN declared file. WR-01: the wording is softened to "may not be fully
+    // type-checked" and must distinguish a JSX-free .tsx (still fully checked) from
+    // a file that is never checked -- it must NOT claim a fully-checked file is
+    // "not type-checked".
+    expect(result).toEqual({ success: true });
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('may not be fully type-checked'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('with no JSX is still fully checked'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('/ws/libs/x/docs.mdx'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('D-01 T11: does NOT warn when notTypeCheckedDeclaredFiles is undefined (no false positive)', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  // SB-09 (Phase 20, D-04): the adapter renders the core's pure bundlerQueryImports
+  // as ONE loud logger.warn -- count + the "types": ["vite/client"] fix + an
+  // ADVISORY-not-suppressed statement + the consumer's OWN specifier -- the render
+  // gate the structural git grep cannot prove fires.
+  it('SB-09 D-04: emits a single logger.warn with the vite/client fix + ADVISORY + specifier when bundlerQueryImports is non-empty', async () => {
+    mocks.runTypecheck.mockResolvedValue(bundlerQueryCoreResult(['./x?raw']));
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    // ADVISORY only: it fires exactly once (only bundlerQueryImports is set, all
+    // other advisory fields empty), naming the recommended fix, stating the TS2307
+    // are NOT suppressed, and listing the consumer's own specifier. The verdict path
+    // is untouched (no logger.error).
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('vite/client'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('ADVISORY'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('./x?raw'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('SB-09 D-04: does NOT warn when bundlerQueryImports is undefined (self-gating, D-03)', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
   });
 
   it('catches a TypecheckInfrastructureError -> logger.error + { success: false } (D-01)', async () => {

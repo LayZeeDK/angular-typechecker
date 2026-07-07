@@ -81,6 +81,27 @@ describe('normalizeOptions (D-01/D-03)', () => {
     expect(normalized.coreOptions.includeDeps).toBe(true);
   });
 
+  it('defaults strict to false when absent (D-19-01: opt-in)', () => {
+    const options: TypecheckExecutorOptions = {
+      tsConfig: 'libs/x/tsconfig.lib.json',
+    };
+
+    const normalized = normalizeOptions(options, contextWithRoot('/ws'));
+
+    expect(normalized.strict).toBe(false);
+  });
+
+  it('forwards a provided strict:true to the verdict layer (D-19-01)', () => {
+    const options: TypecheckExecutorOptions = {
+      tsConfig: 'libs/x/tsconfig.lib.json',
+      strict: true,
+    };
+
+    const normalized = normalizeOptions(options, contextWithRoot('/ws'));
+
+    expect(normalized.strict).toBe(true);
+  });
+
   it('sets pathBase to the workspace root (D-08)', () => {
     const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',

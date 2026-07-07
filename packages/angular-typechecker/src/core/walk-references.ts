@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import type ts from 'typescript';
 
 import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
+import { detectUncheckedDeclaredFiles } from './detect-unchecked-declared';
 import {
   REFERENCE_NOT_FOUND_DIAGNOSTIC_CODE,
   synthesizeFilelessError,
@@ -46,6 +47,25 @@ export interface WalkResult {
   // Sum of `parsed.rootNames.length` across WALKED (surviving) leaves. A
   // skipped/broken leaf contributes 0 (L-3 / Pitfall 5).
   rootNamesCount: number;
+  // The UNION of every SURVIVING leaf's DECLARED `readConfiguration().rootNames`
+  // `.ts` paths (D-02) -- the raw declared set, NEVER
+  // `program.getTsProgram().getRootFileNames()` (which adds a synthetic
+  // `<root>.ngtypecheck.ts` shim per root that would corrupt the input set).
+  // `run-typecheck.ts` (plan 17-03) builds the `inputTs` membership set from
+  // this to route the input-set-membership boundary filter. A
+  // skipped/out-of-project/zero-root-names/not-found leaf `continue`s before the
+  // surviving-leaf tail, so it contributes ZERO paths here (T-17-06).
+  rootNamePaths: readonly string[];
+  // D-01 (Phase 18, T11): the UNION of every SURVIVING leaf's declared-but-
+  // uncheckable files (`.mdx` always; `.tsx` when the resolved `jsx` is unset /
+  // `None`). Aggregated in the SAME surviving-leaf tail as `rootNamePaths` (AFTER
+  // every skip/not-found/zero-root-names `continue`), so a skipped/out-of-project
+  // leaf contributes ZERO paths here (Pitfall 7). Deduped across leaves (IN-01) so
+  // a file two surviving leaves both declare (overlapping `include` globs) is
+  // surfaced once. Empty array when nothing is uncheckable; `runTypecheck` maps
+  // `[]` -> `undefined` on `CoreResult`. ADVISORY only -- these paths NEVER change
+  // the verdict.
+  notTypeCheckedDeclaredFiles: readonly string[];
   // References skipped (out-of-project / zero-root-names / self-reference /
   // duplicate) or reclassified (not-found -> 90002) during the walk. Empty array
   // when every reference walked cleanly; `runTypecheck` maps `[]` -> `undefined`
@@ -109,6 +129,8 @@ export async function walkReferences(
 
   const rawDiagnostics: ts.Diagnostic[] = [];
   const skippedReferences: SkippedReference[] = [];
+  const rootNamePaths: string[] = [];
+  const notTypeCheckedDeclaredFiles: string[] = [];
   const seenCanonicalLeaves = new Set<string>();
   let rootNamesCount = 0;
 
@@ -203,16 +225,19 @@ export async function walkReferences(
       continue;
     }
 
-    // D-03b (DECISION, I-5): a resolved leaf with no input files contributes 0 and
-    // is recorded as an ADVISORY skip -- on its own it does NOT fail the verdict.
-    // This is DELIBERATELY asymmetric with the direct single-leaf path (where a
-    // zero-rootNames config is a hard 90001): inside a walk a leaf may legitimately
-    // match no files yet (e.g. a spec leaf before any *.spec.ts exists), and failing
-    // the WHOLE solution for that would be a false negative. Mitigations keep it
-    // honest -- the loud per-reference logger.warn (executor) surfaces the skip, a
-    // SIBLING leaf's real errors still fail the verdict, and if EVERY leaf is
-    // skipped the none-in-project 90001 guard fires (run-typecheck.ts), so an
-    // all-empty solution is never a silent PASS.
+    // D-06 (DECISION, supersedes the earlier D-03b advisory-only treatment): a
+    // resolved leaf with no input files contributes 0 and is recorded here with
+    // reason 'zero-root-names'. It is NOT advisory-only for the verdict --
+    // evaluateResult (17-04) folds a zero-rootNames first-party leaf into a
+    // non-clean coverage-incomplete outcome, so a leaf that legitimately matches
+    // no files yet (e.g. a spec leaf before any *.spec.ts exists) surfaces as
+    // INCOMPLETE COVERAGE rather than a silent PASS. This stays asymmetric with the
+    // direct single-leaf path (a hard 90001 error there vs the distinct
+    // coverage-incomplete outcome here), but both now fail the verdict. Mitigations
+    // still apply -- the loud per-reference logger.warn (executor) surfaces the
+    // skip, a SIBLING leaf's real errors also fail, and if EVERY leaf is skipped the
+    // none-in-project 90001 guard fires (run-typecheck.ts), so an all-empty
+    // solution is never a silent PASS.
     //
     // LIMITATION (C7): the walk is single-level (D-03). A referenced leaf that is
     // ITSELF a solution/references-only tsconfig has zero root names of its own, so
@@ -246,9 +271,35 @@ export async function walkReferences(
     rawDiagnostics.push(...parsed.errors);
     rawDiagnostics.push(...result.diagnostics);
     rootNamesCount += parsed.rootNames.length;
+    // D-02: surface this surviving leaf's DECLARED rootName paths (the exact
+    // `readConfiguration().rootNames` the loop already holds -- NEVER derived
+    // from a Program, so no `.ngtypecheck.ts` shim enters the input set). This
+    // push lives in the surviving-leaf tail AFTER every skip/not-found/
+    // zero-root-names `continue`, so an out-of-project or non-surviving leaf
+    // contributes nothing (T-17-06).
+    rootNamePaths.push(...parsed.rootNames);
+    // D-01 (Phase 18, T11): this surviving leaf's declared-but-uncheckable files
+    // (`.mdx` always; `.tsx` when `jsx` is unset / `None`). Aggregated HERE, in the
+    // surviving-leaf tail beside `rootNamePaths.push` and AFTER every skip
+    // `continue`, so an out-of-project / zero-root-names / not-found leaf
+    // contributes nothing (Pitfall 7). The loop already holds `parsed` + `leafPath`.
+    notTypeCheckedDeclaredFiles.push(
+      ...detectUncheckedDeclaredFiles(ts, parsed, leafPath),
+    );
   }
 
-  return { rawDiagnostics, rootNamesCount, skippedReferences };
+  return {
+    rawDiagnostics,
+    rootNamesCount,
+    skippedReferences,
+    rootNamePaths,
+    // IN-01: dedupe the cross-leaf union so an `.mdx`/`.tsx` declared by two
+    // surviving leaves (overlapping `include` globs) is surfaced ONCE, not repeated
+    // in the executor's advisory (which joins this set verbatim). The diagnostics
+    // union stays raw -- `finalize` owns diagnostic dedupe -- this is the advisory
+    // display set only.
+    notTypeCheckedDeclaredFiles: [...new Set(notTypeCheckedDeclaredFiles)],
+  };
 }
 
 /**

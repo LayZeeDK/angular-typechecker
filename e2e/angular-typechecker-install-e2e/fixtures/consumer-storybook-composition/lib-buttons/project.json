@@ -1,0 +1,14 @@
+{
+  "name": "lib-buttons",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "lib-buttons/src",
+  "projectType": "library",
+  "targets": {
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "lib-buttons/tsconfig.json"
+      }
+    }
+  }
+}

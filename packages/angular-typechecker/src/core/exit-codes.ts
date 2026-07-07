@@ -31,6 +31,16 @@ import { TypecheckInfrastructureError } from './run-typecheck';
  * `TypecheckInfrastructureError` (the compiler failed to run), `1` when
  * `errorCount > 0` (genuine type errors), else `0` (clean). Pure -- no process
  * side effects; the adapters own `process.exit`.
+ *
+ * This is the pure ngc-parity error/infra/clean policy ONLY. It deliberately does
+ * NOT re-derive the coverage-incomplete / warnings-exceeded verdict from raw
+ * counts: that verdict lives in ONE place, `evaluateResult`, which the live Nx
+ * executor already uses. A second, PARTIAL copy here would silently diverge -- a
+ * `templateCheckAborted`- or `zero-root-names`-only run is `coverage-incomplete`
+ * (success:false) in `evaluateResult` but reads clean from raw counts alone. When
+ * the deferred standalone CLI lands it must map `evaluateResult(...)`'s
+ * `success`/`outcome` to an exit code, NOT re-compute the verdict here. `toExitCode`
+ * has no live consumer today; keeping it verdict-free avoids that fork.
  */
 export function toExitCode(
   input: Pick<CoreResult, 'errorCount'> | TypecheckInfrastructureError,

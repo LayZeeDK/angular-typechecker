@@ -56,6 +56,29 @@ question requires otherwise.
 - **Boundary = canonical path-containment.** In/out-of-project is decided by realpath + case-fold
   canonicalization then containment under the project dir (dirname of the solution tsconfig) -- the
   same basis as the diagnostic filter's basePath (D-05/D-06).
+- **NG-code decoding.** Angular encodes `ts.Diagnostic.code` as `-(990000 + ngNumber)` -- NG8002 =
+  `-998002`, NG3004 = `-993004`. Recover with `ngNumber = -code - 990000` (valid when
+  `code < 0 && 990000 < -code < 1000000`). Extended diagnostics are NG81xx (+ NG8011/8021), core
+  template errors NG80xx. Used to assert NG8xxx firing without hardcoding raw codes (spikes 007/008).
+- **Forced peer-conflicting dep -> isolated scratchpad scaffold (user-chosen).** When a spike needs
+  a dependency whose peer range excludes the official stack (e.g. `@storybook/angular@10.4.6` caps
+  Angular <22 / TS ^4.9||^5), install it the way a consumer must (`--legacy-peer-deps`/`--force`,
+  capturing the ERESOLVE first as evidence) in a THROWAWAY npm scaffold under the session scratchpad
+  -- NOT the dev repo's `node_modules`/`package.json`. Pin the exact official stack in the scaffold
+  `package.json`. Run the harness FROM the scaffold (so the forced dep + pinned toolchain resolve),
+  then COMMIT the record only -- `package.json` + `fixture/` + `harness.mjs` + `forensic-log.json` --
+  and document the `npm install` reproduction; the scaffold `node_modules` is never committed
+  (spike 007).
+- **Diagnostic-driven detection reads PUBLIC diagnostic fields only.** To classify or detect a
+  situation from compiler output, key on `diagnostic.code` + the module specifier recovered from
+  `ts.flattenDiagnosticMessageText(d.messageText, '\n')` (e.g. `/Cannot find module '([^']+)'/` for
+  TS2307). No ngtsc/component-registry internals, no framework/`.storybook` coupling. A `?` in a
+  module specifier is a bundler (Vite/webpack) query -- TS/Node specifiers never contain `?` -- a
+  builder-agnostic signal (spikes 009/010). Advisories built this way are self-gating: they key on
+  the PRESENCE of the unresolved diagnostic, so they fall silent once the consumer resolves it.
+- **Reuse a prior spike's committed fixture** via a relative path (`join(HERE, '..', 'NNN-*', 'fixture')`)
+  rather than duplicating sources, when the new question is a different lens on the same inputs
+  (spike 010 reused 009's fixture).
 
 ## Tools & Libraries
 
@@ -66,3 +89,4 @@ question requires otherwise.
 | `vitest` (`bench`) | 4.1.9 | benchmarking (preferred over hand-rolled timing) |
 | `minimatch` | 10.2.5 | Nx named-input glob resolution (spike 005) |
 | `nx` CLI | 23.0.1 | `nx show projects --affected` for project-graph edge checks |
+| `vite` (`vite/client`) | 8.1.0 | ambient wildcard module decls for Vite `?query` imports (`*?raw`/`*?url`/`*?worker`/`*?inline`), the consumer-side fix (spike 009) |

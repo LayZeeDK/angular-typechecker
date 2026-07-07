@@ -124,11 +124,19 @@ describe('runTypecheck boundary filter (sibling-import fixture)', () => {
       diagnosticsOnFile(result.diagnostics, dependencyLibSource),
     ).toHaveLength(0);
 
-    // ...it was suppressed (counted in the scalar, not enumerated).
-    expect(result.suppressedCount).toBeGreaterThanOrEqual(1);
+    // ...it was suppressed. Per R1 the sibling is a FIRST-PARTY source (a `.ts`
+    // outside `node_modules`), so a suppressed diagnostic on it is classified
+    // IN-GRAPH -- it increments the in-graph Error counter (never a silent drop,
+    // never third-party) and its canonical path appears in suppressedInGraphFiles.
+    expect(result.suppressedInGraphErrorCount).toBeGreaterThanOrEqual(1);
+    expect(
+      result.suppressedInGraphFiles.some((file) =>
+        file.toLowerCase().endsWith('dependency-lib/dependency.ts'),
+      ),
+    ).toBe(true);
   });
 
-  it('EXE-04/D-07: includeDeps: true folds the sibling diagnostic back with suppressedCount 0', async () => {
+  it('EXE-04/D-07: includeDeps: true folds the sibling diagnostic back with all suppressed counters 0/empty', async () => {
     const result = await runTypecheck({
       tsConfigPath: siblingImportTsConfig,
       includeDeps: true,
@@ -143,7 +151,10 @@ describe('runTypecheck boundary filter (sibling-import fixture)', () => {
     ).toHaveLength(1);
 
     // Nothing suppressed when the boundary filter is off.
-    expect(result.suppressedCount).toBe(0);
+    expect(result.suppressedThirdParty).toBe(0);
+    expect(result.suppressedInGraphErrorCount).toBe(0);
+    expect(result.suppressedInGraphWarningCount).toBe(0);
+    expect(result.suppressedInGraphFiles).toHaveLength(0);
   });
 
   it('D-09: the kept set is sorted by file (the sibling dependency-lib sorts before main-lib under includeDeps)', async () => {
@@ -203,10 +214,11 @@ describe('runTypecheck boundary filter (sibling-import fixture)', () => {
     // The out-of-project sibling is SUPPRESSED by the host-derived classifier on
     // every leg (the boundary filter keys off the host's useCaseSensitiveFileNames
     // + realpath, not a literal) -- proving the classification is host-derived.
+    // Per R1 the suppressed first-party sibling `.ts` counts as in-graph.
     expect(
       diagnosticsOnFile(result.diagnostics, dependencyLibSource),
     ).toHaveLength(0);
-    expect(result.suppressedCount).toBeGreaterThanOrEqual(1);
+    expect(result.suppressedInGraphErrorCount).toBeGreaterThanOrEqual(1);
   });
 
   it('Pitfall 5: TS6059 ("not under rootDir") does NOT appear (the no-emit override neutralizes the emit-layout trap)', async () => {

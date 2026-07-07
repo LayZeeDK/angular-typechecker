@@ -1,0 +1,7 @@
+# Introduction
+
+A Storybook docs page. `.mdx` is NEVER covered by the Angular whole-program
+type-check, so it surfaces in `notTypeCheckedDeclaredFiles` as an advisory while
+the verdict stays green. This file is enumerated by the tsconfig `include` glob
+(`../src/**/*.mdx`) via `ts.parseJsonConfigFileContent` `extraFileExtensions` -- it
+is never compiled, only reported.

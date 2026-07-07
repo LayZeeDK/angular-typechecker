@@ -3,4 +3,5 @@ export interface TypecheckExecutorOptions {
   includeDeps?: boolean;
   maxWarnings?: number;
   failFast?: boolean;
+  strict?: boolean;
 }

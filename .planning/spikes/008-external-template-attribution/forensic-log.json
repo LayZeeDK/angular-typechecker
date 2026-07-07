@@ -1,0 +1,65 @@
+{
+  "spike": "008-external-template-attribution",
+  "gates": [
+    "G1",
+    "G5"
+  ],
+  "environment": {
+    "node": "v24.18.0",
+    "typescript": "6.0.3",
+    "@angular/compiler-cli": "22.0.4",
+    "@angular/core": "22.0.4",
+    "platform": "win32"
+  },
+  "ngDiagnostics": [
+    {
+      "ng": "NG8002",
+      "category": "Error",
+      "attributedTo": "html",
+      "file": "bad.component.html",
+      "relatedInformation": [
+        {
+          "file": "bad.component.ts",
+          "attributedTo": "ts",
+          "message": "Error occurs in the template of component BadComponent."
+        }
+      ],
+      "message": "Can't bind to 'nonExistentProp' since it isn't a known property of 'div'."
+    },
+    {
+      "ng": "NG8102",
+      "category": "Warning",
+      "attributedTo": "html",
+      "file": "bad.component.html",
+      "relatedInformation": [
+        {
+          "file": "bad.component.ts",
+          "attributedTo": "ts",
+          "message": "Warning occurs in the template of component BadComponent."
+        }
+      ],
+      "message": "NG8102: The left side of this nullish coalescing operation does not include 'null' or 'undefined' in its type, therefore"
+    }
+  ],
+  "g1": "html",
+  "g5": "PASS (4a)",
+  "recommendedBranch": "D2(d) 4a = owning-component->external-template map via relatedInformation (exact + isolation-correct).",
+  "assertions": [
+    {
+      "id": "008-a external-template-checked",
+      "pass": true,
+      "detail": "2 NG8xxx template diagnostic(s) on the external template: [\"NG8002\",\"NG8102\"]"
+    },
+    {
+      "id": "008-b G1-attribution-unambiguous",
+      "pass": true,
+      "detail": "template diagnostics attribute to: [\"html\"] => G1 = html"
+    },
+    {
+      "id": "008-c G5-ownership-signal",
+      "pass": true,
+      "detail": "2/2 .html diagnostics carry relatedInformation back to a .ts => G5 = PASS (4a)"
+    }
+  ],
+  "verdict": "VALIDATED -- G1 = html; G5 = PASS (4a)"
+}

@@ -1,0 +1,90 @@
+{
+  "spike": "006-layout-b-rootnames",
+  "gate": "G2",
+  "question": "Do a Layout-B host's widened cross-project `.storybook/tsconfig.json` include globs materialize as the leaf's parsed.rootNames (declared inputs) on the official stack?",
+  "environment": {
+    "node": "v24.18.0",
+    "typescript": "6.0.3",
+    "@angular/compiler-cli": "22.0.4",
+    "@angular/core": "22.0.4",
+    "platform": "win32"
+  },
+  "leafTsconfig": "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/tsconfig.json",
+  "parsedRootNames": [
+    "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.stories.ts",
+    "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.component.ts",
+    "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/main.ts"
+  ],
+  "expected": {
+    "story": "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.stories.ts",
+    "comp": "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.component.ts",
+    "main": "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/main.ts",
+    "helper": "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/untracked-helper.ts"
+  },
+  "compile": {
+    "ran": true,
+    "threw": null,
+    "rootFileNames": [
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.stories.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.component.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/main.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.stories.ngtypecheck.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.component.ngtypecheck.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/main.ngtypecheck.ts"
+    ],
+    "sourceFileCount": 267,
+    "extras": [
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.stories.ngtypecheck.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.component.ngtypecheck.ts",
+      "d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/main.ngtypecheck.ts"
+    ]
+  },
+  "assertions": [
+    {
+      "id": "G2-a story-in-rootNames",
+      "pass": true,
+      "detail": "cross-project ../../mylib story IS a declared rootName"
+    },
+    {
+      "id": "G2-b component-in-rootNames",
+      "pass": true,
+      "detail": "cross-project ../../mylib component IS a declared rootName"
+    },
+    {
+      "id": "G2-c storybook-main-in-rootNames",
+      "pass": true,
+      "detail": "local .storybook/main.ts (via \"*.ts\") IS a rootName"
+    },
+    {
+      "id": "G2-d import-only-NOT-rootName",
+      "pass": true,
+      "detail": "import-only untracked-helper.ts is NOT a rootName"
+    },
+    {
+      "id": "G2-e config-parse-clean",
+      "pass": true,
+      "detail": "readConfiguration produced 0 config-parse error(s)"
+    },
+    {
+      "id": "G2-h rootNames-exact-multiset",
+      "pass": true,
+      "detail": "parsed.rootNames == {story,component,main} exactly (got 3: [\"d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.component.ts\",\"d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/mylib/src/lib/my.stories.ts\",\"d:/projects/github/layzeedk/angular-typechecker/.planning/spikes/006-layout-b-rootnames/fixture/storybook-host/.storybook/main.ts\"])"
+    },
+    {
+      "id": "G2-f declared-rootNames-are-program-roots",
+      "pass": true,
+      "detail": "all 3 declared parsed.rootNames appear in program.getRootFileNames() (6 total)"
+    },
+    {
+      "id": "G2-f2 program-root-extras-are-ngtypecheck-shims",
+      "pass": true,
+      "detail": "3 extra program root(s) are all <root>.ngtypecheck.ts shims (synthetic, no real declared file leaks in)"
+    },
+    {
+      "id": "G2-g import-only-is-sourcefile-not-root",
+      "pass": true,
+      "detail": "helper present as SourceFile=true, as root=false (expected true/false)"
+    }
+  ],
+  "verdict": "VALIDATED -- G2 = YES"
+}

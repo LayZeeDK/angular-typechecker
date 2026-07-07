@@ -237,8 +237,10 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
       tsConfigPath: '/virtual/tsconfig.json',
     });
 
-    // The NG3004 was suppressed by the boundary filter (out of /virtual).
-    expect(result.suppressedCount).toBeGreaterThanOrEqual(1);
+    // The NG3004 was suppressed by the boundary filter (out of /virtual). Its file
+    // is a first-party `.ts` (non-node_modules) outside the base, so per R1 it is
+    // classified IN-GRAPH -- a suppressed first-party Error, never third-party.
+    expect(result.suppressedInGraphErrorCount).toBeGreaterThanOrEqual(1);
     expect(
       result.diagnostics.map((diagnostic) => diagnostic.code),
     ).not.toContain(TCB_GENERATION_FATAL_DIAGNOSTIC_CODE);

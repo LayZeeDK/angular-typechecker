@@ -4,6 +4,8 @@ import type ts from 'typescript';
 
 import type { CompilerCli, ParsedConfiguration } from './compiler-cli-types';
 import { loadCompilerCli } from './compiler-loader';
+import { detectBundlerQueryImports } from './detect-bundler-query-imports';
+import { detectUncheckedDeclaredFiles } from './detect-unchecked-declared';
 import {
   synthesizeFilelessError,
   TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
@@ -19,9 +21,9 @@ export interface CoreOptions {
   tsConfigPath: string;
   // D-07: project-boundary filter switch. Default false excludes out-of-project
   // + node_modules diagnostics from the reported set; true folds them back in
-  // (and resets `suppressedCount` to 0). Orthogonal to the consumer's
-  // `skipLibCheck` (which governs whether node_modules `.d.ts` diagnostics are
-  // even produced).
+  // (and resets all suppressed counters to 0 / empty). Orthogonal to the
+  // consumer's `skipLibCheck` (which governs whether node_modules `.d.ts`
+  // diagnostics are even produced).
   includeDeps?: boolean;
   // D-08: the formatter's relativization base for CI annotation paths.
   // `runTypecheck` IGNORES it -- it is consumed ONLY by `formatReport` (plan
@@ -52,9 +54,20 @@ export interface CoreResult {
   // D-01/D-02: category === Warning (explicit, NOT total - errorCount),
   // counted POST-filter on the sorted set.
   warningCount: number;
-  // D-02: count of excluded out-of-project + node_modules diagnostics. 0 on the
-  // zero-rootNames guard path (no Program) and whenever `includeDeps` is true.
-  suppressedCount: number;
+  // D-05/D-07: split suppressed counters (replacing the prior single silent
+  // `suppressedCount`). `suppressedThirdParty` counts node_modules suppressions
+  // (quiet -- NEVER affects the verdict, preserving dependency isolation). The
+  // per-category in-graph counters count SUPPRESSED first-party (non-node_modules)
+  // Error/Warning diagnostics -- the milestone's core correctness signal: an
+  // out-of-project first-party diagnostic the boundary used to drop SILENTLY is
+  // now COUNTED as in-graph (feeding the 17-04 coverage-incomplete gate).
+  // `suppressedInGraphFiles` carries their distinct canonical paths (advisory).
+  // All four are 0 / [] on the zero-rootNames guard path (no Program) and
+  // whenever `includeDeps` is true.
+  suppressedThirdParty: number;
+  suppressedInGraphErrorCount: number;
+  suppressedInGraphWarningCount: number;
+  suppressedInGraphFiles: readonly string[];
   durationMs: number;
   // RES-02 (reframe; 09-RES-02-DECISION.md, Option A): set when a TCB-generation
   // `FatalDiagnosticError` (IMPORT_GENERATION_FAILURE, NG3004 -- the ONLY Fatal
@@ -86,6 +99,32 @@ export interface CoreResult {
   // loud, path-named `logger.warn` advisory. ADVISORY only -- recording a skip
   // NEVER changes the verdict. Additive/non-breaking (0.x semver).
   skippedReferences?: readonly SkippedReference[];
+  // D-01 (Phase 18, T11): declared-but-uncheckable files -- files a consumer's
+  // tsconfig DECLARES that the type-check cannot cover (`.mdx` is NEVER checked;
+  // a `.tsx` is checked only when the resolved `compilerOptions.jsx` is set).
+  // Present (and NON-EMPTY) only when at least one such file is declared on a
+  // SURVIVING leaf (walk path) or the direct single leaf; `undefined` otherwise --
+  // core maps the empty array `[]` -> `undefined` so consumers branch on presence,
+  // exactly like `skippedReferences`. PURE detection (detect-unchecked-declared.ts,
+  // no `console`/`process`); the executor adapter renders the loud `logger.warn`.
+  // ADVISORY only -- these paths NEVER change the verdict (deliberately NOT read by
+  // `evaluateResult`). Additive/non-breaking (0.x semver).
+  notTypeCheckedDeclaredFiles?: readonly string[];
+  // SB-09 (D-01/D-02): unresolved bundler-query imports -- the deduped, sorted
+  // module specifiers of kept TS2307 diagnostics whose specifier contains a `?`
+  // (a Vite/Analog bundler query: `?raw` / `?url` / `?worker` / `?inline`,
+  // virtual modules). PURE diagnostic-derived detection (detect-bundler-query-
+  // imports.ts, no `console`/`process`) computed over the POST-filter KEPT set in
+  // `finalize`, so a boundary-filtered node_modules `?query` is never named.
+  // Present (and NON-EMPTY) only when at least one such TS2307 is kept; `undefined`
+  // otherwise -- core maps the empty array `[]` -> `undefined` so consumers branch
+  // on presence, exactly like `notTypeCheckedDeclaredFiles`. ALWAYS-ON + self-gating
+  // (D-03): it falls silent once the consumer adds `"types": ["vite/client"]` (or a
+  // hand `declare module` shim), so no public option is needed. ADVISORY only -- the
+  // underlying TS2307 stay COUNTED errors and drive the verdict as normal; the field
+  // is deliberately NOT read by `evaluateResult` (D-05), so it NEVER flips the
+  // verdict. Additive/non-breaking (0.x semver).
+  bundlerQueryImports?: readonly string[];
 }
 
 /**
@@ -158,16 +197,19 @@ function hasProjectReferences(parsed: ParsedConfiguration): boolean {
 
 /**
  * Builds the project-boundary `FinalizeFilter` shared by the walk (>=1 in-project
- * leaf) path and the direct single-leaf path. Only `useCaseSensitiveFileNames`
- * differs between the two callers (the walk reuses `ts.sys`; the direct path reads
- * it off the live Program host), so it is the one parameter; `basePath`,
- * `includeDeps`, and `realpath` are identical.
+ * leaf) path and the direct single-leaf path. Two things differ between the two
+ * callers, so both are parameters: `useCaseSensitiveFileNames` (the walk reuses
+ * `ts.sys`; the direct path reads it off the live Program host) and `inputTs`
+ * (the walk passes the union `walk.rootNamePaths`; the direct path passes the
+ * single leaf's `parsed.rootNames`). `basePath`, `includeDeps`, and `realpath`
+ * are identical.
  */
 function buildFinalizeFilter(
   ts: typeof import('typescript'),
   parsed: ParsedConfiguration,
   options: CoreOptions,
   useCaseSensitiveFileNames: boolean,
+  inputTs: readonly string[],
 ): FinalizeFilter {
   return {
     basePath: resolveFilterBasePath(
@@ -176,9 +218,30 @@ function buildFinalizeFilter(
     ),
     includeDeps: options.includeDeps ?? false,
     useCaseSensitiveFileNames,
+    inputTs,
     realpath: (filePath: string): string =>
       ts.sys.realpath?.(filePath) ?? filePath,
   };
+}
+
+/**
+ * CoreResult advisory-field idiom (Pitfall 7 / T-17-09): an advisory ARRAY field is
+ * PRESENT only when non-empty, so consumers branch on presence (an empty `[]` maps
+ * to an omitted key -> `undefined`). Returns a spreadable single-key object,
+ * collapsing the `values.length > 0 ? { key: values } : {}` ternary that was
+ * otherwise repeated for every array field across `runTypecheck`,
+ * `handleSolutionWalk`, and `finalize`. `K` is constrained to `keyof CoreResult` so
+ * a mistyped key is a compile error. Value-presence fields (e.g.
+ * `templateCheckAborted`) keep their own inline spread -- only the array fields
+ * share this contract.
+ */
+function presentIfNonEmpty<K extends keyof CoreResult, T>(
+  key: K,
+  values: readonly T[],
+): Partial<Record<K, readonly T[]>> {
+  return values.length > 0
+    ? ({ [key]: values } as Partial<Record<K, readonly T[]>>)
+    : {};
 }
 
 /**
@@ -262,85 +325,20 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     // `hasProjectReferences` is the SAME predicate `synthesizeZeroRootNamesDiagnostic`
     // uses (below), so the branch classification and the guard message agree.
     if (hasProjectReferences(parsed)) {
-      const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
-
-      // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
-      // union -- whether returned by a surviving leaf's performCompilation OR
-      // raised by an EXISTING leaf's config resolution (walk-references.ts) -- is
-      // an INFRASTRUCTURE failure, never a type error. Re-throw it here exactly as
-      // the direct single-leaf path does below (the walk stays pure and free of the
-      // run-typecheck import cycle), so `errorCount` never counts a compiler crash
-      // and the leaf-vs-solution entry points stay consistent. The synthesized
-      // not-found code is 90002 (NOT 500), so a genuine missing reference is not
-      // caught here -- it stays a counted 90002 and the run resolves.
-      throwIfInfrastructureFailure(ng, ts, walk.rawDiagnostics);
-
-      // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
-      // adapter's presence check is sufficient; mirror the templateCheckAborted
-      // conditional-spread idiom in `finalize`.
-      const skipped =
-        walk.skippedReferences.length > 0
-          ? { skippedReferences: walk.skippedReferences }
-          : {};
-
-      if (walk.rootNamesCount > 0) {
-        // >=1 in-project leaf walked: feed the RAW union into the SAME single
-        // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
-        // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
-        // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
-        // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
-        // available here (the walk owns and discards each leaf's Program), so the
-        // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
-        // Program used -- matching the direct path's `realpath` fallback.
-        const result = finalize(
-          ts,
-          options.tsConfigPath,
-          walk.rootNamesCount,
-          [...configDiagnostics, ...walk.rawDiagnostics],
-          start,
-          buildFinalizeFilter(
-            ts,
-            parsed,
-            options,
-            ts.sys.useCaseSensitiveFileNames,
-          ),
-        );
-
-        return { ...result, ...skipped };
-      }
-
-      // References present but 0 in-project leaves (every reference skipped /
-      // reclassified). If the walk produced counted diagnostics -- the actionable
-      // 90002 "referenced tsconfig not found" Errors, one per not-found leaf --
-      // finalize the UNION so those SPECIFIC, path-named diagnostics are reported
-      // (I-1). Collapsing N broken references into one generic 90001, whose message
-      // ("references are not consulted ... point the tsConfig at a leaf that lists
-      // files") is simply WRONG for the all-not-found case, would misdescribe the
-      // cause. Only when the union is EMPTY -- every reference was boundary-skipped
-      // / zero-root-names / self-reference / duplicate, so nothing was counted --
-      // do we synthesize the none-in-project 90001 guard, keeping the verdict a
-      // deterministic non-zero signal. Every diagnostic here is file-less (no
-      // surviving leaf ran, and the infra-500 case already re-threw above), so no
-      // boundary filter is needed.
-      const guardDiagnostics =
-        walk.rawDiagnostics.length > 0
-          ? walk.rawDiagnostics
-          : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
-      const result = finalize(
+      return handleSolutionWalk(
+        ng,
         ts,
-        options.tsConfigPath,
-        0,
-        [...configDiagnostics, ...guardDiagnostics],
+        parsed,
+        options,
+        configDiagnostics,
         start,
       );
-
-      return { ...result, ...skipped };
     }
 
     // No references (empty project): UNCHANGED. No Program on this path: nothing
     // to filter (the single guard diagnostic is file-less and would never be
-    // filtered anyway), so `suppressedCount` is 0 and `finalize` runs with
-    // `filter` omitted.
+    // filtered anyway), so all suppressed counters are 0 / empty and `finalize`
+    // runs with `filter` omitted.
     const guard = synthesizeZeroRootNamesDiagnostic(ts, parsed);
 
     return finalize(
@@ -395,7 +393,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // every file in-project and defeat the filter. The live program host supplies
   // `useCaseSensitiveFileNames()` so the case-fold mirrors how diagnostics were
   // produced (RESEARCH D-05/D-06).
-  return finalize(
+  const directResult = finalize(
     ts,
     options.tsConfigPath,
     parsed.rootNames.length,
@@ -406,8 +404,130 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
       parsed,
       options,
       result.program.getTsProgram().useCaseSensitiveFileNames(),
+      parsed.rootNames,
     ),
   );
+
+  // D-01 (Phase 18, T11): the direct single-leaf path computes its declared-but-
+  // uncheckable files from its OWN `parsed` + leaf tsconfig path, attached via the
+  // SAME `presentIfNonEmpty` idiom as the walk path above.
+  const notTypeCheckedDeclaredFiles = detectUncheckedDeclaredFiles(
+    ts,
+    parsed,
+    options.tsConfigPath,
+  );
+
+  return {
+    ...directResult,
+    ...presentIfNonEmpty(
+      'notTypeCheckedDeclaredFiles',
+      notTypeCheckedDeclaredFiles,
+    ),
+  };
+}
+
+/**
+ * D-03a (Phase 13): the references-present arm of the zero-rootNames branch,
+ * extracted VERBATIM from `runTypecheck` so the entry function stays under the
+ * cognitive-complexity budget. PURE core (no `console`/`process`), composed from the
+ * module-scoped helpers (`walkReferences`, `throwIfInfrastructureFailure`,
+ * `finalize`, `buildFinalizeFilter`, `presentIfNonEmpty`, and
+ * `synthesizeZeroRootNamesDiagnostic`). A solution-style / references-only config
+ * splits two ways: >=1 in-project leaf walked (finalize the raw union) vs 0
+ * in-project leaves (finalize the counted not-found 90002s, else synthesize the
+ * none-in-project 90001 guard). Both paths attach `skippedReferences` via
+ * `presentIfNonEmpty` (the `[]` -> `undefined` presence idiom).
+ */
+async function handleSolutionWalk(
+  ng: CompilerCli,
+  ts: typeof import('typescript'),
+  parsed: ParsedConfiguration,
+  options: CoreOptions,
+  configDiagnostics: readonly ts.Diagnostic[],
+  start: number,
+): Promise<CoreResult> {
+  const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
+
+  // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
+  // union -- whether returned by a surviving leaf's performCompilation OR
+  // raised by an EXISTING leaf's config resolution (walk-references.ts) -- is
+  // an INFRASTRUCTURE failure, never a type error. Re-throw it here exactly as
+  // the direct single-leaf path does (the walk stays pure and free of the
+  // run-typecheck import cycle), so `errorCount` never counts a compiler crash
+  // and the leaf-vs-solution entry points stay consistent. The synthesized
+  // not-found code is 90002 (NOT 500), so a genuine missing reference is not
+  // caught here -- it stays a counted 90002 and the run resolves.
+  throwIfInfrastructureFailure(ng, ts, walk.rawDiagnostics);
+
+  // Core maps the walk's empty array `[]` -> `undefined` on CoreResult so the
+  // adapter's presence check is sufficient (`presentIfNonEmpty`).
+  const skipped = presentIfNonEmpty(
+    'skippedReferences',
+    walk.skippedReferences,
+  );
+
+  if (walk.rootNamesCount > 0) {
+    // >=1 in-project leaf walked: feed the RAW union into the SAME single
+    // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
+    // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
+    // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
+    // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
+    // available here (the walk owns and discards each leaf's Program), so the
+    // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
+    // Program used -- matching the direct path's `realpath` fallback.
+    const result = finalize(
+      ts,
+      options.tsConfigPath,
+      walk.rootNamesCount,
+      [...configDiagnostics, ...walk.rawDiagnostics],
+      start,
+      buildFinalizeFilter(
+        ts,
+        parsed,
+        options,
+        ts.sys.useCaseSensitiveFileNames,
+        walk.rootNamePaths,
+      ),
+    );
+
+    // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-uncheckable
+    // files via the SAME `presentIfNonEmpty` idiom as `skipped`. Sourced from the
+    // walk's surviving-leaf aggregation (Pitfall 7), so only surviving leaves
+    // contribute.
+    const notTypeChecked = presentIfNonEmpty(
+      'notTypeCheckedDeclaredFiles',
+      walk.notTypeCheckedDeclaredFiles,
+    );
+
+    return { ...result, ...skipped, ...notTypeChecked };
+  }
+
+  // References present but 0 in-project leaves (every reference skipped /
+  // reclassified). If the walk produced counted diagnostics -- the actionable
+  // 90002 "referenced tsconfig not found" Errors, one per not-found leaf --
+  // finalize the UNION so those SPECIFIC, path-named diagnostics are reported
+  // (I-1). Collapsing N broken references into one generic 90001, whose message
+  // ("references are not consulted ... point the tsConfig at a leaf that lists
+  // files") is simply WRONG for the all-not-found case, would misdescribe the
+  // cause. Only when the union is EMPTY -- every reference was boundary-skipped
+  // / zero-root-names / self-reference / duplicate, so nothing was counted --
+  // do we synthesize the none-in-project 90001 guard, keeping the verdict a
+  // deterministic non-zero signal. Every diagnostic here is file-less (no
+  // surviving leaf ran, and the infra-500 case already re-threw above), so no
+  // boundary filter is needed.
+  const guardDiagnostics =
+    walk.rawDiagnostics.length > 0
+      ? walk.rawDiagnostics
+      : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
+  const result = finalize(
+    ts,
+    options.tsConfigPath,
+    0,
+    [...configDiagnostics, ...guardDiagnostics],
+    start,
+  );
+
+  return { ...result, ...skipped };
 }
 
 /**
@@ -462,15 +582,23 @@ function synthesizeZeroRootNamesDiagnostic(
 /**
  * The per-call inputs the project-boundary filter needs, sourced from the live
  * Program host + the parsed config. Omitted on the zero-rootNames guard path
- * (no Program), where `suppressedCount` is 0 and nothing is filtered.
+ * (no Program), where all suppressed counters are 0 / empty and nothing is
+ * filtered.
  */
 interface FinalizeFilter {
-  // D-05: in-project baseline = the leaf tsconfig's `basePath`.
+  // D-05: in-project baseline = the CHECKED tsconfig's `basePath` -- the leaf's on
+  // the direct single-leaf path, but the SOLUTION/host tsconfig's on the walk path
+  // (`handleSolutionWalk` builds this filter from the solution `parsed`), matching
+  // the "solution/host tsconfig dir" baseline documented in filter-diagnostics.ts.
   basePath: string;
   // D-07: false (default) excludes out-of-project + node_modules.
   includeDeps: boolean;
   // D-06: from `result.program.getTsProgram().useCaseSensitiveFileNames()`.
   useCaseSensitiveFileNames: boolean;
+  // D-02: the DECLARED rootName `.ts` paths whose union is the input set. The
+  // walk path threads `walk.rootNamePaths`; the direct path threads
+  // `parsed.rootNames`.
+  inputTs: readonly string[];
   // D-06: symlink resolution (pnpm `.pnpm/`); `ts.sys.realpath` in production.
   realpath: (filePath: string) => string;
 }
@@ -480,8 +608,8 @@ interface FinalizeFilter {
  * first excludes out-of-project + node_modules diagnostics (D-06). The kept set
  * is then sorted + deduped via `ts.sortAndDeduplicateDiagnostics` (D-09)
  * UNCONDITIONALLY -- including the zero-rootNames guard path (no `filter`, where
- * diagnostics pass through unfiltered with `suppressedCount: 0`) -- so the
- * reported order is deterministic on every path (IN-01/IN-05). Error and Warning
+ * diagnostics pass through unfiltered with all suppressed counters 0 / empty) --
+ * so the reported order is deterministic on every path (IN-01/IN-05). Error and Warning
  * categories are then counted EXPLICITLY (D-01) on that POST-filter, sorted set,
  * never by subtracting errors from the total. Suggestion + Message categories
  * stay in `diagnostics` but are not counted, preserving the invariant
@@ -504,7 +632,10 @@ function finalize(
   filter?: FinalizeFilter,
 ): CoreResult {
   let kept: readonly ts.Diagnostic[] = diagnostics;
-  let suppressedCount = 0;
+  let suppressedThirdParty = 0;
+  let suppressedInGraphErrorCount = 0;
+  let suppressedInGraphWarningCount = 0;
+  let suppressedInGraphFiles: readonly string[] = [];
 
   if (filter !== undefined) {
     const filtered = filterDiagnostics(diagnostics, {
@@ -512,10 +643,14 @@ function finalize(
       includeDeps: filter.includeDeps,
       useCaseSensitiveFileNames: filter.useCaseSensitiveFileNames,
       realpath: filter.realpath,
+      inputTs: filter.inputTs,
     });
 
     kept = filtered.kept;
-    suppressedCount = filtered.suppressedCount;
+    suppressedThirdParty = filtered.suppressedThirdParty;
+    suppressedInGraphErrorCount = filtered.suppressedInGraphErrorCount;
+    suppressedInGraphWarningCount = filtered.suppressedInGraphWarningCount;
+    suppressedInGraphFiles = filtered.suppressedInGraphFiles;
   }
 
   // D-09 / IN-01 / IN-05: sort + dedup the kept set UNCONDITIONALLY before
@@ -547,15 +682,29 @@ function finalize(
   // such Fatal is present (the common path).
   const templateCheckAborted = detectTemplateCheckAborted(diagnostics);
 
+  // SB-09 (D-02): PURE detection of unresolved bundler-query imports. Unlike
+  // `detectTemplateCheckAborted` above -- which scans the PRE-filter `diagnostics`
+  // arg (a whole-program TCB abort must fire even for an out-of-project poison) --
+  // this scans `reported`, the POST-filter KEPT set (Pitfall 1). D-02 requires it:
+  // the advisory must name ONLY TS2307 the consumer actually SEES and can fix via
+  // their tsconfig; a boundary-filtered node_modules `?query` is dropped from
+  // `reported` and must never be named. The two detectors look alike but have
+  // OPPOSITE scan targets -- a future refactor MUST NOT unify them onto one arg.
+  const bundlerQueryImports = detectBundlerQueryImports(ts, reported);
+
   return {
     tsConfigPath,
     rootNamesCount,
     diagnostics: reported,
     errorCount,
     warningCount,
-    suppressedCount,
+    suppressedThirdParty,
+    suppressedInGraphErrorCount,
+    suppressedInGraphWarningCount,
+    suppressedInGraphFiles,
     durationMs: performance.now() - start,
     ...(templateCheckAborted !== undefined ? { templateCheckAborted } : {}),
+    ...presentIfNonEmpty('bundlerQueryImports', bundlerQueryImports),
   };
 }
 

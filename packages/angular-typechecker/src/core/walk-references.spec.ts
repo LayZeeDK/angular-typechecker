@@ -197,6 +197,102 @@ describe('walkReferences', () => {
     );
   });
 
+  it('surfaces the UNION of two surviving leaves DECLARED rootNames on rootNamePaths (D-02)', async () => {
+    const ts = tsForWalk(await import('typescript'));
+
+    // Distinct rootNames arrays per leaf (the app leaf declares TWO roots) so the
+    // assertion proves rootNamePaths is the declared-set UNION, not just a per-leaf
+    // first element or a count.
+    const appPath = leaf('./tsconfig.app.json');
+    const specPath = leaf('./tsconfig.spec.json');
+    const appMain = leaf('./app.ts');
+    const appConfig = leaf('./app.config.ts');
+    const specMain = leaf('./app.spec.ts');
+
+    const { ng } = stubCompilerCli({
+      [appPath]: {
+        parsed: parsedConfig(appPath, [appMain, appConfig]),
+        diagnostics: [],
+      },
+      [specPath]: {
+        parsed: parsedConfig(specPath, [specMain]),
+        diagnostics: [],
+      },
+    });
+
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.app.json' }, { path: './tsconfig.spec.json' }],
+    );
+
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
+
+    // rootNamePaths is the DECLARED rootNames union across BOTH surviving leaves,
+    // in walk order; rootNamesCount stays consistent with it.
+    expect(walk.rootNamePaths).toEqual([appMain, appConfig, specMain]);
+    expect(walk.rootNamesCount).toBe(3);
+  });
+
+  it('accumulates rootNamePaths for SURVIVING leaves only -- skipped leaves contribute none (D-02 / T-17-06)', async () => {
+    const ts = tsForWalk(await import('typescript'));
+
+    // One surviving leaf mixed with a zero-root-names leaf and an out-of-project
+    // reference. Both skipped leaves `continue` BEFORE the surviving-leaf tail, so
+    // only the survivor's declared rootName may enter rootNamePaths.
+    const appPath = leaf('./tsconfig.app.json');
+    const appSource = leaf('./app.ts');
+    const emptyPath = leaf('./tsconfig.empty.json');
+    const oopPath = leaf('../other/tsconfig.lib.json');
+    const oopSource = leaf('../other/lib.ts');
+
+    const { ng } = stubCompilerCli({
+      [appPath]: {
+        parsed: parsedConfig(appPath, [appSource]),
+        diagnostics: [],
+      },
+      [emptyPath]: {
+        // zero-root-names -> skipped (reason 'zero-root-names').
+        parsed: parsedConfig(emptyPath, []),
+        diagnostics: [],
+      },
+      [oopPath]: {
+        // resolved OUTSIDE the solution dir -> skipped (reason 'out-of-project').
+        parsed: parsedConfig(oopPath, [oopSource]),
+        diagnostics: [],
+      },
+    });
+
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [
+        { path: './tsconfig.app.json' },
+        { path: './tsconfig.empty.json' },
+        { path: '../other/tsconfig.lib.json' },
+      ],
+    );
+
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
+
+    // ONLY the surviving leaf's declared rootName is surfaced; the zero-root-names
+    // and out-of-project leaves contribute nothing.
+    expect(walk.rootNamePaths).toEqual([appSource]);
+    expect(walk.rootNamePaths).not.toContain(oopSource);
+  });
+
   it('skips an out-of-project leaf without compiling it (D-01)', async () => {
     const ts = tsForWalk(await import('typescript'));
 

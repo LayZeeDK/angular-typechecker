@@ -24,6 +24,11 @@
       "type": "boolean",
       "default": false,
       "description": "Report only the first error (output brevity) - NOT a speed-up; all diagnostics are still gathered."
+    },
+    "strict": {
+      "type": "boolean",
+      "default": false,
+      "description": "Opt-in strict mode: FAIL with the coverage-incomplete outcome when a dropped first-party in-graph warning would otherwise leave the verdict clean. By default such a dropped in-graph warning does not fail on its own (it stays clean unless maxWarnings gates it). strict only adds a fail path; it never turns a fail into a pass."
     }
   },
   "required": ["tsConfig"],

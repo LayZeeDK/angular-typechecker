@@ -80,3 +80,97 @@ Design decisions that emerged / are locked as spikes progress. Non-negotiable fo
 _Build order: risk order (aggregation -> boundary -> cost -> D-03a split -> caching). Aggregation
 runs first as the make-or-break gate; a NO-GO there kills the idea before the rest. Spike # follows
 run order; the Obj column maps each back to the idea's original 1-5 numbering._
+
+---
+
+## Idea 2 -- v0.1.2 Storybook type-check gate (Phase 16, SB-05)
+
+Resolve the hard GO/NO-GO gates (G1-G5) that decide whether the centralized Storybook-host
+layout (Layout B, the Nx "one-storybook-for-all" recipe) is type-checkable on the OFFICIAL
+stack (Nx 23.0.1 / Angular 22.0.4 / TS 6.0.3, `@storybook/angular@10.4.6` force-installed) --
+so the milestone commits to Layout B ONLY on evidence, or ships Layout A alone with Layout B
+documented "not yet supported". Full gate detail + decision tree:
+`.planning/research/v0.1.2-storybook/board/CONSENSUS.md` (P16 spike section). Governing charter:
+**never a silent false pass**. Build order = risk order (G2 -> G3 -> G4 -> G1 -> G5); G2/G3/G4
+are the kill gates, G1/G5 select the shipping branch. User directive: build G2 first, then reassess.
+
+### Requirements emerging from this idea
+
+- **G2 = YES (Spike 006):** a Layout-B host's widened cross-project `.storybook/tsconfig.json`
+  `include` globs DO materialize the aggregated `*.stories.ts`/`*.component.ts` as the leaf's
+  `parsed.rootNames` (declared inputs) on the official stack. The input-set-membership boundary
+  primitive is viable for Layout B.
+- **Program-roots superset (Spike 006):** `program.getTsProgram().getRootFileNames()` = the
+  declared `readConfiguration().rootNames` PLUS one synthetic `<root>.ngtypecheck.ts` shim per
+  root. Phase 17 keys `inputTs` on the DECLARED set (or tolerates + never treats a shim path as a
+  real first-party source when computing `suppressedInGraph`).
+- **Declared-vs-import-only (Spike 006):** only files the host `include` glob DECLARES become
+  rootNames; an aggregated file reached ONLY via import is a SourceFile but not a rootName ->
+  keep-rule (c) would suppress it. Reinforces D3 (check the WHOLE declared set, never a
+  `*.stories.ts` allowlist; a stories-only host glob leaves aggregated components import-only).
+- **G3 = YES + G4 = YES (Spike 007):** forced `@storybook/angular@10.4.6` (installed
+  `--legacy-peer-deps` -- peer-caps Angular <22/TS ^4.9||^5, the real D4 conflict) compiles via
+  `performCompilation` on the official stack with NO infra failure; a clean story passes clean.
+- **D4 confirmed (Spike 007):** under `skipLibCheck:false`, forced-SB10 `.d.ts` produce 48
+  diagnostics -- ALL `node_modules`-attributed and suppressed, ZERO leak in-project. Forced-SB10
+  `.d.ts` errors can never cause a false FAIL; docs-only, no runtime version gate (D4/D6). The 48
+  checked `.d.ts` + zero in-project TS2307/TS2305 also prove the SB10 type surface genuinely
+  resolved under TS6.
+- **NG8xxx fire on the forced stack (Spike 007, G4 positive):** NG8002 (core template) and NG8102
+  (extended, promoted to error via `defaultCategory`) both fire RED in-project on aggregated
+  components -- the "complete type-check incl. NG8xxx" claim is honest on green (SB-07).
+
+### Spikes (Idea 2)
+
+| # | Gate(s) | Type | Validates | Verdict | Tags |
+|---|---------|------|-----------|---------|------|
+| 006 | G2 (HARD prereq) | standard | widened cross-project `.storybook/tsconfig.json` include globs materialize as the leaf's `parsed.rootNames` (declared inputs, not merely imports) on the official Angular 22.0.4 / TS 6.0.3 stack | **VALIDATED (G2 = YES)** | storybook, layout-b, rootnames, boundary, gate, engine |
+| 007 | G3, G4 | standard | forced `@storybook/angular@10.4.6` compiles via `performCompilation` (no infra fail) + clean story passes clean, SB10 `.d.ts` errors node_modules-suppressed (G3); NG8002 core + NG8102 extended fire RED in-project (G4, positive) | **VALIDATED (G3=YES, G4=YES)** | storybook, sb10, ng8xxx, gate, engine |
+| 008 | G1, G5 | standard | external `templateUrl` `.html` NG8002+NG8102 attribute to the `.html` (G1 = html); both carry `relatedInformation` -> owning component `.ts` ("occurs in the template of component X"), a stable public signal (G5 = PASS 4a) | **VALIDATED (G1=html, G5=PASS 4a)** | storybook, external-template, attribution, relatedInformation, gate, engine |
+
+_Build order: G2 -> (G3, G4) -> (G1, G5), risk order. G2 first per user directive; reassessed; then 007, then 008._
+
+### Idea-2 GO/NO-GO verdict (Phase-16 gate)
+
+**GO -- Layout B IS supportable on the official stack.** All three HARD kill gates pass
+(G2 = YES rootNames, G3 = YES forced-SB10 compiles + clean-clean, G4 = YES NG8xxx fire RED), and
+the selectors resolve to **D2(d) branch 4a** (G1 = html + G5 = PASS: map external `.html` ->
+owning rootName component `.ts` via public `relatedInformation`). Phase 17 ships Layout A + Layout B
+with the input-set-membership boundary and the 4a external-template branch. NO gate forced the
+Layout-A-only fallback. Reviewed at the 16->17 handoff before planning Phase 17.
+
+---
+
+## Idea 3 -- Vite/Analog Storybook query-import support (post-v0.1.2 UAT follow-up)
+
+The phase-19 OSS real-repo UAT (`.planning/phases/19-.../19-UAT.md`) found `angular-typechecker`
+surfaces ~228 `TS2307` on radix-ng's Vite `?raw` imports. The engine is CORRECT to surface them
+(a story is a declared rootName -> in-project -> kept). The open question: what is the cleanest,
+SAFE consumer-facing resolution for Vite/Analog Storybook stories using Vite query suffixes
+(`?raw`/`?url`/`?worker`/`?inline`/virtual modules), WITHOUT auto-suppressing `TS2307` (a missing
+module can be real -- the never-a-silent-false-pass charter). Candidates: documented recipe
+(`vite/client`) vs a shipped hand shim vs an in-tool detection advisory.
+
+### Requirements emerging from this idea
+
+- **Recommended fix = `"types": ["vite/client"]`** on the checked tsconfig (Spike 009). `vite/client`
+  declares the full query family as wildcard ambient modules; one line zeroes the query `TS2307`
+  (227 -> 0 on radix, 5 -> 0 hermetic). A hand `declare module '*?query'` .d.ts is a fallback but
+  incomplete unless every suffix is enumerated (missed `?inline` in the hermetic test).
+- **No-false-pass PRESERVED by the recipe (Spike 009):** an ambient wildcard satisfies module
+  RESOLUTION for matched specifiers only -- a plain missing module (`./nope`) still fails `TS2307`
+  (verified on radix: 1 pre-existing plain miss kept + a planted plain miss still errored), and the
+  imported value keeps its real type (`?raw` -> `string`, so misuse still `TS2322`). The tool must
+  NEVER auto-suppress `?query` `TS2307`.
+- **Documented limitation (Spike 009):** a `?query` import of a NONEXISTENT base file resolves via
+  the wildcard (TS cannot verify base existence through an ambient wildcard; mirrors Vite's own
+  build-vs-typecheck split). Narrow -- only `?query`-suffixed imports of a missing base.
+
+### Spikes (Idea 3)
+
+| # | Name | Type | Validates | Verdict | Tags |
+|---|------|------|-----------|---------|------|
+| 009 | vite-ambient-shim-resolves-query-imports | comparison | ambient decls (`vite/client` vs hand shim) drop Vite `?query` TS2307 to 0 while a genuine missing module still fails (no-false-pass on resolution) and misuse still errors (no-false-pass on types); validated hermetically + on radix-ng (227->0) | **VALIDATED** | storybook, vite, analog, module-resolution, ts2307, no-false-pass, engine, devex |
+| 010 | vite-query-detection-advisory | standard | a diagnostic-based detector (unresolved TS2307 + `?`-query specifier; NO Storybook/framework coupling) emits an advisory, never suppresses, no false positive on plain missing modules, self-gates silent once resolved | **VALIDATED** | storybook, vite, advisory, detection, no-false-pass, devex |
+
+_Build order: risk order (009 the make-or-break recipe first; 010 the UX advisory second)._
