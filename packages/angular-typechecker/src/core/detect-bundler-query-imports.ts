@@ -39,7 +39,10 @@ export function detectBundlerQueryImports(
       continue;
     }
 
-    const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+    const message = ts.flattenDiagnosticMessageText(
+      diagnostic.messageText,
+      '\n',
+    );
     // Security V5: `[^']+` is a linear negated character class -- no nested
     // quantifier, no catastrophic backtracking -- and messageText is
     // compiler-owned, not user input. `exec` returns null on no match.
