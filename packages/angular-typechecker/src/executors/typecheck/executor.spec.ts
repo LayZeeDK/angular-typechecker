@@ -137,6 +137,18 @@ function notTypeCheckedCoreResult(
   };
 }
 
+// SB-09 (Phase 20, D-04 adapter render): a CoreResult carrying the NON-EMPTY
+// bundlerQueryImports the adapter must turn into ONE loud logger.warn naming the
+// count, the "types": ["vite/client"] fix, and the consumer's OWN specifiers. The
+// ?query TS2307 are COUNTED errors (errorCount 2), so this builds on coreResult(2)
+// -- the advisory is additive; evaluateResult alone owns the verdict.
+function bundlerQueryCoreResult(specs: readonly string[]): CoreResult {
+  return {
+    ...coreResult(2),
+    bundlerQueryImports: specs,
+  };
+}
+
 const context = { root: '/ws' } as ExecutorContext;
 const options = { tsConfig: 'libs/x/tsconfig.lib.json' };
 
@@ -493,6 +505,44 @@ describe('typecheckExecutor (D-01/D-04)', () => {
   });
 
   it('D-01 T11: does NOT warn when notTypeCheckedDeclaredFiles is undefined (no false positive)', async () => {
+    mocks.runTypecheck.mockResolvedValue(coreResult(0));
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  // SB-09 (Phase 20, D-04): the adapter renders the core's pure bundlerQueryImports
+  // as ONE loud logger.warn -- count + the "types": ["vite/client"] fix + an
+  // ADVISORY-not-suppressed statement + the consumer's OWN specifier -- the render
+  // gate the structural git grep cannot prove fires.
+  it('SB-09 D-04: emits a single logger.warn with the vite/client fix + ADVISORY + specifier when bundlerQueryImports is non-empty', async () => {
+    mocks.runTypecheck.mockResolvedValue(bundlerQueryCoreResult(['./x?raw']));
+    mocks.evaluateResult.mockReturnValue({ success: false });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    // ADVISORY only: it fires exactly once (only bundlerQueryImports is set, all
+    // other advisory fields empty), naming the recommended fix, stating the TS2307
+    // are NOT suppressed, and listing the consumer's own specifier. The verdict path
+    // is untouched (no logger.error).
+    expect(mocks.loggerWarn).toHaveBeenCalledOnce();
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('vite/client'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('ADVISORY'),
+    );
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect.stringContaining('./x?raw'),
+    );
+    expect(mocks.loggerError).not.toHaveBeenCalled();
+  });
+
+  it('SB-09 D-04: does NOT warn when bundlerQueryImports is undefined (self-gating, D-03)', async () => {
     mocks.runTypecheck.mockResolvedValue(coreResult(0));
     mocks.evaluateResult.mockReturnValue({ success: true });
 
