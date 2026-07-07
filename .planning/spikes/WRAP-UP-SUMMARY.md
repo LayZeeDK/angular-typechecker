@@ -41,3 +41,39 @@ three HARD kill gates passed and the selectors resolved:
 
 Implementation blueprint (keep-rule, split counter, tripwire, constraints, validation matrix):
 `./.claude/skills/spike-findings-angular-typechecker/references/storybook-input-set-boundary.md`.
+
+---
+
+**Date:** 2026-07-07
+**Spikes processed:** 2 (009-010)
+**Feature areas:** Vite/Analog query-import support (v0.1.2 UAT follow-up)
+**Skill output:** `./.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`
+
+## Processed Spikes (session 2)
+
+| # | Name | Type | Verdict | Feature Area |
+|---|------|------|---------|--------------|
+| 009 | vite-ambient-shim-resolves-query-imports | comparison | VALIDATED | Vite/Analog query-import support |
+| 010 | vite-query-detection-advisory | standard | VALIDATED | Vite/Analog query-import support |
+
+## Key Findings (session 2)
+
+Origin: the phase-19 OSS real-repo UAT found ~228 `TS2307` on radix-ng's Vite `?raw` imports (the
+tool is CORRECT to surface them -- a story is a declared rootName -> in-project -> kept).
+
+- **009 -- the fix is one consumer-side line:** `"types": ["vite/client"]` on the checked tsconfig
+  declares the full Vite query family (`*?raw`/`*?url`/`*?worker`/`*?inline`/...) as ambient wildcard
+  modules. Hermetic 5 `?query` TS2307 -> 0; radix-ng **227 -> 0**. No-false-pass PRESERVED on both
+  axes: a plain missing module still `TS2307` (radix's 1 pre-existing plain-miss kept + a planted one
+  still errored), and `?raw` is typed `string` so misuse still `TS2322`. Hand `declare module` shim is
+  a fallback but incomplete (missed `?inline`). Auto-suppression rejected. Blind spot: a `?query`
+  import of a missing base resolves via the wildcard (TS can't verify base existence through a
+  wildcard).
+- **010 -- an in-tool advisory is feasible + optional:** detect unresolved `TS2307` whose specifier
+  contains `?` (a bundler query; TS/Node specifiers never use `?`) -> emit a verdict-neutral advisory
+  pointing at `vite/client`. Builder-agnostic (no Storybook coupling), no false positive on plain
+  missing modules, never suppresses, self-gating (silent once resolved).
+
+Signal for the build: ship the docs recipe first (phase-19 README already carries the caveat;
+strengthen it to lead with `vite/client`); the advisory is later DX polish. Blueprint:
+`./.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`.
