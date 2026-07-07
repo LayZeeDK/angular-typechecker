@@ -171,33 +171,31 @@ outputs via `dependentTasksOutputFiles`:
 ```
 
 One thing to get right: the first input must be `default`, not `production`.
-`production` drops `*.spec.ts`, which would under-hash the spec sources the walk
-checks, so a spec-only edit could then reuse a stale cache and pass when it
+`production` drops `*.spec.ts`, which would under-hash the spec sources the check
+covers, so a spec-only edit could then reuse a stale cache and pass when it
 should fail.
 
 ## Executor options
 
-| Option        | Type    | Default    | Description                                                                                                                                                                                                   |
-| ------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                                                                                                                |
-| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).                                                                                                      |
-| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone.                                                                                              |
-| `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                                                                                                             |
-| `strict`      | boolean | `false`    | Opt-in: fail when a dropped first-party in-graph warning would otherwise leave the verdict clean, turning it into a coverage-incomplete failure. It only adds a fail path; it never turns a fail into a pass. |
+| Option        | Type    | Default    | Description                                                                                                                                                                                          |
+| ------------- | ------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tsConfig`    | string  | (required) | Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute.                                                                                                       |
+| `includeDeps` | boolean | `false`    | Include out-of-project and `node_modules` diagnostics. The default excludes them (project-in-isolation).                                                                                             |
+| `maxWarnings` | number  | (unset)    | Fail when the warning count exceeds this number. `0` fails on any warning. Omit to never fail on warnings alone.                                                                                     |
+| `failFast`    | boolean | `false`    | Report only the first error (output brevity). Not a speed-up; all diagnostics are still gathered.                                                                                                    |
+| `strict`      | boolean | `false`    | Opt-in: fail the run if the type-check had to skip a first-party file that produced a warning that would otherwise leave the run green. It only adds a fail path; it never turns a fail into a pass. |
 
-By default the check is scoped to the project in isolation. When it imports a
-non-buildable (local) library whose sources are path-mapped into the program, those
-sources sit outside the project's own tsconfig input set. Their diagnostics are not
-reported inline (dependency isolation -- you see your project's errors, not the
-library's error text), but as of 0.1.2 a real error among them is no longer silently
-skipped: it is counted as a dropped first-party (in-graph) diagnostic that names the
-offending file loudly and forces a non-clean `coverage-incomplete` verdict, so a
-cached pass cannot hide it. A consequence worth noting: any project that imports an
-internal (path-mapped / workspace-package) library can go `coverage-incomplete` when
-a transitively-imported first-party source has a real error -- run each project's own
-`typecheck` target to see that error reported directly as a `type-error`. Set
-`includeDeps: true` to fold those out-of-project (and `node_modules`) diagnostics back
-into the report in full.
+By default the check is scoped to your project in isolation. When your project
+imports a non-buildable (local) workspace library from source, that library's own
+files sit outside your project's `tsconfig`. Their errors aren't listed inline; you
+see your project's errors, not the library's. As of 0.1.2, a real error among them
+is no longer skipped silently: the run names the file it couldn't fully check and
+reports an incomplete-coverage result (a failure), so a cached pass can't hide it.
+One consequence is that any project importing an internal workspace library from
+source can report incomplete coverage when an imported first-party file has a real
+error. Run that library's own `typecheck` target to see the error reported directly.
+Set `includeDeps: true` to fold those out-of-project (and `node_modules`)
+diagnostics back into the report in full.
 
 ## Output
 
@@ -360,153 +358,129 @@ and Build Bottlenecks](https://brandonroberts.dev/blog/posts/angular-compilation
 
 ## Storybook
 
-angular-typechecker type-checks Storybook stories with no extra configuration,
-because Storybook's TypeScript files are just more inputs the project's tsconfig
-declares. There is no Storybook-specific option, version gate, or `*.stories.ts`
-selector -- the tool has zero Storybook coupling.
+`nx typecheck` type-checks your Storybook stories with no extra setup. Storybook's
+TypeScript files (your `*.stories.ts`, `.storybook/main.ts`, and
+`.storybook/preview.ts`) are just more files your project's `tsconfig` includes, so
+the tool checks them the same way it checks the rest of your project. There is no
+Storybook-specific option or flag, and the plugin has no dependency on Storybook.
 
-v0.1.2 runs the complete Angular type-check (TypeScript + template type-check +
-NG8xxx, no emit) on the TypeScript files the Storybook tsconfig declares -- your
-`*.stories.ts`, `.storybook/main.ts`/`preview.ts`, and (centralized host) the
-aggregated `*.component.ts`/`*.directive.ts`/`*.ts` its `include` reaches --
-provided the `typecheck` target points at the project's SOLUTION `tsconfig.json`
-(the top-level config with `references[]`, not a leaf). A green verdict means
-every such file type-checked clean.
+You get the complete Angular check on every TypeScript file your Storybook
+`tsconfig` declares: TypeScript errors plus template and NG8xxx diagnostics, with
+no emit. A passing run means all of those files type-checked cleanly. One thing
+makes this work, and the `configuration` generator already sets it up for you.
+Point the `typecheck` target at your project's top-level `tsconfig.json`, the one
+with a `references` array, not at a specific `tsconfig.app.json` /
+`tsconfig.lib.json`. The tool follows those references to find your stories, so a
+single leaf config leaves the stories out. Order doesn't matter: the target reads
+the references each time it runs, so adding Storybook after you wire `typecheck`
+works on the next run, with no re-generation.
 
-Two Nx Storybook layouts are supported, both verified on the official stack (Nx
-23.0.1 / Angular 22.0.4 / TypeScript 6.0.3 / `@storybook/angular@10.4.6`):
+This covers both ways teams set up Storybook in an Nx workspace (both verified on
+Nx 23.0.1 / Angular 22.0.4 / TypeScript 6.0.3 with `@storybook/angular@10.4.6`):
 
-- **Layout A (per-project scaffold)** -- `nx g @nx/angular:storybook-configuration`
-  injects a `.storybook/tsconfig.json` into the project's `references[]`; the walk
-  visits it and checks the stories.
-- **Layout B (centralized host, the official Nx "one Storybook for all projects"
-  recipe)** -- a host project whose `.storybook/tsconfig.json` `include` aggregates
-  stories and components from across the workspace; the walk checks that whole
-  declared surface.
-
-The enabling condition for both is pointing the target at the solution
-`tsconfig.json`, not a leaf; the `configuration` generator already does this. It
-is also why the order does not matter: the target stores `tsConfig: <solution>`
-and reads `references[]` at execute time, so adding Storybook after you wire
-`typecheck` yields coverage on the next run with no re-generation.
+- A Storybook in each project (`nx g @nx/angular:storybook-configuration`): that
+  project's stories are checked.
+- One central Storybook for the whole workspace (the Nx "one Storybook for all
+  projects" recipe, where a single Storybook pulls in stories and components from
+  many projects): all of those pulled-in files are checked too. Earlier versions
+  skipped them silently, so a central Storybook that used to pass may now correctly
+  fail. See the 0.1.2 entry in the changelog.
 
 ### Storybook Composition
 
-Storybook Composition is a multi-project TOPOLOGY, not a tsconfig layout. Each
-composed project AND the composing host are ordinary per-project Layout A
-projects, so nothing new happens in the engine: point each project's `typecheck`
-target at its own solution `tsconfig.json` and its stories are checked exactly as
-above. The host's `.storybook/main.ts` (including its `refs` object) is
-type-checked as ordinary TypeScript, so a genuine TypeScript error there is
-reported. Note that `@storybook/angular` types `StorybookConfig['refs']` as
-`any`, so a mistyped `refs` value is caught only when you type it against your own
-ref shape -- Storybook's own type does not catch it.
+Storybook Composition (one Storybook that embeds other, independently built
+Storybooks) is a project structure, not a special `tsconfig`. Each composed project
+and the composing host are ordinary per-project Storybooks, so you check them the
+normal way: give each project its own `typecheck` target and run them together with
+`nx run-many -t typecheck` or `nx affected -t typecheck`. To check a host and
+everything it composes in one command, add `dependsOn: ["^typecheck"]` to the
+host's `typecheck` target and list the composed projects in the host's
+`implicitDependencies`.
 
-Coverage of the whole composed set is the per-project `typecheck` target plus the
-Nx project graph, never a walk of the `refs` URLs. Run the set with
-`nx run-many -t typecheck` or `nx affected -t typecheck`, or add
-`dependsOn: ["^typecheck"]` to the host's `typecheck` target so
-`nx typecheck <host>` checks its upstream dependencies first. The graph edge --
-`implicitDependencies` on the host, matching the projects it composes, NEVER the
-ref URL -- is the source of truth for what the fan-out reaches.
+This checks each project's own TypeScript, including the host's
+`.storybook/main.ts`, so a real TypeScript error in its `refs` object is reported.
+It does not verify that the composed `refs` URLs resolve or deploy; those are
+runtime URLs, not TypeScript. Note that `@storybook/angular` types the `refs`
+object loosely (as `any`), so a mistyped `refs` value is caught only if you
+annotate it with your own type.
 
-The coverage claim, stated precisely: each composed project's declared TypeScript
-surface is type-checked when a `typecheck` target points at that project's
-solution `tsconfig.json`, and `nx run-many` / `affected` covers the set. What it
-does NOT claim: we do NOT verify that composed `refs` resolve, are reachable, or
-deploy -- those are runtime URLs, not TypeScript.
+### What this does and doesn't promise
 
-The opt-in `strict` executor option (default `false`) turns a dropped in-graph
-warning (`suppressedInGraph` greater than `0`) -- which by default leaves the
-verdict clean -- into a `coverage-incomplete` failure. It only ever adds a fail
-path; it never turns a failing verdict into a pass.
+It type-checks the TypeScript files your Storybook `tsconfig` declares. It does not
+claim to cover every Storybook file, and it does not verify that Storybook builds or
+runs. It is a type-check, nothing more. Setups other than the two above aren't
+officially supported, but they never pass silently: if the tool can't fully check
+something, it says so and fails rather than reporting a false pass.
 
-**What this does not claim.** It does not cover every Storybook file, it is not a
-guarantee of exhaustive Storybook checking, and it does not ensure Storybook builds
-or runs -- it is a type-check of the declared TypeScript surface, nothing more.
-Layouts not proven on the official stack are not supported (see the caveats below
-and [Limitations](#limitations)).
+### Things to know
 
-Caveats:
+- `.mdx` docs are never type-checked, and a `.tsx` story is checked only when your
+  `tsconfig` sets `compilerOptions.jsx`. When your Storybook config declares files
+  like these that can't be checked, `nx typecheck` prints a notice naming them; this
+  never changes whether the run passes. See `notTypeCheckedDeclaredFiles` under
+  [Programmatic API](#programmatic-api).
+- Stories that use an external `templateUrl` are handled. A template error such as
+  `NG8002` is reported against the right component, not dropped.
+- Vite and Analog Storybook `?query` imports: add `"types": ["vite/client"]` to the
+  tsconfig you check. That one line is the fix. Imports like
+  `import src from './x?raw'` (and `?url`, `?worker`, `?inline`, and virtual modules)
+  are Vite features TypeScript doesn't understand on its own, so the Angular compiler
+  reports them as `TS2307` ("cannot find module"). Adding `"vite/client"` declares
+  that whole family of imports and clears the errors. In one real project it took the
+  count from 227 such errors to zero without hiding any genuine problem: a truly
+  missing module, or the wrong type of value, still fails. This applies whether your
+  Storybook builds with webpack/esbuild (`@storybook/angular`) or Vite
+  (`@analogjs/storybook-angular`). It is standard TypeScript behavior for Vite
+  projects, not something specific to this tool.
 
-- **`.mdx` is never type-checked**, and a `.tsx` story is checked only when the
-  resolved `compilerOptions.jsx` is set. Declared-but-uncheckable files of either
-  kind surface as a loud advisory notice that does not change the verdict; see
-  `notTypeCheckedDeclaredFiles` under [Programmatic API](#programmatic-api).
-- **External `templateUrl` diagnostics** (for example an `NG8002` in an aggregated
-  component's `.html`) are attributed to the `.html` by the compiler and kept by
-  mapping them back to the owning component `.ts` through the compiler's public
-  `relatedInformation`; an unmappable resource is kept, never dropped.
-- **Vite/Analog Storybook `?query` imports: add `"types": ["vite/client"]` to the
-  checked tsconfig.** That one line is the fix. It resolves the Vite-specific import
-  queries -- `import src from './x?raw'` (also `?url`, `?worker`, `?inline`, and
-  virtual modules) -- that the Angular compiler otherwise reports as `TS2307`, because
-  `vite/client` declares the whole query family as ambient wildcard modules. It drove
-  one real project's 227 `?query` `TS2307` to 0 with no false pass (plain missing
-  modules and value-type misuse still fail as they should). The tool is
-  builder-agnostic: it type-checks the tsconfig's declared surface with the Angular
-  compiler whether Storybook builds with webpack/esbuild (`@storybook/angular`) or Vite
-  (`@analogjs/storybook-angular`), so the `?query` `TS2307` is standard `tsc`/`ngc`
-  behavior for Vite projects, not specific to angular-typechecker.
+  If you'd rather not depend on Vite's types, declare the imports yourself in a
+  `.d.ts` your `tsconfig` includes, one per suffix
+  (`declare module '*?raw' { const src: string; export default src; }`). This only
+  covers the suffixes you list, so `"vite/client"` is preferred. Either way there is
+  one narrow blind spot: a `?query` import of a base file that doesn't exist won't be
+  flagged, the same gap between building and type-checking that Vite itself has.
 
-  If `vite` is not resolvable in the checked project, the FALLBACK is a hand ambient
-  shim in a `.d.ts` the tsconfig includes
-  (`declare module '*?raw' { const src: string; export default src; }`, one per
-  suffix). This fallback is INCOMPLETE by construction -- it only covers the suffixes
-  you enumerate, so prefer `"vite/client"`.
+  The tool never hides these `TS2307` errors automatically, because a missing module
+  can be a real bug. When it sees unresolved `?query` imports it lists them in a
+  notice that points you at this same fix and goes quiet once they resolve (see
+  `bundlerQueryImports` under [Programmatic API](#programmatic-api)).
 
-  One honest blind spot either way: an ambient wildcard (`*?raw`) matches the
-  SPECIFIER, not the file, so a `?query` import of a MISSING base file resolves through
-  the wildcard and will NOT error -- the same build-vs-typecheck split Vite itself has.
-  It is narrow: it only affects `?query`-suffixed imports of a missing base.
-
-  The tool NEVER auto-suppresses these `TS2307` -- a missing module can also be a
-  genuine error. When it sees unresolved `?query` imports it surfaces the deduped
-  specifiers through the `bundlerQueryImports` advisory (see
-  [Programmatic API](#programmatic-api)): a verdict-neutral notice that points you at
-  this same fix and falls silent once the imports resolve.
-
-- **Point at the solution `tsconfig.json`, not a leaf.** Pointing the target at a
-  leaf `tsconfig.app.json` / `tsconfig.lib.json` excludes the stories the solution
-  config's references reach.
-- **Layout C (a flat root tsconfig with no `references[]`) is not a
-  committed-supported Storybook layout, but it never silently passes.** Pointed at
-  a flat tsconfig directly, the check takes the direct single-leaf path and
-  type-checks the stories that config's `include` declares; an empty or story-less
-  config (zero declared inputs) is guarded, so it never reports a clean pass with
-  zero checked stories. Committed support beyond this guard is out of scope for
-  v0.1.2 (see [Limitations](#limitations)).
-- **The Angular CLI Storybook shape is not yet covered, planned for a future
-  milestone.** `ng add @storybook/angular` (the Angular CLI layout, even inside an
-  Nx workspace) wires a base `tsconfig.json` plus per-target leaf tsconfigs through
-  `angular.json`, with no solution tsconfig and no `references[]` for the walk to
-  follow. This is a planned addition, not an unsupported configuration.
-- **Installing Storybook on Angular 22 needs a peer override.**
-  `@storybook/angular@10.4.6` peer-caps Angular at `>=18 <22` / TypeScript
-  `^4.9 || ^5`, so `--legacy-peer-deps` (or `--force`) is required to install it on
-  Angular 22.0.4 / TypeScript 6.0.3; on pnpm, `nx add` can hit
+- Point the target at your top-level `tsconfig.json`, not a `tsconfig.app.json` /
+  `tsconfig.lib.json`. A leaf config leaves the stories out.
+- A single flat `tsconfig.json` with no `references` isn't an officially supported
+  Storybook setup, but it won't pass silently. Pointed at a flat config directly, the
+  tool checks the stories that config includes; a config that declares no files is
+  flagged, so it never reports a clean pass with nothing checked. Fuller support is
+  planned for a later release.
+- The Angular CLI Storybook setup isn't covered yet; it is planned.
+  `ng add @storybook/angular` (the Angular CLI layout, even inside an Nx workspace)
+  wires its tsconfigs through `angular.json` with no top-level `references` for the
+  tool to follow. This is a planned addition, not an unsupported setup.
+- Installing Storybook on Angular 22 needs a peer-dependency override.
+  `@storybook/angular@10.4.6` still caps its Angular peer at `>=18 <22`
+  (TypeScript `^4.9 || ^5`), so you need `--legacy-peer-deps` (or `--force`) to
+  install it on Angular 22 / TypeScript 6; on pnpm, `nx add` can hit
   `ERR_PNPM_IGNORED_BUILDS`. This is a Storybook install constraint, not an
-  angular-typechecker one -- the tool applies no runtime version gate. That forced
-  `@storybook/angular@10.4.6` emits 48 TypeScript 6 `.d.ts` errors, but they are
-  `node_modules`-attributed and suppressed, so they never leak into your verdict.
-  Genuine TypeScript 6 errors in your own `main.ts`/`preview.ts` are real and
-  reported.
+  angular-typechecker one; the tool applies no version gate. That Storybook version
+  also emits 48 TypeScript 6 errors from its own bundled type declarations. Those
+  come from `node_modules` and never affect your result, while genuine errors in your
+  own `main.ts` / `preview.ts` are still reported.
 
 ## Limitations
 
 - angular-typechecker is 0.x (pre-1.0). Breaking changes are allowed in minor
   releases under the project's 0.x semver policy.
-- A fatal template-compilation error (Angular `NG3004`) aborts type-check-block
-  generation for the whole program, which can suppress surviving files' template
-  and NG8xxx diagnostics until it is fixed. The run warns loudly about the
-  incompleteness and still exits non-zero, so it never passes silently.
-- The reference walk is single-level. It checks the solution tsconfig's direct
-  in-project leaves. A referenced in-project leaf that resolves to zero input
-  files -- an empty config, or a references-only/solution tsconfig whose inner
-  projects are not themselves walked -- yields a non-clean coverage-incomplete
-  verdict, so missing coverage is never a silent pass. Only out-of-project,
-  duplicate, and self references stay advisory: they are skipped with a warning and
-  do not change the verdict. Point `tsConfig` at a leaf directly for those.
+- A fatal template-compilation error (Angular `NG3004`) stops Angular's template
+  type-checking for the whole program, which can hide other files' template and
+  NG8xxx diagnostics until you fix it. The run reports that its results are
+  incomplete and still exits non-zero, so it never passes silently.
+- The tool follows one level of `references`: the projects your top-level
+  `tsconfig.json` references directly. If one of those referenced configs resolves
+  to no files (an empty config, or another top-level config whose own inner projects
+  aren't reached), the run reports incomplete coverage and fails, so a gap is never a
+  silent pass. Out-of-project, duplicate, and self references are skipped with a
+  warning and don't change the result; point `tsConfig` at that config directly if
+  you need it checked.
 - `includeDeps` defaults to `false` (project-in-isolation) for speed and boundary
   hygiene, so type errors in a non-buildable local dependency are not reported
   unless you opt in (see [Executor options](#executor-options)).
