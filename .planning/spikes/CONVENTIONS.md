@@ -69,6 +69,16 @@ question requires otherwise.
   then COMMIT the record only -- `package.json` + `fixture/` + `harness.mjs` + `forensic-log.json` --
   and document the `npm install` reproduction; the scaffold `node_modules` is never committed
   (spike 007).
+- **Diagnostic-driven detection reads PUBLIC diagnostic fields only.** To classify or detect a
+  situation from compiler output, key on `diagnostic.code` + the module specifier recovered from
+  `ts.flattenDiagnosticMessageText(d.messageText, '\n')` (e.g. `/Cannot find module '([^']+)'/` for
+  TS2307). No ngtsc/component-registry internals, no framework/`.storybook` coupling. A `?` in a
+  module specifier is a bundler (Vite/webpack) query -- TS/Node specifiers never contain `?` -- a
+  builder-agnostic signal (spikes 009/010). Advisories built this way are self-gating: they key on
+  the PRESENCE of the unresolved diagnostic, so they fall silent once the consumer resolves it.
+- **Reuse a prior spike's committed fixture** via a relative path (`join(HERE, '..', 'NNN-*', 'fixture')`)
+  rather than duplicating sources, when the new question is a different lens on the same inputs
+  (spike 010 reused 009's fixture).
 
 ## Tools & Libraries
 
@@ -79,3 +89,4 @@ question requires otherwise.
 | `vitest` (`bench`) | 4.1.9 | benchmarking (preferred over hand-rolled timing) |
 | `minimatch` | 10.2.5 | Nx named-input glob resolution (spike 005) |
 | `nx` CLI | 23.0.1 | `nx show projects --affected` for project-graph edge checks |
+| `vite` (`vite/client`) | 8.1.0 | ambient wildcard module decls for Vite `?query` imports (`*?raw`/`*?url`/`*?worker`/`*?inline`), the consumer-side fix (spike 009) |
