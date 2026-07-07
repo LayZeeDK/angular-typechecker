@@ -429,6 +429,18 @@ Caveats:
   component's `.html`) are attributed to the `.html` by the compiler and kept by
   mapping them back to the owning component `.ts` through the compiler's public
   `relatedInformation`; an unmappable resource is kept, never dropped.
+- **Vite/Analog Storybook import suffixes need ambient declarations.** The tool is
+  builder-agnostic -- it type-checks the tsconfig's declared surface with the Angular
+  compiler regardless of whether Storybook builds with webpack/esbuild
+  (`@storybook/angular`) or Vite (`@analogjs/storybook-angular`). But Vite-specific
+  import queries such as `import src from './x?raw'` (also `?url`, `?worker`, and
+  virtual modules) are not valid TypeScript module specifiers, so the compiler reports
+  `TS2307` on them unless your checked tsconfig provides the matching ambient
+  declarations (a `declare module '*?raw' { const src: string; export default src; }`
+  in a `.d.ts`, or `"vite/client"` in the tsconfig's `types`/`include`). This is
+  standard `tsc`/`ngc` behavior for Vite projects, not specific to angular-typechecker;
+  the tool never silently drops these, because a missing module can also be a genuine
+  error.
 - **Point at the solution `tsconfig.json`, not a leaf.** Pointing the target at a
   leaf `tsconfig.app.json` / `tsconfig.lib.json` excludes the stories the solution
   config's references reach.
