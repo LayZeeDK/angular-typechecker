@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.1.2
 milestone_name: Storybook story type-checking
-status: completed
-stopped_at: "Completed 19-03-PLAN.md (phase 19: all 3 plans executed)"
-last_updated: "2026-07-07T00:25:16.141Z"
+status: Phase 20 added (SB-09 Vite/Analog query-import guidance) -- v0.1.2 reopened for this follow-up; run /gsd-plan-phase 20
+stopped_at: Phase 20 context gathered
+last_updated: "2026-07-07T12:15:14.630Z"
 last_activity: 2026-07-07
 progress:
-  total_phases: 4
-  completed_phases: 2
+  total_phases: 5
+  completed_phases: 3
   total_plans: 15
   completed_plans: 16
-  percent: 50
+  percent: 60
 ---
 
 # Project State
@@ -119,14 +119,14 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-06T23:50:04.956Z
+Last session: 2026-07-07T12:15:14.593Z
 `/gsd-new-milestone` roadmap gap (phases 16-19 lacked the `### Phase N:` detail headings GSD resolves
 against -> `phase_found:false`; user-fixed in commit 7d68162; see the [[gsd-roadmap-needs-phase-headings]]
 memory). Then built + ran spikes 006 (G2), 007 (G3/G4 -- forced `@storybook/angular@10.4.6` in an
 isolated scratchpad scaffold via `--legacy-peer-deps`), 008 (G1/G5) -- all VALIDATED. Wrapped up:
 packaged findings into `.claude/skills/spike-findings-angular-typechecker/`, and recorded Phase 16
 complete in ROADMAP/REQUIREMENTS/STATE. Committed on `gsd/v0.1.2-storybook`.
-Stopped at: Completed 19-03-PLAN.md (phase 19: all 3 plans executed)
+Stopped at: Phase 20 context gathered
 complete. Reviewed at the 16->17 gate.
 Next step: `/gsd-plan-phase 17` (input-set-membership boundary + Layout A/B support). The
 implementation blueprint is in the spike-findings skill's
