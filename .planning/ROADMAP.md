@@ -212,7 +212,7 @@ weakening the never-a-silent-false-pass charter.
 **Blueprint:** `.claude/skills/spike-findings-angular-typechecker/references/vite-analog-query-imports.md`
 (spikes 009-010); origin `.planning/phases/19-stretch-layout-c-non-ts-story-formats-strict-mode/19-UAT.md`.
 
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 
@@ -223,7 +223,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 20-02-PLAN.md -- Signal 2 executor render: warnBundlerQueryImports (fifth advisory notice; self-gating) + render/silent tests [wave 2]
-- [ ] 20-03-PLAN.md -- Signal 1 docs: README Vite caveat leads with "types": ["vite/client"] + CoreResult API comment + curated CHANGELOG fold (no release cut) [wave 2]
+- [x] 20-03-PLAN.md -- Signal 1 docs: README Vite caveat leads with "types": ["vite/client"] + CoreResult API comment + curated CHANGELOG fold (no release cut) [wave 2]
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
