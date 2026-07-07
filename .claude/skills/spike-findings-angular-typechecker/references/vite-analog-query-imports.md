@@ -24,7 +24,7 @@ The fix a consumer applies to the CHECKED tsconfig:
 ```jsonc
 // the tsconfig angular-typechecker is pointed at (e.g. .storybook/tsconfig.json or the solution)
 {
-  "compilerOptions": { "types": ["vite/client"] }
+  "compilerOptions": { "types": ["vite/client"] },
 }
 ```
 
@@ -35,9 +35,18 @@ the full query family as wildcard ambient modules: `*?raw`, `*?url`, `*?inline`,
 Fallback when `vite` is not resolvable -- a hand ambient shim in a `.d.ts` included by the tsconfig:
 
 ```ts
-declare module '*?raw' { const src: string; export default src; }
-declare module '*?url' { const src: string; export default src; }
-declare module '*?worker' { const w: { new (): Worker }; export default w; }
+declare module '*?raw' {
+  const src: string;
+  export default src;
+}
+declare module '*?url' {
+  const src: string;
+  export default src;
+}
+declare module '*?worker' {
+  const w: { new (): Worker };
+  export default w;
+}
 // ...enumerate every suffix you use; INCOMPLETE by construction -- prefer vite/client
 ```
 
