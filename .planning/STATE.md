@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-09 -- v0.2.0 RELEASED + published to 
 Phase: Milestone v0.2.0 released
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-07 -- v0.2.0 released and published to npm (angular-typechecker@0.2.0)
+Last activity: 2026-07-10 -- Completed quick task 260710-0ch: audited, triaged, and addressed all 5 Dependabot security alerts
 
 ## Accumulated Context
 
@@ -95,6 +95,10 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 (260703-lp0 / 260703-p2x / 260703-u74 / 260703-wcg / 260704-mse / 260704-wnq / 260705-1wo). v0.1.1
 (packaging hotfix -- `packageRoot` so the tarball ships built `.js`) is published; prior versions
 (0.0.1-0.1.0) are deprecated. See [[angular-typechecker-npm-releases-ship-source]].
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260710-0ch | Audit, triage, then address Dependabot security alerts | 2026-07-10 | 0fe82a8 | Verified | [260710-0ch-audit-triage-then-address-dependabot-sec](./quick/260710-0ch-audit-triage-then-address-dependabot-sec/) |
 
 ## Deferred Items
 
