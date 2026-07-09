@@ -1,269 +1,330 @@
 # Codebase Concerns
 
-**Analysis Date:** 2026-06-30
+**Analysis Date:** 2026-07-09
 
-> **Context for the reader.** `angular-typechecker` v0.0.3 shipped and was audited
-> "passed, 16/16, zero tech debt" (`.planning/STATE.md`). This analysis confirms that:
-> there are **no** TODO/FIXME/HACK/XXX markers anywhere in `packages/`, `e2e/`, or
-> `apps/` source; the known coupling points are *deliberate, documented, and guarded*;
-> and the items most likely to be mistaken for debt are **intentionally-deferred future
-> scope**, not shortcuts. The sections below therefore lean heavily on *fragile areas*
-> (coupling that future Angular upgrades will stress) and *dependencies at risk*, and
-> are explicit about what is NOT debt. Treat this as a maintenance-risk map, not a
-> defect list.
+Scope: the published Nx plugin `angular-typechecker` (`packages/angular-typechecker/`)
+plus its e2e harness (`e2e/`). This codebase is unusually well-maintained for its age:
+there are effectively no stray `TODO`/`FIXME`/`HACK` markers in source (the only
+`ponytail:`-style marker is a deliberate one in `scoped-name-guard.spec.ts`), and most
+of the items below are DELIBERATE, DOCUMENTED trade-offs with existing mitigations, not
+latent defects. They are catalogued here so future work does not silently regress a
+load-bearing decision or re-open a resolved bug.
 
 ## Tech Debt
 
-**No source-level tech debt markers detected.**
-- A repo-wide scan (`git grep -e TODO -e FIXME -e HACK -e XXX` over `packages/`,
-  `e2e/`, `apps/`) returns **zero** matches. The known carried-forward items are
-  tracked in `.planning/STATE.md` (Blockers/Concerns) and `.planning/PROJECT.md`
-  (Out of Scope), not as in-code shortcuts.
+**CJS executor / ESM `@angular/compiler-cli` bridge is build-config-fragile:**
+- Issue: the executor ships as CommonJS but the type-check engine is ESM-only, reached
+  through the single dynamic `await import('@angular/compiler-cli')` in
+  `packages/angular-typechecker/src/core/compiler-loader.ts`. That `import()` MUST survive
+  emit as a native dynamic import. It only does so because the package is compiled under
+  `module: nodenext` (`packages/angular-typechecker/tsconfig.json`). Switching to
+  `module: commonjs` would downlevel `import()` to `require()`, which throws
+  `ERR_REQUIRE_ESM` at runtime for the ESM compiler-cli.
+- Files: `packages/angular-typechecker/tsconfig.json` (the `module`/`moduleResolution:
+  nodenext` setting), `packages/angular-typechecker/src/core/compiler-loader.ts`,
+  `packages/angular-typechecker/src/executors/typecheck/executor.ts` (GATE A artifact header).
+- Impact: a well-meaning "modernize the tsconfig" or "align with `type: commonjs`" change
+  silently breaks every consumer install; the failure only appears at runtime after
+  compile+pack, never at type-check time.
+- Fix approach / mitigation in place: GATE A asserts the EMITTED bytes (not source), and
+  the e2e specs assert `NO /ERR_REQUIRE_ESM/` on real installed tarballs (see
+  `e2e/angular-typechecker-install-e2e/src/storybook-tarball.int.spec.ts` and the other
+  `*.int.spec.ts`). Keep those assertions; never relax the `module` setting.
 
-**Dev-repo `.npmrc legacy-peer-deps=true` (carried-forward, NOT consumer-facing):**
-- Issue: `@nx/angular@23.0.1` caps its `@angular/build` / `@angular-devkit/*` /
-  `@schematics/angular` peers at `< 22.0.0`, but the locked stack is Angular 22.x.
-  The dev workspace installs the Angular-22 tree against the Nx-23 plugin only with
-  `legacy-peer-deps=true`.
-- Files: `.npmrc` (repo root). The rationale is documented inline in that file and in
-  `.planning/STATE.md:50`.
-- Impact: **dev workspace only.** Verified contained: `.npmrc` lives at the repo root
-  and is NOT in the published `files` whitelist (`packages/angular-typechecker/package.json`
-  ships only `src`, `executors.json`, `README.md`, `LICENSE`). A clean tarball install
-  on stable Angular 22.0.4 + Nx 23.0.1 needs no override. The flag does not reach
-  consumers.
-- Fix approach: drop the flag when a stable `@nx/angular` (the 23.1.x line) ships peers
-  that admit Angular 22. Re-test a fresh `npm install` without the override at that point.
+**Hand-vendored `@angular/compiler-cli` type surface:**
+- Issue: the compiler-cli barrel `index.d.ts` does not resolve under `nodenext` (its
+  re-exports are extensionless ESM paths that resolve empty), so the core consumes a
+  hand-declared STRUCTURAL shim instead of the real typings. The shim can drift from the
+  real upstream API on any Angular bump.
+- Files: `packages/angular-typechecker/src/core/compiler-cli-types.ts` (the shim, with a
+  long rationale header), `packages/angular-typechecker/src/core/compiler-cli-types.drift.ts`
+  + `packages/angular-typechecker/tsconfig.drift.json` (the build-time tripwire), and the
+  `typecheck-drift` CI target in `.github/workflows/ci.yml`.
+- Impact: if the real `api.Program` getters or the NG error-code encoding change and the
+  shim is not updated, the engine could under-gather diagnostics silently.
+- Fix approach / mitigation in place: the `tsconfig.drift.json` + `typecheck-drift` target
+  break the build when the shim drifts from the real installed typings; greppable
+  `// angular-typechecker: vendored -- <reason>` markers flag every intentional divergence.
+  Widen the shim (never re-introduce a deep relative import into the dependency tree) as
+  the engine grows.
 
-**Manual executor target wiring (intentional for this milestone, low residual cost):**
-- Issue: consumers must hand-author the `angular-typecheck` target in their
-  `project.json`; there is no `createNodesV2` inferred-target plugin and no
-  `nx add` / `ng add` schematic yet.
-- Files: documented in `README.md`; scope decision in `.planning/PROJECT.md` Out of Scope.
-- Impact: a small DX papercut for consumers, not a correctness or maintenance risk.
-- Fix approach: deferred to a future milestone (inferred targets / generators family).
-  This is scope, not debt.
+**Two look-alike detectors with OPPOSITE scan targets:**
+- Issue: in `finalize()`, `detectTemplateCheckAborted(diagnostics)` scans the PRE-filter
+  diagnostic set (a whole-program TCB abort must fire even for an out-of-project poison),
+  while `detectBundlerQueryImports(ts, reported)` scans the POST-filter kept set (it must
+  name only TS2307 the consumer actually sees). They read almost identically but a refactor
+  that "unifies" them onto one argument would break correctness in one direction or the other.
+- Files: `packages/angular-typechecker/src/core/run-typecheck.ts` (the `finalize` function,
+  around lines 683-693, with an explicit "MUST NOT unify them" comment).
+- Impact: a future simplification could either silence the TCB-abort notice for
+  out-of-project poison, or start naming node_modules `?query` imports the consumer cannot fix.
+- Fix approach: preserve the two distinct scan targets; the inline comment documents the trap.
 
 ## Known Bugs
 
-**None identified.**
-- The error-handling posture is fail-safe by construction: any non-`TypecheckInfrastructureError`
-  throw is RE-THROWN by the executor rather than swallowed
-  (`packages/angular-typechecker/src/executors/angular-typecheck/executor.ts:76-86`),
-  on the stated principle that "a type-checker that silently swallows an unknown failure
-  and reports success is worse than none." Infrastructure failures (compiler crash,
-  config-resolution crash) are detected by the synthesized `UNKNOWN_ERROR_CODE` (500)
-  at two stages and surfaced distinctly, never counted as type errors
-  (`run-typecheck.ts:167-178`, `:244-252`).
+**(RESOLVED) npm releases 0.0.1-0.1.0 shipped raw `.ts` source, not compiled `.js`:**
+- Symptoms: on a stock Nx 23 consumer, `nx add` / `nx g` / `nx typecheck` / `require()` all
+  failed because the published tarball contained zero `.js` and no `src/index.js`.
+- Root cause: `nx release publish` packed the source root instead of the built `dist`
+  (missing `packageRoot`); the build itself was correct, and the e2e tarball audit tested
+  the LOCAL dist pack, not the shipped artifact.
+- Status: RESOLVED in 0.1.1 (2026-07-04) via the `packageRoot` fix; versions 0.0.1-0.1.0
+  are deprecated on npm and marked GitHub pre-release. Current `version` is `0.2.0`
+  (`packages/angular-typechecker/package.json`), publish pending the Release-PR.
+- Residual concern: the e2e tarball-audit exercises the local dist pack. The authoritative
+  guard against a repeat is the Verdaccio `nx add` install e2e that installs the actually
+  published artifact (`e2e/angular-typechecker-install-e2e/src/global-setup.ts` builds +
+  publishes dist once, and the install specs consume it by name). Keep the install-path
+  e2e; a dist-only pack test would not have caught this class of packaging defect.
+
+**(RESOLVED) `nx add` on yarn 4 (berry) intermittently threw `AggregateError [ECONNREFUSED]`:**
+- Symptoms: yarn's resolution step succeeded against the local Verdaccio, then the fetch
+  step was refused; only yarn flaked (npm/pnpm passed on the same host/run). Observed once
+  during the Phase 18-04 wave on Windows arm64.
+- Root cause: dual-stack `localhost` family mismatch -- Verdaccio bound the single family
+  `localhost` resolved to first (IPv6 `::1`-only on the Windows host) while yarn 4's HTTP
+  layer intermittently attempted IPv4 `127.0.0.1`.
+- Status: RESOLVED 2026-07-09 by pinning the shared e2e local registry to the numeric IPv4
+  loopback end-to-end. Files touched: root `project.json` (`listenAddress: 127.0.0.1`),
+  `e2e/angular-typechecker-install-e2e/src/global-setup.ts` (the `listenAddress` +
+  `http://127.0.0.1:` SAFETY gate), and the loopback asserts in every install-e2e spec that
+  reads `verdaccioUrl`. Full record: `.planning/debug/resolved/nx-add-yarn-flake.md`.
+- Residual concern (HONEST CAVEAT from the debug session): a single green run cannot prove
+  absence of a 1-in-many flake. Confidence is mechanism-level (numeric literals remove the
+  DNS/family-selection step), not statistical; repeated Linux-CI runs remain the closing check.
 
 ## Security Considerations
 
-**Publish pipeline (tokenless OIDC) -- hardened, low risk:**
-- Posture: `.github/workflows/release.yml` publishes via npm Trusted Publisher OIDC with
-  **no `NODE_AUTH_TOKEN`** present (`:84-100`); `id-token: write` is the only elevated
-  permission and it is granted on the publish job only (`:44-47`); top-level scope is
-  `contents: read` (`:33-34`). Trust is pinned to the exact workflow filename
-  (`release.yml`) + the `npm-publish` environment, which carries a Required-Reviewer
-  manual-approval gate (`:42-43`). Every action is SHA-pinned to a 40-char commit
-  (tj-actions mitigation); `persist-credentials: false` on checkout.
-- Risk: the `npm-publish` environment approval is a **human-only gate** -- it must never
-  be auto-approved (see `MEMORY.md` "Never approve GitHub deployments"). The OIDC
-  Trusted-Publisher exact-match config (org/repo/workflow/environment) lives on npmjs.com
-  and is the single off-repo dependency; a mismatch surfaces as a 404/ENEEDAUTH at publish
-  (documented inline at `:64-100`).
-- Current mitigation: triggers on TAG PUSH only (never the untrusted-PR-code trigger that
-  was the s1ngularity vector); the publish job has a defense-in-depth `if:` re-asserting
-  the release-tag ref (`:54`).
-- Recommendations: keep the manual environment gate; keep `NODE_AUTH_TOKEN` unset; never
-  re-enable `changelog.workspaceChangelog.createRelease: "github"` (the `release.git.push:
-  false` + `createRelease: false` pairing is load-bearing -- see `AGENTS.md` LANDMINE).
+**Type-checker must never report success on its own crash (correctness-as-security):**
+- Risk: a type-checker that silently swallows an infrastructure failure and returns
+  `success: true` is worse than none -- CI and agents would gate green on a broken check.
+- Files: `packages/angular-typechecker/src/executors/typecheck/executor.ts` (the `catch`
+  re-throws EVERY error except `TypecheckInfrastructureError`, which maps to
+  `success: false`); `packages/angular-typechecker/src/core/run-typecheck.ts`
+  (`throwIfInfrastructureFailure` applied at three stages -- config parse, walk union,
+  post-compile -- plus a `result.program === undefined` defense-in-depth guard).
+- Current mitigation: robust. The infra-vs-type invariant is detected by CODE only
+  (`UNKNOWN_ERROR_CODE`/500), never by message text, so `errorCount` never counts a crash
+  as a type error and a crash never masquerades as a clean verdict.
+- Recommendation: preserve the re-throw-by-default posture; do not add a broad
+  catch-and-return-false.
 
-**`main` is PR-only with an empty bypass list -- a deliberate trade-off:**
-- Risk: the Default-branch ruleset has an EMPTY bypass list, so even the repo owner cannot
-  push directly to `main`. The cost is a **lockout** if the required `ci` check goes red or
-  stops reporting -- the merge button blocks with no bypass.
-- Files: enforced by GitHub repo settings (not in-tree); recovery procedure documented in
-  `AGENTS.md` ("Lockout recovery").
-- Current mitigation: recover by toggling the ruleset `enforcement` to `disabled`, pushing
-  the fix, then re-enabling -- preferred over a standing bypass actor (which would
-  permanently weaken the PR-only guarantee). Release TAGS are governed by a SEPARATE
-  ruleset, so tag pushes are not blocked by the empty branch bypass.
-- Recommendation: keep the empty bypass; never add a standing bypass actor to work around a
-  transient red check.
+**e2e publish SAFETY gate against reaching the real npm registry:**
+- Risk: the e2e globalSetup runs the REAL `nx release publish`; a misconfiguration could
+  publish to `registry.npmjs.org`.
+- Files: `e2e/angular-typechecker-install-e2e/src/global-setup.ts` (refuses any registry
+  URL not starting with `http://127.0.0.1:` before touching publish; strips all
+  `npm_config_*`).
+- Current mitigation: strong (explicit loopback allowlist + env scrub). Keep the gate; the
+  numeric-IP pin also happens to be the yarn-flake fix.
 
-**No secrets handled in source.** The plugin reads only tsconfig paths and emits no
-network calls; the core layer is PURE (eslint bans `console`/`process` under
-`**/src/core/**`, enforced by the fail-safe-realpath comment at `filter-diagnostics.ts:152`).
+**Supply-chain posture of the CI/release workflows is already hardened:**
+- `.github/workflows/ci.yml` and `.github/workflows/release.yml` use SHA-pinned actions,
+  top-level `contents: read`, `persist-credentials: false`, and tokenless OIDC publishing
+  with provenance. No standing `contents: write` in CI; the irreversible tag+publish stays
+  human-gated (see `AGENTS.md`). No committed secrets; `.env`-class files are not present.
+- Note only (not a defect): `.npmrc` in the dev repo carries `legacy-peer-deps=true` (dev
+  convenience for the `@nx/angular` peer cap); it does not reach consumers.
 
 ## Performance Bottlenecks
 
-**Cold-start ESM load dominates a single run (inherent, mitigated):**
-- Problem: each `runTypecheck` cold call pays the ESM module load of
-  `@angular/compiler-cli` + `typescript` plus the config parse before any compilation.
-  This is the dominant cold-start cost.
-- Files: `run-typecheck.ts:123-137` (timer started at the very top to report honest
-  wall-clock); `compiler-loader.ts:16-20` and `run-typecheck.ts:520-531` memoize the
-  loaded modules after the first call.
-- Cause: `@angular/compiler-cli` is ESM-only and must be reached via `await import()` from
-  the CommonJS executor; the whole-program type-check itself is the separable cost the tool
-  exists to isolate (this is the product's value, not a bottleneck to remove).
-- Improvement path: Nx target caching (the executor is a cacheable target) amortizes
-  re-runs; the loader memoization amortizes repeated in-process calls. A future
-  `NgtscProgram` incremental engine (deferred) would enable warm/incremental re-checks.
+**Cold whole-program compile is the dominant cost (by design):**
+- Problem: each run performs a full `performCompilation` whole-program type-check with an
+  unconditional all-diagnostics gatherer; there is no per-file incremental path.
+- Files: `packages/angular-typechecker/src/core/run-typecheck.ts`,
+  `packages/angular-typechecker/src/core/gather-diagnostics.ts`.
+- Cause: the tool's entire value is the COMPLETE whole-program check (TS + template +
+  NG8xxx), which is inherently whole-program; the ESM module load of compiler-cli +
+  typescript is the dominant cold-start cost (`durationMs` is captured from the very top of
+  `runTypecheck` to reflect it honestly).
+- Improvement path: Nx caching is the primary speed lever for consumers (the `init`
+  generator seeds a cacheable `targetDefaults`; see `README.md` caching guidance).
+  `NgtscProgram` per-file incremental checking is a deferred Future Requirement
+  (WALK-FUT-02), not current debt. The `loadCompilerCli` memoization amortizes the module
+  load across walked leaves within one process.
 
-**Per-file template loop over all source files (bounded, deduped):**
-- Problem: the HYBRID gatherer iterates every non-declaration source file calling
-  `getNgSemanticDiagnostics(fileName)` (`gather-diagnostics.ts:80-86`), which can produce
-  duplicates of the residual whole-program call.
-- Cause: the deliberate strict-superset choice (RES-01 spike GO=HYBRID) to avoid
-  under-gathering shim-attached non-template diagnostics.
-- Improvement path: none needed -- `ts.sortAndDeduplicateDiagnostics` in `finalize`
-  (`run-typecheck.ts:422`) removes the duplicates for free; the filter canonicalizer
-  memoizes per-path realpath resolution (`filter-diagnostics.ts:131-164`) so a hot run over
-  thousands of components does not re-resolve the same directory.
+**Cache-key correctness is a footgun for consumers (documented):**
+- Problem: because one target checks every leaf (including the spec leaf) in one run, the
+  cache keys on ONE key. Using the `production` named input (which excludes `*.spec.ts`)
+  instead of `default` would let a spec-only edit replay a stale PASS.
+- Files: `packages/angular-typechecker/README.md` and the root `README.md` caching section;
+  the `init` generator seeds the correct `default`-first inputs.
+- Mitigation: documented prominently and seeded correctly by the generator; the risk is
+  only if a consumer hand-writes the wrong inputs.
 
 ## Fragile Areas
 
-**Vendored `@angular/compiler-cli` structural shim (the single highest-coupling point):**
-- Files: `packages/angular-typechecker/src/core/compiler-cli-types.ts` (the hand-declared
-  structural surface), `packages/angular-typechecker/src/core/diagnostic-codes.ts`
-  (the NG-code encoding + the `IMPORT_GENERATION_FAILURE = 3004` literal).
-- Why fragile: the production `nodenext` build resolves `@angular/compiler-cli`'s published
-  barrel EMPTY (its `index.d.ts` re-exports with extensionless relative paths that strict
-  nodenext ESM resolution refuses), so the engine cannot import the real typings. The shim
-  therefore **hand-mirrors** a deliberate subset of the real `api.Program` (the 6 diagnostic
-  getters), the `EmitFlags` enum (`DTS=1..All=31`, NO `None`), `UNKNOWN_ERROR_CODE = 500`,
-  and `ParsedConfiguration` / `PerformCompilationResult` shapes -- all pinned to
-  `@angular/compiler-cli@22.0.4`. An Angular upgrade that removes, renames,
-  signature-changes, or renumbers any of these would break the engine at runtime if it
-  passed the build silently.
-- Safe modification (the guardrails that make this *managed* fragility, not debt):
-  1. **Build-time drift tripwire** -- `compiler-cli-types.drift.ts` imports the REAL named
-     types from `@angular/compiler-cli` and asserts `real -> shim` assignability per getter,
-     plus value-level pins on `EmitFlags` members and `UNKNOWN_ERROR_CODE`. It compiles ONLY
-     under `tsconfig.drift.json` (classic node10 resolution) via the `typecheck-drift` Nx
-     target (`project.json:45-61`), is EXCLUDED from `tsconfig.lib.json`
-     (`tsconfig.lib.json:18`) so it never ships, and is NOT in the `files` whitelist. CI
-     runs it in every matrix cell (`ci.yml:114`). A removed/renamed/return-changed getter
-     fails the build at its exact tuple slot.
-  2. **Call-site arity probes** in the same file (`compiler-cli-types.drift.ts:108-140`)
-     catch the silent `optional -> required` parameter change that assignability alone
-     misses (method-param bivariance).
-  3. **Runtime getter-set spec** (`compiler-cli-types.runtime.spec.ts`) surfaces a
-     newly-ADDED upstream getter out-of-band (the shim is a deliberate subset, so additions
-     are intentionally NOT a build failure).
-- Test coverage: strong -- drift assertions + runtime getter-set spec + the integration
-  tier (`*.integration.spec.ts`) exercise the real compiler. The fallow config declares the
-  drift file an entry point and pins the `EmitFlags` / `UNKNOWN_ERROR_CODE` exports so they
-  are not flagged unused (`.fallowrc.jsonc:9-21`, `:34-43`).
-- **When you bump Angular: run `nx run angular-typechecker:typecheck-drift` first.** A red
-  drift target is the designed signal to widen the shim. Do NOT remove the
-  `getNgStructuralDiagnostics` call (`gather-diagnostics.ts:74`) or the retained getter
-  without retiring its drift/runtime gates -- it returns `[]` at 22.0.4 but is kept so a
-  future Angular that reactivates it cannot silently under-gather.
+**e2e tarball is shared across three projects -- cross-project runs MUST be serialized:**
+- Files: `.github/workflows/ci.yml` (the `e2e` job runs `nx run-many -t test -p
+  angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e
+  --parallel=1`); `e2e/angular-typechecker-install-e2e/vitest.config.mts`
+  (`singleFork` + `fileParallelism: false` + `sequence.concurrent: false`).
+- Why fragile: all three e2e projects `npm pack`/consume the SAME dist tarball
+  (`dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz`) and `rmSync` it on
+  teardown. Vitest serializes specs WITHIN a project, but `nx run-many` defaults to
+  parallel, so without `--parallel=1` a sibling's teardown deletes the tarball mid-install
+  (ENOENT). pnpm 11's supply-chain verification widened the window so the latent race trips
+  deterministically. This flake only surfaced under CI parallel scheduling, not locally.
+- Safe modification: never add a fourth e2e project or drop `--parallel=1` without a
+  per-project isolated tarball; keep new tarball-consuming specs INSIDE
+  `angular-typechecker-install-e2e` (inherits the serialized harness). The `-p` list line
+  in ci.yml is also parsed by the GUARD-01 set-equality self-audit -- keep it on one line.
 
-**`EmitFlags: 0` cast and the emit-neutralizing override:**
-- Files: `run-typecheck.ts:212-239`.
-- Why fragile: the engine passes the literal `0` as `emitFlags` (the emit-neutralizing
-  value) which is NOT a declared `EmitFlags` member, so the call site uses an explicit
-  `0 as EmitFlags` cast (a bare `: EmitFlags = 0` errors TS2322 at tsc 6.0.3). The override
-  block (`noEmit`, `composite: false`, `declaration: false`, etc.) is verbatim from
-  `02-CONTEXT.md` and every key is load-bearing (`emitFlags: 0` AND `noEmit: true` are BOTH
-  required -- one suppresses i18n emit, the other the clean fall-through to `ts.Program.emit`).
-- Safe modification: do not "simplify" the override or drop the cast; both are covered by
-  the integration specs (`no-emit-override.integration.spec.ts`, `suppress-output-path.integration.spec.ts`).
+**e2e job is coupled to Node 24 for corepack:**
+- Files: `.github/workflows/ci.yml` (the `e2e` job pins `node-version: 24` and runs
+  `corepack enable` to put the yarn 4 shim on PATH for `nx-add-yarn.int.spec.ts`).
+- Why fragile: corepack ships through Node 24 but is REMOVED in Node 25+. Bumping the e2e
+  job's Node to >=25 will break `corepack enable` with no obvious error.
+- Safe modification: if the e2e Node is bumped past 24, provision yarn via a pinned setup
+  step (mirroring `pnpm/action-setup`) or gate the corepack step on the Node major. The
+  coupling is documented inline in the workflow.
 
-**TCB-generation Fatal detection by exact code (NG3004):**
-- Files: `diagnostic-codes.ts:81-94` (`IMPORT_GENERATION_FAILURE_CODE = 3004`,
-  `TCB_GENERATION_FATAL_DIAGNOSTIC_CODE = NG(3004) = -993004`); detection in
-  `run-typecheck.ts:474-489`; notice in `executor.ts:52-63`.
-- Why fragile: this couples to a single Angular-internal behavior -- that NG3004 is the ONLY
-  `FatalDiagnosticError` thrown from the Type-Check-Block path at v22.0.4, and that it aborts
-  shim generation for ALL files. If a future Angular changes which Fatal code aborts TCB
-  priming, the loud "template check incomplete" notice would mis-fire or miss.
-- Safe modification: detection is code-only (never `source`/message-text matching, the same
-  discipline as the infra-500 scans) and scans the PRE-filter set so an out-of-project Fatal
-  still fires the notice. The behavior is pinned by `infra-failure.spec.ts` and
-  `run-typecheck.spec.ts`; re-verify the "only NG3004 aborts TCB" assumption on any Angular
-  bump (it is the same limit `@angular/build` has today).
+**Boundary-filter base path can silently disable the filter if left empty:**
+- Files: `packages/angular-typechecker/src/core/run-typecheck.ts` (`resolveFilterBasePath`).
+- Why fragile: an empty `basePath` makes the containment check treat `'' + '/'` as `/`,
+  matching every absolute path on POSIX and silently disabling the project-boundary filter.
+- Mitigation in place: `resolveFilterBasePath` explicitly guards `undefined` AND `''`
+  (a bare `??` would miss `''`) and falls back to the tsconfig directory. Keep both checks.
 
-**`.ngtypecheck.ts` shim-name string surgery:**
-- Files: `run-typecheck.ts:510-518` (`normalizeShimFileName`).
-- Why fragile: maps a generated shim path back to its source by stripping the
-  `.ngtypecheck` infix via regex, mirroring the compiler's
-  `fileName.replace(/\.tsx?$/, ".ngtypecheck.ts")`. Documented LIMITATION (WR-01): a
-  `.tsx`-sourced component collapses to the same shim name, so the notice would name it
-  `<name>.ts`. This affects ONLY the advisory notice's path string -- never the verdict,
-  counts, or the diagnostic's own codeframe.
-- Safe modification: low stakes (`.tsx` Angular sources are vanishingly rare). If `.tsx`
-  support is ever in scope, resolve the source via the program's source-file map instead of
-  string surgery.
+**CI path-skip gate depends on a load-bearing quantifier:**
+- Files: `.github/workflows/ci.yml` (`changes` job, `predicate-quantifier: 'every'`).
+- Why fragile: with the default `some` quantifier, all-negation globs would wrongly mark a
+  `.planning/*.md`-only PR as a code change (it is not under `docs/`, so `!docs/**` matches),
+  so the heavy matrix would never skip. A prior CI skip-gate bug (Phase 7) surfaced only on
+  a live run because Docker was unavailable locally, so `act` static checks could not catch it.
+- Safe modification: preserve `predicate-quantifier: every`; validate path-gating changes
+  against a real PR, not just `act -n`.
+
+**`.tsx` component source is mis-named in the TCB-abort notice (advisory-only):**
+- Files: `packages/angular-typechecker/src/core/run-typecheck.ts` (`normalizeShimFileName`).
+- Why fragile: the compiler collapses both `.ts` and `.tsx` sources to the same
+  `<name>.ngtypecheck.ts` shim, so a `.tsx`-sourced component is named as `<name>.ts` in the
+  advisory notice. This affects only the notice's path string, never the verdict, counts, or
+  the diagnostic codeframe, and `.tsx` Angular components are vanishingly rare.
+- Fix approach if ever needed: resolve the source via the program's source-file map instead
+  of string surgery on the shim name.
 
 ## Scaling Limits
 
-**Not applicable as a service.** This is a per-project CLI/executor invoked by Nx or CI, not
-a long-running process. The relevant "scale" axis is project size (number of source files);
-the per-file gather loop and the memoized realpath canonicalizer are linear in file count
-with no quadratic hot paths identified.
+Not a meaningful axis for this tool: it is a per-project static type-checker, not a
+long-running service. The only "capacity" concern is per-project compile time (see
+Performance), which Nx caching and `nx affected -t typecheck` address for large workspaces.
 
 ## Dependencies at Risk
 
-**`@angular/compiler-cli` (peer, ESM-only, pinned to 22.x behavior):**
-- Risk: the entire engine is built on internal-adjacent surfaces of this package (the
-  diagnostic getters on `api.Program`, `EmitFlags`, `UNKNOWN_ERROR_CODE`,
-  `defaultGatherDiagnostics`, the NG3004 TCB-abort behavior). The published peer range is
-  `^22.0.0`. A minor/major Angular release can shift any of these.
-- Impact: silent under-gathering or a mis-fired suppression notice if a shape changes
-  unguarded.
-- Migration plan: the build-time drift tripwire + runtime getter-set spec are the early-
-  warning system (see Fragile Areas). Widen the peer range only after the drift target is
-  green against the new Angular and the integration tier passes. **Verify only against
-  STABLE Angular** (22.0.4), never `next`/`rc` (`MEMORY.md` "Stable Angular only for
-  verification").
+**`@nx/devkit` pinned exact `23.0.1`; declared Nx-23-only intent is NOT enforced at install:**
+- Files: `packages/angular-typechecker/package.json` (`dependencies["@nx/devkit"]:
+  "23.0.1"`; no `nx` declared).
+- Risk: the consumer's `nx` is constrained transitively by devkit's own peer
+  (`>= 22 <= 24 || ^23.0.0-0`), which is WIDER than the project's Nx-23-only intent. You
+  cannot narrow it via devkit's peer; the "Nx 23.x" support statement lives only in docs.
+- Migration plan: bump devkit in lockstep with the target Nx version; keep the README
+  requirements table accurate as the source of truth for the supported Nx range.
 
-**`@nx/devkit` (pinned `dependency` `23.0.1`):**
-- Risk: pinned exact, and its own `nx` peer (`>= 22 <= 24 || ^23.0.0-0`) is WIDER than the
-  Nx-23-only intent. The plugin cannot prevent installs on Nx 22/24 via the peer.
-- Impact: a consumer on Nx 22/24 could install without an npm peer warning; behavior is only
-  validated on Nx 23.
-- Migration plan: documented "Nx 23 only" expectation; the `engines.node` field warns on
-  unsupported Node. Re-pin in lockstep when bumping Nx.
+**`typescript` / `@angular/compiler-cli` peers are stable-Angular-22-only:**
+- Files: `packages/angular-typechecker/package.json` (`peerDependencies:
+  @angular/compiler-cli "^22.0.0"`, `typescript ">=6.0.0 <6.1.0"`).
+- Risk: `^22.0.0` excludes Angular 22 pre-releases (`-next` / `-rc`) by semver rules, and
+  the TS window is deliberately narrow (Angular 22 supports only TS 6.0.x). A consumer on a
+  22.x pre-release needs `--legacy-peer-deps`. Verification is intentionally done only
+  against stable Angular 22.0.4, never `next`/`rc`.
+- Migration plan: widen the range only after verifying against the new stable; widening is
+  non-breaking under 0.x semver. Documented in `README.md` (Requirements note).
 
-**`typescript` (peer `>=6.0.0 <6.1.0`):**
-- Risk: the `0 as EmitFlags` cast and several option-override behaviors are pinned to tsc
-  6.0.x semantics (e.g. the TS2322 behavior on a bare enum assignment).
-- Impact: a TS 6.1+/7 bump could change option shapes or enum assignability.
-- Migration plan: deliberately narrow range (TS 7 is out of scope per PROJECT.md); widen
-  only with a re-run of the full integration tier.
+**`@storybook/angular@10.4.6` peer cap forces install-time overrides (external, not ours):**
+- Risk: `@storybook/angular@10.4.6` still caps its Angular peer at `>=18 <22` (TS `^4.9 ||
+  ^5`), so installing it on Angular 22 / TS 6 needs `--legacy-peer-deps` (or `--force`); on
+  pnpm, `nx add` can then hit `ERR_PNPM_IGNORED_BUILDS`. That Storybook version also emits
+  48 TS 6 errors from its own bundled `.d.ts` (suppressed as node_modules; never affect the
+  consumer's result).
+- Files: `packages/angular-typechecker/README.md` (Storybook > Things to know);
+  `e2e/angular-typechecker-install-e2e/src/storybook-tarball.int.spec.ts` (installs
+  angular-typechecker BEFORE Storybook so the override-free `nx add` peer check runs against
+  a Storybook-free tree).
+- Note: this is a Storybook install constraint, NOT an angular-typechecker one -- the tool
+  applies no version gate. Documented, never gated.
+
+**`nx add` on pnpm workspaces hits `ERR_PNPM_IGNORED_BUILDS` (a pnpm<->nx-add interaction):**
+- Risk: `nx add` runs a fixed child `pnpm add -Dw angular-typechecker@latest` and forwards
+  NO flags. pnpm 11's `strictDepBuilds` (default true) makes any `pnpm add`/`pnpm install`
+  exit non-zero while the workspace carries an unapproved build script (here `nx` itself has
+  a postinstall). nx add treats that as an install failure and aborts before `init`.
+  angular-typechecker ships ZERO install/build scripts of its own.
+- Files: `e2e/angular-typechecker-install-e2e/src/nx-add-pnpm.int.spec.ts` (documents +
+  exercises both workarounds); `README.md` (pnpm install note). Memory:
+  `nx-add-fails-on-pnpm-workspaces`.
+- Workarounds (encoded in the e2e, deliberately NOT surfaced as a README caveat since it is a
+  PM issue): (A) approve the build via `allowBuilds: { nx: true }` in `pnpm-workspace.yaml`
+  (what `pnpm approve-builds` writes on pnpm 11); or (B) skip `nx add` -- `pnpm add -Dw
+  angular-typechecker@latest --ignore-scripts` then `nx g angular-typechecker:init` (the flag
+  only applies to a DIRECT install, not through `nx add`). pnpm 11 removed
+  `onlyBuiltDependencies` in favor of `allowBuilds`.
+
+**`fallow` GSD structural pre-pass is a silent no-op on fallow 2.x (CLI drift):**
+- Risk: the GSD `code_quality.fallow` integration uses an old CLI contract; on fallow 2.x it
+  is a silent no-op.
+- Files: `.planning/config.json` (`code_quality.fallow.enabled: false` -- intentionally off
+  for the GSD pre-pass); the working gate is wired directly in `.github/workflows/ci.yml`
+  (the `fallow` job runs `npx fallow audit --format human --base origin/main`, new-only,
+  `contents: read`).
+- Mitigation: fallow is gated in CI via the manually-verified 2.x invocation, not the GSD
+  pre-pass. Do not "enable" the GSD pre-pass expecting it to do anything.
+
+## Missing Critical Features
+
+All of the following are DELIBERATE deferrals recorded as Future Requirements in
+`.planning/STATE.md` (Deferred Items) and `.planning/RETROSPECTIVE.md`, not accidental gaps.
+They are listed so a consumer request maps to a known decision.
+
+- **Machine-readable reporters (JSON / SARIF):** non-goal in v0.x. The only output is the
+  Angular compiler's human-readable `formatDiagnostics` written to raw stdout
+  (`packages/angular-typechecker/src/executors/typecheck/executor.ts` writes
+  `process.stdout.write(report)`; `render-report.ts`). Blocks: no structured CI ingestion
+  beyond a `tsc`-style problem matcher.
+- **Standalone CLI binary:** deferred (would own the literal OS exit code `2`). Today the
+  only entry point is the Nx executor; `package.json` declares no `bin`.
+- **Faithful per-file template recovery after a TCB-generation Fatal (NG3004):** deferred
+  (REP-RES-02b; needs `NgtscProgram`). Currently a single NG3004 aborts whole-program
+  template-check-block generation, SUPPRESSING surviving files' template/NG8xxx diagnostics.
+  This is handled honestly (a loud `warnTemplateCheckAborted` notice + a non-clean verdict in
+  `executor.ts` / `run-typecheck.ts`), never silently, but the coverage gap is real until the
+  offending NG3004 is fixed.
+- **`.mdx` / `.tsx` type-checking:** `.mdx` is never type-checked; a `.tsx` is checked only
+  when `compilerOptions.jsx` is set. Surfaced as a verdict-neutral advisory
+  (`notTypeCheckedDeclaredFiles`, `warnNotTypeChecked`), deferred as SB-08.
+- **`NgtscProgram` per-file incremental + `createNodesV2` per-leaf targets:** deferred
+  additive engine work (WALK-FUT-01/02).
 
 ## Test Coverage Gaps
 
-**No material gaps identified in the shipped scope.** Coverage is dense for a package this
-size: 25 spec files (unit + integration) against 14 source files, including dedicated
-drift/runtime-pin specs (`compiler-cli-types.runtime.spec.ts`), fault-isolation integration
-tests (`fault-isolation.integration.spec.ts`), gate differentials
-(`gate-a-static.spec.ts`, `gate-b.spec.ts`), schema parity
-(`schema-parity.spec.ts`), and package-manifest assertions (`package-manifest.spec.ts`).
-Three rounds of PR review hardened the test set in v0.0.3 (`.planning/STATE.md` Quick Tasks).
+**Heavy tarball-install e2e runs on Linux only:**
+- What's not tested: the `nx add` / tarball-install path across OSes; the e2e gate in
+  `.github/workflows/ci.yml` runs only on `ubuntu-latest` (RD-03), while the unit/integration
+  matrix covers Windows + macOS.
+- Risk: an OS-specific packaging/install regression (path handling, symlink/junction, corepack
+  shim) on Windows/macOS would not be caught by the install-path e2e. Unit + integration
+  coverage does span the OS matrix, so pure engine regressions are covered.
+- Priority: Medium.
 
-The genuinely uncovered behaviors are all **intentionally-deferred future scope** (see below),
-not gaps in what shipped.
+**Yarn install-path flake is not statistically closed:**
+- What's not tested: repeated runs proving the yarn 4 ECONNREFUSED family-race is gone.
+- Files: `e2e/angular-typechecker-install-e2e/src/nx-add-yarn.int.spec.ts`;
+  `.planning/debug/resolved/nx-add-yarn-flake.md`.
+- Risk: the fix is mechanism-level correct (numeric IPv4 pin removes DNS/family selection),
+  but a 1-in-many flake cannot be disproven by a single green run; repeated Linux-CI runs are
+  the closing check.
+- Priority: Low (mechanism-level confidence is high).
 
-## Intentionally-Deferred Future Scope (NOT debt)
-
-> These are tracked as Future Requirements in `.planning/PROJECT.md` (Out of Scope) and
-> `.planning/STATE.md` (Deferred Items). They are **scope decisions, not shortcuts** --
-> listed here so a future planner does not mistake them for tech debt to "fix."
-
-| Item | What is deferred | Why it is scope, not debt |
-|------|------------------|---------------------------|
-| **REP-RES-02b** | Faithful per-file TEMPLATE/extended (NG8xxx) diagnostic recovery AFTER a TCB-generation Fatal (NG3004). Today survivors' template diagnostics are suppressed and the loud notice fires. | Needs the `NgtscProgram` / `OptimizeFor.SingleFile` incremental engine. This is the SAME limitation `@angular/build` has today; v0.0.3 ships detection + a loud notice instead of silent incompleteness. Deferred to the `NgtscProgram` milestone. |
-| **OBS-01** | A `totalFilesCount` field on `CoreResult` (`@nx/js` parity). | Deferred pending charter-fit; additive observability, no correctness impact. |
-| **Standalone CLI surface** | A `bin` entry that owns the literal OS exit code `2` (consuming the pure `toExitCode` policy already present in `exit-codes.ts`). | The Nx executor maps to Nx's `{ success }` contract (0/1); literal exit `2` belongs to the deferred CLI. PROJECT.md Out of Scope. |
-| **JSON / SARIF reporters** | Machine-readable output formats. Default output is `@angular/compiler-cli`'s `formatDiagnostics` (a `tsc` superset). | Deferred to a reporters milestone; the SARIF CI path also needs `security-events: write`, which contradicts the current `contents: read` CI posture (`ci.yml:146-150`). |
-| **Inferred targets / generators** | `createNodesV2` auto-wiring, `nx add` / `ng add` schematics, `migrations.json`. | v0.0.1/v0.0.3 ship manual target wiring deliberately (smallest valuable slice). |
-| **INF / GEN / SUR / REP / SUP families** | Broader feature families carried from v0.0.1. | Roadmap scope for later milestones. |
+**`act` static CI checks cannot substitute for a live run when Docker is unavailable:**
+- What's not tested locally: changes-dependent CI logic (the path-skip gate) -- `act -n`
+  cannot schedule it without Docker, which is unavailable on the dev box. A real skip-gate bug
+  shipped once (Phase 7) and surfaced only on a live PR run.
+- Files: `.github/workflows/ci.yml` (`act-compat`, `lint-workflows` jobs are parseability /
+  static checks, not execution).
+- Risk: path-aware or condition-gated workflow changes can pass static validation yet behave
+  wrong at runtime.
+- Priority: Medium -- gate path-aware CI logic changes on a real PR run, not just static checks.
 
 ---
 
-*Concerns audit: 2026-06-30*
+*Concerns audit: 2026-07-09*

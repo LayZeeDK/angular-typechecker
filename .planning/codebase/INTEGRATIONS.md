@@ -1,86 +1,89 @@
 # External Integrations
 
-**Analysis Date:** 2026-06-30
+**Analysis Date:** 2026-07-09
 
-**Scope note (read first):** `angular-typechecker` is a build-tool library - an
-Nx executor that statically type-checks Angular projects. It has **no runtime
-external integrations**: no databases, no HTTP/REST APIs, no authentication
-providers, no third-party SDKs, no caching services, no monitoring backends,
-and no incoming or outgoing webhooks. It reads tsconfig + source files from the
-local filesystem and runs the Angular compiler in-process. The only "integration
-boundaries" that exist are: (1) the Nx executor contract, (2) the
-dynamically-imported ESM `@angular/compiler-cli` engine, (3) npm publish via
-GitHub Actions OIDC with provenance, and (4) the GitHub Actions CI pipeline.
-This document records those accurately and does not invent integrations that do
-not exist.
+angular-typechecker is a build-time developer tool, not a networked service. It
+has NO application-level external services, databases, or auth providers. Its
+integrations are all toolchain and distribution concerns: the Angular compiler
+it drives in-process, the npm registry it publishes to, GitHub Actions CI/CD,
+and a local Verdaccio registry used only for e2e install verification.
 
 ## APIs & External Services
 
-**Build-tool contracts (in-process, no network):**
-- **Nx executor contract** - The package registers an executor via `executors.json` (`packages/angular-typechecker/executors.json`). Nx `require()`s the compiled `executor.js`; the default export is `async (options, context: ExecutorContext) => Promise<{ success: boolean }>` (`packages/angular-typechecker/src/executors/angular-typecheck/executor.ts`). Options are validated against `schema.json` (`cli: "nx"`).
-  - SDK/Client: `@nx/devkit` `23.0.1` (pinned `dependency`) for `ExecutorContext` + `logger`.
-  - Auth: none.
-- **`@angular/compiler-cli` (the type-check engine)** - The single runtime value-import of the compiler, loaded lazily and memoized via dynamic `await import('@angular/compiler-cli')` in `packages/angular-typechecker/src/core/compiler-loader.ts` (ESM-only package, reached from the CommonJS executor). The engine calls `readConfiguration` and `performCompilation` (`packages/angular-typechecker/src/core/run-typecheck.ts`).
-  - SDK/Client: `@angular/compiler-cli` `^22.0.0` (runtime `peerDependency`, supplied by the consumer).
-  - Auth: none.
-- **`typescript`** - Loaded dynamically alongside the compiler (`loadTypescript()` in `run-typecheck.ts`) for `ts.sortAndDeduplicateDiagnostics`, `ts.flattenDiagnosticMessageText`, `ts.sys.realpath`, diagnostic category counting.
-  - Auth: none. Runtime `peerDependency` `>=6.0.0 <6.1.0`.
+**In-process compiler engine (the core integration):**
+- `@angular/compiler-cli` - the type-check engine. Loaded at runtime via dynamic ESM `import('@angular/compiler-cli')` from CommonJS in `packages/angular-typechecker/src/core/compiler-loader.ts` (memoized). This is the single value-import of the compiler in the whole package; the executor calls `performCompilation` and gathers the full diagnostic set. Declared as a `peerDependency` - the consumer's installed version is used.
+- `typescript` - loaded the same way via dynamic `import('typescript')` in `packages/angular-typechecker/src/core/load-typescript.ts` (memoized, `default ?? loaded`). Also a `peerDependency`.
 
-There are no network API calls anywhere in the plugin source.
+Neither is a network API - they are in-process libraries reached through the
+CJS to ESM dynamic-import bridge.
 
 ## Data Storage
 
 **Databases:**
-- None.
+- None. This is a stateless build-time tool.
 
 **File Storage:**
-- Local filesystem only. The executor reads a tsconfig (resolved relative to the workspace root, see `normalize-options.ts`) and the project's source files; it emits nothing (no-emit type-check). Report output is written to raw `process.stdout` (`executor.ts`), never to a file.
+- Local filesystem only. Reads tsconfig files and the consumer's TypeScript program; writes the type-check report to raw `process.stdout` (`packages/angular-typechecker/src/executors/typecheck/executor.ts`). No files are emitted (`noEmit`).
 
 **Caching:**
-- No external cache service. Result caching is provided by **Nx's local/remote task cache**: the `angular-typecheck` target is declared `cache: true` with explicit `inputs` (incl. `externalDependencies: ["typescript", "@angular/compiler-cli"]`) and empty `outputs` in `nx.json` `targetDefaults`. Vitest/build/lint targets are likewise Nx-cached. This is Nx infrastructure, not a third-party integration.
-- Local tooling caches (gitignored, not integrations): `.angular/cache/`, `.nx/`, `.fallow/cache/`, `node_modules/.vite/`.
+- Nx task cache. The `angular-typechecker:typecheck` target is `cache: true` with inputs pinned in `nx.json` (tsconfig globs, `package.json`, `tsconfig.base.json`, transitive `.d.ts`/`.tsbuildinfo` dependent outputs, and `externalDependencies: [typescript, @angular/compiler-cli]`). No external cache service.
 
 ## Authentication & Identity
 
-**Auth Provider:**
-- None in the product. The library performs no authentication and stores no credentials.
-- The ONLY auth in the repository is in CI publish: **GitHub Actions OIDC** mints a short-lived identity that the npm registry validates as a Trusted Publisher (tokenless). See CI/CD below.
+**Application auth:**
+- None. The tool has no users, sessions, or identity system.
+
+**Publish auth (npm):**
+- Tokenless OIDC Trusted Publisher. `.github/workflows/release.yml` publishes with `id-token: write` and no `NODE_AUTH_TOKEN` set (an empty token would break OIDC). `NPM_CONFIG_PROVENANCE: true` attaches provenance. The npm Trusted Publisher is pinned to repo `LayZeeDK/angular-typechecker`, workflow filename `release.yml`, and environment `npm-publish`.
+- `registry-url: https://registry.npmjs.org/` is set on `actions/setup-node` (required for npm to DETECT the OIDC trusted-publishing environment).
+- The seed publish (`0.0.1`) used a one-time granular token; every subsequent release is OIDC-only.
+
+**Verdaccio auth (e2e only):**
+- `.verdaccio/config.yml` configures htpasswd auth so the e2e `ci-user` sign-up can mint a real publish token against the local registry. Local-only; no real credentials.
 
 ## Monitoring & Observability
 
 **Error Tracking:**
-- None. No Sentry/Datadog/etc. Errors surface through Nx's `logger` (`@nx/devkit`) and process exit codes.
-  - Infrastructure failures (the Angular compiler failed to RUN, code-500 `UNKNOWN_ERROR_CODE`) are caught and reported via `logger.error` -> `{ success: false }` (`executor.ts`, `run-typecheck.ts`'s `TypecheckInfrastructureError`).
-  - A TCB-generation Fatal (NG3004) that suppressed template diagnostics emits a loud `logger.warn` (`executor.ts`).
+- None (build-time tool).
 
 **Logs:**
-- The diagnostic report is written to raw `process.stdout` (deliberately NOT `logger.info`, to keep byte-deterministic codeframes and GitHub problem-matcher `file:line:col` parsing intact - `executor.ts` D-04). Meta/warning messages use `@nx/devkit` `logger`.
+- `@nx/devkit` `logger` for advisory notices (warn/info/error) emitted by the executor adapter; the type-check report itself is written to raw stdout so GitHub problem-matcher `file:line:col` parsing stays intact. Detection lives in the pure `core/`; only the executor adapter touches `logger` and stdout.
 
 ## CI/CD & Deployment
 
 **Hosting / distribution:**
-- Published to the **public npm registry** as `angular-typechecker` (`registry.npmjs.org`). `publishConfig`: `{ provenance: true, access: "public" }`.
-- Source hosted on **GitHub**: `LayZeeDK/angular-typechecker` (`repository.url` in `packages/angular-typechecker/package.json`, `directory: packages/angular-typechecker`).
+- Public npm registry (`registry.npmjs.org`). The package is published (`nx release publish`) from `dist/packages/angular-typechecker/`. Release tag pattern `angular-typechecker@{version}` (`nx.json` `release.releaseTag.pattern`).
+- Source + issues + homepage on GitHub (`github.com/LayZeeDK/angular-typechecker`), declared in `packages/angular-typechecker/package.json` (`repository.url`, `bugs.url`, `homepage`).
 
 **CI Pipeline (GitHub Actions):**
-- `.github/workflows/ci.yml` (`ci`) - cross-OS / multi-Node test + e2e + quality gate. Jobs: `changes` (path-filter via `dorny/paths-filter`), `test` (6-cell matrix: ubuntu Node 22/24/26, windows 24/26, macos 24), `e2e` (Linux Node 24, tarball-install + cache + matrix e2e projects, pnpm `11.9.0`), `fallow` (dead-code/complexity audit, new-only gate), `act-compat` (`act` `v0.2.89` validate + dry-run), `lint-workflows` (`actionlint` `1.7.7`), and the aggregate `ci` gate (the required status check). Triggers: `pull_request` + push to `main`. Top-level `permissions: contents: read`. All actions are 40-char SHA-pinned.
-- `.github/workflows/release.yml` (`release`) - hardened npm publish. Triggers on tag push `angular-typechecker@*` (+ `workflow_dispatch`). Job `publish` uses `environment: npm-publish` (manual-approval gate with a Required Reviewer), `permissions: id-token: write` only. Publishes via `npx nx release publish` with `NPM_CONFIG_PROVENANCE: true` and **no auth token** (tokenless OIDC; the npm Trusted Publisher is pinned to repo + workflow filename `release.yml` + environment `npm-publish`). `registry-url: https://registry.npmjs.org/` is required for npm to detect the OIDC trusted-publishing environment.
-- `.github/dependabot.yml` - weekly `github-actions` ecosystem updates (keeps the SHA-pinned action references fresh).
-- `.actrc` - maps `act` runner images to `catthehacker/ubuntu:act-24.04` for local workflow dry-runs.
+- `.github/workflows/ci.yml` (`ci`) - the required merge gate. Jobs: `changes` (path-filter via `dorny/paths-filter`), `test` (6-cell OS x Node matrix: ubuntu 22/24/26, windows 24/26, macos 24), `e2e` (Linux/Node 24 tarball-install gate, serialized `--parallel=1`), `fallow` (code-quality audit, new-only), `format-lint` (Prettier + ESLint, uses `nrwl/nx-set-shas`), `act-compat`, `lint-workflows` (actionlint), `scoped-name-guard`, and the aggregate `ci` gate.
+- `.github/workflows/release.yml` (`release`) - triggers on `angular-typechecker@*` tag push (+ manual dispatch); publishes via OIDC behind the `npm-publish` environment (Required Reviewer manual gate).
+- CodeQL analysis (`Analyze (actions)`, `Analyze (javascript-typescript)`) - additional required status checks (referenced in `AGENTS.md`; default-branch ruleset). Managed by GitHub default setup (no in-repo workflow file).
+- All action refs are 40-char SHA-pinned; `persist-credentials: false` on every checkout; top-level `contents: read`.
 
-**Release mechanics:**
-- `nx release` with `version.conventionalCommits: true` and `releaseTag.pattern: angular-typechecker@{version}` (`nx.json`). `release.git` is `{ commit: true, tag: false, push: false }` and `changelog.workspaceChangelog.createRelease: false` - the local cut creates NO tag and pushes nothing; the release goes through a Release PR, and the tag is created by hand on the merge commit (full procedure documented in `AGENTS.md`).
+**Dependency automation:**
+- Dependabot (`.github/dependabot.yml`) - `github-actions` ecosystem, weekly. Keeps the SHA-pinned action refs (and their `# vN` comments) fresh.
+
+**Branch protection:**
+- `main` is PR-only via an active "Default branch" ruleset with an empty bypass list (even the owner cannot push directly). Release tags are governed by a separate "Release tag" ruleset. (See `AGENTS.md`.)
+
+## Local Registry (e2e install verification)
+
+- Verdaccio `6.7.4` - launched via the `local-registry` target (`@nx/js:verdaccio`, `project.json`) bound to `127.0.0.1:4873`. Config `.verdaccio/config.yml`.
+- The `angular-typechecker` package is served ONLY from local storage (no proxy) so the e2e round-trip exercises the freshly built dist, never the live npmjs copy; everything else proxies `https://registry.npmjs.org/`.
+- e2e projects (`e2e/angular-typechecker-install-e2e`, `-cache-e2e`, `-matrix-e2e`) pack the local dist tarball and install it via npm / pnpm / yarn into fixture consumer workspaces. All three share the same tarball path, so they run serialized (`--parallel=1`).
 
 ## Environment Configuration
 
 **Required env vars:**
-- Product: none.
-- CI test/e2e jobs: `NX_DAEMON: false`.
-- CI publish job: `NPM_CONFIG_PROVENANCE: true`; OIDC `id-token: write` permission; the npm auth-token env var is deliberately left UNSET (an empty value would break OIDC).
-- CI fallow job: `FALLOW_AUDIT_BASE: origin/main` (pins the new-only audit base).
+- `NX_DAEMON: false` - set in CI jobs (parallel-safety / determinism).
+- `NPM_CONFIG_PROVENANCE: true` - release publish (provenance attestation).
+- `FALLOW_AUDIT_BASE: origin/main` - pins the fallow new-only audit base.
+- `VERDACCIO_STORAGE_PATH` - runtime storage override for the local registry (e2e).
+- No application runtime env vars; the executor takes options via the Nx schema (`tsConfig`, `includeDeps`, `maxWarnings`, `failFast`, `strict`) in `packages/angular-typechecker/src/executors/typecheck/schema.json`.
 
 **Secrets location:**
-- No long-lived publish secret. Publishing uses GitHub Actions OIDC (short-lived, minted per run) validated by the npm Trusted Publisher. CI checkouts set `persist-credentials: false` so checkout credentials are never persisted. (`0.0.1` used a one-time bypass-2FA token for the seed publish; all subsequent releases are OIDC-only - documented in `release.yml`.)
+- No stored secrets. Publish uses ephemeral OIDC identity minted per release run (no long-lived npm token in the repo or CI).
 
 ## Webhooks & Callbacks
 
@@ -88,8 +91,8 @@ There are no network API calls anywhere in the plugin source.
 - None.
 
 **Outgoing:**
-- None.
+- None. (GitHub Release creation is done manually by a human after the release PR merges - see `AGENTS.md`; the CI publish job holds only `id-token: write`, never `contents: write`.)
 
 ---
 
-*Integration audit: 2026-06-30*
+*Integration audit: 2026-07-09*
