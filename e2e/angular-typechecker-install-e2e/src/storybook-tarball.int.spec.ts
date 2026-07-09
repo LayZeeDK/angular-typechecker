@@ -152,8 +152,8 @@ describe('SB-06 criterion 1: the SHIPPED tarball catches a planted Storybook sto
     const verdaccioToken = inject('verdaccioToken');
 
     // Documentation-level re-assert of the global-setup SAFETY gate: this install
-    // reads ONLY from local Verdaccio.
-    expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+    // reads ONLY from local Verdaccio (pinned to the numeric IPv4 loopback).
+    expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
     const tmp = mkdtempSync(join(tmpdir(), 'atc-sb-a-'));
 
@@ -207,7 +207,7 @@ describe('SB-06 criterion 1: the SHIPPED tarball catches a planted Storybook sto
     const verdaccioUrl = inject('verdaccioUrl');
     const verdaccioToken = inject('verdaccioToken');
 
-    expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+    expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
     const tmp = mkdtempSync(join(tmpdir(), 'atc-sb-b-'));
 

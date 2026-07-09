@@ -71,7 +71,7 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
       const verdaccioUrl = inject('verdaccioUrl');
       const verdaccioToken = inject('verdaccioToken');
 
-      expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+      expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
       const tmp = mkdtempSync(join(tmpdir(), 'atc-add-yarn-'));
 
@@ -93,7 +93,13 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
         // load-bearing):
         // nodeLinker node-modules (a real tree for the nx executor + require());
         // npmRegistryServer/npmAuthToken (yarn 4 auth form, NOT .npmrc);
-        // unsafeHttpWhitelist localhost (yarn 4 blocks http by default -> YN0081);
+        // unsafeHttpWhitelist 127.0.0.1 (yarn 4 blocks http by default -> YN0081).
+        //   The registry is pinned to the numeric IPv4 loopback (verdaccioUrl is
+        //   http://127.0.0.1:PORT -- see global-setup.ts listenAddress), which is
+        //   what kills this spec's former ECONNREFUSED flake: a numeric-IP URL
+        //   makes yarn connect to exactly 127.0.0.1 with no dual-stack `localhost`
+        //   (::1 vs 127.0.0.1) family race. The whitelist host MUST match that
+        //   numeric host, so it whitelists 127.0.0.1, not `localhost`;
         // npmMinimalAgeGate 0 (OBSERVED: yarn 4 defaults to 1440 minutes and
         //   QUARANTINES the seconds-old Verdaccio-published version -> YN0016
         //   "version for tag latest is quarantined"; 0 lifts the age gate for this
@@ -105,7 +111,7 @@ describe('NX-ADD-YARN: real `nx add` on a yarn 4 workspace seeds the typecheck t
           `npmRegistryServer: "${verdaccioUrl}"`,
           `npmAuthToken: "${verdaccioToken}"`,
           'unsafeHttpWhitelist:',
-          '  - localhost',
+          '  - 127.0.0.1',
           'npmMinimalAgeGate: 0',
           'enableTelemetry: false',
           'enableImmutableInstalls: false',

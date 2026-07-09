@@ -91,7 +91,7 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
       const verdaccioUrl = inject('verdaccioUrl');
       const verdaccioToken = inject('verdaccioToken');
 
-      expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+      expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
       const tmp = mkdtempSync(join(tmpdir(), 'atc-add-pnpm-'));
 
