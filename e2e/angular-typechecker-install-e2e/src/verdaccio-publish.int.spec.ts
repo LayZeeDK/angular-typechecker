@@ -92,8 +92,9 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
     const verdaccioToken = inject('verdaccioToken');
 
     // Documentation-level re-assert of the globalSetup SAFETY gate: the registry
-    // the publish targeted (and this install reads from) MUST be local Verdaccio.
-    expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+    // the publish targeted (and this install reads from) MUST be local Verdaccio
+    // (pinned to the numeric IPv4 loopback).
+    expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
     // Install BY NAME from Verdaccio into a fresh consumer (not by tarball path --
     // this is the registry round-trip install-smoke cannot do). The consumer

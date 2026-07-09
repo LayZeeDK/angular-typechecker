@@ -80,15 +80,26 @@ export default async function ({ provide }: TestProject) {
   ).name;
 
   // startLocalRegistry forks `nx` (not an `npx` cmd shim) and resolves readiness
-  // by scraping the "http://localhost:PORT" line out of stdout (log.level: http
-  // in config.yml keeps that line printing). clearStorage wipes the storage dir --
-  // including the htpasswd under it -- so every run gets a deterministic fresh
-  // ci-user sign-up (no cross-run EPUBLISHCONFLICT / htpasswd idempotency ambiguity).
+  // by scraping the "http://<listenAddress>:PORT" line out of stdout (log.level:
+  // http in config.yml keeps that line printing). clearStorage wipes the storage
+  // dir -- including the htpasswd under it -- so every run gets a deterministic
+  // fresh ci-user sign-up (no cross-run EPUBLISHCONFLICT / htpasswd idempotency
+  // ambiguity).
+  //
+  // listenAddress '127.0.0.1' is LOAD-BEARING (fixes the nx-add-yarn ECONNREFUSED
+  // flake): the local-registry target pins verdaccio's bind to the numeric IPv4
+  // loopback (project.json), and this pins the scrape + the provided verdaccioUrl
+  // to the SAME numeric literal. A numeric-IP registry URL means every client
+  // (npm/pnpm/yarn) skips DNS and connects to exactly 127.0.0.1 -- removing the
+  // dual-stack `localhost` (::1 vs 127.0.0.1) family race that intermittently made
+  // yarn 4's fetch phase hit a family verdaccio was not listening on. Must match
+  // the target's listenAddress so the readiness scrape (`http://127.0.0.1:`) fires.
   const stop = await startLocalRegistry({
     localRegistryTarget: `${rootProjectName}:local-registry`,
     storage: './tmp/local-registry/storage',
     verbose: false,
     clearStorage: true,
+    listenAddress: '127.0.0.1',
   });
 
   try {
@@ -97,8 +108,9 @@ export default async function ({ provide }: TestProject) {
 
     // Load-bearing SAFETY gate: never let the real `nx release publish` reach
     // registry.npmjs.org. A publish there is a real-world side effect and is
-    // forbidden. Refuse any non-local registry before touching publish.
-    if (!registryUrl.startsWith('http://localhost:')) {
+    // forbidden. Refuse any non-local registry before touching publish. The
+    // registry is pinned to the numeric IPv4 loopback (see listenAddress above).
+    if (!registryUrl.startsWith('http://127.0.0.1:')) {
       throw new Error(
         `refusing to publish to non-local registry: ${registryUrl}`,
       );

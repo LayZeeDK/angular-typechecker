@@ -59,8 +59,9 @@ describe('NX-ADD-NPM: real `nx add` on an npm workspace seeds the typecheck targ
     const verdaccioToken = inject('verdaccioToken');
 
     // Documentation-level re-assert of the globalSetup SAFETY gate: the registry
-    // this install reads from MUST be local Verdaccio.
-    expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+    // this install reads from MUST be local Verdaccio (pinned to the numeric IPv4
+    // loopback -- see global-setup.ts listenAddress).
+    expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
     const tmp = mkdtempSync(join(tmpdir(), 'atc-add-npm-'));
 

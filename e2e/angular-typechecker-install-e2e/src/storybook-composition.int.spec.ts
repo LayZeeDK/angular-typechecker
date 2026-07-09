@@ -119,8 +119,8 @@ describe('SB-08 Composition: per-project typecheck + dependsOn:["^typecheck"] fa
     const verdaccioToken = inject('verdaccioToken');
 
     // Documentation-level re-assert of the global-setup SAFETY gate: this install
-    // reads ONLY from local Verdaccio.
-    expect(verdaccioUrl.startsWith('http://localhost:')).toBe(true);
+    // reads ONLY from local Verdaccio (pinned to the numeric IPv4 loopback).
+    expect(verdaccioUrl.startsWith('http://127.0.0.1:')).toBe(true);
 
     tmp = mkdtempSync(join(tmpdir(), 'atc-sb-comp-'));
     cpSync(fixtureDir('consumer-storybook-composition'), tmp, {
