@@ -1,164 +1,145 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-06-30
+**Analysis Date:** 2026-07-09
 
 ## Directory Layout
 
 ```
-angular-typechecker/
-├── packages/
-│   └── angular-typechecker/          # THE published Nx plugin (the only release artifact)
-│       ├── src/
-│       │   ├── index.ts              # Public API barrel (main/types)
-│       │   ├── core/                 # Framework-agnostic engine + reporting + verdict
-│       │   └── executors/
-│       │       └── angular-typecheck/# The Nx executor adapter + schema
-│       ├── executors.json            # Plugin marker -> executor implementation path
-│       ├── package.json              # Published manifest (CJS, peers, files allowlist)
-│       ├── project.json              # build / lint / test / typecheck-drift targets
-│       ├── tsconfig.json             # Solution tsconfig (module: nodenext)
-│       ├── tsconfig.lib.json         # Library build (excludes specs/drift)
-│       ├── tsconfig.spec.json        # Test tsconfig
-│       ├── tsconfig.drift.json       # Drift-probe tsconfig
-│       ├── eslint.config.mjs         # Flat config + @nx/dependency-checks
-│       ├── vitest.config.mts         # Vitest config
-│       ├── README.md / LICENSE       # Shipped in the tarball
-├── apps/
-│   └── ng-spike-app/                 # Local Angular 22 app (engine spike / sandbox)
-├── e2e/                              # End-to-end test projects (NOT published)
-│   ├── angular-typechecker-cache-e2e/    # Nx cache + executor-parity int specs
-│   ├── angular-typechecker-install-e2e/  # Tarball install smoke + release hygiene
-│   └── angular-typechecker-matrix-e2e/   # 5-project-type + pnpm-symlink matrix
-├── fixtures/                         # Hand-authored tsconfig+component fixtures for int tests
-├── .planning/                        # GSD planning artifacts (milestones, phases, quick, research)
-├── .github/workflows/               # ci.yml, release.yml
-├── nx.json                           # Workspace config: targetDefaults, release, namedInputs
-├── tsconfig.base.json                # Workspace-wide TS base + path aliases
-├── package.json                      # Workspace (private) devDependencies
-├── package-lock.json
-├── eslint.config.mjs                 # Workspace flat ESLint config
-├── vitest.workspace.ts               # Vitest project globs
-├── .fallowrc.jsonc                   # fallow code-quality config
-├── AGENTS.md / CLAUDE.md             # Agent instructions (release mechanics, worktrees)
-├── README.md / SECURITY.md / CHANGELOG.md
+angular-typechecker/                 # Nx workspace root (@angular-typechecker/source)
+|-- packages/
+|   '-- angular-typechecker/         # THE published plugin (the only shipped project)
+|       |-- src/
+|       |   |-- core/                # Pure engine (no devkit/console/process)
+|       |   |-- executors/typecheck/ # Nx executor adapter + schema
+|       |   |-- generators/          # configuration + init generators
+|       |   '-- index.ts             # Public API barrel
+|       |-- executors.json           # Executor manifest (Nx loads by path)
+|       |-- generators.json          # Generator manifest
+|       |-- package.json             # Published manifest (deps/peers/files)
+|       |-- project.json             # Nx targets (build/lint/test/release/drift)
+|       |-- tsconfig*.json           # Solution + lib + spec + drift tsconfigs
+|       |-- vitest.config.mts        # Vitest config
+|       '-- README.md
+|-- e2e/                             # Tarball-install + matrix + cache e2e projects
+|   |-- angular-typechecker-install-e2e/  # install / nx-add / generator / storybook / tarball
+|   |-- angular-typechecker-matrix-e2e/   # 5 project-type matrix + pnpm symlink
+|   '-- angular-typechecker-cache-e2e/    # Nx cache invalidation + executor parity
+|-- libs/                            # Dev-only support libraries + typecheck fixtures
+|   |-- test-util/                   # @workspace/test-util (findWorkspaceRoot, e2e helpers)
+|   |-- typecheck-consumer/          # in-workspace consumer fixture
+|   |-- typecheck-consumer-dep/      # dependency fixture (has .pristine restore files)
+|   '-- typecheck-walk-consumer/     # solution-walk fixture (lib + spec leaves)
+|-- apps/
+|   '-- ng-spike-app/                # Angular 22 app used by engine spikes
+|-- fixtures/                        # Flat tsconfig fixtures (baselines, extended, layouts)
+|-- tools/act/                       # act (local GitHub Actions) compat scripts
+|-- .github/workflows/               # ci.yml + release.yml
+|-- .planning/                       # GSD planning artifacts (phases/milestones/etc.)
+|-- nx.json                          # Nx config: targetDefaults, release, generators
+|-- tsconfig.base.json               # Workspace path aliases + base compilerOptions
+|-- vitest.workspace.ts              # Vitest project glob
+'-- project.json                     # Root project: local-registry (verdaccio) target
 ```
 
 ## Directory Purposes
 
-**`packages/angular-typechecker/`:**
-- Purpose: The single published npm package (`angular-typechecker`). Everything else in the repo supports, tests, or plans it.
-- Contains: the executor, the core engine, build/test config, and the shipped README/LICENSE.
-- Key files: `src/index.ts`, `executors.json`, `package.json`, `project.json`.
-
 **`packages/angular-typechecker/src/core/`:**
-- Purpose: The framework-agnostic type-check engine, reporting, verdict, and exit-code policy. NO `@nx/devkit`, NO `process`/`console` (ESLint-enforced purity).
-- Contains: `run-typecheck.ts` (orchestrator), `gather-diagnostics.ts`, `filter-diagnostics.ts`, `compiler-loader.ts`, `render-report.ts`, `format-report.ts`, `evaluate-result.ts`, `exit-codes.ts`, `diagnostic-codes.ts`, `compiler-cli-types.ts`, the drift probe, and co-located `*.spec.ts` / `*.integration.spec.ts`.
-- Key files: `run-typecheck.ts` (the engine entry), `gather-diagnostics.ts` (the differentiator).
+- Purpose: the framework-agnostic type-check engine. PURE -- no `@nx/devkit`, `console`, or `process` (ESLint-enforced on `**/src/core/**`).
+- Contains: engine orchestration, gatherer, walker, boundary filter, verdict, formatter, code space, loaders, the compiler-cli type shim, and the pure `detect-*` advisory detectors. Specs are co-located (`*.spec.ts`, `*.integration.spec.ts`, `*.drift.ts`).
+- Key files: `run-typecheck.ts`, `gather-diagnostics.ts`, `walk-references.ts`, `filter-diagnostics.ts`, `evaluate-result.ts`, `compiler-loader.ts`, `compiler-cli-types.ts`, `diagnostic-codes.ts`.
 
-**`packages/angular-typechecker/src/executors/angular-typecheck/`:**
-- Purpose: The Nx executor adapter -- the ONLY `@nx/devkit`-aware tier.
-- Contains: `executor.ts` (default async fn), `normalize-options.ts`, `schema.json`, `schema.d.ts`, plus their specs and `gate-a-static.spec.ts` / `schema-parity.spec.ts`.
-- Key files: `executor.ts`, `normalize-options.ts`, `schema.json`.
+**`packages/angular-typechecker/src/executors/typecheck/`:**
+- Purpose: the Nx executor adapter (the tier that touches `@nx/devkit`).
+- Contains: `executor.ts` (default async executor), `normalize-options.ts`, `schema.json` (option contract), `schema.d.ts` (`TypecheckExecutorOptions`), and spec/parity tests.
+
+**`packages/angular-typechecker/src/generators/`:**
+- Purpose: Nx generators that wire the target and seed cacheable targetDefaults.
+- Contains: `configuration/` (wire a `typecheck` target), `init/` (seed `nx.json` targetDefaults; run by `nx add`). Each has `generator.ts`, `schema.json`, `schema.d.ts`, and `schema-parity.spec.ts`.
 
 **`e2e/`:**
-- Purpose: End-to-end verification at three tiers -- Nx cache behavior, tarball install, and the cross-project-type matrix. Never published (`nx.json` `release.projects` is scoped to `angular-typechecker`).
-- Contains: three `*-e2e` projects, each with its own `project.json`, `tsconfig*.json`, `vitest.config.mts`, `src/*.int.spec.ts`, and `fixtures/` consumer workspaces.
+- Purpose: end-to-end verification against the packed tarball and real consumer workspaces. Each project has `implicitDependencies: ["angular-typechecker"]` and a `typecheck-e2e` (`tsc --noEmit`) static gate plus a Vitest `test` target running `*.int.spec.ts`.
+- Contains: install/nx-add/generator/storybook/tarball specs, the 5-project-type matrix + pnpm symlink specs, and cache-invalidation + executor-parity specs. Consumer workspaces live under each project's `fixtures/`.
+
+**`libs/`:**
+- Purpose: dev-only support (never published). `test-util` exports `@workspace/test-util`; the `typecheck-*` libs are in-workspace fixtures exercised by core integration specs.
 
 **`fixtures/`:**
-- Purpose: Small hand-authored tsconfig + component triples that reproduce specific diagnostic scenarios (TS baseline, NG baseline, extended/promoted NG8xxx, composite-triangle, broken config, solution-style, fault-isolation, global diagnostics, no-emit message, gate-b).
-- Contains: per-scenario directories referenced by `core/*.integration.spec.ts`.
-
-**`apps/ng-spike-app/`:**
-- Purpose: A real Angular 22 application used as the engine spike / sandbox target.
-- Contains: a standard Nx Angular app (`src/app/`, `tsconfig.app.json`).
-
-**`.planning/`:**
-- Purpose: GSD workflow artifacts. Drives milestones, phases, quick tasks, research, and this codebase map.
-- Contains: `PROJECT.md`, `ROADMAP.md`, `MILESTONES.md`, `STATE.md`, `RETROSPECTIVE.md`, `config.json`, `codebase/`, `milestones/` (v0.0.1-phases, v0.0.3-phases), `phases/`, `quick/`, `research/`.
+- Purpose: flat, hand-authored tsconfig fixtures for core integration specs (TS/NG baselines, extended NG8xxx batches, Storybook Layout A/B, solution-style variants, external-template tripwires, bundler query imports).
 
 ## Key File Locations
 
 **Entry Points:**
-- `packages/angular-typechecker/executors.json`: Nx plugin marker; maps `angular-typecheck` to the compiled executor.
-- `packages/angular-typechecker/src/executors/angular-typecheck/executor.ts`: the executor's default async function.
-- `packages/angular-typechecker/src/index.ts`: programmatic public API barrel.
+- `packages/angular-typechecker/src/executors/typecheck/executor.ts`: Nx executor (default export).
+- `packages/angular-typechecker/src/generators/configuration/generator.ts`, `.../generators/init/generator.ts`: Nx generators.
+- `packages/angular-typechecker/src/index.ts`: programmatic `runTypecheck` API barrel.
 
 **Configuration:**
-- `nx.json`: `targetDefaults` (incl. the cacheable `angular-typecheck` recipe), `release` (conventionalCommits, `git.tag: false`, `releaseTag.pattern`), `namedInputs`.
-- `tsconfig.base.json`: workspace TS base + path aliases (`angular-typechecker`).
-- `packages/angular-typechecker/tsconfig.json`: solution config that pins `module: nodenext` (the CJS->ESM bridge enabler).
-- `packages/angular-typechecker/package.json`: published manifest (peers, `files` allowlist, `engines`).
+- `packages/angular-typechecker/package.json`: published manifest -- `type: commonjs`, `main`/`types` -> `./src/index.js`, `executors`/`generators` manifests, `files` whitelist, `@nx/devkit` dependency, `@angular/compiler-cli`+`typescript` peers, `engines.node`.
+- `packages/angular-typechecker/executors.json` / `generators.json`: Nx entry manifests (extensionless implementation paths).
+- `packages/angular-typechecker/tsconfig.json`: solution tsconfig (`module: nodenext`, references lib + spec).
+- `packages/angular-typechecker/tsconfig.lib.json`: build includes `src/**/*.ts`, excludes specs/drift.
+- `nx.json`: `targetDefaults` (incl. `angular-typechecker:typecheck` cache inputs), `release` block, default generators.
+- `tsconfig.base.json`: workspace path aliases (`angular-typechecker`, `@workspace/test-util`, `@fixtures/typecheck-consumer-dep`).
 
 **Core Logic:**
-- `packages/angular-typechecker/src/core/run-typecheck.ts`: the engine orchestrator.
-- `packages/angular-typechecker/src/core/gather-diagnostics.ts`: the unconditional all-getter gatherer.
-- `packages/angular-typechecker/src/core/filter-diagnostics.ts`: the project-boundary filter.
-- `packages/angular-typechecker/src/core/compiler-loader.ts`: the memoized ESM load.
+- `packages/angular-typechecker/src/core/run-typecheck.ts`: engine orchestration + `CoreOptions`/`CoreResult` types + infra policy.
+- `packages/angular-typechecker/src/core/gather-diagnostics.ts`: `runNoEmitCompilation` + unconditional all-getter.
+- `packages/angular-typechecker/src/core/filter-diagnostics.ts`: project-boundary keep/suppress classification.
 
 **Testing:**
-- Co-located `*.spec.ts` (unit) and `*.integration.spec.ts` (real cold compiler) beside their core modules.
-- `e2e/**/src/*.int.spec.ts`: cache, install, matrix tiers.
-- `fixtures/`: scenario inputs for the integration tier.
+- Co-located `*.spec.ts` (unit) and `*.integration.spec.ts` (real cold-compiler) under `src/core/`.
+- `*.int.spec.ts` under each `e2e/*/src/`.
+- `*.drift.ts` compiled by the `typecheck-drift` target (`tsconfig.drift.json`) as a version-drift tripwire.
 
 ## Naming Conventions
 
 **Files:**
-- Source modules: `kebab-case.ts` (`run-typecheck.ts`, `filter-diagnostics.ts`, `normalize-options.ts`).
-- Unit tests: `<module>.spec.ts` co-located with the module.
-- Integration tests (real compiler): `<scenario>.integration.spec.ts` in `core/`.
-- E2E tests: `<scenario>.int.spec.ts` under `e2e/**/src/`.
-- Drift probe: `<module>.drift.ts` (excluded from the lib build; compiled by the `typecheck-drift` target).
-- Schema: `schema.json` (Nx) + hand-authored `schema.d.ts` (TS interface).
+- kebab-case for modules: `run-typecheck.ts`, `filter-diagnostics.ts`, `detect-bundler-query-imports.ts`.
+- Pure advisory detectors prefixed `detect-`: `detect-unchecked-declared.ts`, `detect-bundler-query-imports.ts`.
+- Unit tests `<name>.spec.ts`; real-compiler tests `<name>.integration.spec.ts`; e2e tests `<name>.int.spec.ts`; drift tripwires `<name>.drift.ts`.
+- Nx option contracts always paired: `schema.json` + `schema.d.ts`, guarded by a `schema-parity.spec.ts`.
 
 **Directories:**
-- `core/` for the framework-agnostic engine; `executors/<executor-name>/` for each Nx executor adapter.
-- Fixtures and e2e consumer workspaces use descriptive kebab-case scenario names.
+- Plugin lives under `packages/<plugin-name>/`; each Nx executor/generator is its own directory holding `implementation` + `schema`.
+- e2e projects suffixed `-e2e`; fixture workspaces nested under `<project>/fixtures/`.
 
 ## Where to Add New Code
 
-**New core engine logic (filters, gather phases, classification):**
-- Primary code: `packages/angular-typechecker/src/core/<feature>.ts` (keep it pure -- no `process`/`console`).
-- Tests: co-located `packages/angular-typechecker/src/core/<feature>.spec.ts`; add a real-compiler `<scenario>.integration.spec.ts` + a `fixtures/<scenario>/` triple when behavior depends on the live compiler.
-- Export from the barrel only if a deferred adapter (CLI/builder) needs it: `packages/angular-typechecker/src/index.ts`.
+**New engine capability (a new diagnostic phase, filter rule, or verdict trigger):**
+- Primary code: `packages/angular-typechecker/src/core/` (keep it PURE -- no devkit/console/process).
+- If it produces a user-facing signal, add a structured field to `CoreResult` in `run-typecheck.ts` and render it from `executor.ts` (never log from core).
+- Tests: co-located `*.spec.ts` (pure unit with synthetic diagnostics) plus a `*.integration.spec.ts` if a real compiler run is needed; add a fixture under `fixtures/` when required.
 
 **New executor option:**
-- Add the property to `packages/angular-typechecker/src/executors/angular-typecheck/schema.json` AND `schema.d.ts` (kept in parity by `schema-parity.spec.ts`).
-- Map it in `packages/angular-typechecker/src/executors/angular-typecheck/normalize-options.ts` (reporter knob vs `CoreOptions` field).
-- Thread it through `executor.ts` and into `runTypecheck`/`renderReport`/`evaluateResult` as appropriate.
-- Document it in `packages/angular-typechecker/README.md` Options table.
+- Add to `packages/angular-typechecker/src/executors/typecheck/schema.json` AND `schema.d.ts` (parity spec enforces both), thread through `normalize-options.ts`, and split it into a verdict knob (`evaluate-result.ts`) or reporter knob (`render-report.ts`).
 
-**New Nx executor (a second one):**
-- Implementation: `packages/angular-typechecker/src/executors/<new-name>/executor.ts` + `schema.json` + `schema.d.ts`.
-- Register it in `packages/angular-typechecker/executors.json` and glob the schema into the build via `project.json` `assets`.
+**New generator:**
+- Add a directory under `packages/angular-typechecker/src/generators/<name>/` with `generator.ts` + `schema.json` + `schema.d.ts`, and register it in `generators.json`.
 
-**New end-to-end coverage:**
-- Add a project under `e2e/angular-typechecker-<tier>-e2e/` with its own `project.json` + `vitest.config.mts` + `src/*.int.spec.ts`, and any `fixtures/` consumer workspace it needs.
+**Shared test helper:**
+- `libs/test-util/src/lib/` (exported via `@workspace/test-util`).
 
-**New fixture scenario:**
-- `fixtures/<scenario>/` with the minimal `tsconfig*.json` + component triple; reference it from a `core/*.integration.spec.ts`.
+**New e2e scenario:**
+- Add a `*.int.spec.ts` under the appropriate `e2e/*/src/`; add a consumer fixture under that project's `fixtures/`.
 
 ## Special Directories
 
 **`dist/`:**
-- Purpose: `@nx/js:tsc` build output (`dist/packages/angular-typechecker`); `dist/out-tsc` for the lib tsconfig.
+- Purpose: `@nx/js:tsc` build output; `dist/packages/angular-typechecker` is the `packageRoot` for `nx-release-publish` (the packed tarball).
 - Generated: Yes. Committed: No (gitignored).
 
-**`.nx/`, `.angular/`, `.fallow/cache/`:**
-- Purpose: Nx daemon/cache, Angular compiler cache, fallow audit cache.
-- Generated: Yes. Committed: No.
-
-**`.claude/worktrees/`:**
-- Purpose: Isolated git worktrees for parallel phase execution (see AGENTS.md `node_modules` junction rules).
-- Generated: Yes. Committed: No.
-
 **`.planning/`:**
-- Purpose: GSD planning artifacts.
-- Generated: By GSD workflows. Committed: Yes -- this repo keeps planning artifacts on `main`.
+- Purpose: GSD planning artifacts (phases, milestones, research, quick tasks, this codebase map).
+- Generated: Yes (by GSD). Committed: Yes -- this repo deliberately keeps planning artifacts on `main`.
 
-**`node_modules/`:**
-- Purpose: Dependencies. Provisioned by `npm ci` (CI) or a junction into the main checkout (parallel worktrees).
-- Generated: Yes. Committed: No.
+**`fixtures/` and `libs/typecheck-*`:**
+- Purpose: intentionally-erroring / intentionally-clean tsconfig fixtures. Some carry `.pristine` files used to restore mutated fixture sources between test runs.
+- Generated: No (hand-authored). Committed: Yes. Note: excluded from Prettier (`.prettierignore`) because their non-compliance is intentional.
+
+**`.verdaccio/` + root `local-registry` target:**
+- Purpose: local npm registry (`@nx/js:verdaccio`, IPv4 loopback) for tarball publish/install e2e.
+- Generated: storage under `tmp/` is generated + gitignored; `.verdaccio/config.yml` is committed.
 
 ---
 
-*Structure analysis: 2026-06-30*
+*Structure analysis: 2026-07-09*

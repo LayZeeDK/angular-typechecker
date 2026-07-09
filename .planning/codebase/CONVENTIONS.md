@@ -1,185 +1,169 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-06-30
+**Analysis Date:** 2026-07-09
 
-This is a CommonJS-output Nx 23 plugin (`packages/angular-typechecker/`) that runs the
-Angular whole-program type-check. The conventions below are derived from the actual source
-under `packages/angular-typechecker/src/` and the workspace tooling configs. Follow them
-exactly when adding or editing code.
+This is an Nx plugin monorepo (Nx 23 / Angular 22 / TypeScript 6). The published
+package is `packages/angular-typechecker/`; supporting projects live in `libs/`,
+`e2e/`, `apps/`, and `fixtures/`. All conventions below are enforced by the two
+required CI gates: `format:check` (Prettier) and `lint` (ESLint, `maxWarnings: 0`).
 
 ## Naming Patterns
 
 **Files:**
-- `kebab-case.ts` for all source modules: `run-typecheck.ts`, `compiler-loader.ts`,
-  `gather-diagnostics.ts`, `evaluate-result.ts`, `exit-codes.ts`, `normalize-options.ts`.
-- Co-located unit tests: `<module>.spec.ts` (e.g. `exit-codes.spec.ts`).
-- Real-compiler integration tests in the plugin: `<name>.integration.spec.ts`
-  (e.g. `run-typecheck.integration.spec.ts`).
-- E2E specs (tarball/install/matrix tier, under `e2e/`): `<name>.int.spec.ts`
-  (e.g. `tarball-audit.int.spec.ts`).
-- Type-only build-time tripwire: `<name>.drift.ts` (e.g. `compiler-cli-types.drift.ts`) --
-  never shipped, never `import`-reachable, compiled only by the `typecheck-drift` target.
-- Schema pairs per executor: `schema.json` (runtime) + `schema.d.ts` (the matching TS
-  interface), kept in parity by `schema-parity.spec.ts`.
+
+- kebab-case for all `.ts` sources: `run-typecheck.ts`, `gather-diagnostics.ts`,
+  `filter-diagnostics.ts`, `detect-bundler-query-imports.ts`.
+- Suffix conventions carry meaning and are load-bearing for tsconfig include/exclude
+  and vitest globs:
+  - `*.spec.ts` -- unit test, colocated next to source.
+  - `*.integration.spec.ts` -- real-compiler integration test (runs `performCompilation`).
+  - `*.int.spec.ts` -- e2e test (only under `e2e/*/src/`; the vitest `include` there is `src/**/*.int.spec.ts`).
+  - `*.drift.ts` -- build-time drift tripwires, type-checked by the `typecheck-drift` target, EXCLUDED from both lib and spec compilation.
+  - `*.members.ts` / `*.runtime.spec.ts` / `*.structural.spec.ts` -- narrower spec facets.
+- Nx plugin scaffolding files keep their canonical names: `executor.ts`,
+  `generator.ts`, `schema.d.ts`, `executors.json`, `generators.json`, `schema.json`.
 
 **Functions:**
-- `camelCase`. Exported engine/adapter entry points are verbs: `runTypecheck`,
-  `loadCompilerCli`, `gatherAllDiagnostics`, `evaluateResult`, `renderReport`,
-  `normalizeOptions`, `toExitCode`. Private helpers also `camelCase`
-  (`synthesizeZeroRootNamesDiagnostic`, `resolveFilterBasePath`, `finalize`).
+
+- camelCase: `runTypecheck`, `gatherAllDiagnostics`, `finalize`, `buildFinalizeFilter`,
+  `detectTemplateCheckAborted`, `normalizeOptions`.
+- Exported executor default is an `async function` returning `Promise<{ success: boolean }>`
+  (`packages/angular-typechecker/src/executors/typecheck/executor.ts`).
+- Adapter-only helpers use a `warn*` prefix (`warnSkippedReferences`, `warnSuppressed`).
 
 **Variables:**
-- `camelCase` for locals/params (`tsConfigPath`, `suppressedCount`, `configDiagnostics`).
-- `SCREAMING_SNAKE_CASE` for module-level constants and synthesized codes:
-  `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE`, `TCB_GENERATION_FATAL_DIAGNOSTIC_CODE`,
-  `UNKNOWN_ERROR_CODE`, test literals like `TS2322`, `INJECTED_TS_CODE`, `REQUIRED_FILES`.
+
+- camelCase for locals and parameters (`configDiagnostics`, `rootNamesCount`, `extractDir`).
+- SCREAMING_SNAKE_CASE for module-level constants and fixed sets: `TS2322`,
+  `NX_RUNNER_ENV_KEYS`, `REQUIRED_FILES`, `INSTALL_SCRIPT_KEYS`,
+  `TCB_GENERATION_FATAL_DIAGNOSTIC_CODE`, `ZERO_ROOT_NAMES_DIAGNOSTIC_CODE`.
 
 **Types:**
-- `PascalCase` interfaces and classes: `CoreOptions`, `CoreResult`, `NormalizedOptions`,
-  `TemplateCheckAborted`, `TypecheckInfrastructureError`, `AngularTypecheckExecutorOptions`.
-- Custom error subclasses extend `Error` and set `this.name` in the constructor (see
-  `TypecheckInfrastructureError` in `src/core/run-typecheck.ts`).
+
+- PascalCase for interfaces, type aliases, and classes: `CoreOptions`, `CoreResult`,
+  `TemplateCheckAborted`, `FinalizeFilter`, `TypecheckInfrastructureError`,
+  `TypecheckExecutorOptions`, `RunResult`.
+- No `I`-prefix on interfaces.
+- Error classes extend `Error` and set `this.name` in the constructor
+  (`TypecheckInfrastructureError` in `packages/angular-typechecker/src/core/run-typecheck.ts`).
 
 ## Code Style
 
-**Formatting (Prettier):**
-- Config: `.prettierrc` -- the only override is `{ "singleQuote": true }`. Everything else
-  is Prettier defaults (2-space indent, semicolons, trailing commas in multiline).
-- `.editorconfig`: UTF-8, 2-space indent, final newline, trim trailing whitespace
-  (markdown exempt from trim + line-length).
-- `.prettierignore`: `/dist`, `/coverage`, `/.nx/cache`, `/.nx/workspace-data`, `.angular`.
-- Prettier version: `~3.6.2` (root `devDependencies`).
+**Formatting:**
 
-**Linting (ESLint flat config):**
-- Root config: `eslint.config.mjs` -- composes `@nx/eslint-plugin` flat presets
-  (`flat/base`, `flat/typescript`, `flat/javascript`) plus `@nx/enforce-module-boundaries`.
-- Plugin config: `packages/angular-typechecker/eslint.config.mjs` extends the root and adds
-  three load-bearing rule blocks:
-  1. **`core/` purity boundary** (`files: ['**/src/core/**/*.ts']`): bans importing `nx`,
-     `@nx/devkit`, any `@nx/*`, `@angular-devkit/*`, and `yargs` via
-     `@typescript-eslint/no-restricted-imports` (type-only imports ALSO banned --
-     `allowTypeImports` is intentionally omitted). Also `'no-console': 'error'` and a
-     `no-restricted-properties` ban on `process.exit`. The framework-agnostic `core/`
-     owns NO I/O and NO process side effects; the executor adapter owns those.
-  2. **`@nx/dependency-checks`** (ERROR, on `**/*.json`): catches missing/obsolete deps;
-     `checkVersionMismatches: false` so the autofix never rewrites the PUBLIC peer ranges
-     to installed exacts (`^22.0.0` -> `22.0.4`). NEVER run `eslint --fix` on the manifest.
-  3. **`@nx/nx-plugin-checks`** (ERROR, on `**/package.json`).
-- `jsonc-eslint-parser` parses JSON for the dependency/plugin rules.
+- Tool: Prettier `~3.6.2`. Config is `.prettierrc` and contains ONLY `{ "singleQuote": true }`.
+  Everything else is Prettier default (2-space indent, semicolons, trailing commas es5+, 80 cols).
+- `.editorconfig`: UTF-8, `indent_style = space`, `indent_size = 2`, final newline,
+  trim trailing whitespace. Markdown exempts line length + trailing whitespace.
+- `format:check` runs ONLY over PR-changed files (nx `--base/--head`), because the repo
+  intentionally carries un-Prettier'd fixtures. Do NOT run a whole-repo format.
+- `.prettierignore` excludes `/dist`, `/coverage`, `/.nx`, `/.planning/`, lockfiles, and
+  specific whitespace-sensitive Angular template fixtures whose reflow changes which NG
+  diagnostics fire (e.g. `fixtures/extended-batch-fn/error.component.html`).
+
+**Linting:**
+
+- ESLint 9 FLAT config (`eslint.config.mjs`), NOT legacy `.eslintrc`. Root config composes
+  `@nx/eslint-plugin` presets. The plugin project extends the root and adds project-scoped rules.
+- `maxWarnings: 0` is baked into `@nx/eslint:lint` targetDefaults in `nx.json` -- a single
+  warning fails CI. No CI flag is passed; the default carries it.
+- `@nx/enforce-module-boundaries` (error) governs cross-project imports.
+- `@nx/dependency-checks` (error) polices the published `package.json` deps/peers, with
+  `checkVersionMismatches: false` so autofix never rewrites the public peer ranges
+  (`^22.0.0`) to the installed exact versions. NEVER run `eslint --fix` on the manifest.
+- `@nx/nx-plugin-checks` (error) validates `executors.json` / `generators.json` shapes.
+- JSON is parsed with `jsonc-eslint-parser` in the config's `languageOptions`.
 
 ## Import Organization
 
-Imports are grouped, blank-line-separated, alphabetized within each group. Observed order
-(see `src/core/run-typecheck.ts`, `src/core/gather-diagnostics.spec.ts`):
+Imports are grouped with a blank line between groups, in this order:
 
-1. Node built-ins, `node:`-prefixed (`import { dirname } from 'node:path';`).
-2. Type-only imports of external packages (`import type ts from 'typescript';`).
-3. Type-only imports of local modules (`import type { Program } from './compiler-cli-types';`).
-4. Value imports of external packages -- in specs, the test runner sits here
-   (`import { describe, expect, it, vi } from 'vitest';`).
-5. Value imports of local modules (`import { gatherAllDiagnostics } from './gather-diagnostics';`).
+1. Node built-ins, always `node:`-prefixed: `import { dirname, join } from 'node:path';`
+2. External type-only imports: `import type ts from 'typescript';`
+3. External/workspace value imports: `import { describe, expect, it, vi } from 'vitest';`,
+   `import { logger } from '@nx/devkit';`, `import { findWorkspaceRoot } from '@workspace/test-util';`
+4. Local type + value imports (`./` relative): `import { runTypecheck } from './run-typecheck';`
 
-**Conventions:**
-- Prefer `import type { ... }` for anything used only in type position. The compiler-cli
-  surface is reached at VALUE level exactly once (`compiler-loader.ts`'s
-  `await import('@angular/compiler-cli')`); every other reference is `import type`.
-- No path aliases in published source. The dev workspace uses a `@fixtures/*` tsconfig
-  alias for fixtures, but ZERO `@fixtures` references may reach shipped `.d.ts`
-  (guarded by `e2e/.../tarball-audit.int.spec.ts`).
-- `@nx/devkit` may be imported ONLY from the executor adapter tier
-  (`src/executors/angular-typecheck/executor.ts`, `normalize-options.ts`) -- never `core/`.
+Additional rules:
+
+- Use `import type` for type-only imports even though `verbatimModuleSyntax: false`
+  (the plugin tsconfig sets it false so the CJS `await import()` bridge type-checks).
+- Path aliases (from `tsconfig.base.json`): `angular-typechecker` (the barrel),
+  `@workspace/test-util`, `@fixtures/typecheck-consumer-dep`. Specs import the public
+  barrel or a relative sibling, never deep-reach into another project.
 
 ## Error Handling
 
-**Strategy:** distinguish a TYPE error (a real diagnostic) from an INFRASTRUCTURE failure
-(the compiler failed to RUN). The two map to different exit codes and verdicts.
-
-- A returned/synthesized `UNKNOWN_ERROR_CODE` (500) diagnostic is detected BY CODE ONLY
-  (never by `source`/message text) at two stages in `runTypecheck` (after
-  `readConfiguration` and after `performCompilation`) and re-thrown as
-  `TypecheckInfrastructureError` (`src/core/run-typecheck.ts`).
-- The executor adapter catches ONLY `TypecheckInfrastructureError` -> `logger.error` +
-  `{ success: false }`. EVERY other error is RE-THROWN -- "a type-checker that silently
-  swallows an unknown failure and reports success is worse than none"
-  (`src/executors/angular-typecheck/executor.ts`).
-- Exit-code policy is a pure leaf in `core/exit-codes.ts`: `2` = infra failure, `1` =
-  `errorCount > 0`, `0` = clean (ngc parity). It performs NO process side effects.
-- Defensive guards use explicit `=== undefined` / `!== undefined` checks (never truthiness)
-  and `??` for defaults, with a guard against the empty-string footgun where `??` is
-  insufficient (see `resolveFilterBasePath`).
+- Distinguish INFRASTRUCTURE failures from TYPE errors. A compiler crash surfaces as a
+  `TypecheckInfrastructureError` (a real type-checker that swallows an unknown failure and
+  reports success is worse than none).
+- Detect infrastructure by DIAGNOSTIC CODE only (`ng.UNKNOWN_ERROR_CODE` === 500), NEVER by
+  `source` or message text. This code-only discipline is applied at three stages
+  (config parse, walk union, post-compile) in `core/run-typecheck.ts`.
+- The executor adapter is the ONLY place that catches: it narrows `instanceof
+  TypecheckInfrastructureError` -> `logger.error` + `{ success: false }`, and RE-THROWS every
+  other error (`executor.ts`).
+- e2e process helpers rethrow with captured stdout+stderr so a failed nested `nx`/`npm`
+  surfaces WHY (`sh` in `libs/test-util/src/lib/e2e-process.ts`); `execSync` throwing on
+  non-zero exit is the mechanism used to capture exit codes.
 
 ## Logging
 
-**Framework:** `@nx/devkit`'s `logger` -- but ONLY in the executor adapter tier. `core/`
-forbids `console` via ESLint (`no-console: error`).
-
-**Patterns:**
-- `logger.error(...)` for an infrastructure failure (distinct operator message containing
-  "infrastructure error").
-- `logger.warn(...)` for the loud TCB-generation-abort suppression notice (names the
-  offending file; never silent).
-- The rendered type-check report goes to RAW `process.stdout.write(report)`, NEVER
-  `logger.info` -- Nx chrome/color would corrupt the byte-deterministic codeframes and the
-  GitHub problem-matcher `file:line:col` parsing (`executor.ts`, D-04).
+- Framework: `@nx/devkit`'s `logger` (`logger.error` / `logger.warn` / `logger.info`).
+- STRICT boundary: only the executor adapter tier touches `logger`. The framework-agnostic
+  `core/**` is forbidden from `console` (ESLint `no-console: error`) and `process.exit`
+  (`no-restricted-properties`). Core only COUNTS and RECORDS structured advisory fields;
+  the adapter RENDERS them (the detection-vs-rendering split, D-11).
+- The report itself is written to RAW `process.stdout.write` (never `logger.info`, which
+  would prepend Nx chrome and corrupt byte-deterministic codeframes / problem-matcher parsing).
 
 ## Comments
 
-**When to Comment:**
-- Heavy, intentional commenting. Modules and non-obvious branches carry block comments
-  explaining the WHY, the failure mode being guarded, and the decision reference
-  (`D-01`, `COR-04`, `RES-02`, `Pitfall 5`, etc.) that justifies the choice. These decision
-  refs trace back to `.planning/` artifacts -- preserve them when editing.
-- Comment the footguns: every defensive guard states what breaks if it is removed
-  (the empty-`basePath` filter-disable, the mutated-`noEmit` cross-call leak, the
-  `length - errorCount` miscount, etc.).
+**When to comment:**
+
+- Heavy, deliberate block comments explaining WHY, not what. Decisions are referenced by
+  stable ids (`D-01`, `RES-02`, `SB-09`, `COR-02`, `Pitfall 7`, `WR-01`) that trace back to
+  `.planning/` artifacts. This is the dominant documentation style -- preserve it.
+- Comments name landmines and load-bearing invariants explicitly (e.g. "MUST precede the
+  zero-rootNames guard", "detect BY CODE only", "LOAD-BEARING").
 
 **JSDoc/TSDoc:**
-- Exported functions and many interfaces/fields carry `/** ... */` doc comments describing
-  contract, invariants, and purity. Field-level comments document the invariant
-  (`errorCount + warningCount <= diagnostics.length`).
+
+- Exported functions, classes, and interfaces carry `/** ... */` blocks describing purpose,
+  invariants, and why the shape exists (see every export in `core/run-typecheck.ts`).
+- Interface fields are documented inline with `//` comments tied to decision ids.
 
 ## Function Design
 
-**Size:** functions stay single-purpose. `runTypecheck` is the one large orchestrator;
-it delegates to small pure helpers (`finalize`, `resolveFilterBasePath`,
-`detectTemplateCheckAborted`, `synthesizeZeroRootNamesDiagnostic`).
-
-**Parameters:** public entry points take a single options object
-(`runTypecheck(options: CoreOptions)`, `normalizeOptions(options, context)`). Booleans are
-opt-in with safe defaults applied via `?? false`.
-
-**Return Values:** return structured result objects (`CoreResult`, `NormalizedOptions`,
-`{ success: boolean }`), `readonly` arrays for diagnostic sets, and union literals for
-policy (`0 | 1 | 2` from `toExitCode`). Conditional fields are spread in only when present
-(`...(templateCheckAborted !== undefined ? { templateCheckAborted } : {})`).
+- Small, single-purpose module functions composed by an orchestrator (`runTypecheck`
+  delegates to `handleSolutionWalk`, `finalize`, `buildFinalizeFilter`, `presentIfNonEmpty`).
+- Functions are extracted specifically to stay under the cognitive-complexity budget
+  (`handleSolutionWalk` was carved out of `runTypecheck` for this reason) -- fallow audits
+  new complexity in CI (`.fallowrc.jsonc`, `fallow` job).
+- Prefer explicit parameter objects (`CoreOptions`, `FinalizeFilter`) over long positional lists.
+- Return `readonly` arrays in public result types (`CoreResult.diagnostics: readonly ts.Diagnostic[]`).
+- Advisory array fields on `CoreResult` are PRESENT only when non-empty (`[]` maps to
+  `undefined`), via the shared `presentIfNonEmpty` helper -- consumers branch on presence.
 
 ## Module Design
 
-**Exports:** named exports throughout `core/`; the executor uses a `default export` async
-function (Nx requires the executor's default export). The public API surface is the barrel
-`src/index.ts`, which re-exports the `core/` functions + their option/result types.
-
-**Barrel Files:** `src/index.ts` is the single barrel and the published `main`/`exports`
-entry (`./src/index.js`). `core/` modules import each other by relative path, not via the
-barrel, to avoid cycles. `exit-codes.ts` must NOT be imported by `run-typecheck.ts`
-(the engine stays unaware of exit policy -- documented layering rule).
-
-## Commit Conventions (release-driving)
-
-Conventional Commits are MANDATORY -- `nx release` (`nx.json` -> `release.version.
-conventionalCommits: true`) computes both the next version and the changelog from the
-commit log. See `AGENTS.md` for the authoritative rules. Key points:
-- Format: `type(scope): imperative summary`. Breaking change = `!` before colon OR a
-  `BREAKING CHANGE:` footer.
-- This repo is pre-1.0, so `adjustSemverBumpsForZeroMajorVersion` shifts bumps DOWN one
-  level: `feat`/`fix` both produce a PATCH bump; a breaking change produces a MINOR bump.
-  `docs`/`chore`/`refactor`/`test`/`build`/`ci`/`style`/`perf` produce NO bump.
-- Only commits that touch `packages/angular-typechecker/` files count toward its version;
-  `.planning/`-only or docs-only commits do not bump the package.
-- Keep scopes PUBLIC-clean (`core`, `executor`, `release`, `deps`) -- internal plan-id
-  scopes (`feat(05-01): ...`) leak verbatim into the generated changelog.
-- No AI attribution in commit messages. Never `git add .`/`-A`/`-u` -- stage by name.
+- The published plugin is CommonJS: `package.json` `"type": "commonjs"`, `main:
+  "./src/index.js"`, `types: "./src/index.d.ts"`, `exports` map `{ ".": "./src/index.js",
+  "./package.json": "./package.json" }`. Do NOT add a `module` field or `type: module`.
+- Compiled with `module`/`moduleResolution: "nodenext"` (plugin `tsconfig.json`) so the
+  dynamic `await import('@angular/compiler-cli')` (ESM-only) survives emit and is NOT
+  downleveled to `require()`. Reach the ESM compiler-cli via `await import()`, never a static import.
+- The public barrel (`src/index.ts`) exports ONLY `runTypecheck`,
+  `TypecheckInfrastructureError`, and the `CoreOptions` / `CoreResult` / `SkippedReference`
+  types. Engine internals stay unexported and free to change; the executor + generators are
+  reached BY PATH via `executors.json` / `generators.json`, not the barrel.
+- Dependencies: `@nx/devkit` is a pinned `dependency` (`23.0.1`); `@angular/compiler-cli`
+  (`^22.0.0`) and `typescript` (`>=6.0.0 <6.1.0`) are `peerDependencies`; `tslib` is a
+  dependency (paired with `importHelpers: true`). NEVER declare `nx` -- devkit's peer carries it.
+- The `core/**` boundary is locked at lint time: it may not import `nx`, `@nx/*`,
+  `@angular-devkit/*`, or a CLI arg parser (`yargs`), even type-only. Only the executor
+  adapter (`executors/typecheck/`) and `normalize-options.ts` may import `@nx/devkit`.
 
 ---
 
-*Convention analysis: 2026-06-30*
+*Convention analysis: 2026-07-09*

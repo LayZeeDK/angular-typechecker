@@ -10,7 +10,7 @@ A historical record of shipped versions. For current work see `.planning/ROADMAP
 **Phases:** 16-20, incl. the Phase 16 GO/NO-GO spike (5) | **Plans:** 20 | **Tasks:** 37 | **Commits:** ~204 (since the v0.1.1 hotfix tag)
 **Timeline:** 2026-07-05 -> 2026-07-07 (3 days)
 **Package source:** ~3,636 LOC production TypeScript (`packages/angular-typechecker/src/`, non-test)
-**Published:** PENDING -- version is still `0.1.1` at close; `angular-typechecker@0.2.0` is cut via the human-gated Release-PR flow (AGENTS.md), not by this milestone close.
+**Published:** `angular-typechecker@0.2.0` (npm, live, 2026-07-07, tokenless OIDC + SLSA v1 provenance) -- cut AFTER milestone close via the human-gated Release-PR flow (AGENTS.md): PR #29 merged, tag `angular-typechecker@0.2.0` on the release merge commit.
 
 ### Delivered
 
@@ -41,7 +41,7 @@ security verified with 0 open threats.
 
 ### Known deferred items at close
 
-- **Post-close (human-gated):** the v0.2.0 npm release cut + publish -- version stays `0.1.1` at close; the `angular-typechecker@0.2.0` tag is created on the release merge commit via the AGENTS.md Release-PR flow (OIDC publish behind the `npm-publish` environment).
+- **Post-close (human-gated) -- DONE 2026-07-07:** the v0.2.0 npm release was cut + published via the AGENTS.md Release-PR flow -- PR #29 (`release/0.2.0`) merged, `angular-typechecker@0.2.0` tag created on the release merge commit, OIDC publish through the `npm-publish` environment (SLSA v1 provenance).
 - **Tech debt (non-blocking):** `exit-codes.ts` `toExitCode` mirrors only the `suppressedInGraphError` coverage-incomplete trigger (dead scaffold, no live consumer -- the Nx executor uses `evaluateResult`); the local-only `nx-add-yarn` corepack/Verdaccio ECONNREFUSED flake (CI e2e is Linux-only); and the benign `requirements-completed: [SB-08]` frontmatter overstatement.
 - The 7 post-v0.1.1 quick tasks (260703-lp0/p2x/u74/wcg, 260704-mse/wnq, 260705-1wo) were verified + shipped; the close audit initially flagged them "missing" due to the recurring bare-`SUMMARY.md`-vs-`<id>-SUMMARY.md` scanner mismatch (bare markers added at close).
 

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: Storybook story type-checking
 status: Awaiting next milestone
-stopped_at: "Phase 20 -- Gate B human checkpoint (real-OSS radix-ng tarball verify); Gate A green CI done (PR #27)"
-last_updated: "2026-07-07T19:17:53.352Z"
-last_activity: 2026-07-07 — Milestone v0.2.0 completed and archived
+stopped_at: "v0.2.0 RELEASED -- angular-typechecker@0.2.0 published to npm 2026-07-07 (PR #29 merged; tag on the release merge commit); awaiting /gsd-new-milestone"
+last_updated: "2026-07-09T21:22:43.067Z"
+last_activity: 2026-07-07 -- v0.2.0 released and published to npm (angular-typechecker@0.2.0)
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-07 -- v0.2.0 milestone CLOSED)
+See: .planning/PROJECT.md (updated 2026-07-09 -- v0.2.0 RELEASED + published to npm)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** v0.2.0 closed + audited PASSED; the v0.2.0 npm publish is the pending human-gated Release-PR, then `/gsd-new-milestone`.
+**Current focus:** v0.2.0 RELEASED -- `angular-typechecker@0.2.0` published live to npm 2026-07-07 (dist-tag `latest`, tokenless OIDC + SLSA v1 provenance). Next: `/gsd-new-milestone`.
 
 ## Current Position
 
-Phase: Milestone v0.2.0 complete
+Phase: Milestone v0.2.0 released
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-07 — Milestone v0.2.0 completed and archived
+Last activity: 2026-07-07 -- v0.2.0 released and published to npm (angular-typechecker@0.2.0)
 
 ## Accumulated Context
 
@@ -119,15 +119,15 @@ Last session: 2026-07-07 -- ran `/gsd-audit-milestone v0.2.0` (PASSED 9/9 requir
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed
 REQUIREMENTS.md, added the 7 bare quick-task `SUMMARY.md` markers (audit-open workaround, 3rd close).
-Milestone-close committed on `release/0.2.0`; `main` held at origin (PR-only).
-Stopped at: v0.2.0 Release-PR -- version cut + curated end-user-facing CHANGELOG on `release/0.2.0`,
-PR opened into `main`. Merge, `angular-typechecker@0.2.0` tag on the merge commit, and OIDC npm
-publish are the pending HUMAN-GATED steps (AGENTS.md; never agent-approved).
-Next step: human merges the Release-PR once `ci` is green, tags the merge commit
-`angular-typechecker@0.2.0`, pushes the tag (fires `release.yml` -> OIDC publish, approve the
-`npm-publish` environment), and creates the GitHub Release from the curated CHANGELOG section. Then
-`/gsd-new-milestone`. OSS reference clones under D:/projects/github/ (radix-ng/primitives et al.) are
-not committed.
+Milestone-close committed on `release/0.2.0`; then RELEASED via the AGENTS.md Release-PR flow:
+PR #29 (`release/0.2.0`, carrying the version cut + curated end-user-facing CHANGELOG) merged into
+`main`; the `angular-typechecker@0.2.0` tag was created on the release merge commit and pushed
+(fired `release.yml` -> OIDC publish through the human-approved `npm-publish` environment); and the
+GitHub Release was cut from the curated CHANGELOG section. `angular-typechecker@0.2.0` is live on npm
+(dist-tag `latest`, published 2026-07-07T22:25:11Z, SLSA v1 provenance);
+`packages/angular-typechecker/package.json` is at `0.2.0`.
+Next step: start the next milestone with `/gsd-new-milestone`. OSS reference clones under
+D:/projects/github/ (radix-ng/primitives et al.) are not committed.
 
 ## Operator Next Steps
 

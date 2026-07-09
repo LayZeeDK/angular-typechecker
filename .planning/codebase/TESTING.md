@@ -1,272 +1,241 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-06-30
+**Analysis Date:** 2026-07-09
 
-This project is a type-checking tool, so test correctness is the product. Tests fall into
-three tiers: fast pure-unit specs, real-`@angular/compiler-cli` integration specs (in the
-plugin), and tarball/install/matrix e2e specs (under `e2e/`). Verify type-check behavior
-via the test runner (`nx test`), never the editor LSP.
+This project is a type-checking tool, so test correctness is the product. Tests are
+organized into three tiers (unit, real-compiler integration, tarball/verdaccio e2e) plus a
+set of always-run regression GUARD specs. All tiers use Vitest; Jest is deferred because
+`@angular/compiler-cli` is ESM-only.
 
 ## Test Framework
 
 **Runner:**
-- Vitest, run through the Nx executor `@nx/vitest:test` (Nx 23's dedicated Vitest package,
-  NOT `@nx/vite:test`). Configured per project via a `vitest.config.mts` file.
-- Plugin config: `packages/angular-typechecker/vitest.config.mts`.
-- Vitest version: `~4.1.0`; coverage via `@vitest/coverage-v8` `~4.1.0` (root devDeps).
+
+- Vitest `~4.1.0` via the Nx `@nx/vitest:test` executor (the dedicated Nx 23 package, NOT
+  `@nx/vite:test`).
+- Per-project config: `packages/angular-typechecker/vitest.config.mts`,
+  `libs/test-util/vitest.config.mts`, and one per e2e project under `e2e/*/vitest.config.mts`.
+- `vitest.workspace.ts` at the root globs `**/vitest.config.{mjs,js,ts,mts}`.
+- Every config uses `defineConfig`, `nxViteTsPaths()` (tsconfig path resolution) and
+  `nxCopyAssetsPlugin(...)`, with `watch: false` and `globals: true`.
 
 **Assertion Library:**
-- Vitest built-in `expect` (Jest-compatible matchers + `expect.stringContaining`,
-  `toHaveBeenCalledWith`, `rejects.toThrow`, etc.).
+
+- Vitest built-in `expect` with `describe` / `it` (globals enabled; also imported explicitly
+  in specs for clarity: `import { describe, expect, it, vi } from 'vitest';`).
 
 **Run Commands:**
+
 ```bash
-npx nx test angular-typechecker                          # plugin unit + integration specs
-npx nx run-many -t typecheck-drift test -p angular-typechecker   # CI plugin gate (drift + test)
-npx nx run-many -t test -p angular-typechecker-install-e2e \
-  angular-typechecker-cache-e2e angular-typechecker-matrix-e2e   # the three e2e projects
-npx nx test angular-typechecker --skip-nx-cache          # bypass Nx cache for a clean run
+npx nx test angular-typechecker                              # plugin unit + integration tier
+npx nx run-many -t test -p angular-typechecker test-util     # what the CI `test` job runs (with typecheck-drift)
+npx nx run-many -t test \
+  -p angular-typechecker-install-e2e \
+     angular-typechecker-cache-e2e \
+     angular-typechecker-matrix-e2e --parallel=1             # the e2e gate (MUST be serial; see below)
+npx nx scoped-name-guard angular-typechecker                 # always-run regression guard (cache:false)
 ```
-Note: the plugin `test` target `dependsOn: ["build"]` (`packages/angular-typechecker/
-project.json`), so a build runs first. The e2e projects `implicitDependencies:
-["angular-typechecker"]` and pack/install the freshly built tarball.
+
+- The plugin `test` target `dependsOn: ["build"]` (`packages/angular-typechecker/project.json`).
+- CI sets `NX_DAEMON: false` for every test job.
 
 ## Test File Organization
 
-**Location:**
-- Co-located with source under `packages/angular-typechecker/src/` (unit + integration).
-- E2E specs live in separate Nx projects under `e2e/` with their own fixtures.
+**Location:** Co-located with source. Unit + integration specs sit directly beside the
+module they test (e.g. `src/core/run-typecheck.ts` <-> `src/core/run-typecheck.spec.ts` +
+`src/core/run-typecheck.integration.spec.ts`). E2e specs live in `e2e/<project>/src/`.
 
-**Naming:**
-- Unit (pure / mocked): `<module>.spec.ts` -- e.g. `exit-codes.spec.ts`,
-  `gather-diagnostics.spec.ts`, `executor.spec.ts`, `package-manifest.spec.ts`,
-  `schema-parity.spec.ts` (26 plugin `.spec.ts` files).
-- Real-compiler integration (in the plugin): `<name>.integration.spec.ts` -- e.g.
-  `run-typecheck.integration.spec.ts`, `fault-isolation.integration.spec.ts`
-  (8 `.integration.spec.ts` files).
-- E2E (tarball/install/matrix): `<name>.int.spec.ts` -- e.g. `tarball-audit.int.spec.ts`,
-  `matrix-5types.int.spec.ts` (7 e2e `.int.spec.ts` files).
+**Naming (tier is encoded in the suffix):**
 
-**Structure (Vitest include globs):**
+- `*.spec.ts` -- unit tier. Mocked, fast, jsdom, parallel.
+- `*.integration.spec.ts` -- integration tier. Runs the REAL `@angular/compiler-cli`
+  `performCompilation` against a `fixtures/` project.
+- `*.int.spec.ts` -- e2e tier. `execSync` real toolchain (`nx build` / `npm pack` /
+  install / `nx run`), node env, fully serialized.
+
+**Structure:**
+
 ```
-packages/angular-typechecker/
-  src/core/*.spec.ts                  # pure unit + real-compiler integration (same dir)
-  src/core/*.integration.spec.ts
-  src/executors/angular-typecheck/*.spec.ts
-  src/package-manifest.spec.ts
-e2e/angular-typechecker-install-e2e/src/*.int.spec.ts
-e2e/angular-typechecker-cache-e2e/src/*.int.spec.ts
-e2e/angular-typechecker-matrix-e2e/src/*.int.spec.ts
-fixtures/<scenario>/                  # real Angular component + tsconfig fixtures
+packages/angular-typechecker/src/
+  core/*.spec.ts                 # unit + *.integration.spec.ts (real compiler)
+  executors/typecheck/*.spec.ts  # executor + normalize-options + schema-parity
+  generators/*/*.spec.ts         # generator unit + schema-parity
+  *.spec.ts                      # top-level guards (scoped-name-guard, ci-e2e-coverage-guard, package-manifest, storybook-docs)
+libs/test-util/src/lib/*.spec.ts # shared test-helper unit tests
+e2e/<project>/src/*.int.spec.ts  # tarball/verdaccio e2e
+fixtures/                        # hand-authored Angular projects the integration tier checks
 ```
-
-The plugin config includes `{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}`;
-each e2e config narrows to `src/**/*.int.spec.ts`. `tsconfig.spec.json` lists the spec/test
-globs and types `["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"]`;
-it EXCLUDES `src/**/*.drift.ts`. `tsconfig.lib.json` excludes all `*.spec`/`*.test`/`*.drift`
-so tests never ship.
 
 ## Test Structure
 
-**Suite Organization** (from `src/core/exit-codes.spec.ts`):
+**Suite Organization:**
+
 ```typescript
-import { describe, expect, it } from 'vitest';
-
-import { toExitCode } from './exit-codes';
-import { TypecheckInfrastructureError } from './run-typecheck';
-
-describe('toExitCode (COR-04 / D-07)', () => {
-  it('returns 2 for an infrastructure error', () => {
-    expect(toExitCode(new TypecheckInfrastructureError('boom'))).toBe(2);
-  });
-
-  it('returns 1 when errorCount > 0', () => {
-    expect(toExitCode({ errorCount: 3 })).toBe(1);
-  });
-
-  it('returns 0 when clean (errorCount 0)', () => {
-    expect(toExitCode({ errorCount: 0 })).toBe(0);
+describe('gatherAllDiagnostics', () => {
+  it('calls all the unconditional getters in order ...', () => {
+    // arrange a minimal stub program, act, assert on ordered call log
+    expect(calls).toEqual([...]);
+    expect(result.map((diagnostic) => diagnostic.code)).toEqual([...]);
   });
 });
 ```
 
 **Patterns:**
-- `globals: true` is set in every Vitest config, so `describe`/`it`/`expect`/`vi` are
-  globally available -- but specs STILL explicitly `import` them from `'vitest'` (the
-  type imports keep the spec self-documenting and lint-clean).
-- `it` titles are full sentences that name the requirement/decision id under test
-  (`'ENG-02: the unconditional gatherer surfaces TS2322 AND NG8109 ...'`). Keep this --
-  the ids cross-reference `.planning/` requirements.
-- Parameterized cases use `describe.each` / `it.each` (e.g.
-  `run-typecheck.integration.spec.ts` runs the same assertions against the app and lib
-  tsconfigs; `matrix-5types.int.spec.ts` iterates the five project types).
-- `beforeEach`/`afterEach`/`beforeAll`/`afterAll` for setup/teardown (see below).
+
+- Parameterized suites via `describe.each([...])` (e.g. app-tsconfig vs lib-tsconfig matrix
+  in `run-typecheck.integration.spec.ts`).
+- Common assertion styles: `toEqual`, `toContain`, `toBeDefined`, `toBeUndefined`,
+  `not.toThrow`, `toHaveBeenCalledOnce`, `toHaveBeenCalledWith`, `.toBe(true)` with a
+  descriptive message as the second `expect(...)` arg for guard specs.
+- Angular extended diagnostic codes are asserted through the negative-encoding helper
+  `const NG = (code) => -990000 - code;` -- NEVER the bare positive code. Raw TypeScript
+  codes (e.g. `2322`) are asserted directly.
 
 ## Mocking
 
-**Framework:** Vitest `vi` (`vi.mock`, `vi.hoisted`, `vi.fn`, `vi.spyOn`,
-`vi.clearAllMocks`, `vi.restoreAllMocks`). Used in only TWO plugin specs
-(`executor.spec.ts`, `infra-failure.spec.ts`) -- mocking is reserved for isolating the
-adapter's COMPOSITION/error-handling logic from the real compiler.
+**Framework:** Vitest `vi` (`vi.fn`). No heavy `vi.mock` module mocking in the unit tier.
 
-**Pattern** (from `src/executors/angular-typecheck/executor.spec.ts`):
+**Patterns:**
+
 ```typescript
-// Hoisted mock handles so each test drives the composed core deterministically.
-const mocks = vi.hoisted(() => ({
-  runTypecheck: vi.fn(),
-  renderReport: vi.fn(async () => 'RENDERED REPORT'),
-  evaluateResult: vi.fn(),
-  normalizeOptions: vi.fn(() => ({ /* ... */ })),
-  loggerError: vi.fn(),
-  loggerWarn: vi.fn(),
-}));
-
-// Keep the REAL TypecheckInfrastructureError so the executor's instanceof catch works;
-// only stub runTypecheck.
-vi.mock('../../core/run-typecheck', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../core/run-typecheck')>();
-  return { ...actual, runTypecheck: mocks.runTypecheck };
-});
-
-vi.mock('@nx/devkit', () => ({
-  logger: { error: mocks.loggerError, info: mocks.loggerInfo, warn: mocks.loggerWarn },
-  joinPathFragments: (...parts: string[]) => parts.join('/'),
-}));
+// Hand-build a minimal compiler stub and cast through unknown to the shim type.
+const program = {
+  getTsOptionDiagnostics: vi.fn(() => []),
+  getNgSemanticDiagnostics: vi.fn((fileName?: string) => [diagnostic(8109)]),
+  getTsProgram: () => ({ getGlobalDiagnostics: () => [], getSourceFiles: () => [] }),
+} as unknown as Program;
 ```
-- Re-import the unit under test INSIDE each `it` (`const { default: executor } = await
-  import('./executor');`) so the hoisted mocks apply after `vi.mock` registration.
-- `vi.spyOn(process.stdout, 'write').mockImplementation(() => true)` to assert raw stdout
-  writes without polluting test output.
-- `vi.clearAllMocks()` in `beforeEach`, `vi.restoreAllMocks()` in `afterEach`.
 
 **What to Mock:**
-- The four core seams of the executor adapter (`runTypecheck`, `renderReport`,
-  `evaluateResult`, `normalizeOptions`) and `@nx/devkit`'s `logger` -- to test composition,
-  verdict mapping, and error classification without a real compiler load.
-- Preserve REAL error classes when an `instanceof` check depends on them (use
-  `importOriginal` and spread `...actual`).
+
+- The compiler `Program` surface in the unit tier -- stub only the getters under test, cast
+  `as unknown as Program`. Tiny builders (`diagnostic(code)`, `sourceFile(name, isDecl)`)
+  keep loops exercised without a real compiler.
+- Record call order into a `string[]` to prove the unconditional all-getter ordering.
 
 **What NOT to Mock:**
-- The Angular compiler in integration specs. `*.integration.spec.ts` and the e2e specs run
-  the REAL `@angular/compiler-cli performCompilation` against real fixture projects --
-  that end-to-end proof is the whole point of a type-checking tool.
-- `gatherAllDiagnostics`/diagnostic-shaping pure functions test against tiny hand-built
-  `ts.Program`/`ts.SourceFile` stubs (`{ ... } as unknown as Program`), not `vi.mock`.
+
+- The `@angular/compiler-cli` compiler itself in the integration tier -- those specs run the
+  REAL cold `performCompilation` against a fixture so behavior is proven end-to-end.
+- The real toolchain in e2e -- those specs shell out to `nx` / `npm` / `pnpm` / `yarn` via
+  `execSync`.
 
 ## Fixtures and Factories
 
 **Test Data:**
-- Real Angular fixture projects live under `fixtures/<scenario>/` (each has component
-  `.ts`/`.html` + a leaf `tsconfig.*.json`). Scenarios encode specific diagnostic
-  conditions: `gate-b-error` (TS2322 + NG8109 in one program), `sibling-import`
-  (in-project vs out-of-project boundary), `fault-isolation` (TCB-generation poison +
-  survivor), `solution-style` (references-only zero-rootNames guard), `composite-triangle`,
-  `extended-promoted`, `extended-v13`, `global-diagnostics`, `config-broken`,
-  `no-emit-message`, `ts-baseline`, `ng-baseline`.
-- E2E fixtures are full consumer workspaces:
-  `e2e/angular-typechecker-install-e2e/fixtures/consumer-app/` and
-  `e2e/angular-typechecker-matrix-e2e/fixtures/consumer-workspace/` (app + local/buildable/
-  publishable libs + spec tsconfig).
-- Small factory helpers build literal result/diagnostic objects in-spec (e.g.
-  `coreResult(errorCount)`, `abortedCoreResult(fileName)`, `diagnostic(code)`,
-  `sourceFile(fileName, isDeclarationFile)`) rather than shared fixture modules.
 
-**Location:** `fixtures/` (workspace root) for the plugin integration tier; each e2e
-project's own `fixtures/` for the install/matrix tier. Fixtures resolve their paths from
-the spec's own location via `fileURLToPath(import.meta.url)` + `join(...)` so runs are
-cwd-independent.
+- Real Angular project fixtures live in `fixtures/` (`gate-b-error`, `sibling-import`,
+  `config-broken`, `solution-style`, `extended-batch-*`, etc.) with their own
+  `tsconfig.*.json` and `.component.ts` / `.html`. Integration specs resolve them by
+  `join(findWorkspaceRoot(...), 'fixtures', '<name>')`.
+- Some fixture templates are `.prettierignore`d because reflow changes which NG diagnostics
+  fire and would break exact-count assertions.
+- E2e consumer workspaces live under `e2e/<project>/fixtures/`.
+
+**Location / helpers:**
+
+- Shared helpers are the `@workspace/test-util` lib (`libs/test-util/src/index.ts`):
+  `findWorkspaceRoot` (walks up to `nx.json`, so every spec is cwd-independent),
+  `buildCleanEnv`, `run`, `sh`, `commandSucceeds`, `removeTmpDir`, and fixture/env helpers.
+- Specs resolve their own location with `dirname(fileURLToPath(import.meta.url))` then
+  `findWorkspaceRoot(...)` -- never a relative `../../` climb.
 
 ## Coverage
 
-**Requirements:** no enforced threshold. Coverage is collected (v8 provider) but not gated.
-- Plugin: `reportsDirectory: '../../coverage/packages/angular-typechecker'`, `provider:
-  'v8'` (`vitest.config.mts`); the `test` target `outputs` the reports dir.
+**Requirements:** No enforced threshold. Provider is v8 (`@vitest/coverage-v8`), output to
+`coverage/<project>/` (`reportsDirectory` in each vitest config + the `test` target).
 
 **View Coverage:**
+
 ```bash
-npx nx test angular-typechecker --coverage   # report under coverage/packages/angular-typechecker
+npx nx test angular-typechecker --coverage
 ```
 
 ## Test Types
 
-**Unit Tests** (`*.spec.ts`, jsdom env, fast):
-- Pure-function policy/shaping: `exit-codes.spec.ts`, `evaluate-result.spec.ts`,
-  `filter-diagnostics.spec.ts`, `format-report.spec.ts`, `gather-diagnostics.spec.ts`,
-  `normalize-options.spec.ts`.
-- Contract/manifest specs that read files but load no compiler: `package-manifest.spec.ts`
-  (asserts the published `package.json` deps/peers/engines/files/exports/keywords),
-  `schema-parity.spec.ts` (schema.json keys == schema.d.ts interface keys).
-- Composition/error-handling with mocks: `executor.spec.ts`, `infra-failure.spec.ts`.
+**Unit Tests (`*.spec.ts`):**
 
-**Integration Tests** (`*.integration.spec.ts`, jsdom env, real compiler):
-- Call `runTypecheck` directly against a `fixtures/` tsconfig and assert off `CoreResult`
-  (codes via `diagnostics.map(d => d.code)`, `errorCount`, `suppressedCount`,
-  `templateCheckAborted`). Each spec proves one decision end-to-end (boundary filter,
-  no-emit override neutralizing TS6059/TS5055, global diagnostics, fault isolation,
-  config resolution, zero-rootNames guard).
-- These run a COLD `performCompilation` (ESM load + whole-program check), so the plugin
-  config raises `testTimeout`/`hookTimeout` to `30000` (default 5000 flakes on slower
-  hardware like Windows arm64).
+- Scope: pure core functions and the executor/generator adapters with stubbed compiler.
+- Environment `jsdom`, `globals: true`, run in PARALLEL.
+- `testTimeout` / `hookTimeout` raised to `30000` in the plugin config -- the co-resident
+  `*.integration.spec.ts` cold-compiler runs can exceed the 5000ms default on slow hardware
+  (Windows arm64), producing a rotating timeout flake. This changes patience only, not semantics.
 
-**E2E / Tarball Tests** (`*.int.spec.ts`, node env, fully serialized):
-- `angular-typechecker-install-e2e`: `install-smoke` (pack + install the tarball into a
-  tmp consumer, run the executor green + injected-error), `tarball-audit` (build fresh
-  dist, `npm pack`, run `publint --strict` + `attw --pack --profile node16` + file-set /
-  no-install-scripts / no-`@fixtures`-leak gates), `release-hygiene`.
-- `angular-typechecker-matrix-e2e`: `matrix-5types` runs the installed tarball's executor
-  across all five project types via `it.each`; `pnpm-symlink` covers pnpm `.pnpm/` layout.
-- `angular-typechecker-cache-e2e`: `executor-parity`, `cache-busts-on-dep-error` (Nx cache
-  correctness).
-- These shell out via `execSync` to real `nx`/`npm`/`tar`/`publint`/`attw`. Their configs
-  set `pool: 'forks'`, `singleFork: true`, `fileParallelism: false`,
-  `sequence.concurrent: false`, `environment: 'node'`, and `testTimeout: 300000` because
-  the harness builds + packs + installs (parallel workers would race on the shared dist +
-  `.tgz`). They strip `NX_*` runner env vars (`buildCleanEnv`) so the nested `nx`/`npm`
-  invocations are clean top-level runs.
+**Integration Tests (`*.integration.spec.ts`):**
 
-**Build-time drift "test"** (not a Vitest spec): `compiler-cli-types.drift.ts` is a
-type-only tripwire compiled by the `typecheck-drift` Nx target
-(`tsc --noEmit -p tsconfig.drift.json`, classic `moduleResolution: node`). It asserts the
-real `@angular/compiler-cli` `Program` stays assignable to the vendored shim; a
-removed/renamed/signature-changed getter fails the build. Run in CI alongside `test`.
+- Scope: real `@angular/compiler-cli` `performCompilation` against a `fixtures/` project,
+  asserting off the structured `CoreResult`. Run in the SAME plugin vitest project as the
+  unit tier (same jsdom config, same 30000ms timeout).
+
+**E2e Tests (`*.int.spec.ts`):**
+
+- Three dedicated projects: `angular-typechecker-install-e2e` (verdaccio publish/install +
+  tarball audit + `nx add` on npm/pnpm/yarn + generators + storybook), `-cache-e2e` (nx cache
+  correctness + executor parity), `-matrix-e2e` (5 project-type matrix + pnpm symlink).
+- Environment `node` (NOT jsdom -- an execSync/pack harness needs node).
+- FULLY SERIALIZED per project: `pool: 'forks'`, `poolOptions.forks.singleFork: true`,
+  `fileParallelism: false`, `sequence.concurrent: false`.
+- Long timeouts: `180000` (cache-e2e) to `300000` (install/matrix-e2e), because a real
+  `nx build` + `npm pack` + install + `nx run` is slow.
 
 ## Common Patterns
 
 **Async Testing:**
-```typescript
-it('maps errorCount === 0 to { success: true }', async () => {
-  mocks.runTypecheck.mockResolvedValue(coreResult(0));
-  mocks.evaluateResult.mockReturnValue({ success: true });
 
-  const { default: executor } = await import('./executor');
-  const result = await executor(options, context);
-
-  expect(result).toEqual({ success: true });
-});
-```
-- `mockResolvedValue` / `mockRejectedValue` for promise-returning seams; `await import(...)`
-  for the unit under test after mocks are registered.
+- Integration + core specs `await runTypecheck(coreOptions)` directly and assert on the
+  resolved `CoreResult`. Vitest awaits returned promises from `it(async () => ...)`.
 
 **Error Testing:**
+
 ```typescript
-it('RE-THROWS a non-infrastructure error (never swallows an unknown failure)', async () => {
-  mocks.runTypecheck.mockRejectedValue(new Error('unexpected boom'));
-  const { default: executor } = await import('./executor');
-
-  await expect(executor(options, context)).rejects.toThrow('unexpected boom');
-  expect(mocks.loggerError).not.toHaveBeenCalled();
-});
+expect(() =>
+  execSync(`npx publint "${tgz}" --strict`, { cwd: distDir, env, encoding: 'utf8' }),
+).not.toThrow();          // execSync throws on non-zero exit -> the assertion IS the gate
 ```
-- Assert the negative path too (`.not.toHaveBeenCalled()`, `rejects.not.toBeInstanceOf(...)`)
-  so an infra failure can never be mis-reported as clean and a plain error is never
-  mis-classified as infrastructure.
 
-**Diagnostic-code assertions:**
-- TypeScript codes are raw positive ints (`const TS2322 = 2322`). Angular extended codes
-  are negative-encoded -- assert via the `NG()` helper (`const NG = (code) => -990000 -
-  code;`), NEVER the bare positive code. Detect special codes (500 infra, NG3004 TCB
-  fatal) BY CODE ONLY, never by `source`/message text.
+- Core error classification is asserted by diagnostic CODE, never message text.
+
+## Verdaccio / Tarball E2e (the install-e2e project)
+
+- `globalSetup: ['./src/global-setup.ts']` stands up the toolchain ONCE per project run:
+  `startLocalRegistry` (first-party `@nx/js` helper) on the numeric IPv4 loopback
+  `127.0.0.1` (load-bearing -- fixes a `localhost` dual-stack ECONNREFUSED flake in yarn 4),
+  mints a REAL couchdb bearer token (a dummy token 401s on Verdaccio 6), builds dist ONCE,
+  strips CI-only provenance from the dist manifest, and publishes ONCE via the real
+  `nx release publish --first-release --excludeTaskDependencies`.
+- The setup `provide`s `verdaccioUrl` + `verdaccioToken` to specs (typed via a
+  `declare module 'vitest'` `ProvidedContext` augmentation).
+- A SAFETY gate refuses to publish to any non-`http://127.0.0.1:` registry.
+- `buildCleanEnv({ stripAllNpmConfig: true })` strips inherited `npm_config_*` (an inherited
+  `npm_config_registry` outranks `--registry` and would leak the publish to the public registry).
+- The tarball-audit spec (`src/tarball-audit.int.spec.ts`) packs the shared dist, extracts it
+  under a RELATIVE dir (GNU-vs-BSD `tar` + Windows drive-letter portability), and gates on
+  `publint --strict`, `attw --pack --profile node16` (problems empty), a required-files
+  positive set, a spec/fixture/`@fixtures` leak-negative set, and no install-lifecycle scripts.
+
+**CRITICAL -- shared tarball, run `--parallel=1`:**
+
+All three e2e projects `npm pack` the SAME dist artifact
+(`dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz`) in `beforeAll` and
+`rmSync` it in `afterAll`. Vitest serializes WITHIN a project, but `nx run-many` defaults to
+PARALLEL, so without `--parallel=1` a sibling project's `afterAll rmSync` deletes the tarball
+mid-`pnpm add` (ENOENT flake; pnpm 11's supply-chain check widened the window). The flag is
+load-bearing and is guarded by `GUARD-01b` in
+`packages/angular-typechecker/src/ci-e2e-coverage-guard.spec.ts`.
+
+## Regression Guard Specs (always run)
+
+- `scoped-name-guard.spec.ts` -- runs via a dedicated `cache: false` `nx:run-commands` target
+  on EVERY PR (even docs-only) so a stray scoped ref in the shipped README never ships green.
+- `ci-e2e-coverage-guard.spec.ts` (GUARD-01/01b/01c) -- asserts the ci.yml `e2e` job's `-p`
+  list equals the `e2e/*` project set, that it passes `--parallel=1`, and that every e2e
+  project defines + runs `typecheck-e2e`. Reads `ci.yml` + `project.json` with regex, no YAML
+  parser dependency.
+- `schema-parity.spec.ts` (executor + both generators) -- keeps `schema.json` and the
+  hand-authored `schema.d.ts` interface in sync.
+- `*.drift.ts` files + `typecheck-drift` target -- `tsc --noEmit` tripwires that fail when the
+  vendored `@angular/compiler-cli` type shims drift from the installed compiler.
 
 ---
 
-*Testing analysis: 2026-06-30*
+*Testing analysis: 2026-07-09*
