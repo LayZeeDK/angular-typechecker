@@ -1,6 +1,6 @@
 ---
 slug: nx-add-yarn-flake
-status: awaiting_human_verify
+status: resolved
 trigger: "Debug the nx-add-yarn flake"
 goal: find_and_fix
 created: 2026-07-09
@@ -76,7 +76,7 @@ Debug the nx-add-yarn flake
 hypothesis: CONFIRMED -- dual-stack `localhost` family mismatch; Verdaccio bound IPv6 `::1`-only here while yarn intermittently attempted IPv4 -> ECONNREFUSED.
 test: applied end-to-end IPv4 pin; ran the full install-e2e suite against the pinned registry.
 expecting: yarn `nx add` succeeds (numeric-IP URL removes the family race); no sibling regresses.
-next_action: awaiting human verification -- confirm the flake is gone over repeated Linux-CI-only runs before archiving. Then branch + commit are prepared; do not merge/archive until confirmed.
+next_action: CONFIRMED FIXED by the user (2026-07-09). Session archived; fix carried on branch `fix/nx-add-yarn-registry-ipv6-flake` into a PR against `main` (PR-only; merge left to the user).
 reasoning_checkpoint:
   hypothesis: "The e2e registry is addressed by the dual-stack hostname `localhost`; the shared verdaccio target sets no listenAddress so Verdaccio binds the single family `localhost` resolves to first (IPv6 `::1`-only on this Windows host, confirmed by Get-NetTCPConnection). yarn 4's HTTP layer intermittently attempts the OTHER family (IPv4 `127.0.0.1`) for `localhost`; nothing listens there so connect() is refused -> AggregateError [ECONNREFUSED]. npm/pnpm reliably land on the bound family, so only yarn flakes."
   confirming_evidence:
@@ -103,6 +103,47 @@ root_cause: |
   [ECONNREFUSED]`. Resolution wins the family race; a later parallel fetch burst loses it,
   producing the "resolution OK, fetch ECONNREFUSED" signature. Not a registry-down,
   lifecycle, tarball-rewrite (that leg inherits the same `localhost`), or corepack issue.
+fix: |
+  Pin the shared e2e local registry to the numeric IPv4 loopback end-to-end so no
+  client path performs `localhost` name resolution (and thus no dual-stack family
+  selection):
+    1. project.json local-registry target: add `"listenAddress": "127.0.0.1"` ->
+       verdaccio binds 127.0.0.1 and prints `http://127.0.0.1:PORT/`.
+    2. global-setup.ts: pass `listenAddress: '127.0.0.1'` to startLocalRegistry (so
+       its readiness scrape + the provided verdaccioUrl use the numeric literal) and
+       flip the publish SAFETY gate to `http://127.0.0.1:`.
+    3. Flip the loopback SAFETY-gate asserts in every install-e2e spec that reads
+       verdaccioUrl (`http://localhost:` -> `http://127.0.0.1:`): nx-add-npm/pnpm/yarn,
+       storybook-composition, storybook-tarball (x2), verdaccio-publish.
+    4. yarn spec: `unsafeHttpWhitelist` host `localhost` -> `127.0.0.1` (must match the
+       numeric registry host). npm/pnpm nerf-dart + verdaccio tarball-URL rewrite derive
+       the host from the URL, so they follow automatically.
+  Numeric IP on BOTH ends means yarn connects to exactly 127.0.0.1 (no DNS, no `::1`
+  candidate), matching where verdaccio now binds -- the root-cause fix, not a retry.
+verification: |
+  Ran the full `angular-typechecker-install-e2e` suite against the pinned registry
+  (NX_DAEMON=false, --skip-nx-cache): 11 files / 37 tests PASS, nx exit 0. Directly
+  relevant: `nx-add-yarn.int.spec.ts` (the real `corepack yarn nx add
+  angular-typechecker`) PASSED in 13.9s with NO ECONNREFUSED -- the falsification test
+  (yarn still refusing against a numeric IPv4 registry) did NOT trigger. No sibling
+  regressed (npm/pnpm/storybook/verdaccio-publish all green on the IPv4 URL). Prettier
+  format:check clean on all changed files; the e2e project has no lint target so the
+  edits are Prettier-gated only. Live root-cause proof captured beforehand:
+  Get-NetTCPConnection showed verdaccio bound `::1`-only under the old bare `--listen`,
+  and bound `127.0.0.1` under `--listenAddress 127.0.0.1`.
+  HONEST CAVEAT: a single green yarn run cannot prove absence of a 1-in-many flake; the
+  confidence is mechanism-level (numeric literals eliminate the causal name-resolution/
+  family-selection step entirely), not statistical. User confirmed fixed 2026-07-09;
+  repeated Linux-CI runs remain the closing statistical check.
+files_changed:
+  - project.json
+  - e2e/angular-typechecker-install-e2e/src/global-setup.ts
+  - e2e/angular-typechecker-install-e2e/src/nx-add-yarn.int.spec.ts
+  - e2e/angular-typechecker-install-e2e/src/nx-add-npm.int.spec.ts
+  - e2e/angular-typechecker-install-e2e/src/nx-add-pnpm.int.spec.ts
+  - e2e/angular-typechecker-install-e2e/src/storybook-composition.int.spec.ts
+  - e2e/angular-typechecker-install-e2e/src/storybook-tarball.int.spec.ts
+  - e2e/angular-typechecker-install-e2e/src/verdaccio-publish.int.spec.ts
 
 ## Evidence
 
@@ -153,44 +194,23 @@ root_cause: |
   evidence: not a separate root -- Verdaccio rewrites dist.tarball on read from the request Host (`localhost`, no url_prefix set), so the fetch leg simply inherits the SAME dual-stack `localhost` ambiguity as resolution. Collapses into H1; same fix resolves it.
   timestamp: 2026-07-09
 
-  fix: |
-    Pin the shared e2e local registry to the numeric IPv4 loopback end-to-end so no
-    client path performs `localhost` name resolution (and thus no dual-stack family
-    selection):
-      1. project.json local-registry target: add `"listenAddress": "127.0.0.1"` ->
-         verdaccio binds 127.0.0.1 and prints `http://127.0.0.1:PORT/`.
-      2. global-setup.ts: pass `listenAddress: '127.0.0.1'` to startLocalRegistry (so
-         its readiness scrape + the provided verdaccioUrl use the numeric literal) and
-         flip the publish SAFETY gate to `http://127.0.0.1:`.
-      3. Flip the loopback SAFETY-gate asserts in every install-e2e spec that reads
-         verdaccioUrl (`http://localhost:` -> `http://127.0.0.1:`): nx-add-npm/pnpm/yarn,
-         storybook-composition, storybook-tarball (x2), verdaccio-publish.
-      4. yarn spec: `unsafeHttpWhitelist` host `localhost` -> `127.0.0.1` (must match the
-         numeric registry host). npm/pnpm nerf-dart + verdaccio tarball-URL rewrite derive
-         the host from the URL, so they follow automatically.
-    Numeric IP on BOTH ends means yarn connects to exactly 127.0.0.1 (no DNS, no `::1`
-    candidate), matching where verdaccio now binds -- the root-cause fix, not a retry.
-  verification: |
-    Ran the full `angular-typechecker-install-e2e` suite against the pinned registry
-    (NX_DAEMON=false, --skip-nx-cache): 11 files / 37 tests PASS, nx exit 0. Directly
-    relevant: `nx-add-yarn.int.spec.ts` (the real `corepack yarn nx add
-    angular-typechecker`) PASSED in 13.9s with NO ECONNREFUSED -- the falsification test
-    (yarn still refusing against a numeric IPv4 registry) did NOT trigger. No sibling
-    regressed (npm/pnpm/storybook/verdaccio-publish all green on the IPv4 URL). Prettier
-    format:check clean on all changed files; the e2e project has no lint target so the
-    edits are Prettier-gated only. Live root-cause proof captured beforehand:
-    Get-NetTCPConnection showed verdaccio bound `::1`-only under the old bare `--listen`,
-    and bound `127.0.0.1` under `--listenAddress 127.0.0.1`.
-    HONEST CAVEAT: a single green yarn run cannot prove absence of a 1-in-many flake; the
-    confidence is mechanism-level (numeric literals eliminate the causal name-resolution/
-    family-selection step entirely), not statistical. Human verification over repeated
-    Linux-CI runs is the closing check.
-  files_changed:
-    - project.json
-    - e2e/angular-typechecker-install-e2e/src/global-setup.ts
-    - e2e/angular-typechecker-install-e2e/src/nx-add-yarn.int.spec.ts
-    - e2e/angular-typechecker-install-e2e/src/nx-add-npm.int.spec.ts
-    - e2e/angular-typechecker-install-e2e/src/nx-add-pnpm.int.spec.ts
-    - e2e/angular-typechecker-install-e2e/src/storybook-composition.int.spec.ts
-    - e2e/angular-typechecker-install-e2e/src/storybook-tarball.int.spec.ts
-    - e2e/angular-typechecker-install-e2e/src/verdaccio-publish.int.spec.ts
+## Knowledge Base Entry
+
+**Symptom:** An e2e install spec that talks to the shared local Verdaccio registry fails
+intermittently with `AggregateError [ECONNREFUSED]` on the client's FETCH leg, while
+RESOLUTION against the same `http://localhost:PORT` succeeded. Only yarn (berry) flaked;
+npm and pnpm passed on the same host/run.
+
+**Root cause (generalized):** Addressing the local registry by the dual-stack hostname
+`localhost` is non-deterministic. With a bare `--listen PORT` (no `listenAddress`),
+Verdaccio binds only the ONE address family `localhost` resolves to first -- IPv6 `::1`-only
+on this Windows arm64 host. A client that (sometimes) attempts the other family (IPv4
+`127.0.0.1`) reaches nothing and gets ECONNREFUSED. The bound family is host-dependent
+(IPv6-first here, typically IPv4-first on Linux CI), so no client-only pin is portable.
+
+**Guard rule:** Pin the e2e local registry to a NUMERIC IPv4 literal end-to-end -- the
+`local-registry` target's `listenAddress: 127.0.0.1`, the `startLocalRegistry` call, the
+injected `verdaccioUrl`, and every client whitelist/URL. A numeric literal removes DNS and
+dual-stack family selection from the client path entirely. Prefer this over retry/wait
+loops -- it fixes the cause, not the symptom. When adding a new install-e2e spec, assert
+the registry URL is `http://127.0.0.1:` (never `localhost`).
