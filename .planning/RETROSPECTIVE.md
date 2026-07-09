@@ -150,7 +150,7 @@
 
 ## Milestone: v0.2.0 -- Storybook story type-checking
 
-**Closed:** 2026-07-07 (npm publish pending the human-gated Release-PR)
+**Closed:** 2026-07-07 (released 2026-07-07 -- `angular-typechecker@0.2.0` published live to npm via the human-gated Release-PR flow)
 **Phases:** 5 (16-20, incl. the Phase 16 GO/NO-GO spike) | **Plans:** 20 | **Commits:** ~204 | **Timeline:** 3 days
 
 ### What Was Built
@@ -211,7 +211,7 @@
 | v0.0.1 | ~1,162 (33 `.ts` files) | 5/5 | 2 (0.0.1, 0.0.2) |
 | v0.0.3 | ~1,777 prod / ~5,263 incl. tests (15 / 41 `.ts` files) | 5/5 (carried) | 1 (0.0.3) |
 | v0.1.0 | ~2,709 prod / ~8,552 incl. tests (22 / 56 `.ts` files) | 5/5 (carried) | 1 (0.1.0) |
-| v0.2.0 | ~3,636 prod (67 `.ts` files incl. tests) | 5/5 (carried) | 0 (publish pending the Release-PR) |
+| v0.2.0 | ~3,636 prod (67 `.ts` files incl. tests) | 5/5 (carried) | 1 (0.2.0) |
 
 ### Top Lessons (Verified Across Milestones)
 
