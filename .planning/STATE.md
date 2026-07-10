@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: executing
-last_updated: "2026-07-10T20:30:00.000Z"
-last_activity: 2026-07-10 -- Phase 21 plan 21-02 (ENG-01 tsConfig string|string[] via handleMultiTsConfig) complete; build/test/integration/lint green
+status: verifying
+last_updated: "2026-07-10T18:53:52.946Z"
+last_activity: "2026-07-10 -- Phase 21 plan 21-03 complete: three pure builder guard specs (schema parity + thin-wrapper + executors ?? builders regression); nx test(274)/lint/format:check green; no production code changed"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 
 ## Current Position
 
-Phase: 21 (angular-cli-builder-engine-multi-tsconfig-gate-a-spike-go-no) — EXECUTING
-Plan: 2 of 3 complete (21-01 GATE A' = GO human-authorized; 21-02 ENG-01 tsConfig array done)
-Status: Executing Phase 21 -- Wave 3 (21-03 ACB-01/ACB-03 in-repo guard suite) next
-Last activity: 2026-07-10 -- Phase 21 plan 21-02 complete: tsConfig widened to string|string[] (handleMultiTsConfig union-then-single-finalize); nx build/test/integration/lint green
+Phase: 21 (angular-cli-builder-engine-multi-tsconfig-gate-a-spike-go-no) — ALL PLANS EXECUTED
+Plan: 3 of 3 complete (21-01 GATE A' = GO human-authorized; 21-02 ENG-01 tsConfig array; 21-03 in-repo builder guard suite ACB-01/ACB-03)
+Status: Phase 21 execution complete — ready for phase verification (verify_phase_goal), then secure/validate/extract-learnings
+Last activity: 2026-07-10 -- Phase 21 plan 21-03 complete: three pure builder guard specs (schema parity + thin-wrapper + executors ?? builders regression); nx test(274)/lint/format:check green; no production code changed
 
 ## Accumulated Context
 
@@ -62,6 +62,7 @@ archives under `.planning/milestones/`.
 - [Phase 20]: README Vite caveat restructured to lead with the vite/client fix; both SB-09 signals folded into the curated 0.2.0 CHANGELOG (prose only, no release cut, package.json stays 0.1.1)
 - [Phase 21]: 21-01: GATE A' = GO (spike 011, VALIDATED). The shipped CJS->ESM `await import()` bridge SURVIVES `convertNxExecutor` + a real `ng run <project>:typecheck` on-stack Angular 22 (app AND library) against the real `bluehalo/ngx-leaflet` clone @ 818e9ae -- no `ERR_REQUIRE_ESM` incl. the eager `retrieveProjectConfigurationsWithAngularProjects` prelude; planted TS2322 RED / clean control GREEN; on-stack install clean (no --legacy-peer-deps). Minimal builder = `convertNxExecutor(typecheckExecutor)` + `builders.json` + additive `builders` field landed; `gate-a-static` byte-guard extended to the builder entry. Builder `tsConfig` stays single-string (ENG-01 array widening is 21-02). Human GATE A' GO/NO-GO checkpoint = GO (authorized); Waves 2-3 proceed. NO-GO would NEVER have fallen back to a hand-written architect builder (D-04).
 - [Phase 21]: 21-02: ENG-01 -- `tsConfig` widened to `string | string[]` at four additive seams (schema.d.ts, both schema.json `oneOf`, normalize-options `map(resolveOne)`, `CoreOptions.tsConfigPath`). Core `handleMultiTsConfig` runs each entry through the SAME single-tsConfig gather logic, UNIONs the raw per-entry diagnostics, and calls `finalize` EXACTLY ONCE over the COMBINED declared input set (`buildFinalizeFilter` combined `rootNamePaths`) -- the surviving-leaf tail of `handleSolutionWalk`, never per-entry `runTypecheck`+merge. Zero-rootNames entry -> `zero-root-names` `SkippedReference` (coverage-incomplete via `evaluateResult`), per-entry 500 / empty array -> infra throw (never a silent pass, T-21-05). Widened union is MUTABLE `string[]` not `readonly` (Array.isArray narrows a readonly union only in the true branch; mutable keeps the single-string body byte-unchanged). Single-string path + Nx executor path byte-unchanged; proven by a hermetic `fixtures/multi-tsconfig-array` real-compiler integration spec (both planted codes surface, `['x']`===`'x'`). nx build/test(259)/integration/lint green.
+- [Phase 21]: 21-03: in-repo CI-authoritative builder guard suite (three specs, NO production code). (1) `schema-parity.spec.ts` locks the SANITIZED builder `schema.json` to `TypecheckExecutorOptions` via `satisfies` + `AssertAssignable` reverse-coverage probe (keys/required:['tsConfig']/additionalProperties:false/defaults + ENG-01 `tsConfig` oneOf string|array) AND asserts sanitized (no `cli`/`version`/`$id`) -- T-21-07. (2) `builder.spec.ts` thin-wrapper: source-regex proves `builder.ts` imports `convertNxExecutor` from `@nx/devkit` + the executor default from `../../executors/typecheck/executor` + default-exports exactly `convertNxExecutor(typecheckExecutor)`, forbidding an engine fork / hand-written architect builder (T-21-09 / D-04); runtime asserts the Architect Builder brand. (3) `nx-surface-regression.spec.ts` asserts package.json `executors` unchanged + `builders` additive + executors.json still declares the `typecheck` impl -> `executors ?? builders` still resolves the executor (T-21-08). DEVIATION (Rule 1): `convertNxExecutor` returns an Architect Builder OBJECT branded `Symbol.for('@angular-devkit/architect:builder')===true` + a `handler` function, NOT a bare function -- the plan's `typeof==='function'` runtime assertion was corrected to the stronger brand+handler check. nx test(274)/lint/format:check green. Phase 21 complete.
 
 ### Roadmap Evolution
 
@@ -121,7 +122,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-10T14:06:39.625Z
+Last session: 2026-07-10T18:53:52.934Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed
