@@ -36,6 +36,11 @@ interface PluginManifest {
   schematics?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+  // RF-01: how `ng add angular-typechecker` places the install.
+  'ng-add'?: {
+    save?: string;
+  };
   engines?: {
     node?: string;
   };
@@ -146,5 +151,33 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
     // `access` to public" -- the unscoped-defaults-to-public rule does NOT
     // satisfy this, so `access: public` must be explicit (caught by the seed run).
     expect(manifest.publishConfig?.access).toBe('public');
+  });
+});
+
+describe('plugin manifest Angular CLI install contract (ACP-01 / NGADD-01 RF-01 / D-07)', () => {
+  it('sets ng-add.save to devDependencies so `ng add` installs a dev tool into devDependencies (RF-01)', () => {
+    // `@angular/cli` reads the package's own `ng-add.save` and installs with
+    // --save-dev when it is "devDependencies" (precedent @angular-eslint/schematics).
+    expect(manifest['ng-add']?.save).toBe('devDependencies');
+  });
+
+  it('declares the converted builder runtime peers with the D-07 ranges', () => {
+    // @angular-devkit/architect uses the 0.22xx.x scheme (NOT 22.x).
+    expect(manifest.peerDependencies?.['@angular-devkit/architect']).toBe(
+      '^0.2200.0',
+    );
+    expect(manifest.peerDependencies?.['rxjs']).toBe('^7.8.0');
+  });
+
+  it('classifies both builder runtime peers as OPTIONAL (never forced onto a pure-Nx consumer)', () => {
+    expect(
+      manifest.peerDependenciesMeta?.['@angular-devkit/architect']?.optional,
+    ).toBe(true);
+    expect(manifest.peerDependenciesMeta?.['rxjs']?.optional).toBe(true);
+  });
+
+  it('still does NOT declare nx (the optional peers must not reintroduce an explicit nx constraint)', () => {
+    expect(manifest.dependencies ?? {}).not.toHaveProperty('nx');
+    expect(manifest.peerDependencies ?? {}).not.toHaveProperty('nx');
   });
 });
