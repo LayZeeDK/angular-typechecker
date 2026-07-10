@@ -45,9 +45,17 @@ export function normalizeOptions(
   options: TypecheckExecutorOptions,
   context: ExecutorContext,
 ): NormalizedOptions {
-  const tsConfigPath = isAbsolute(options.tsConfig)
-    ? options.tsConfig
-    : joinPathFragments(context.root, options.tsConfig);
+  // ENG-01: resolve EACH entry the same way -- an absolute path passes through, a
+  // relative one is joined under the workspace root via joinPathFragments (NOT
+  // node:path.join -- POSIX-separator stability on Windows arm64). An array maps the
+  // same resolver over every entry; a string resolves once. coreOptions.tsConfigPath
+  // then carries string | readonly string[].
+  const resolveOne = (path: string): string =>
+    isAbsolute(path) ? path : joinPathFragments(context.root, path);
+
+  const tsConfigPath = Array.isArray(options.tsConfig)
+    ? options.tsConfig.map(resolveOne)
+    : resolveOne(options.tsConfig);
 
   return {
     coreOptions: {

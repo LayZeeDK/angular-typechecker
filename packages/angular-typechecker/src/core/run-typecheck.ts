@@ -18,7 +18,19 @@ import type { SkippedReference } from './walk-references';
 import { walkReferences } from './walk-references';
 
 export interface CoreOptions {
-  tsConfigPath: string;
+  // ENG-01 (D-06): a single ABSOLUTE tsconfig path (the unchanged direct path), OR a
+  // non-empty array of ABSOLUTE leaf paths. An array runs each entry through the same
+  // single-tsConfig gather logic, UNIONs the raw per-entry diagnostics, and runs ONE
+  // finalize over the COMBINED declared input set (handleMultiTsConfig). The
+  // single-string path and the entire Nx executor path stay byte-unchanged.
+  //
+  // The array member is MUTABLE `string[]` (not `readonly string[]`) ON PURPOSE:
+  // `Array.isArray()` narrows a `readonly` array's UNION only in the true branch, so a
+  // `string | readonly string[]` field leaves the single-string body typed as the
+  // union (TS2345) and would force touching that byte-unchanged body. A mutable
+  // `string[]` narrows cleanly in BOTH branches, keeping the `Array.isArray` guard and
+  // the single-string body untouched. All real callers pass mutable arrays.
+  tsConfigPath: string | string[];
   // D-07: project-boundary filter switch. Default false excludes out-of-project
   // + node_modules diagnostics from the reported set; true folds them back in
   // (and resets all suppressed counters to 0 / empty). Orthogonal to the
@@ -211,11 +223,17 @@ function buildFinalizeFilter(
   useCaseSensitiveFileNames: boolean,
   inputTs: readonly string[],
 ): FinalizeFilter {
+  // ENG-01: CoreOptions.tsConfigPath is now string | readonly string[]. The
+  // basePath fallback (used ONLY when parsed.options.basePath is missing) needs a
+  // single string, so an array uses its FIRST entry -- array entries are expected
+  // co-located within one project dir (D-06), so every entry shares the same base.
+  // For the single-string callers (direct path + walk) this is byte-identical.
+  const basePathTsConfig = Array.isArray(options.tsConfigPath)
+    ? options.tsConfigPath[0]
+    : options.tsConfigPath;
+
   return {
-    basePath: resolveFilterBasePath(
-      parsed.options.basePath,
-      options.tsConfigPath,
-    ),
+    basePath: resolveFilterBasePath(parsed.options.basePath, basePathTsConfig),
     includeDeps: options.includeDeps ?? false,
     useCaseSensitiveFileNames,
     inputTs,
@@ -271,6 +289,15 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   // propagates as a true environment/install error, never a type result.
   const ng = await loadCompilerCli();
   const ts = await loadTypescript();
+
+  // ENG-01 (D-06): an ARRAY tsConfigPath fans out to handleMultiTsConfig, which runs
+  // each entry through the SAME single-tsConfig gather logic, UNIONs the raw
+  // per-entry diagnostics, and runs ONE finalize over the COMBINED declared input set
+  // (mirroring handleSolutionWalk's union-then-single-finalize tail). This returns
+  // BEFORE the single-string body below, which stays byte-unchanged.
+  if (Array.isArray(options.tsConfigPath)) {
+    return handleMultiTsConfig(ng, ts, options, start);
+  }
 
   // RES-04 / D-09: pass `suppressOutputPathCheck: true` as the `existingOptions`
   // second arg, matching `@angular/build`'s `loadConfiguration`
@@ -446,7 +473,14 @@ async function handleSolutionWalk(
   configDiagnostics: readonly ts.Diagnostic[],
   start: number,
 ): Promise<CoreResult> {
-  const walk = await walkReferences(ng, ts, parsed, options.tsConfigPath);
+  // ENG-01: handleSolutionWalk is reached ONLY from runTypecheck's single-string path
+  // (the references-present zero-rootNames branch) -- an array tsConfigPath is routed
+  // to handleMultiTsConfig long before this -- so tsConfigPath is a single string
+  // here. Narrow it once for walkReferences + the two finalize calls; byte-identical
+  // to the pre-ENG-01 behavior (the value is unchanged).
+  const tsConfigPath = options.tsConfigPath as string;
+
+  const walk = await walkReferences(ng, ts, parsed, tsConfigPath);
 
   // D-06 parity (I-2 / S-7): a per-leaf UNKNOWN_ERROR_CODE (500) in the walk
   // union -- whether returned by a surviving leaf's performCompilation OR
@@ -477,7 +511,7 @@ async function handleSolutionWalk(
     // Program used -- matching the direct path's `realpath` fallback.
     const result = finalize(
       ts,
-      options.tsConfigPath,
+      tsConfigPath,
       walk.rootNamesCount,
       [...configDiagnostics, ...walk.rawDiagnostics],
       start,
@@ -521,13 +555,152 @@ async function handleSolutionWalk(
       : [synthesizeZeroRootNamesDiagnostic(ts, parsed)];
   const result = finalize(
     ts,
-    options.tsConfigPath,
+    tsConfigPath,
     0,
     [...configDiagnostics, ...guardDiagnostics],
     start,
   );
 
   return { ...result, ...skipped };
+}
+
+/**
+ * ENG-01 (D-06): the tsConfig-ARRAY fan-out. Runs EACH explicit leaf entry through
+ * the SAME single-tsConfig gather logic the direct path uses
+ * (`readConfiguration` -> infra-500 re-throw -> `runNoEmitCompilation`), UNIONs the
+ * RAW per-entry diagnostics, and runs ONE `finalize` over the COMBINED declared input
+ * set -- the surviving-leaf tail of `handleSolutionWalk`, sourced from an EXPLICIT
+ * path list instead of resolved references. This reuses the shipped
+ * union-then-single-`finalize` aggregation and the v0.2.0 input-set-membership
+ * boundary over the combined input sets, so no leaf's real diagnostic is dropped as
+ * "out of the other leaf's set" (T-21-05). It NEVER calls `runTypecheck` per entry and
+ * merges `CoreResult`s -- that double-finalizes and breaks the combined boundary.
+ * PURE core (no `console`/`process`), composed from the same module-scoped helpers
+ * (`throwIfInfrastructureFailure`, `runNoEmitCompilation`, `finalize`,
+ * `buildFinalizeFilter`, `presentIfNonEmpty`, `detectUncheckedDeclaredFiles`).
+ *
+ * A zero-rootNames entry contributes 0 root names and is RECORDED as a
+ * 'zero-root-names' skipped reference (mirroring the walk, NOT the direct path's hard
+ * 90001), so `evaluateResult` folds it into the coverage-incomplete outcome rather
+ * than a silent pass. A per-entry `UNKNOWN_ERROR_CODE` (500) -- a nonexistent
+ * explicit path's ENOENT or a genuine config crash -- re-throws as
+ * `TypecheckInfrastructureError`, exactly as the direct path does. `configDiagnostics`
+ * is empty on this path: each surviving entry's own parse errors are already in the
+ * union.
+ *
+ * LIMITATION (D-06 / A4): array entries are expected co-located within one project
+ * dir, so the FIRST entry is the representative `tsConfigPath` and its `parsed`
+ * governs the boundary filter's basePath fallback; input-set membership (the combined
+ * rootNames), NOT basePath, is the primary boundary. A cross-dir array is a documented
+ * limitation, and a solution/references entry lands as a zero-rootNames skip (single
+ * level -- the generator wires leaf arrays, not solution entries).
+ */
+async function handleMultiTsConfig(
+  ng: CompilerCli,
+  ts: typeof import('typescript'),
+  options: CoreOptions,
+  start: number,
+): Promise<CoreResult> {
+  // runTypecheck routes here ONLY via the Array.isArray guard; a defensive wrap keeps
+  // the (unreachable) non-array case a single-element array without a cast.
+  const entries = Array.isArray(options.tsConfigPath)
+    ? options.tsConfigPath
+    : [options.tsConfigPath];
+
+  const rawDiagnostics: ts.Diagnostic[] = [];
+  const rootNamePaths: string[] = [];
+  const notTypeCheckedDeclaredFiles: string[] = [];
+  const skippedReferences: SkippedReference[] = [];
+  let rootNamesCount = 0;
+  let firstParsed: ParsedConfiguration | undefined;
+  let firstEntry: string | undefined;
+
+  for (const entry of entries) {
+    // Per-entry config resolution, mirroring the direct path (suppressOutputPathCheck
+    // parity with @angular/build). A per-entry UNKNOWN_ERROR_CODE (500) -- a
+    // nonexistent explicit path's ENOENT or a genuine crash -- re-throws as
+    // infrastructure, never a counted type error (T-21-05).
+    const parsed = ng.readConfiguration(entry, {
+      suppressOutputPathCheck: true,
+    });
+
+    throwIfInfrastructureFailure(ng, ts, parsed.errors);
+
+    if (firstParsed === undefined) {
+      firstParsed = parsed;
+      firstEntry = entry;
+    }
+
+    // D-06: a resolved entry with no input files contributes 0 and is recorded as a
+    // 'zero-root-names' skip so evaluateResult surfaces coverage-incomplete (mirror
+    // walk-references, NOT the direct path's hard 90001). Its parse errors are not
+    // folded (the entry never ran), exactly as a walked zero-root-names leaf.
+    if (parsed.rootNames.length === 0) {
+      skippedReferences.push({
+        referencePath: entry,
+        reason: 'zero-root-names',
+      });
+
+      continue;
+    }
+
+    // Surviving entry: run the SAME no-emit whole-program compilation the direct path
+    // and the walk use, and accumulate the RAW union. A surviving entry's OWN
+    // parse diagnostics (e.g. a folded TS5012 from a bad `extends`) are first-class
+    // counted diagnostics (MD-01 parity), never dropped.
+    const result = runNoEmitCompilation(ng, parsed);
+
+    rawDiagnostics.push(...parsed.errors);
+    rawDiagnostics.push(...result.diagnostics);
+    rootNamesCount += parsed.rootNames.length;
+    rootNamePaths.push(...parsed.rootNames);
+    notTypeCheckedDeclaredFiles.push(
+      ...detectUncheckedDeclaredFiles(ts, parsed, entry),
+    );
+  }
+
+  // Defensive (T-21-05): an empty array is a misconfiguration -- the executor schema's
+  // minItems:1 blocks it, but the core is callable directly. Surface it as
+  // infrastructure, never a silent clean pass on no input. This also proves firstEntry
+  // / firstParsed are defined for the finalize below.
+  if (firstParsed === undefined || firstEntry === undefined) {
+    throw new TypecheckInfrastructureError(
+      'angular-typechecker: tsConfigPath was an empty array; provide at least ' +
+        'one tsconfig path to type-check.',
+    );
+  }
+
+  // D-06 parity: a per-entry UNKNOWN_ERROR_CODE (500) surfaced by a surviving entry's
+  // performCompilation is infrastructure -- re-throw over the whole union exactly as
+  // handleSolutionWalk does, so errorCount never counts a compiler crash.
+  throwIfInfrastructureFailure(ng, ts, rawDiagnostics);
+
+  // ONE finalize over the union (NEVER per-entry): the boundary filter runs over the
+  // COMBINED declared input set (rootNamePaths) so neither leaf's in-project files are
+  // dropped as out of the other's set. The FIRST entry is the representative
+  // tsConfigPath (co-located limitation above); configDiagnostics is empty here.
+  const result = finalize(
+    ts,
+    firstEntry,
+    rootNamesCount,
+    rawDiagnostics,
+    start,
+    buildFinalizeFilter(
+      ts,
+      firstParsed,
+      options,
+      ts.sys.useCaseSensitiveFileNames,
+      rootNamePaths,
+    ),
+  );
+
+  return {
+    ...result,
+    ...presentIfNonEmpty('skippedReferences', skippedReferences),
+    ...presentIfNonEmpty('notTypeCheckedDeclaredFiles', [
+      ...new Set(notTypeCheckedDeclaredFiles),
+    ]),
+  };
 }
 
 /**
