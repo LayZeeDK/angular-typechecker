@@ -29,6 +29,7 @@
   "executors": "./executors.json",
   "generators": "./generators.json",
   "builders": "./builders.json",
+  "schematics": "./collection.json",
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json"
@@ -38,6 +39,7 @@
     "executors.json",
     "generators.json",
     "builders.json",
+    "collection.json",
     "README.md",
     "LICENSE"
   ],

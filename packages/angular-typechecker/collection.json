@@ -1,0 +1,10 @@
+{
+  "$schema": "../../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "configuration": {
+      "factory": "./src/schematics/configuration/schematic",
+      "schema": "./src/generators/configuration/schema.json",
+      "description": "Wire a typecheck target into an Angular CLI project's angular.json."
+    }
+  }
+}
