@@ -86,7 +86,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The `tsConfig` option accepts an array: each entry runs through the existing single-`tsConfig` logic, diagnostics UNION, and the v0.2.0 input-set-membership boundary filters over the combined declared input sets; the single-string behavior and the Nx path are byte-unchanged (ENG-01).
   4. `builders.json` + the `package.json` `builders` field are added additively, and `nx run <project>:typecheck` still resolves unchanged -- the `executors ?? builders` Nx-surface regression assertion passes (ACB-03).
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -95,7 +95,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 21-02-PLAN.md -- ENG-01: widen `tsConfig` to `string | string[]` (both schemas `oneOf`, array-aware normalize-options, core `handleMultiTsConfig` union-then-single-finalize) + hermetic integration fixture
+- [x] 21-02-PLAN.md -- ENG-01: widen `tsConfig` to `string | string[]` (both schemas `oneOf`, array-aware normalize-options, core `handleMultiTsConfig` union-then-single-finalize) + hermetic integration fixture
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -170,7 +170,7 @@ Plans:
 | 18. Packaged-tarball e2e + docs | v0.2.0 | 5/5 | Complete | 2026-07-06 |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.2.0 | 3/3 | Complete | 2026-07-07 |
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
-| 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 1/3 | In Progress|  |
+| 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 2/3 | In Progress|  |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 0/? | Not started | - |
 | 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/? | Not started | - |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |
