@@ -1,50 +1,48 @@
 {
   "version": "1.0",
-  "timestamp": "2026-07-10T09:14:39.115Z",
-  "context": "quick",
-  "phase": "quick-260710-b9t",
-  "phase_name": "Dogfood angular-typechecker: unify typecheck/test/integration/e2e verbs + cover every non-broken file",
-  "phase_dir": ".planning/quick/260710-b9t-dogfood-angular-typechecker-add-typechec",
-  "plan": 1,
-  "task": 9,
-  "total_tasks": 9,
-  "status": "complete-pending-merge",
-  "branch": "dogfood-typecheck-all-files",
-  "pr": "https://github.com/LayZeeDK/angular-typechecker/pull/33",
-  "ci_status": "green (ci aggregate + e2e + 6 test cells + fallow + format-lint + act-compat + lint-workflows + scoped-name-guard + CodeQL all pass on 1606713)",
+  "timestamp": "2026-07-10T22:51:07.541Z",
+  "context": "phase",
+  "phase": "23",
+  "phase_name": "init-schematic-parity-first-party-ng-add",
+  "phase_dir": ".planning/phases/23-init-schematic-parity-first-party-ng-add",
+  "plan": 3,
+  "task": 0,
+  "total_tasks": 3,
+  "status": "paused",
+  "chain_context": "Auto-chain: /gsd-discuss-phase 23 --analyze --auto --chain -> plan-phase --auto -> execute-phase 23 --auto --no-transition. Paused mid-execute after Wave 1. Resume by re-running execute-phase 23.",
   "completed_tasks": [
-    {"id": 1, "name": "nx.json name-keyed typecheck default + root run-many scripts", "status": "done", "commit": "efb9d50"},
-    {"id": 2, "name": "plugin unified typecheck (spec+drift+tools commands[]) + tsconfig.tools.json + fix first-time-checked specs", "status": "done", "commit": "086b247"},
-    {"id": 3, "name": "typecheck targets on gap projects (app, consumer-dep, test-util)", "status": "done", "commit": "086b247"},
-    {"id": 4, "name": "3-tier test split (reclassify 2 leakers, fast test + integration target)", "status": "done", "commit": "cbf5eb6"},
-    {"id": 5, "name": "e2e vocabulary (test->e2e, typecheck-e2e->typecheck) + rewrite coverage guard", "status": "done", "commit": "b684663"},
-    {"id": 6, "name": "clean-fixtures typecheck on root project (fixtures/tsconfig.clean.json)", "status": "done", "commit": "6bd4397"},
-    {"id": 7, "name": "simplify ci.yml onto unified verbs (security intact)", "status": "done", "commit": "e13ec75"},
-    {"id": 8, "name": "make green locally (+ .nxignore consumer-app exclusion, dep-checks ignore)", "status": "done", "commit": "469b655"},
-    {"id": 9, "name": "commits + PR #33 into main + clear fallow new-only false positives", "status": "done", "commit": "1c68811"},
-    {"id": 10, "name": "SCOPE ADDITION (user): rename e2e specs .int.spec.ts -> .e2e.spec.ts", "status": "done", "commit": "946e7ca"},
-    {"id": 11, "name": "docs: quick-task planning artifacts (CONTEXT/RESEARCH/PLAN/SUMMARY/VERIFICATION) + STATE.md", "status": "done", "commit": "9affd24"},
-    {"id": 12, "name": "POST-REVIEW (user): scope e2e-job typecheck so it stops duplicating the test job", "status": "done", "commit": "5f5c6a0"},
-    {"id": 13, "name": "POST-REVIEW (user): tag e2e projects type:e2e, select e2e typecheck by tag, add GUARD-01d", "status": "done", "commit": "1606713"}
+    {"id": 1, "name": "Plan 23-01 - init schematic parity (ACS-03): additive tree.exists('angular.json') fork in initGenerator + exported NO_CACHING_NOTICE + convertNxGenerator(initGenerator) + collection.json init entry", "status": "done", "commit": "5addd4a", "summary": "23-01-SUMMARY.md"},
+    {"id": 2, "name": "Plan 23-02 - optional-peer classification (ACP-01) + ng-add.save devDependencies lever (RF-01): package.json optional peers + peerDependenciesMeta.optional + ng-add.save field, eslint.config.mjs ignoredDependencies, package-manifest.spec.ts contract", "status": "done", "commit": "90eaeb4", "summary": "23-02-SUMMARY.md"}
   ],
   "remaining_tasks": [
-    {"id": 14, "name": "USER decides whether to merge PR #33 into main", "status": "not_started"},
-    {"id": 15, "name": "OPTIONAL (offered, undecided): add a one-line comment on the nx:run-commands typecheck targets citing the 'why not @nx/js:tsc noEmit' rationale", "status": "not_started"}
+    {"id": 3, "name": "Plan 23-03 (Wave 2) - first-party ng-add schematic (NGADD-01): composed ngAddGenerator (RF-02 tree.exists('angular.json') guard + defensive devDep move + getProjects filter app+library + compose configurationGenerator per project + NO_CACHING_NOTICE once, returns VOID) + schema.json/schema.d.ts + convertNxGenerator re-export + collection.json ng-add entry + ng-add.spec + extend nx-generators-surface-regression.spec", "status": "not_started", "wave": 2, "depends_on": ["23-01", "23-02"]}
   ],
-  "blockers": [],
-  "human_actions_pending": [
-    {"action": "Decide whether to merge PR #33 into main", "context": "main is PR-only (empty-bypass ruleset); an agent self-merge needs EXPLICIT user OK per the release-mechanics memory. ci is green.", "blocking": true},
-    {"action": "Do NOT approve any deployment/environment gate", "context": "HARD RULE: environment approval is a human-only control. (There is no gate on the ci workflow anyway; release.yml's npm-publish gate is not involved here.)", "blocking": false}
+  "post_execution_gates_remaining": [
+    "code_review_gate: Skill(gsd-code-review, args=\"23\") - advisory, non-blocking",
+    "regression_gate: run prior-phase tests (nx test) for cross-phase regressions",
+    "schema_drift_gate: N/A (no ORM schema files in this type-checker plugin)",
+    "codebase_drift_gate: non-blocking structural drift check",
+    "verify_phase_goal: spawn gsd-verifier (opus) -> 23-VERIFICATION.md; check must_haves + ACS-03/NGADD-01/ACP-01 vs codebase, goal-backward against ROADMAP Phase 23 SC1-SC4",
+    "update_roadmap: gsd-sdk query phase.complete 23 (ONLY after verification status: passed)"
   ],
+  "claude_md_post_completion_sequence_MANDATORY": [
+    "After verify passes (per user global CLAUDE.md, NOT optional): /gsd-secure-phase 23 -> 23-SECURITY.md (threat-model gate ON: ASVS L1, block on high; low surface: config-edit schematics editing package.json/angular.json/collection.json)",
+    "/gsd-validate-phase 23 -> nyquist audit of 23-VALIDATION.md + generate tests (workflow.nyquist_validation on)",
+    "LAST: /gsd-extract-learnings 23 -> 23-LEARNINGS.md (run AFTER secure + validate so it captures their fixes)",
+    "Then global-learnings bridge ONLY if features.global_learnings=true (was not enabled this session - verify config): build temp top-level .planning/LEARNINGS.md from 23-LEARNINGS.md, gsd-sdk query learnings.copy, rm immediately (never git add it)",
+    "Run order: execute -> verify_phase_goal -> secure -> validate -> extract-learnings"
+  ],
+  "blockers": [
+    {"description": "Org monthly Claude spend limit was hit TWICE this session (first planner spawn; again mid-23-02 executor) and reset both times. A fresh session's Opus executor(s)/verifier may hit it again.", "type": "external", "workaround": "Wait for reset; /gsd:execute-phase 23 is idempotent - it skips plans that already have a SUMMARY.md (23-01, 23-02) and resumes from 23-03."}
+  ],
+  "human_actions_pending": [],
   "decisions": [
-    {"decision": "D2 revised: use nx:run-commands + tsc --noEmit for non-Angular typecheck (NOT @nx/js:tsc)", "rationale": "Verified twice against @nx/js@23.0.1 source: @nx/js:tsc schema requires main+outputPath, forces outDir, sets noEmitOnError, calls program.emit() and treats emitSkipped as failure -> noEmit is a guaranteed CI-red. Nx's inferred typecheck uses tsc --build --emitDeclarationOnly (emits) and self-disables on noEmit. tsc --noEmit -p is the real no-emit primitive.", "phase": "quick-260710-b9t"},
-    {"decision": "Angular projects (app, consumer libs, clean fixtures) dogfood angular-typechecker:typecheck", "rationale": "It honors noEmit (performCompilation, not program.emit) and adds NG8xxx template diagnostics tsc can't.", "phase": "quick-260710-b9t"},
-    {"decision": "Exclude only intentionally-broken fixtures; clean fixtures get a solution-style typecheck on the root project", "rationale": "D1 (user). Broken fixtures are the test corpus asserted by the 16 integration specs; classified clean-vs-broken empirically by running.", "phase": "quick-260710-b9t"},
-    {"decision": "3-tier tests: test (fast unit) / integration (real-compiler) / e2e (tarball); suffix .e2e.spec.ts", "rationale": "D5 (user) + user scope addition. Measured integration ~4x unit wall-clock; .e2e.spec.ts removes .int/.integration ambiguity and mirrors the e2e target.", "phase": "quick-260710-b9t"},
-    {"decision": "Identify e2e projects with a type:e2e tag; ci e2e-job typecheck uses -p tag:type:e2e; GUARD-01d locks the tag set", "rationale": "User request. Auto-covers future e2e projects; the tag scopes the pre-install fast typecheck without duplicating the test job's full run.", "phase": "quick-260710-b9t"},
-    {"decision": "DEVIATION: added consumer-app fixture to .nxignore (brief said don't touch it)", "rationale": "The unified typecheck verb swept in an on-graph install-smoke fixture with a fixture-root-relative tsConfig (ENOENT). EXTENDS the repo's own documented exclusion pattern; does not undo any exclusion. Flagged to user; accepted.", "phase": "quick-260710-b9t"}
+    {"decision": "Sequential-on-main-tree execution (NO worktree isolation) for all plans, despite workflow.use_worktrees=true. CONTINUE for 23-03.", "rationale": "This repo's AGENTS.md requires a node_modules junction per worktree (executors cannot verify without deps) with documented Windows teardown hazards; 23-02 changed package.json (invalidates shared-junction Pattern A); Wave 2 is single-plan (AGENTS.md: skip worktrees for single-plan waves); tiny thin-adapter plans = marginal parallelism gain. Sequential-on-main gives each executor real node_modules to verify.", "phase": "23"},
+    {"decision": "RF-01 resolved as Approach C - NOT the CONTEXT.md starting hypothesis. 23-03 MUST honor this.", "rationale": "23-RESEARCH.md verified vs installed @angular/cli@22 source: ng add reads the package's own ng-add.save:devDependencies field and installs --save-dev BEFORE the schematic runs. So ng-add uses that field (landed in 23-02) + a DEFENSIVE in-schematic devDep move and returns VOID; NO addDependenciesToPackageJson / install GeneratorCallback (convertNxGenerator would fire a redundant npm install).", "phase": "23"},
+    {"decision": "ACP-01 lever = ignoredDependencies in eslint.config.mjs (landed in 23-02, verified green).", "rationale": "peerDependenciesMeta.optional does NOT exempt the two optional peers from @nx/dependency-checks' obsolete-dependency check; ignoredDependencies is the operative lever.", "phase": "23"},
+    {"decision": "Two plan-checker warnings fixed inline by the orchestrator (commit 3ea90ba) instead of a full planner+checker revision cycle.", "rationale": "0 blockers; both one-line hygiene fixes (broken git grep|git grep idiom in 23-02 acceptance criteria; RESEARCH.md Open-Questions marker).", "phase": "23"}
   ],
   "uncommitted_files": [],
-  "next_action": "Confirm PR #33 ci is still green (it is: ci=pass on 1606713), then let the USER decide whether to merge. Do NOT self-merge without explicit user OK; do NOT approve any environment/deployment gate.",
-  "context_notes": "Ran as /gsd-quick --research --validate. Full pipeline done: research (RESEARCH.md), plan (PLAN.md, 9 tasks) + plan-check PASS, execute (gsd-executor, split across a usage-limit reset), independent orchestrator verification (local nx run-many -t typecheck GREEN across 10 projects + CI GREEN across the matrix; zero suppressions added; email hygiene clean). Two post-PR user refinements landed (e2e typecheck de-dup via tag; both CI-green). Everything is committed and pushed; working tree clean; 12 commits ahead of origin/main. The ONLY open item is the human merge decision on PR #33."
+  "next_action": "Re-run /gsd:execute-phase 23 --auto --no-transition. It detects 23-01 + 23-02 SUMMARYs, skips them, resumes at Wave 2 (23-03). Run 23-03 as ONE gsd-executor (opus) SEQUENTIALLY on the main tree (no worktree). Then post-execution gates (code review, regression, verify_phase_goal). Then the MANDATORY CLAUDE.md post-completion sequence: secure-phase 23 -> validate-phase 23 -> extract-learnings 23. execute-phase (--no-transition) then returns PHASE COMPLETE to the paused plan-phase chain; next milestone step is /gsd:discuss-phase 24 --auto (Phase 24 = real-OSS + scaffolded e2e, additive-only audit, docs).",
+  "context_notes": "Phase 23 is a small, HEAVILY LOCKED additive thin-adapter phase (design source-verified in .planning/research/v0.2.1-angular-cli/). Wave 1 done, post-plan spot-checked, nx lint + nx test(297) + nx build all green. Only 23-03 + the gates remain. 23-03 composes the already-shipped Phase-22 configuration write-fork; NO_CACHING_NOTICE is exported from init/generator.ts for it to import. Additive-only charter: no breaking changes to executor id / runTypecheck / CoreResult / CoreOptions / existing schemas (widening only)."
 }
