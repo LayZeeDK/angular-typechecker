@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
-last_updated: "2026-07-10T22:34:55.862Z"
+last_updated: "2026-07-10T22:48:12.456Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 7
   percent: 50
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 ## Current Position
 
 Phase: 23 (init-schematic-parity-first-party-ng-add) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-10
 
@@ -66,6 +66,7 @@ archives under `.planning/milestones/`.
 - [Phase 22]: 22-01: Angular CLI write-fork -- an early tree.exists(angular.json) branch in the shared configuration generator writes each per-project architect.typecheck = { builder: angular-typechecker:typecheck, options.tsConfig: [buildLeaf, specLeaf] } via @nx/devkit updateJson (updateProjectConfiguration cannot write angular.json, Pitfall 2), skipping the Nx init (D-04, no stray nx.json). New resolveTsConfigLeaves helper resolves RF-01 to Approach A (projectType-convention tsconfig.app.json/tsconfig.lib.json + tsconfig.spec.json, each tree.exists-probed; --tsConfig override to single-element array; empty result throws) -- NOT Approach B, because the default @angular/build:ng-packagr library builder carries no tsConfig in build.options. Collision by builder id read defensively from architect then targets, written canonically to architect; idempotent rewrite preserves user keys + options. Nx else-branch byte-unchanged (resolveTsConfig/resolveTsConfigOverride untouched; configuration.spec.ts green). Proven by a 10-case angular.json-seeded spec (nx test 284 green, typecheck green). Reachable now via nx g; the ng generate schematic surface + ACS-04 regression are 22-02.
 - [Phase 22]: 22-02: additive ng generate surface -- NEW collection.json (configuration schematic only; init/ng-add are Phase 23) + convertNxGenerator(configurationGenerator) re-export + package.json schematics field + files entry + project.json build asset glob (Pitfall 4: dist ships collection.json). generators ?? schematics keeps the collection Nx-invisible (ACS-04), proven by nx-generators-surface-regression.spec.ts. Schema REUSED verbatim. Zero new production dependency. nx lint/build/test(288)/typecheck green.
 - [Phase 23]: 23-01: init parity via an additive tree.exists('angular.json') early-return fork in the shipped initGenerator (mirrors the Phase-22 configuration fork) -- on an Angular CLI workspace it prints the shared NO_CACHING_NOTICE and returns BEFORE readNxJson/updateNxJson, seeding no caching + no stray nx.json (ACS-03, D-04); the Nx else-branch is byte-unchanged (existing init specs still pass). NO_CACHING_NOTICE is exported from init/generator.ts as the single source Plan 03's ng-add imports (D-06). Thin convertNxGenerator(initGenerator) re-export + collection.json init entry (D-05); generators.json still declares init so nx add angular-typechecker runs <pkg>:init resolvable via generators ?? schematics (nx add UNCHANGED, Pitfall 5). nx build/test(293)/lint/format:check green.
+- [Phase 23]: 23-02: classified the converted builder's runtime peers -- @angular-devkit/architect (^0.2200.0) + rxjs (^7.8.0) as OPTIONAL peerDependencies (peerDependenciesMeta.optional:true); nx NOT declared (transitive via @nx/devkit, .nx/ dir accepted+documented as a code comment). ACP-01 lever = @nx/dependency-checks ignoredDependencies (hand-added; peerDependenciesMeta.optional does NOT exempt the obsolete check; checkVersionMismatches:false preserved, never eslint --fix). RF-01 = top-level ng-add.save:devDependencies so ng add installs a dev tool into devDependencies. Static package-manifest.spec.ts contract locks all three; nx lint/test(297)/build green + dist manifest carries the fields.
 
 ### Roadmap Evolution
 
@@ -125,7 +126,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:34:55.855Z
+Last session: 2026-07-10T22:48:12.447Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed

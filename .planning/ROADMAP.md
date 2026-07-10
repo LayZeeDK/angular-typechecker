@@ -133,13 +133,13 @@ Plans:
   3. `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies`, `@nx/dependency-checks` stays green, and the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented (ACP-01).
   4. The Nx `nx add angular-typechecker` behavior is unchanged from v0.2.0 (init/caching seed only).
 
-**Plans:** 0/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 23-01-PLAN.md -- ACS-03: additive `tree.exists('angular.json')` early-return fork in `initGenerator` (no caching / no stray `nx.json`) + the co-located single-source `NO_CACHING_NOTICE` const + `convertNxGenerator(initGenerator)` re-export + the `collection.json` init entry + init-CLI-fork spec + surface-regression (init).
-- [ ] 23-02-PLAN.md -- ACP-01 + NGADD-01 (RF-01 lever): declare `@angular-devkit/architect` + `rxjs` as OPTIONAL peerDependencies (`peerDependenciesMeta.optional`), the `@nx/dependency-checks` `ignoredDependencies` lever + the nx-transitive/`.nx/` doc comment, the `ng-add.save: devDependencies` field, and the static manifest contract spec.
+- [x] 23-01-PLAN.md -- ACS-03: additive `tree.exists('angular.json')` early-return fork in `initGenerator` (no caching / no stray `nx.json`) + the co-located single-source `NO_CACHING_NOTICE` const + `convertNxGenerator(initGenerator)` re-export + the `collection.json` init entry + init-CLI-fork spec + surface-regression (init).
+- [x] 23-02-PLAN.md -- ACP-01 + NGADD-01 (RF-01 lever): declare `@angular-devkit/architect` + `rxjs` as OPTIONAL peerDependencies (`peerDependenciesMeta.optional`), the `@nx/dependency-checks` `ignoredDependencies` lever + the nx-transitive/`.nx/` doc comment, the `ng-add.save: devDependencies` field, and the static manifest contract spec.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -188,5 +188,5 @@ Plans:
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete    | 2026-07-10 |
-| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/3 | Planned    |  |
+| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 2/3 | In Progress|  |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |

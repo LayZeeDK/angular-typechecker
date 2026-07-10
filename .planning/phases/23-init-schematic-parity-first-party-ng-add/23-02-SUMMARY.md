@@ -98,6 +98,10 @@ None - no external service configuration required.
 - The optional peers + ignoredDependencies keep the CI lint gate green; Phase 24's additive-only audit + real-OSS e2e can verify the shipped install placement end-to-end.
 - Verified beyond the plan's automated checks: nx build green and the built dist/packages/angular-typechecker/package.json carries all three additive fields (ng-add.save, both optional peers, peerDependenciesMeta.optional) so the eventual published tarball is correct.
 
+## Self-Check: PASSED
+
+All 3 modified files present; all 3 commits (4552a34, 3144fa2, b8ed004) exist in history.
+
 ---
 *Phase: 23-init-schematic-parity-first-party-ng-add*
 *Completed: 2026-07-10*

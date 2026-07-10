@@ -45,7 +45,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Packaging / deps (ACP)
 
-- [ ] **ACP-01**: `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies` (runtime-required by the converted builder; present in any Angular CLI workspace); `@nx/dependency-checks` stays green; the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented.
+- [x] **ACP-01**: `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies` (runtime-required by the converted builder; present in any Angular CLI workspace); `@nx/dependency-checks` stays green; the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented.
 - [ ] **ACP-02**: additive-only is enforced: no breaking change to the executor id, `runTypecheck`/`CoreResult`/`CoreOptions` (widened only), or the existing schemas (v0.3.0 only if a breaking change proves unavoidable).
 
 ### Docs (ACD)
@@ -95,7 +95,7 @@ Phase numbering continues from v0.2.0's Phase 20.
 | ACV-01 | Phase 24 | Pending |
 | ACV-02 | Phase 24 | Pending |
 | ACV-03 | Phase 24 | Pending |
-| ACP-01 | Phase 23 | Pending |
+| ACP-01 | Phase 23 | Complete |
 | ACP-02 | Phase 24 | Pending |
 | ACD-01 | Phase 24 | Pending |
 
