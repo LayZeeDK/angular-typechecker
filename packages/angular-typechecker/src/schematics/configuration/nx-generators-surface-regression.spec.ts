@@ -31,12 +31,19 @@ interface GeneratorsManifest {
   generators?: Record<string, { factory?: string }>;
 }
 
+interface CollectionManifest {
+  schematics?: Record<string, { factory?: string }>;
+}
+
 const manifest = JSON.parse(
   readFileSync(join(packageRoot, 'package.json'), 'utf8'),
 ) as PluginManifest;
 const generatorsManifest = JSON.parse(
   readFileSync(join(packageRoot, 'generators.json'), 'utf8'),
 ) as GeneratorsManifest;
+const collectionManifest = JSON.parse(
+  readFileSync(join(packageRoot, 'collection.json'), 'utf8'),
+) as CollectionManifest;
 
 describe('Nx generators ?? schematics surface regression (ACS-04)', () => {
   it('keeps the generators field declared + unchanged so Nx resolves it before schematics', () => {
@@ -50,6 +57,18 @@ describe('Nx generators ?? schematics surface regression (ACS-04)', () => {
   it('still declares the configuration generator factory (nx g angular-typechecker:configuration stays resolvable via generators, never reads collection.json)', () => {
     expect(generatorsManifest.generators?.configuration?.factory).toBe(
       './src/generators/configuration/generator',
+    );
+  });
+
+  it('declares the additive init schematic in collection.json (ng generate angular-typechecker:init parity, ACS-03)', () => {
+    expect(collectionManifest.schematics?.init?.factory).toBe(
+      './src/schematics/init/schematic',
+    );
+  });
+
+  it('still declares the init generator factory in generators.json so nx add angular-typechecker -> <pkg>:init stays resolvable via generators (nx add UNCHANGED, Pitfall 5)', () => {
+    expect(generatorsManifest.generators?.init?.factory).toBe(
+      './src/generators/init/generator',
     );
   });
 });
