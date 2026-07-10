@@ -4,5 +4,12 @@
   "sourceRoot": "libs/typecheck-consumer-dep/src",
   "projectType": "library",
   "tags": ["scope:fixture"],
-  "targets": {}
+  "targets": {
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "libs/typecheck-consumer-dep/tsconfig.lib.json"
+      }
+    }
+  }
 }

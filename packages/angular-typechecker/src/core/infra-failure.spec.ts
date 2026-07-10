@@ -28,7 +28,10 @@ const compilerCliStub = vi.hoisted(() => {
       project: '/virtual/tsconfig.json',
       options: {},
       rootNames: ['/virtual/error.component.ts'],
-      errors: [],
+      // Type the default (empty) errors array so per-test `mockReturnValue`
+      // overrides that inject real diagnostics are not rejected against an
+      // inferred `never[]` element type.
+      errors: [] as ts.Diagnostic[],
       emitFlags: 0,
     })),
     performCompilation: vi.fn(),

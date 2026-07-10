@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
-import type { Program } from './compiler-cli-types';
+// This spec probes the REAL `@angular/compiler-cli` program surface (via the
+// `await import(...)` the executor uses), so it types against the real `Program`
+// rather than the vendored structural shim in `./compiler-cli-types` -- the shim
+// deliberately diverges (e.g. it adds `useCaseSensitiveFileNames` to the
+// `getTsProgram()` return), which would misrepresent the live shape under test.
+import type { Program } from '@angular/compiler-cli';
 import { NG, ngCodeOf } from './diagnostic-codes';
 
 // HARD-01 / D-04 -- the RUNTIME half of the two-pronged drift guard. The
@@ -90,9 +95,16 @@ describe('compiler-cli-types runtime drift (real NgtscProgram getter-set + NG en
     const result = cli.performCompilation({
       rootNames: parsed.rootNames,
       options: { ...parsed.options, noEmit: true },
-      emitFlags: 0,
+      // `options.noEmit` already suppresses emission; `EmitFlags` has no `None`/0
+      // member, so an explicit `emitFlags` is both unnecessary and untypeable here.
       gatherDiagnostics: () => [],
     });
+
+    if (result.program === undefined) {
+      throw new Error(
+        'performCompilation returned no program (expected an NgtscProgram for the shape probe).',
+      );
+    }
 
     program = result.program;
   });
@@ -121,9 +133,14 @@ describe('compiler-cli-types runtime drift (real NgtscProgram getter-set + NG en
     // `getTsProgram().useCaseSensitiveFileNames()` read in `runTypecheck`.
     // It is in neither GATHERED_GETTERS nor the build-time drift probe, so this is
     // the one production-read vendored runtime member otherwise unenforced.
-    expect(typeof program.getTsProgram().useCaseSensitiveFileNames).toBe(
-      'function',
-    );
+    // `useCaseSensitiveFileNames` is a RUNTIME-only member of the wrapped program
+    // instance; the public `ts.Program` type does not declare it (which is exactly
+    // why the vendored shim adds it). Probe it through the same `Record` cast the
+    // gathered-getter loop above uses, so this asserts the live shape, not the type.
+    expect(
+      typeof (program.getTsProgram() as unknown as Record<string, unknown>)
+        .useCaseSensitiveFileNames,
+    ).toBe('function');
   });
 
   it('(b) flags any NEW diagnostic getter for review (the additions blind-spot the type gate cannot see)', () => {

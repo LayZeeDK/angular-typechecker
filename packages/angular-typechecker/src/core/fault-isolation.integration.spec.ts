@@ -92,9 +92,9 @@ const ordinaryNgErrorTsConfig = join(
 );
 
 function diagnosticsOnFile(
-  diagnostics: readonly { file?: { fileName: string } }[],
+  diagnostics: readonly { code: number; file?: { fileName: string } }[],
   absolutePath: string,
-): readonly { file?: { fileName: string } }[] {
+): readonly { code: number; file?: { fileName: string } }[] {
   // CoreResult fileNames are absolute + forward-slash; the join() path uses the
   // OS separator, so compare on the normalized forward-slash form.
   const normalized = absolutePath.replace(/\\/g, '/');
