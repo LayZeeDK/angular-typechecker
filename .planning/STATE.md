@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: ready_to_plan
-last_updated: 2026-07-10T19:34:01.065Z
-last_activity: "2026-07-10 -- Phase 21 plan 21-03 complete: three pure builder guard specs (schema parity + thin-wrapper + executors ?? builders regression); nx test(274)/lint/format:check green; no production code changed"
+status: planning
+last_updated: "2026-07-10T19:36:04.690Z"
+last_activity: 2026-07-10
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 3
   completed_plans: 3
   percent: 25
-stopped_at: Phase 21 complete (3/3) — ready to discuss Phase 22
 ---
 
 # Project State
