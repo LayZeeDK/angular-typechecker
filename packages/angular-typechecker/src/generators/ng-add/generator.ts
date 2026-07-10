@@ -71,7 +71,10 @@ export default async function ngAddGenerator(
     return;
   }
 
-  // 3. Enumerate + filter + compose the shared write-fork per in-scope project.
+  // 3. Enumerate + filter + compose the shared write-fork per in-scope project,
+  // tracking how many projects were actually wired.
+  let wired = 0;
+
   for (const [name, project] of getProjects(tree)) {
     if (schema.project && name !== schema.project) {
       continue;
@@ -82,7 +85,28 @@ export default async function ngAddGenerator(
       project.projectType === 'library'
     ) {
       await configurationGenerator(tree, { project: name, skipFormat: true });
+      wired++;
     }
+  }
+
+  // WR-03: a `--project` that matched no application/library project (a typo, or
+  // an e2e/other project) is a user error -- fail loudly with a located error
+  // rather than reporting a silent no-op as success, matching the direct
+  // `nx g angular-typechecker:configuration <bad>` path. An UNSET `--project` over
+  // a workspace with no app/library project is NOT an error (an empty Angular CLI
+  // workspace is valid); the IN-01 gate below handles that case honestly.
+  if (schema.project && wired === 0) {
+    throw new Error(
+      `--project "${schema.project}" did not match an application or library ` +
+        `project. Omit --project to wire every application + library project.`,
+    );
+  }
+
+  // IN-01: only claim wiring happened when it did. When zero targets were wired
+  // (an angular.json with only e2e/other projects) there is nothing to format and
+  // the no-caching notice would misreport, so skip both and return.
+  if (wired === 0) {
+    return;
   }
 
   // 4. Format ONCE at the end.

@@ -236,6 +236,53 @@ describe('ng-add generator (Angular CLI auto-wire-all)', () => {
 
     infoSpy.mockRestore();
   });
+
+  it('throws when --project names a project that does not exist (WR-03)', async () => {
+    seedNgxLeafletWorkspace(tree);
+    assertCliSubstrate(tree);
+
+    await expect(
+      ngAddGenerator(tree, { project: 'does-not-exist' }),
+    ).rejects.toThrow(
+      /--project "does-not-exist" did not match an application or library project/,
+    );
+  });
+
+  it('throws when --project names an e2e/non-app-library project (WR-03)', async () => {
+    writeAngularJson(tree, {
+      'ngx-leaflet-demo': { projectType: 'application', root: '' },
+      // Legacy e2e projects carry NO projectType field (Pitfall 3) -- enumerated
+      // but not wireable, so scoping to it matches nothing wireable.
+      'ngx-leaflet-demo-e2e': { root: 'e2e' },
+    });
+    writeLeaf(tree, 'tsconfig.app.json');
+    writeLeaf(tree, 'tsconfig.spec.json');
+    assertCliSubstrate(tree);
+
+    await expect(
+      ngAddGenerator(tree, { project: 'ngx-leaflet-demo-e2e' }),
+    ).rejects.toThrow(
+      /--project "ngx-leaflet-demo-e2e" did not match an application or library project/,
+    );
+  });
+
+  it('does NOT print the no-caching notice when auto-wire-all wires zero targets (IN-01)', async () => {
+    // angular.json with ONLY an e2e/other project: auto-wire-all (no --project) is
+    // valid and NOT an error, but nothing is wired -- the notice must not claim it.
+    writeAngularJson(tree, {
+      'ngx-leaflet-demo-e2e': { root: 'e2e' },
+    });
+    assertCliSubstrate(tree);
+    const infoSpy = vi
+      .spyOn(logger, 'info')
+      .mockImplementation(() => undefined);
+
+    await ngAddGenerator(tree, {});
+
+    expect(infoSpy).not.toHaveBeenCalledWith(NO_CACHING_NOTICE);
+
+    infoSpy.mockRestore();
+  });
 });
 
 describe('ng-add generator (RF-02 no-angular.json guard)', () => {
