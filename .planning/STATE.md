@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: executing
-last_updated: "2026-07-10T22:48:12.456Z"
-last_activity: 2026-07-10
+status: verifying
+last_updated: "2026-07-10T23:08:41.628Z"
+last_activity: 2026-07-11 -- Phase 23 Plan 03 (first-party ng-add) complete
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 7
-  percent: 50
+  completed_plans: 8
+  percent: 75
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 ## Current Position
 
 Phase: 23 (init-schematic-parity-first-party-ng-add) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-07-10
+Plan: 3 of 3 (complete)
+Status: Phase 23 plans complete — ready for verification
+Last activity: 2026-07-11 -- Phase 23 Plan 03 (first-party ng-add) complete
 
 ## Accumulated Context
 
@@ -67,6 +67,7 @@ archives under `.planning/milestones/`.
 - [Phase 22]: 22-02: additive ng generate surface -- NEW collection.json (configuration schematic only; init/ng-add are Phase 23) + convertNxGenerator(configurationGenerator) re-export + package.json schematics field + files entry + project.json build asset glob (Pitfall 4: dist ships collection.json). generators ?? schematics keeps the collection Nx-invisible (ACS-04), proven by nx-generators-surface-regression.spec.ts. Schema REUSED verbatim. Zero new production dependency. nx lint/build/test(288)/typecheck green.
 - [Phase 23]: 23-01: init parity via an additive tree.exists('angular.json') early-return fork in the shipped initGenerator (mirrors the Phase-22 configuration fork) -- on an Angular CLI workspace it prints the shared NO_CACHING_NOTICE and returns BEFORE readNxJson/updateNxJson, seeding no caching + no stray nx.json (ACS-03, D-04); the Nx else-branch is byte-unchanged (existing init specs still pass). NO_CACHING_NOTICE is exported from init/generator.ts as the single source Plan 03's ng-add imports (D-06). Thin convertNxGenerator(initGenerator) re-export + collection.json init entry (D-05); generators.json still declares init so nx add angular-typechecker runs <pkg>:init resolvable via generators ?? schematics (nx add UNCHANGED, Pitfall 5). nx build/test(293)/lint/format:check green.
 - [Phase 23]: 23-02: classified the converted builder's runtime peers -- @angular-devkit/architect (^0.2200.0) + rxjs (^7.8.0) as OPTIONAL peerDependencies (peerDependenciesMeta.optional:true); nx NOT declared (transitive via @nx/devkit, .nx/ dir accepted+documented as a code comment). ACP-01 lever = @nx/dependency-checks ignoredDependencies (hand-added; peerDependenciesMeta.optional does NOT exempt the obsolete check; checkVersionMismatches:false preserved, never eslint --fix). RF-01 = top-level ng-add.save:devDependencies so ng add installs a dev tool into devDependencies. Static package-manifest.spec.ts contract locks all three; nx lint/test(297)/build green + dist manifest carries the fields.
+- [Phase 23]: 23-03: first-party ng-add (NGADD-01) -- composed ngAddGenerator enumerates getProjects(tree), filters projectType in {application,library} (skips e2e/other, Pitfall 3), and composes configurationGenerator(tree,{project,skipFormat:true}) per in-scope project so idempotency + collision-by-builder-id + leaf-array resolution are all inherited (re-implements nothing); optional --project scopes to one, default auto-wires ALL. RF-01 backstop: a defensive updateJson deps->devDeps move that returns VOID (no install callback -> no redundant npm install; never addDependenciesToPackageJson/GeneratorCallback). RF-02: guard on tree.exists('angular.json') AFTER the devDep ensure -- absent -> devDep-ensure + end-user guidance only, no wiring, no nx.json. D-06: NO_CACHING_NOTICE imported from init/generator (single source), printed exactly once after wiring (configurationGenerator logs nothing on the CLI branch). convertNxGenerator(ngAddGenerator) re-export + collection.json ng-add entry ONLY; generators.json untouched so nx add stays <pkg>:init (Pitfall 5) -- surface-regression asserts ng-add present in collection.json + absent from generators.json. TDD RED(0b28f25)->GREEN(9c3c17e); nx test(308)/build/lint/format:check green.
 
 ### Roadmap Evolution
 
@@ -126,7 +127,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-10T22:48:12.447Z
+Last session: 2026-07-10T23:07:55.577Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed

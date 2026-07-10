@@ -68,7 +68,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 - [x] **Phase 21: Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO)** -- Re-export the `typecheck` executor as an Angular CLI builder, widen `tsConfig` to `string | string[]`, and prove the CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run` on-stack (Angular 22) against a real cloned OSS workspace (`bluehalo/ngx-leaflet`). (Off-stack Angular 21 dropped 2026-07-10.) (completed 2026-07-10)
 - [x] **Phase 22: `configuration` schematic + the `angular.json` write-fork** -- `ng generate angular-typechecker:configuration <project>` wires one per-project `typecheck` architect target (scoped to that project's leaves) via the `tree.exists('angular.json')` fork, with the Nx generator path unchanged. (completed 2026-07-10)
-- [ ] **Phase 23: `init` schematic parity + first-party `ng-add`** -- `ng add angular-typechecker` auto-wires every app + library project in `angular.json`, with the no-caching notice and optional-peer dependency classification.
+- [x] **Phase 23: `init` schematic parity + first-party `ng-add`** -- `ng add angular-typechecker` auto-wires every app + library project in `angular.json`, with the no-caching notice and optional-peer dependency classification. (completed 2026-07-10)
 - [ ] **Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs** -- prove the full flow against a real OSS `angular.json` workspace and a scaffolded one, audit the additive-only charter, and document the Angular CLI surface.
 
 ## Phase Details
@@ -133,7 +133,7 @@ Plans:
   3. `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies`, `@nx/dependency-checks` stays green, and the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented (ACP-01).
   4. The Nx `nx add angular-typechecker` behavior is unchanged from v0.2.0 (init/caching seed only).
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -143,7 +143,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 23-03-PLAN.md -- NGADD-01: the composed `ngAddGenerator` (RF-02 guard + defensive devDep move + `getProjects` enumerate/filter/compose `configurationGenerator` per app+library + notice-once, returns void) + schema + `convertNxGenerator(ngAddGenerator)` re-export + the `collection.json` ng-add entry + auto-wire-all/idempotency/guard spec + surface-regression (ng-add absent from generators.json -> nx add unchanged).
+- [x] 23-03-PLAN.md -- NGADD-01: the composed `ngAddGenerator` (RF-02 guard + defensive devDep move + `getProjects` enumerate/filter/compose `configurationGenerator` per app+library + notice-once, returns void) + schema + `convertNxGenerator(ngAddGenerator)` re-export + the `collection.json` ng-add entry + auto-wire-all/idempotency/guard spec + surface-regression (ng-add absent from generators.json -> nx add unchanged).
 
 ### Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs
 
@@ -188,5 +188,5 @@ Plans:
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete    | 2026-07-10 |
-| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 2/3 | In Progress|  |
+| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 3/3 | Complete   | 2026-07-10 |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |

@@ -31,7 +31,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### ng add (NGADD)
 
-- [ ] **NGADD-01**: `ng add angular-typechecker` runs a first-party `ng-add` schematic that iterates `angular.json#projects` and auto-wires a `typecheck` target into EVERY `application` + `library` project (idempotent -- skips a project that already has a `typecheck` target; app + library only, skipping e2e/other project types), ensures the devDependency, and prints an explicit "no target caching on Angular CLI" notice. The Nx `nx add` behavior is unchanged from v0.2.0.
+- [x] **NGADD-01**: `ng add angular-typechecker` runs a first-party `ng-add` schematic that iterates `angular.json#projects` and auto-wires a `typecheck` target into EVERY `application` + `library` project (idempotent -- skips a project that already has a `typecheck` target; app + library only, skipping e2e/other project types), ensures the devDependency, and prints an explicit "no target caching on Angular CLI" notice. The Nx `nx add` behavior is unchanged from v0.2.0.
 
 ### Coverage (COV)
 
@@ -90,7 +90,7 @@ Phase numbering continues from v0.2.0's Phase 20.
 | ACS-02 | Phase 22 | Complete |
 | ACS-03 | Phase 23 | Complete |
 | ACS-04 | Phase 22 | Complete |
-| NGADD-01 | Phase 23 | Pending |
+| NGADD-01 | Phase 23 | Complete |
 | COV-01 | Phase 22 | Complete |
 | ACV-01 | Phase 24 | Pending |
 | ACV-02 | Phase 24 | Pending |
