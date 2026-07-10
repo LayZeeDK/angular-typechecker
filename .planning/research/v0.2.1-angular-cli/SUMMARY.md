@@ -6,6 +6,42 @@
 **Researched:** 2026-07-10
 **Confidence:** HIGH
 
+## CORRECTION & LOCKED DECISIONS (empirically verified 2026-07-10 -- supersedes conflicting claims below)
+
+The parallel researchers assumed the PRE-solution-style Angular CLI layout; that was wrong.
+Corrected after generating a real Angular CLI 22.0.6 workspace (`npm init @angular@latest` in
+`D:/projects/sandbox/angular220`) + reading `@schematics/angular` source + `core/walk-references.ts`.
+Where this section conflicts with anything below (especially Pitfall 8), THIS section wins.
+
+1. **Pitfall 8 (spec coverage) is VOID.** Modern Angular CLI's workspace-root `tsconfig.json` IS
+   solution-style: `"files": []` + `references` -> `tsconfig.app.json` + `tsconfig.spec.json`, and
+   `ng g library` APPENDS each library's `tsconfig.lib.json` + `tsconfig.spec.json` to that SAME root
+   `references[]` (verified: `@schematics/angular/library/index.js` `addTsProjectReference`, and a
+   generated Ng22 workspace). Planted-error `tsc --noEmit` per leaf confirmed each leaf checks exactly
+   its own glob scope (app / spec / lib all isolated).
+
+2. **Per-project targets via `tsConfig: string | string[]` (Option A -- LOCKED).** Angular CLI has NO
+   target inference, so a `typecheck` architect target is wired per project. One target per project,
+   scoped to that project, is achieved by pointing `tsConfig` at an ARRAY of the project's leaves
+   (`[buildLeaf, specLeaf]`). The engine runs each array entry through the existing single-`tsConfig`
+   logic, UNIONs diagnostics, and filters via the v0.2.0 input-set-membership boundary over the
+   combined declared input sets. Additive/non-breaking: widen `CoreOptions.tsConfig` + executor
+   `schema.json` (`oneOf` string|array) + `normalize-options`; single-string behavior AND the Nx path
+   are byte-unchanged. NO emitted per-project solution tsconfig (generator stays config-edit-only);
+   NO directory-boundary change; NO runtime workspace-parsing.
+
+3. **`ng add` auto-wires ALL projects (LOCKED).** The Angular CLI `ng-add` schematic iterates
+   `angular.json#projects` and wires a per-project `typecheck` target into EVERY `application` +
+   `library` project (idempotent; skip a project that already has one; skip e2e/other types). The
+   `configuration` schematic remains the single-project entry (projects added after install). The Nx
+   `nx add` is UNCHANGED from shipped v0.2.0 (init/caching seed only; Nx auto-provisioning stays
+   deferred to `createNodesV2` / WALK-FUT-01).
+
+4. `.angular/cache` is build-pipeline-only (verified: every consumer is `@angular/build` or `ng cache`)
+   -> nothing to seed on the CLI path.
+
+Authoritative requirements: `.planning/REQUIREMENTS.md` (ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD).
+
 ## Executive Summary
 
 This milestone adds a non-Nx Angular CLI (`angular.json`) surface to the already-shipped `angular-typechecker` Nx plugin, so `ng add angular-typechecker` / `ng generate angular-typechecker:configuration` / `ng run <p>:typecheck` all work against the SAME tested engine that Nx consumers use. All four research files agree on the shape: it is a "thin re-export" plus one genuine fork. `@nx/devkit@23.0.1` (already a pinned dependency) exports both `convertNxExecutor` and `convertNxGenerator`, both current and NOT deprecated (verified in the installed source). No new production dependencies are required. The work is two new manifest files (`builders.json`, `collection.json`), two new `package.json` fields (`builders`, `schematics`), three thin `convert*` wrapper modules, one first-party `ng-add` Rule, and -- the one place real engineering lives -- an `angular.json`-aware write branch inside the shared `configuration` generator.
@@ -70,7 +106,7 @@ Bridge-and-branch. The executor is re-exported verbatim; the generators are re-e
 5. **Undeclared runtime `require()`s (`@angular-devkit/architect`, `rxjs`).** Avoid: declare optional peers (see Stack); e2e is the backstop.
 6. **`ng add` peer friction on Angular < 22.** The `^22.0.0`/TS-6 peer caps mean off-stack fixtures need `--legacy-peer-deps`; on-stack (Ng22) needs none. Document; never gate in code.
 7. **Reusing the Nx executor `schema.json` for the builder** trips Architect's stricter validation (`cli:"nx"`, `x-*`, `$default` positional args). Avoid: a sanitized builder `schema.json` over the same TS options interface + a schema-parity test. (Confidence MEDIUM -- confirm in the builder spike.)
-8. **Reference-walk never engages on Angular CLI (no TS project references) -> specs silently unchecked.** A CLI app's `tsconfig.app.json` has no `references[]`, so the walk falls to the single-leaf fallback and skips `tsconfig.spec.json`. Document; consider wiring a second spec target or a `--tsConfig` override; e2e must plant BOTH an app error and a spec error.
+8. **[CORRECTED -- VOID; see "CORRECTION & LOCKED DECISIONS" at top.]** ~~Reference-walk never engages on Angular CLI (no TS project references) -> specs silently unchecked.~~ FALSE for modern Angular CLI: the workspace-root `tsconfig.json` IS solution-style with `references`. Per-project complete coverage is delivered by `tsConfig: [buildLeaf, specLeaf]` (Option A). e2e still plants BOTH an app error and a spec error (and a library error) to prove per-project scoping.
 
 ## Implications for Roadmap
 
