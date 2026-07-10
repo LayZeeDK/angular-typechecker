@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
-last_updated: "2026-07-10T20:22:23.226Z"
-last_activity: 2026-07-10 -- Phase 22 planning complete
+last_updated: "2026-07-10T20:43:26.752Z"
+last_activity: 2026-07-10
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 25
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 22 — `configuration` schematic + the `angular.json` write fork
+**Current focus:** Phase 22 — configuration-schematic-the-angular-json-write-fork
 
 ## Current Position
 
-Phase: 22
-Plan: Not started
+Phase: 22 (configuration-schematic-the-angular-json-write-fork) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-10 -- Phase 22 planning complete
+Last activity: 2026-07-10
 
 ## Accumulated Context
 
@@ -63,6 +63,7 @@ archives under `.planning/milestones/`.
 - [Phase 21]: 21-01: GATE A' = GO (spike 011, VALIDATED). The shipped CJS->ESM `await import()` bridge SURVIVES `convertNxExecutor` + a real `ng run <project>:typecheck` on-stack Angular 22 (app AND library) against the real `bluehalo/ngx-leaflet` clone @ 818e9ae -- no `ERR_REQUIRE_ESM` incl. the eager `retrieveProjectConfigurationsWithAngularProjects` prelude; planted TS2322 RED / clean control GREEN; on-stack install clean (no --legacy-peer-deps). Minimal builder = `convertNxExecutor(typecheckExecutor)` + `builders.json` + additive `builders` field landed; `gate-a-static` byte-guard extended to the builder entry. Builder `tsConfig` stays single-string (ENG-01 array widening is 21-02). Human GATE A' GO/NO-GO checkpoint = GO (authorized); Waves 2-3 proceed. NO-GO would NEVER have fallen back to a hand-written architect builder (D-04).
 - [Phase 21]: 21-02: ENG-01 -- `tsConfig` widened to `string | string[]` at four additive seams (schema.d.ts, both schema.json `oneOf`, normalize-options `map(resolveOne)`, `CoreOptions.tsConfigPath`). Core `handleMultiTsConfig` runs each entry through the SAME single-tsConfig gather logic, UNIONs the raw per-entry diagnostics, and calls `finalize` EXACTLY ONCE over the COMBINED declared input set (`buildFinalizeFilter` combined `rootNamePaths`) -- the surviving-leaf tail of `handleSolutionWalk`, never per-entry `runTypecheck`+merge. Zero-rootNames entry -> `zero-root-names` `SkippedReference` (coverage-incomplete via `evaluateResult`), per-entry 500 / empty array -> infra throw (never a silent pass, T-21-05). Widened union is MUTABLE `string[]` not `readonly` (Array.isArray narrows a readonly union only in the true branch; mutable keeps the single-string body byte-unchanged). Single-string path + Nx executor path byte-unchanged; proven by a hermetic `fixtures/multi-tsconfig-array` real-compiler integration spec (both planted codes surface, `['x']`===`'x'`). nx build/test(259)/integration/lint green.
 - [Phase 21]: 21-03: in-repo CI-authoritative builder guard suite (three specs, NO production code). (1) `schema-parity.spec.ts` locks the SANITIZED builder `schema.json` to `TypecheckExecutorOptions` via `satisfies` + `AssertAssignable` reverse-coverage probe (keys/required:['tsConfig']/additionalProperties:false/defaults + ENG-01 `tsConfig` oneOf string|array) AND asserts sanitized (no `cli`/`version`/`$id`) -- T-21-07. (2) `builder.spec.ts` thin-wrapper: source-regex proves `builder.ts` imports `convertNxExecutor` from `@nx/devkit` + the executor default from `../../executors/typecheck/executor` + default-exports exactly `convertNxExecutor(typecheckExecutor)`, forbidding an engine fork / hand-written architect builder (T-21-09 / D-04); runtime asserts the Architect Builder brand. (3) `nx-surface-regression.spec.ts` asserts package.json `executors` unchanged + `builders` additive + executors.json still declares the `typecheck` impl -> `executors ?? builders` still resolves the executor (T-21-08). DEVIATION (Rule 1): `convertNxExecutor` returns an Architect Builder OBJECT branded `Symbol.for('@angular-devkit/architect:builder')===true` + a `handler` function, NOT a bare function -- the plan's `typeof==='function'` runtime assertion was corrected to the stronger brand+handler check. nx test(274)/lint/format:check green. Phase 21 complete.
+- [Phase 22]: 22-01: Angular CLI write-fork -- an early tree.exists(angular.json) branch in the shared configuration generator writes each per-project architect.typecheck = { builder: angular-typechecker:typecheck, options.tsConfig: [buildLeaf, specLeaf] } via @nx/devkit updateJson (updateProjectConfiguration cannot write angular.json, Pitfall 2), skipping the Nx init (D-04, no stray nx.json). New resolveTsConfigLeaves helper resolves RF-01 to Approach A (projectType-convention tsconfig.app.json/tsconfig.lib.json + tsconfig.spec.json, each tree.exists-probed; --tsConfig override to single-element array; empty result throws) -- NOT Approach B, because the default @angular/build:ng-packagr library builder carries no tsConfig in build.options. Collision by builder id read defensively from architect then targets, written canonically to architect; idempotent rewrite preserves user keys + options. Nx else-branch byte-unchanged (resolveTsConfig/resolveTsConfigOverride untouched; configuration.spec.ts green). Proven by a 10-case angular.json-seeded spec (nx test 284 green, typecheck green). Reachable now via nx g; the ng generate schematic surface + ACS-04 regression are 22-02.
 
 ### Roadmap Evolution
 
@@ -122,7 +123,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-10T19:47:52.362Z
+Last session: 2026-07-10T20:43:01.698Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed

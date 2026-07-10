@@ -24,8 +24,8 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Angular CLI Schematics (ACS)
 
-- [ ] **ACS-01**: `ng generate angular-typechecker:configuration <project>` wires ONE per-project `typecheck` architect target into `angular.json` with `tsConfig: [<project build leaf>, <project spec leaf>]` (via the `tree.exists('angular.json')` write-fork; config-edit-only, no emitted file; idempotent + collision-safe).
-- [ ] **ACS-02**: the Nx `configuration` generator path stays behavior-unchanged -- one shared generator with the workspace-type fork; the Nx path still writes a single-string solution `tsConfig`.
+- [x] **ACS-01**: `ng generate angular-typechecker:configuration <project>` wires ONE per-project `typecheck` architect target into `angular.json` with `tsConfig: [<project build leaf>, <project spec leaf>]` (via the `tree.exists('angular.json')` write-fork; config-edit-only, no emitted file; idempotent + collision-safe).
+- [x] **ACS-02**: the Nx `configuration` generator path stays behavior-unchanged -- one shared generator with the workspace-type fork; the Nx path still writes a single-string solution `tsConfig`.
 - [ ] **ACS-03**: `ng generate angular-typechecker:init` is available for parity; on an Angular CLI workspace it seeds NO caching and creates no stray `nx.json`.
 - [ ] **ACS-04**: `collection.json` + the `package.json` `schematics` field are added additively; `nx g angular-typechecker:configuration` still resolves unchanged (regression assertion: `generators ?? schematics`).
 
@@ -35,7 +35,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Coverage (COV)
 
-- [ ] **COV-01**: a per-project `typecheck` target type-checks that project's COMPLETE leaf set (application+spec, or library+spec) and ONLY that project's leaves (no cross-project bleed) -- proven by scaffolding `ng g library` and asserting per-project scoping.
+- [x] **COV-01**: a per-project `typecheck` target type-checks that project's COMPLETE leaf set (application+spec, or library+spec) and ONLY that project's leaves (no cross-project bleed) -- proven by scaffolding `ng g library` and asserting per-project scoping.
 
 ### Verification (ACV)
 
@@ -86,12 +86,12 @@ Phase numbering continues from v0.2.0's Phase 20.
 | ACB-01 | Phase 21 | Complete |
 | ACB-02 | Phase 21 | Complete |
 | ACB-03 | Phase 21 | Complete |
-| ACS-01 | Phase 22 | Pending |
-| ACS-02 | Phase 22 | Pending |
+| ACS-01 | Phase 22 | Complete |
+| ACS-02 | Phase 22 | Complete |
 | ACS-03 | Phase 23 | Pending |
 | ACS-04 | Phase 22 | Pending |
 | NGADD-01 | Phase 23 | Pending |
-| COV-01 | Phase 22 | Pending |
+| COV-01 | Phase 22 | Complete |
 | ACV-01 | Phase 24 | Pending |
 | ACV-02 | Phase 24 | Pending |
 | ACV-03 | Phase 24 | Pending |
