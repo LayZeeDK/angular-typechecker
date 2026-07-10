@@ -33,6 +33,7 @@ interface PluginManifest {
   type?: string;
   generators?: string;
   builders?: string;
+  schematics?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   engines?: {
@@ -91,6 +92,7 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
       'executors.json',
       'generators.json',
       'builders.json',
+      'collection.json',
       'README.md',
       'LICENSE',
     ]);
@@ -102,6 +104,10 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
 
   it('registers the Angular CLI builders collection (ACB-03; additive)', () => {
     expect(manifest.builders).toBe('./builders.json');
+  });
+
+  it('registers the Angular CLI schematics collection (ACS-04; additive sibling of generators)', () => {
+    expect(manifest.schematics).toBe('./collection.json');
   });
 
   it('declares the minimal CJS exports map (D-02; barrel entry + package.json escape hatch)', () => {
