@@ -91,7 +91,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 Plans:
 **Wave 1**
 
-- [ ] 21-01-PLAN.md -- GATE A' gating plan: minimal `convertNxExecutor` builder + manifests + sanitized schema, extended static byte-guard, and the real-`ng run` GATE A' spike (011) against the cloned Angular 22 `bluehalo/ngx-leaflet` workspace (GO/NO-GO)
+- [ ] 21-01-PLAN.md -- GATE A' gating plan: minimal `convertNxExecutor` builder + manifests + sanitized schema, extended static byte-guard, and the real-`ng run` GATE A' spike (011) against the cloned Angular 22 `bluehalo/ngx-leaflet` workspace (GO/NO-GO). **Tasks 1-3 committed 2026-07-10 (`4b768d4`, `86d44c4`, `57c391c`); spike 011 VERDICT = GO.** Task 4 (blocking human GATE A' GO/NO-GO checkpoint) PENDING -- box stays unchecked until the human types "GO".
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
-last_updated: "2026-07-10T15:08:11.871Z"
-last_activity: 2026-07-10 -- Phase 21 planning complete
+last_updated: "2026-07-10T17:57:00.000Z"
+last_activity: 2026-07-10 -- Phase 21 plan 21-01 tasks 1-3 done; GATE A' = GO recorded; awaiting human GO/NO-GO checkpoint
 progress:
   total_phases: 4
   completed_phases: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** v0.2.1 -- Angular CLI (`angular.json`) workspace support (`ng add`, generators as CLI schematics via `convertNxGenerator`, executor as a CLI builder via `convertNxExecutor`), proven against a real OSS Angular CLI repo. ADDITIVE-ONLY (v0.3.0 only if a breaking change is unavoidable). Currently: defining requirements.
+**Current focus:** Phase 21 — angular-cli-builder-engine-multi-tsconfig-gate-a-spike-go-no
 
 ## Current Position
 
-Phase: 21 -- Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) (not started)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-07-10 -- Phase 21 planning complete
+Phase: 21 (angular-cli-builder-engine-multi-tsconfig-gate-a-spike-go-no) — EXECUTING
+Plan: 1 of 3 (tasks 1-3 committed; task 4 = blocking human GATE A' GO/NO-GO checkpoint, PENDING)
+Status: Executing Phase 21 -- awaiting human GATE A' confirmation before Waves 2-3
+Last activity: 2026-07-10 -- Phase 21 plan 21-01 tasks 1-3 done; GATE A' spike 011 VERDICT = GO recorded; awaiting human GO/NO-GO
 
 ## Accumulated Context
 
@@ -60,6 +60,7 @@ archives under `.planning/milestones/`.
 - [Phase 20]: 20-01: added advisory CoreResult.bundlerQueryImports (deduped+sorted ?query TS2307 specifiers) via a pure detector over the POST-filter kept set at the single finalize seam (zero walk threading); verdict-neutral (evaluate-result untouched + D-05 tripwire); baseline leg fires+keeps the TS2307 / vite-client leg self-gates, proven by a hermetic real-compiler fixture. Signal 2 engine half only -- executor render (20-02) + README (20-03) remain; SB-09 not closed until phase verification.
 - [Phase 20]: 20-02: executor half of Signal 2 (D-04) -- warnBundlerQueryImports renders CoreResult.bundlerQueryImports as ONE logger.warn (count + "types": ["vite/client"] fix + ADVISORY-not-suppressed + specifiers), the fifth advisory notice, fired after warnNotTypeChecked; self-gating on field presence (D-03), verdict untouched (evaluateResult never reads it), content-isolated to the consumer's own specifiers; both doc-comments bumped four->five
 - [Phase 20]: README Vite caveat restructured to lead with the vite/client fix; both SB-09 signals folded into the curated 0.2.0 CHANGELOG (prose only, no release cut, package.json stays 0.1.1)
+- [Phase 21]: 21-01: GATE A' = GO (spike 011, VALIDATED). The shipped CJS->ESM `await import()` bridge SURVIVES `convertNxExecutor` + a real `ng run <project>:typecheck` on-stack Angular 22 (app AND library) against the real `bluehalo/ngx-leaflet` clone @ 818e9ae -- no `ERR_REQUIRE_ESM` incl. the eager `retrieveProjectConfigurationsWithAngularProjects` prelude; planted TS2322 RED / clean control GREEN; on-stack install clean (no --legacy-peer-deps). Minimal builder = `convertNxExecutor(typecheckExecutor)` + `builders.json` + additive `builders` field landed; `gate-a-static` byte-guard extended to the builder entry. Builder `tsConfig` stays single-string (ENG-01 array widening is 21-02). AWAITING the human GATE A' GO/NO-GO checkpoint before 21-02/21-03 proceed; NO-GO would NEVER fall back to a hand-written architect builder (D-04).
 
 ### Roadmap Evolution
 
