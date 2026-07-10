@@ -36,7 +36,7 @@ breaking change (v0.3.0 only); off-stack Angular 21 support.
 ## Implementation Decisions
 
 ### Proof substrate (REVISED per user directives 2026-07-10)
-- **D-07 (substrate roles -- three tiers):**
+- **D-07:** Substrate roles (three tiers):
   1. **In-repo Vitest unit/integration** -- CI-authoritative. Proves the static byte-assertion
      (extended to the builder entry), the schema-parity guard, the `tsConfig`-array union, and
      the `nx run` `executors ?? builders` regression. This is the committed, repeatable gate.
