@@ -334,16 +334,18 @@ function resolveTsConfigLeaves(
 | A2 | Fresh Ng22 `ng g library` places leaves at `projects/<lib>/tsconfig.lib.json` + `tsconfig.spec.json` under the lib root | RF-01 Substrate 2 | LOW -- cited from v0.2.1 SUMMARY (verified against a generated workspace); Approach A probes existence, so a differently-named leaf simply drops and the `--tsConfig` override covers it. The definitive scaffold proof is Phase 24 (ACV-02). |
 | A3 | `@angular-devkit/schematics/collection-schema.json` exists at the referenced path for the collection `$schema` | Additive manifest wiring | NEGLIGIBLE -- `$schema` is advisory; omit if absent. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+Both are non-load-bearing and are encoded in the Phase-22 plans (22-01 / 22-02).
 
 1. **Does `@nx/nx-plugin-checks` validate `collection.json` referenced by the `schematics` field?**
    - What we know: the eslint config runs `@nx/nx-plugin-checks` on `package.json`; it validates plugin manifests.
    - What is unclear: whether it errors if `collection.json` factories/paths are malformed at lint time.
-   - Recommendation: after adding `collection.json` + the `schematics` field, run `nx lint angular-typechecker` and fix any manifest findings as part of the same plan. Treat a green lint as a hard gate.
+   - RESOLVED: after adding `collection.json` + the `schematics` field, run `nx lint angular-typechecker` and fix any manifest findings as part of the same plan. Treat a green lint as a hard gate. (Encoded in 22-02 Task 1 acceptance criteria: `nx lint angular-typechecker` exits 0.)
 
 2. **Single-element `[resolved]` vs bare string for an explicit `--tsConfig` override on the CLI branch.**
    - What we know: the ENG-01 engine accepts both.
-   - Recommendation: write `[resolved]` for CLI-branch shape uniformity; planner may choose the bare string. Non-load-bearing.
+   - RESOLVED: write `[resolved]` for CLI-branch shape uniformity. Non-load-bearing. (Encoded in 22-01 as the single-element array for the `--tsConfig` override case.)
 
 ## Environment Availability
 
