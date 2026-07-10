@@ -114,10 +114,13 @@ function warnTemplateCheckAborted(result: CoreResult): void {
 }
 
 /**
- * D-02 (Phase 13, L-4): surface the loud skipped-reference notice. Fires only when
- * the core recorded at least one reference skipped (out-of-project /
- * zero-root-names / self-reference) or reclassified (not-found -> 90002) during a
- * solution-tsconfig walk. One logger.warn per reference. Core sets
+ * D-02 (Phase 13, L-4): surface the loud skipped-reference notice. Fires when the
+ * core recorded at least one tsconfig skipped (out-of-project / zero-root-names /
+ * self-reference) or reclassified (not-found -> 90002) -- either during a
+ * solution-tsconfig reference walk OR as a directly-listed entry of a `tsConfig`
+ * array (ENG-01: the array path records a zero-root-names skip for an empty leaf,
+ * where no reference walk happened). The message stays provenance-neutral so it is
+ * accurate for both sources. One logger.warn per reference. Core sets
  * skippedReferences only when non-empty (never []), so the optional-chained length
  * check alone is sufficient.
  */
@@ -128,8 +131,8 @@ function warnSkippedReferences(result: CoreResult): void {
 
   for (const skipped of result.skippedReferences) {
     logger.warn(
-      `angular-typechecker: referenced tsconfig '${skipped.referencePath}' was skipped ` +
-        `or reclassified during the solution-tsconfig reference walk (reason: ${skipped.reason}). ` +
+      `angular-typechecker: tsconfig '${skipped.referencePath}' was skipped ` +
+        `or reclassified (reason: ${skipped.reason}). ` +
         skippedReferenceVerdictNote(skipped.reason),
     );
   }
