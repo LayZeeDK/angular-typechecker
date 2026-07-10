@@ -55,6 +55,7 @@
     "vitest": "~4.1.0"
   },
   "dependencies": {
+    "@angular-devkit/architect": "0.2200.4",
     "@angular/common": "22.0.4",
     "@angular/compiler": "22.0.4",
     "@angular/core": "22.0.4",
