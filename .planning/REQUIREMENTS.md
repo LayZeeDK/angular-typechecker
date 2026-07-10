@@ -14,12 +14,12 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Engine -- multi-tsConfig (ENG)
 
-- [ ] **ENG-01**: The `tsConfig` option accepts `string | string[]`. An array runs each entry through the existing single-`tsConfig` logic, UNIONs the diagnostics, and filters via the v0.2.0 input-set-membership boundary over the combined declared input sets. Additive/non-breaking: `CoreOptions.tsConfig` + the executor `schema.json` (`oneOf` string|array) + `normalize-options` are widened only; the single-string behavior and the Nx path are byte-unchanged.
+- [x] **ENG-01**: The `tsConfig` option accepts `string | string[]`. An array runs each entry through the existing single-`tsConfig` logic, UNIONs the diagnostics, and filters via the v0.2.0 input-set-membership boundary over the combined declared input sets. Additive/non-breaking: `CoreOptions.tsConfig` + the executor `schema.json` (`oneOf` string|array) + `normalize-options` are widened only; the single-string behavior and the Nx path are byte-unchanged.
 
 ### Angular CLI Builder (ACB)
 
 - [x] **ACB-01**: `ng run <project>:typecheck` runs the complete Angular type-check via a `convertNxExecutor`-wrapped builder, producing diagnostics, human output, and an exit/`BuilderOutput.success` verdict identical to the Nx executor.
-- [ ] **ACB-02** (GATE A', GO/NO-GO): a spike proves the CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` engine survives `convertNxExecutor` + a real `ng run` **on-stack (Angular 22)**, with no `ERR_REQUIRE_ESM` (incl. the wrapper's eager project-graph prelude), verified against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, MIT, non-Nx, app + lib) used for quick verification. A NO-GO re-scopes the builder (documented) and never falls back to a hand-written architect builder. (Off-stack Angular 21 was DROPPED from this gate 2026-07-10 per user directive.)
+- [x] **ACB-02** (GATE A', GO/NO-GO): a spike proves the CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` engine survives `convertNxExecutor` + a real `ng run` **on-stack (Angular 22)**, with no `ERR_REQUIRE_ESM` (incl. the wrapper's eager project-graph prelude), verified against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, MIT, non-Nx, app + lib) used for quick verification. A NO-GO re-scopes the builder (documented) and never falls back to a hand-written architect builder. (Off-stack Angular 21 was DROPPED from this gate 2026-07-10 per user directive.)
 - [x] **ACB-03**: `builders.json` + the `package.json` `builders` field are added additively; `nx run <project>:typecheck` still resolves unchanged (a field-aliasing / Nx-surface regression assertion: `executors ?? builders`).
 
 ### Angular CLI Schematics (ACS)
@@ -82,9 +82,9 @@ Phase numbering continues from v0.2.0's Phase 20.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENG-01 | Phase 21 | Pending |
+| ENG-01 | Phase 21 | Complete |
 | ACB-01 | Phase 21 | Complete |
-| ACB-02 | Phase 21 | Pending |
+| ACB-02 | Phase 21 | Complete |
 | ACB-03 | Phase 21 | Complete |
 | ACS-01 | Phase 22 | Pending |
 | ACS-02 | Phase 22 | Pending |

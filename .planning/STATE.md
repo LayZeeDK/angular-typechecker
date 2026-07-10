@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: verifying
-last_updated: "2026-07-10T18:53:52.946Z"
+status: ready_to_plan
+last_updated: 2026-07-10T19:34:01.065Z
 last_activity: "2026-07-10 -- Phase 21 plan 21-03 complete: three pure builder guard specs (schema parity + thin-wrapper + executors ?? builders regression); nx test(274)/lint/format:check green; no production code changed"
 progress:
   total_phases: 4
@@ -11,6 +11,7 @@ progress:
   total_plans: 3
   completed_plans: 3
   percent: 25
+stopped_at: Phase 21 complete (3/3) — ready to discuss Phase 22
 ---
 
 # Project State
@@ -20,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 21 — angular-cli-builder-engine-multi-tsconfig-gate-a-spike-go-no
+**Current focus:** Phase 22 — `configuration` schematic + the `angular.json` write fork
 
 ## Current Position
 
-Phase: 21 (angular-cli-builder-engine-multi-tsconfig-gate-a-spike-go-no) — ALL PLANS EXECUTED
-Plan: 3 of 3 complete (21-01 GATE A' = GO human-authorized; 21-02 ENG-01 tsConfig array; 21-03 in-repo builder guard suite ACB-01/ACB-03)
-Status: Phase 21 execution complete — ready for phase verification (verify_phase_goal), then secure/validate/extract-learnings
-Last activity: 2026-07-10 -- Phase 21 plan 21-03 complete: three pure builder guard specs (schema parity + thin-wrapper + executors ?? builders regression); nx test(274)/lint/format:check green; no production code changed
+Phase: 22
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-10
 
 ## Accumulated Context
 
