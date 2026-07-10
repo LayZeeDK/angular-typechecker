@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-07-10T12:02:08.376Z"
 last_activity: 2026-07-10
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 21 -- Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-10 — Milestone v0.2.1 started
+Status: Roadmap complete (4 phases, 21-24) -- ready to plan Phase 21
+Last activity: 2026-07-10 — Roadmap created for v0.2.1 (Angular CLI workspace support)
 
 ## Accumulated Context
 
@@ -63,6 +63,7 @@ archives under `.planning/milestones/`.
 
 ### Roadmap Evolution
 
+- v0.2.1 roadmap created 2026-07-10: 4 phases (21-24), numbering continued from v0.2.0's Phase 20. All 16 v0.2.1 requirements (ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD) mapped to exactly one phase, 100% coverage, 0 unmapped. Structure follows the research build-order (`.planning/research/v0.2.1-angular-cli/SUMMARY.md`, CORRECTION & LOCKED DECISIONS): Phase 21 carries the GATE A' GO/NO-GO spike (ACB-02 -- the CJS->ESM `await import()` bridge surviving `convertNxExecutor` + a real `ng run`, on-stack Ng22 + off-stack Ng21) and gates the milestone; Phase 22 carries the highest design weight (the `angular.json` write-fork, Option A `tsConfig: [buildLeaf, specLeaf]`); Phase 23 is `ng-add` auto-wire-all + `init` parity + optional-peer classification; Phase 24 is the real-OSS + scaffolded e2e, the additive-only audit, and docs. ADDITIVE-ONLY charter: re-versions to v0.3.0 only if a breaking change proves unavoidable.
 - Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010. BOTH signals in scope for v0.2.0 (user-committed 2026-07-07): the `vite/client` README recipe (docs) AND the `?query` detection advisory (engine + executor). Reopens v0.2.0 beyond its passed milestone audit.
 
 ### Blockers/Concerns
@@ -135,4 +136,4 @@ D:/projects/github/ (radix-ng/primitives et al.) are not committed.
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan Phase 21 with /gsd-plan-phase 21 (Angular CLI builder + engine multi-tsConfig + GATE A' GO/NO-GO spike)

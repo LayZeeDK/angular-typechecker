@@ -78,31 +78,31 @@ Explicitly excluded from v0.2.1.
 
 ## Traceability
 
-Populated during roadmap creation (phase numbering continues from v0.2.0's Phase 20).
+Phase numbering continues from v0.2.0's Phase 20.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ENG-01 | (pending) | Pending |
-| ACB-01 | (pending) | Pending |
-| ACB-02 | (pending) | Pending |
-| ACB-03 | (pending) | Pending |
-| ACS-01 | (pending) | Pending |
-| ACS-02 | (pending) | Pending |
-| ACS-03 | (pending) | Pending |
-| ACS-04 | (pending) | Pending |
-| NGADD-01 | (pending) | Pending |
-| COV-01 | (pending) | Pending |
-| ACV-01 | (pending) | Pending |
-| ACV-02 | (pending) | Pending |
-| ACV-03 | (pending) | Pending |
-| ACP-01 | (pending) | Pending |
-| ACP-02 | (pending) | Pending |
-| ACD-01 | (pending) | Pending |
+| ENG-01 | Phase 21 | Pending |
+| ACB-01 | Phase 21 | Pending |
+| ACB-02 | Phase 21 | Pending |
+| ACB-03 | Phase 21 | Pending |
+| ACS-01 | Phase 22 | Pending |
+| ACS-02 | Phase 22 | Pending |
+| ACS-03 | Phase 23 | Pending |
+| ACS-04 | Phase 22 | Pending |
+| NGADD-01 | Phase 23 | Pending |
+| COV-01 | Phase 22 | Pending |
+| ACV-01 | Phase 24 | Pending |
+| ACV-02 | Phase 24 | Pending |
+| ACV-03 | Phase 24 | Pending |
+| ACP-01 | Phase 23 | Pending |
+| ACP-02 | Phase 24 | Pending |
+| ACD-01 | Phase 24 | Pending |
 
 **Coverage:**
 - v0.2.1 requirements: 16 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 16 (pending roadmap)
+- Mapped to phases: 16 (Phase 21: 4 | Phase 22: 4 | Phase 23: 3 | Phase 24: 5)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-10*

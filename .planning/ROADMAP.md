@@ -6,6 +6,7 @@
 - [SHIPPED] **v0.0.3** -- Phases 8-11 -- shipped 2026-06-30. Engine hardening: closed correctness/completeness holes, made diagnostic gathering resilient instead of all-or-nothing, made Angular-version drift fail loudly, and adopted `fallow` as a green-on-adoption CI quality gate. Verified against stable Angular 22.0.4; NO `NgtscProgram` migration, NO new feature surfaces. Full detail: `.planning/milestones/v0.0.3-ROADMAP.md`.
 - [SHIPPED] **v0.1.0** -- Phases 12-15 (incl. inserted 13.1) -- shipped 2026-07-02. Reference-walking engine, the typecheck executor rename, and the configuration + init generator suite. Full detail: `.planning/milestones/v0.1.0-ROADMAP.md`.
 - [SHIPPED] **v0.2.0** -- Phases 16-20 -- Storybook story type-checking (closed 2026-07-07; published to npm 2026-07-07 as `angular-typechecker@0.2.0`). One boundary-filter correctness fix (directory-containment -> compiler **input-set membership**) so `typecheck` targets check `*.stories.ts` and the whole `.storybook/` tsconfig-declared surface across the two Nx-official layouts (per-project scaffold + centralized host), proven against the shipped tarball on the supported stack, with no silent false pass; plus the opt-in `strict` mode, Storybook Composition fan-out, and Vite/Analog `?query` guidance. Scope hardened by a 6-lens Opus advisory board (`.planning/research/v0.1.2-storybook/board/CONSENSUS.md`). Full detail: `.planning/milestones/v0.2.0-ROADMAP.md`. (v0.1.1 was a packaging hotfix; no v0.1.x roadmap phases between 15 and 16.)
+- [ACTIVE] **v0.2.1** -- Phases 21-24 -- Angular CLI (`angular.json`) workspace support (ADDITIVE-ONLY). Re-export the shipped `typecheck` executor as an Angular CLI builder (`convertNxExecutor`) and the `configuration`/`init` generators as Angular CLI schematics (`convertNxGenerator`), add a first-party `ng-add` schematic that auto-wires every app + library project in `angular.json`, and widen the engine's `tsConfig` to `string | string[]` -- proven end-to-end against a real OSS `angular.json` workspace. No breaking changes to the Nx executor id, the `runTypecheck`/`CoreResult`/`CoreOptions` public API (widening only), or existing schemas (re-versions to v0.3.0 only if a breaking change proves unavoidable). Design + empirical verification: `.planning/research/v0.2.1-angular-cli/SUMMARY.md` (CORRECTION & LOCKED DECISIONS).
 
 ## Phases
 
@@ -63,6 +64,61 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 </details>
 
+### [ACTIVE] v0.2.1 -- Angular CLI (`angular.json`) workspace support (Phases 21-24)
+
+- [ ] **Phase 21: Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO)** -- Re-export the `typecheck` executor as an Angular CLI builder, widen `tsConfig` to `string | string[]`, and prove the CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run` on-stack and off-stack.
+- [ ] **Phase 22: `configuration` schematic + the `angular.json` write-fork** -- `ng generate angular-typechecker:configuration <project>` wires one per-project `typecheck` architect target (scoped to that project's leaves) via the `tree.exists('angular.json')` fork, with the Nx generator path unchanged.
+- [ ] **Phase 23: `init` schematic parity + first-party `ng-add`** -- `ng add angular-typechecker` auto-wires every app + library project in `angular.json`, with the no-caching notice and optional-peer dependency classification.
+- [ ] **Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs** -- prove the full flow against a real OSS `angular.json` workspace and a scaffolded one, audit the additive-only charter, and document the Angular CLI surface.
+
+## Phase Details
+
+### Phase 21: Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO)
+**Goal:** The shipped `typecheck` executor is runnable as an Angular CLI builder (`ng run <project>:typecheck`) with diagnostics, human output, and verdict identical to the Nx executor; the engine's `tsConfig` accepts `string | string[]`; and the CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` bridge is empirically proven to survive `convertNxExecutor` + a real `ng run`.
+**Depends on:** Nothing new (builds on the shipped v0.2.0 engine + executor).
+**Requirements:** ENG-01, ACB-01, ACB-02 (GATE A'), ACB-03
+**GATE:** This phase contains the **GATE A' GO/NO-GO spike (ACB-02)**. It is the milestone's headline risk and gates every downstream phase (exactly as Phase 16 gated Layout B in v0.2.0). A NO-GO re-scopes the builder feature (documented) and NEVER falls back to a hand-written `@angular-devkit/architect` builder; the schematics/`ng-add`/e2e phases do not proceed against the builder until GO.
+**Success Criteria** (what must be TRUE):
+  1. GATE A' (ACB-02): a real `ng run <project>:typecheck` completes with NO `ERR_REQUIRE_ESM` on-stack (Angular 22) AND off-stack (Angular 21) -- including the wrapper's eager project-graph prelude -- and the GATE build-output static assertion is extended to the builder entry; the GO/NO-GO verdict is recorded.
+  2. `ng run <project>:typecheck` (via the `convertNxExecutor`-wrapped builder) produces diagnostics, `formatDiagnostics` human output, and a `BuilderOutput.success` verdict identical to the Nx executor (ACB-01).
+  3. The `tsConfig` option accepts an array: each entry runs through the existing single-`tsConfig` logic, diagnostics UNION, and the v0.2.0 input-set-membership boundary filters over the combined declared input sets; the single-string behavior and the Nx path are byte-unchanged (ENG-01).
+  4. `builders.json` + the `package.json` `builders` field are added additively, and `nx run <project>:typecheck` still resolves unchanged -- the `executors ?? builders` Nx-surface regression assertion passes (ACB-03).
+**Plans:** TBD
+
+### Phase 22: `configuration` schematic + the `angular.json` write-fork
+**Goal:** `ng generate angular-typechecker:configuration <project>` wires ONE per-project `typecheck` architect target into `angular.json`, scoped to exactly that project's complete leaf set, via a single shared generator with a `tree.exists('angular.json')` fork -- leaving the Nx generator path byte-unchanged.
+**Depends on:** Phase 21 (needs the builder target + the array-`tsConfig` engine; requires GATE A' = GO).
+**Requirements:** ACS-01, ACS-02, ACS-04, COV-01
+**Success Criteria** (what must be TRUE):
+  1. `ng generate angular-typechecker:configuration <project>` wires one per-project `typecheck` architect target into `angular.json` with `tsConfig: [<build leaf>, <spec leaf>]` via the `tree.exists('angular.json')` write-fork -- config-edit-only (no emitted file), idempotent, and collision-safe (ACS-01).
+  2. The Nx `configuration` generator path is behavior-unchanged: one shared generator with the workspace-type fork; the Nx path still writes a single-string solution `tsConfig` (ACS-02).
+  3. A per-project `typecheck` target type-checks that project's COMPLETE leaf set (application+spec, or library+spec) and ONLY that project's leaves -- proven by scaffolding `ng g library` and asserting per-project scoping with no cross-project bleed (COV-01).
+  4. `collection.json` + the `package.json` `schematics` field are added additively, and `nx g angular-typechecker:configuration` still resolves unchanged -- the `generators ?? schematics` Nx-surface regression assertion passes (ACS-04).
+**Plans:** TBD
+
+### Phase 23: `init` schematic parity + first-party `ng-add`
+**Goal:** `ng add angular-typechecker` installs the package and auto-wires a `typecheck` target into every `application` + `library` project in `angular.json`, with an explicit "no target caching on Angular CLI" notice, an `init` schematic for parity that seeds no caching, and correct optional-peer dependency classification.
+**Depends on:** Phase 22 (`ng-add` composes the shared `configuration` write-fork).
+**Requirements:** ACS-03, NGADD-01, ACP-01
+**Success Criteria** (what must be TRUE):
+  1. `ng add angular-typechecker` runs a first-party `ng-add` schematic that iterates `angular.json#projects` and wires a `typecheck` target into EVERY `application` + `library` project (idempotent -- skips a project that already has a `typecheck` target; skips e2e/other project types), ensures the devDependency, and prints an explicit "no target caching on Angular CLI" notice (NGADD-01).
+  2. `ng generate angular-typechecker:init` is available for parity, and on an Angular CLI workspace it seeds NO caching and creates no stray `nx.json` (ACS-03).
+  3. `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies`, `@nx/dependency-checks` stays green, and the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented (ACP-01).
+  4. The Nx `nx add angular-typechecker` behavior is unchanged from v0.2.0 (init/caching seed only).
+**Plans:** TBD
+
+### Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs
+**Goal:** The full Angular CLI flow (`ng add` -> `ng run <project>:typecheck`) is proven end-to-end against a real OSS `angular.json` workspace and a freshly scaffolded workspace, the additive-only charter is audited, and the README/CHANGELOG document the new Angular CLI surface in end-user language.
+**Depends on:** Phases 21, 22, 23 (the e2e exercises the builder, the schematics, and `ng-add` together).
+**Requirements:** ACV-01, ACV-02, ACV-03, ACP-02, ACD-01
+**Success Criteria** (what must be TRUE):
+  1. The packed tarball is proven end-to-end against a REAL OSS Angular CLI clone (`realworld-angular/realworld-angular`, exact stack): `ng add` -> `ng run <project>:typecheck` catches planted diagnostics; the off-stack cross-check (`realworld-apps/angular-realworld-example-app`, Angular 21, installed with `--legacy-peer-deps`) also runs the check (ACV-01).
+  2. The full flow is proven against a freshly SCAFFOLDED workspace (`npm init @angular` + `ng g library`): planted application + spec + library errors each surface, and each per-project target catches exactly its own leaves (ACV-02).
+  3. Unit + integration coverage targets the Angular-CLI-vs-Nx differences: the `tsConfig: string[]` union; the `angular.json` write-fork on an `angular.json`-seeded schematics test tree; the builder over `BuilderContext`; `ng-add` auto-wire-all + idempotency; and no stray `nx.json` (ACV-03).
+  4. Additive-only is enforced and audited: no breaking change to the executor id, the `runTypecheck`/`CoreResult`/`CoreOptions` public API (widened only), or the existing schemas -- v0.3.0 only if a breaking change proves unavoidable (ACP-02).
+  5. README gains an `## Angular CLI` section (`ng add` auto-wire-all; single-project `ng generate ...:configuration`; `ng run <project>:typecheck`; per-project targets; the `tsConfig` array; the `nx`-transitive + no-caching notes; the off-stack `--legacy-peer-deps` note), plus a curated CHANGELOG entry in end-user language with no internal ids (ACD-01).
+**Plans:** TBD
+
 ## Progress
 
 | Phase             | Milestone | Plans Complete | Status   | Completed  |
@@ -89,3 +145,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 18. Packaged-tarball e2e + docs | v0.2.0 | 5/5 | Complete | 2026-07-06 |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.2.0 | 3/3 | Complete | 2026-07-07 |
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
+| 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 0/? | Not started | - |
+| 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 0/? | Not started | - |
+| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/? | Not started | - |
+| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |
