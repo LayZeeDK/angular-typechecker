@@ -6,11 +6,10 @@ logged here, NOT fixed.
 
 ## Plan 21-02
 
-- **`.claude/skills/spike-findings-angular-typechecker/SKILL.md` fails
-  `nx format:check`.** Pre-existing Prettier drift on this branch from the external
-  skill regeneration/reload (the skill "was just regenerated + reloaded" per the
-  execution prompt). NOT touched by any 21-02 commit; unrelated to ENG-01. Fixing a
-  regenerated skill artifact is out of this plan's scope and risks conflicting with the
-  skill-generation tooling. Whoever regenerates the skill (or a follow-up
-  `nx format:write`) should reformat it before the phase's format:check CI gate is
-  relied upon green.
+- **RESOLVED (orchestrator, post-21-02):** `.claude/skills/spike-findings-angular-typechecker/SKILL.md`
+  fails `nx format:check`. Pre-existing Prettier drift from 21-01's skill regeneration
+  (commit `57c391c`); NOT touched by any 21-02 commit; unrelated to ENG-01. Correctly logged
+  out-of-scope by the 21-02 executor. Fixed at the Wave 2/3 boundary via
+  `nx format:write --files=.claude/skills/spike-findings-angular-typechecker/SKILL.md`
+  (whitespace-only reformat; no semantic change to the skill, so no `/reload-skills` needed);
+  `nx format:check` now green.
