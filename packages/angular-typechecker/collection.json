@@ -1,6 +1,11 @@
 {
   "$schema": "../../node_modules/@angular-devkit/schematics/collection-schema.json",
   "schematics": {
+    "ng-add": {
+      "factory": "./src/schematics/ng-add/schematic",
+      "schema": "./src/generators/ng-add/schema.json",
+      "description": "Add angular-typechecker and wire a typecheck target into every application + library project."
+    },
     "configuration": {
       "factory": "./src/schematics/configuration/schematic",
       "schema": "./src/generators/configuration/schema.json",

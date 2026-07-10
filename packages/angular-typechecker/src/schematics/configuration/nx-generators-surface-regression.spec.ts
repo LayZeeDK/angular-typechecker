@@ -29,6 +29,7 @@ interface PluginManifest {
 
 interface GeneratorsManifest {
   generators?: Record<string, { factory?: string }>;
+  schematics?: Record<string, { factory?: string }>;
 }
 
 interface CollectionManifest {
@@ -70,5 +71,16 @@ describe('Nx generators ?? schematics surface regression (ACS-04)', () => {
     expect(generatorsManifest.generators?.init?.factory).toBe(
       './src/generators/init/generator',
     );
+  });
+
+  it('declares the additive ng-add schematic in collection.json (ng add angular-typechecker auto-wire-all, NGADD-01)', () => {
+    expect(collectionManifest.schematics?.['ng-add']?.factory).toBe(
+      './src/schematics/ng-add/schematic',
+    );
+  });
+
+  it('never declares ng-add in generators.json so the Nx nx add surface stays <pkg>:init (nx add UNCHANGED, Pitfall 5)', () => {
+    expect(generatorsManifest.generators?.['ng-add']).toBeUndefined();
+    expect(generatorsManifest.schematics?.['ng-add']).toBeUndefined();
   });
 });
