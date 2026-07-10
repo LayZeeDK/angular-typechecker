@@ -19,7 +19,7 @@ e2e/angular-typechecker-matrix-e2e/fixtures/
 #
 # Same rationale as the matrix-e2e block above: this is a multi-project consumer
 # workspace exercised ONLY from inside the angular-typechecker-install-e2e spec
-# (storybook-composition.int.spec.ts copies it to a per-run tmp dir and runs the
+# (storybook-composition.e2e.spec.ts copies it to a per-run tmp dir and runs the
 # executor by its PUBLISHED id). It must NOT be a member of THIS repo's graph for TWO
 # reasons: (1) its `storybook-host` project name COLLIDES with consumer-storybook-b's
 # `storybook-host` (nx errors: "projects defined in multiple locations"); and (2) each

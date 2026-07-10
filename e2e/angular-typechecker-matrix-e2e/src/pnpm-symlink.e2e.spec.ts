@@ -16,7 +16,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildCleanEnv, findWorkspaceRoot, run } from '@workspace/test-util';
 
 // TEST-03 / OUT-02 backstop (D-09): the pnpm symlinked-store e2e + the realpath
-// regression-guard. The npm matrix spec (matrix-5types.int.spec.ts) covers the
+// regression-guard. The npm matrix spec (matrix-5types.e2e.spec.ts) covers the
 // HOISTED node_modules layout class; THIS spec covers the SYMLINKED content-store
 // class (pnpm's `.pnpm/`). Per RD-03, npm + pnpm are the two viable on-disk layout
 // classes the OUT-02 boundary filter must survive.

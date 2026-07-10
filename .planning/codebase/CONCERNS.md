@@ -28,8 +28,8 @@ load-bearing decision or re-open a resolved bug.
   compile+pack, never at type-check time.
 - Fix approach / mitigation in place: GATE A asserts the EMITTED bytes (not source), and
   the e2e specs assert `NO /ERR_REQUIRE_ESM/` on real installed tarballs (see
-  `e2e/angular-typechecker-install-e2e/src/storybook-tarball.int.spec.ts` and the other
-  `*.int.spec.ts`). Keep those assertions; never relax the `module` setting.
+  `e2e/angular-typechecker-install-e2e/src/storybook-tarball.e2e.spec.ts` and the other
+  `*.e2e.spec.ts`). Keep those assertions; never relax the `module` setting.
 
 **Hand-vendored `@angular/compiler-cli` type surface:**
 - Issue: the compiler-cli barrel `index.d.ts` does not resolve under `nodenext` (its
@@ -172,7 +172,7 @@ load-bearing decision or re-open a resolved bug.
 
 **e2e job is coupled to Node 24 for corepack:**
 - Files: `.github/workflows/ci.yml` (the `e2e` job pins `node-version: 24` and runs
-  `corepack enable` to put the yarn 4 shim on PATH for `nx-add-yarn.int.spec.ts`).
+  `corepack enable` to put the yarn 4 shim on PATH for `nx-add-yarn.e2e.spec.ts`).
 - Why fragile: corepack ships through Node 24 but is REMOVED in Node 25+. Bumping the e2e
   job's Node to >=25 will break `corepack enable` with no obvious error.
 - Safe modification: if the e2e Node is bumped past 24, provision yarn via a pinned setup
@@ -238,7 +238,7 @@ Performance), which Nx caching and `nx affected -t typecheck` address for large 
   48 TS 6 errors from its own bundled `.d.ts` (suppressed as node_modules; never affect the
   consumer's result).
 - Files: `packages/angular-typechecker/README.md` (Storybook > Things to know);
-  `e2e/angular-typechecker-install-e2e/src/storybook-tarball.int.spec.ts` (installs
+  `e2e/angular-typechecker-install-e2e/src/storybook-tarball.e2e.spec.ts` (installs
   angular-typechecker BEFORE Storybook so the override-free `nx add` peer check runs against
   a Storybook-free tree).
 - Note: this is a Storybook install constraint, NOT an angular-typechecker one -- the tool
@@ -250,7 +250,7 @@ Performance), which Nx caching and `nx affected -t typecheck` address for large 
   exit non-zero while the workspace carries an unapproved build script (here `nx` itself has
   a postinstall). nx add treats that as an install failure and aborts before `init`.
   angular-typechecker ships ZERO install/build scripts of its own.
-- Files: `e2e/angular-typechecker-install-e2e/src/nx-add-pnpm.int.spec.ts` (documents +
+- Files: `e2e/angular-typechecker-install-e2e/src/nx-add-pnpm.e2e.spec.ts` (documents +
   exercises both workarounds); `README.md` (pnpm install note). Memory:
   `nx-add-fails-on-pnpm-workspaces`.
 - Workarounds (encoded in the e2e, deliberately NOT surfaced as a README caveat since it is a
@@ -308,7 +308,7 @@ They are listed so a consumer request maps to a known decision.
 
 **Yarn install-path flake is not statistically closed:**
 - What's not tested: repeated runs proving the yarn 4 ECONNREFUSED family-race is gone.
-- Files: `e2e/angular-typechecker-install-e2e/src/nx-add-yarn.int.spec.ts`;
+- Files: `e2e/angular-typechecker-install-e2e/src/nx-add-yarn.e2e.spec.ts`;
   `.planning/debug/resolved/nx-add-yarn-flake.md`.
 - Risk: the fix is mechanism-level correct (numeric IPv4 pin removes DNS/family selection),
   but a 1-in-many flake cannot be disproven by a single green run; repeated Linux-CI runs are

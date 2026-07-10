@@ -96,7 +96,7 @@
       "e2e/**",
       "fixtures/**",
       "**/*.spec.ts",
-      "**/*.int.spec.ts",
+      "**/*.e2e.spec.ts",
       "packages/angular-typechecker/src/core/walk-references.ts",
     ],
   },
@@ -112,13 +112,13 @@
       },
     },
     {
-      // FAL-03 (v0.1.0): Vitest spec files (`*.spec.ts`) and the e2e integration
-      // specs (`*.int.spec.ts`) are TEST-RUNNER entry points -- Vitest discovers
+      // FAL-03 (v0.1.0): Vitest spec files (`*.spec.ts`) and the e2e specs
+      // (`*.e2e.spec.ts`) are TEST-RUNNER entry points -- Vitest discovers
       // and executes them by glob; nothing imports them, so fallow's import-graph
       // reachability reports them as `unused-files` (error). They are not dead
       // code. Scope `unused-files` off for spec globs only; non-spec product files
       // stay gated for `unused-files`.
-      "files": ["**/*.spec.ts", "**/*.int.spec.ts"],
+      "files": ["**/*.spec.ts", "**/*.e2e.spec.ts"],
       "rules": {
         "unused-files": "off",
       },

@@ -25,7 +25,7 @@ import {
 // "via `nx add`", and the project's global-setup already builds dist ONCE and
 // publishes it to the local Verdaccio -- so `nx add angular-typechecker` resolves
 // the freshly-published SHIPPED dist by name. The tarball alternative
-// (generator-e2e.int.spec.ts) is equivalent but adds a per-spec `npm pack`; the
+// (generator-e2e.e2e.spec.ts) is equivalent but adds a per-spec `npm pack`; the
 // `nx add` path reuses the already-published artifact and also proves `nx add`
 // itself works on a Storybook workspace.
 //
@@ -87,7 +87,7 @@ function fixtureDir(name: string): string {
   );
 }
 
-// stripAllNpmConfig is load-bearing (same reasoning as nx-add-npm.int.spec.ts): the
+// stripAllNpmConfig is load-bearing (same reasoning as nx-add-npm.e2e.spec.ts): the
 // shared global-setup sets npm_config_registry process-wide (inherited by this
 // singleFork worker) and it would outrank the fixture .npmrc, retargeting the install
 // away from local Verdaccio. Stripping every npm_config_* also drops any leaked
