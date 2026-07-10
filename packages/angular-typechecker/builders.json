@@ -1,0 +1,9 @@
+{
+  "builders": {
+    "typecheck": {
+      "implementation": "./src/builders/typecheck/builder",
+      "schema": "./src/builders/typecheck/schema.json",
+      "description": "Type-checks an Angular project (TypeScript + template + extended NG8xxx) with no emit."
+    }
+  }
+}

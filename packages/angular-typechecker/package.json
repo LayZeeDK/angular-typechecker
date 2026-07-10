@@ -28,6 +28,7 @@
   "types": "./src/index.d.ts",
   "executors": "./executors.json",
   "generators": "./generators.json",
+  "builders": "./builders.json",
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json"
@@ -36,6 +37,7 @@
     "src",
     "executors.json",
     "generators.json",
+    "builders.json",
     "README.md",
     "LICENSE"
   ],

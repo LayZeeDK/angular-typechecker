@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "title": "Angular type-check builder",
+  "description": "Type-checks an Angular project (TypeScript + template + extended NG8xxx) with no emit.",
+  "type": "object",
+  "properties": {
+    "tsConfig": {
+      "type": "string",
+      "description": "Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute."
+    },
+    "includeDeps": {
+      "type": "boolean",
+      "default": false,
+      "description": "Include out-of-project and node_modules diagnostics. Default excludes them."
+    },
+    "maxWarnings": {
+      "type": "number",
+      "description": "Fail when the warning count exceeds this number. 0 fails on any warning. Omit to never fail on warnings alone."
+    },
+    "failFast": {
+      "type": "boolean",
+      "default": false,
+      "description": "Report only the first error (output brevity) - NOT a speed-up; all diagnostics are still gathered."
+    },
+    "strict": {
+      "type": "boolean",
+      "default": false,
+      "description": "Opt-in strict mode: FAIL with the coverage-incomplete outcome when a dropped first-party in-graph warning would otherwise leave the verdict clean. By default such a dropped in-graph warning does not fail on its own (it stays clean unless maxWarnings gates it). strict only adds a fail path; it never turns a fail into a pass."
+    }
+  },
+  "required": ["tsConfig"],
+  "additionalProperties": false
+}
