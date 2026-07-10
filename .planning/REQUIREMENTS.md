@@ -26,7 +26,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 - [x] **ACS-01**: `ng generate angular-typechecker:configuration <project>` wires ONE per-project `typecheck` architect target into `angular.json` with `tsConfig: [<project build leaf>, <project spec leaf>]` (via the `tree.exists('angular.json')` write-fork; config-edit-only, no emitted file; idempotent + collision-safe).
 - [x] **ACS-02**: the Nx `configuration` generator path stays behavior-unchanged -- one shared generator with the workspace-type fork; the Nx path still writes a single-string solution `tsConfig`.
-- [ ] **ACS-03**: `ng generate angular-typechecker:init` is available for parity; on an Angular CLI workspace it seeds NO caching and creates no stray `nx.json`.
+- [x] **ACS-03**: `ng generate angular-typechecker:init` is available for parity; on an Angular CLI workspace it seeds NO caching and creates no stray `nx.json`.
 - [x] **ACS-04**: `collection.json` + the `package.json` `schematics` field are added additively; `nx g angular-typechecker:configuration` still resolves unchanged (regression assertion: `generators ?? schematics`).
 
 ### ng add (NGADD)
@@ -88,7 +88,7 @@ Phase numbering continues from v0.2.0's Phase 20.
 | ACB-03 | Phase 21 | Complete |
 | ACS-01 | Phase 22 | Complete |
 | ACS-02 | Phase 22 | Complete |
-| ACS-03 | Phase 23 | Pending |
+| ACS-03 | Phase 23 | Complete |
 | ACS-04 | Phase 22 | Complete |
 | NGADD-01 | Phase 23 | Pending |
 | COV-01 | Phase 22 | Complete |

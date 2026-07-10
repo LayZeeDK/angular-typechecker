@@ -133,7 +133,7 @@ Plans:
   3. `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies`, `@nx/dependency-checks` stays green, and the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented (ACP-01).
   4. The Nx `nx add angular-typechecker` behavior is unchanged from v0.2.0 (init/caching seed only).
 
-**Plans:** 3 plans
+**Plans:** 0/3 plans executed
 
 Plans:
 **Wave 1**
@@ -188,5 +188,5 @@ Plans:
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete    | 2026-07-10 |
-| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/3 | Planned | - |
+| 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/3 | Planned    |  |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |
