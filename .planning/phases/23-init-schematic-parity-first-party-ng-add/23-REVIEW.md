@@ -22,7 +22,8 @@ findings:
   warning: 3
   info: 1
   total: 4
-status: issues_found
+status: resolved
+resolved_at: 2026-07-11
 ---
 
 # Phase 23: Code Review Report
@@ -63,6 +64,8 @@ injection sink, and the generator runs on a developer's own workspace (no trust 
 ## Warnings
 
 ### WR-01: Angular-CLI fork discriminates on `angular.json` presence alone, contradicting its own "and no nx.json" invariant
+
+**RESOLVED (4396ca6):** Both the `init` and `configuration` CLI forks now gate on `tree.exists('angular.json') && !tree.exists('nx.json')`, so a hybrid workspace with both files takes the Nx path. Added hybrid lock tests in `init-angular-cli.spec.ts` + `configuration-angular-cli.spec.ts` and updated the block comments to state nx.json is authoritative when present.
 
 **File:** `packages/angular-typechecker/src/generators/init/generator.ts:82` (and the composed `src/generators/configuration/generator.ts:238`)
 **Issue:**
@@ -107,6 +110,8 @@ Apply the same guard to the `configurationGenerator` write-fork so the two stay 
 
 ### WR-02: `@angular-devkit/architect` peer range `^0.2200.0` only covers Angular 22.0.x, asymmetric with the `^22.0.0` compiler-cli peer
 
+**RESOLVED (4844438):** Decision was KEEP-both-optional-peers + WIDEN (not remove). Widened the `@angular-devkit/architect` peer to `>=0.2200.0 <0.2300.0` (all of Angular 22.x, symmetric with the `^22.0.0` compiler-cli peer); kept `optional: true` and left `rxjs: ^7.8.0` unchanged. Updated the locking assertion in `package-manifest.spec.ts`; verified the built `dist` manifest carries the widened range.
+
 **File:** `packages/angular-typechecker/package.json:56` (asserted by `src/package-manifest.spec.ts:166-169`)
 **Issue:**
 `^0.2200.0` is a caret range on a leading-zero-major version, so it locks the minor:
@@ -148,6 +153,8 @@ expect(manifest.peerDependencies?.['@angular-devkit/architect']).toBe(
 ```
 
 ### WR-03: `ng-add --project` silently no-ops (false success) on an unknown or out-of-scope project name
+
+**RESOLVED (bbce0d0):** `ngAddGenerator` now tracks a `wired` counter and throws a located error when `--project` was set but matched no application/library project. Added ng-add spec cases for the unknown-name and e2e-name cases. `ngAddGenerator` still returns void.
 
 **File:** `packages/angular-typechecker/src/generators/ng-add/generator.ts:75-86`
 **Issue:**
@@ -205,6 +212,8 @@ if (schema.project && wired === 0) {
 ## Info
 
 ### IN-01: no-caching notice claims targets were wired even when zero were wired
+
+**RESOLVED (bbce0d0, folded into WR-03):** The notice + `formatFiles` are now gated on `wired > 0`, so an auto-wire-all over a workspace with only e2e/other projects stays silent instead of claiming targets were wired. Added an ng-add spec asserting the notice is not printed when zero targets are wired.
 
 **File:** `packages/angular-typechecker/src/generators/ng-add/generator.ts:94`
 **Issue:**
