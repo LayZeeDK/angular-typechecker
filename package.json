@@ -2,7 +2,14 @@
   "name": "@angular-typechecker/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "typecheck": "nx run-many -t typecheck",
+    "test": "nx run-many -t test",
+    "integration": "nx run-many -t integration",
+    "e2e": "nx run-many -t e2e --parallel=1",
+    "lint": "nx run-many -t lint",
+    "format:check": "nx format:check"
+  },
   "private": true,
   "devDependencies": {
     "@angular-devkit/core": "22.0.4",
