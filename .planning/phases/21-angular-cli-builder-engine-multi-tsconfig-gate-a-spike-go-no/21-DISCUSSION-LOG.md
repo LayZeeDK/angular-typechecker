@@ -74,10 +74,32 @@ verbatim, collapse to reuse.
 
 None new -- discussion stayed within phase scope.
 
-## UNRESOLVED (trap quadrant -- escalated, not decided)
+## UNRESOLVED (trap quadrant -- escalated, then RESOLVED by the user)
 
 - **U-01 split-result contingency (Ng22 GO / Ng21 NO-GO).** Requirement ACB-02 ("on-stack AND
-  off-stack") vs the charter ("Ng21 is only an off-stack cross-check") disagree. Recorded in
-  CONTEXT.md `<unresolved>` with both options (A: on-stack is the true gate + document Ng21 as an
-  off-stack limitation; B: literal split = NO-GO). Decide ONLY if the spike produces a split;
-  surface to the user then -- do not auto-lock.
+  off-stack") vs the charter ("Ng21 is only an off-stack cross-check") disagreed. Escalated to the
+  user rather than auto-locked. **RESOLVED 2026-07-10:** the user dropped off-stack Angular 21
+  entirely (AskUserQuestion "Drop off-stack Ng21"). No off-stack leg -> contingency moot; U-01
+  removed from CONTEXT.md.
+
+## Post-discussion user directives (2026-07-10, mid-chain)
+
+The autonomous chain was paused after discuss to incorporate three interactive directives:
+
+1. **"Don't use off-stack Ng21 sandbox project. Find a real-world OSS Angular 22 project with
+   application(s) and library(/-ies) on GitHub, then clone it locally."** -> A repo-hunt vetted 4
+   candidates; the user chose **`bluehalo/ngx-leaflet`** (813 stars, MIT, Angular ^22.0.0, non-Nx
+   `angular.json`, app `ngx-leaflet-demo` + lib `ngx-leaflet`). Cloned to
+   `D:\projects\github\bluehalo\ngx-leaflet` @ `818e9ae` (uncommitted). Replaces CONTEXT.md D-01's
+   synthetic scaffolds.
+2. **"e2e tests should scaffold a fresh Angular CLI workspace so the Angular 22 sandbox project
+   should only be necessary for quick verification before e2e tests have been implemented and
+   debugging."** -> e2e = scaffolded fresh workspace (ACV-02, automated/CI); real clone =
+   quick-verify + debug.
+3. **"The real clone should also be used for final tarball end-to-end verification gate for this
+   milestone."** -> real clone ALSO = the milestone's FINAL tarball e2e gate (ACV-01: pack tarball
+   -> `ng add` -> `ng run` -> assert diagnostics).
+
+Net effect: CONTEXT.md D-01/D-07 revised, U-01 removed; REQUIREMENTS.md ACB-02/ACV-01/ACV-02 +
+Out-of-Scope amended; ROADMAP.md Phase 21/24 success criteria amended. All off-stack Angular 21
+verification dropped.

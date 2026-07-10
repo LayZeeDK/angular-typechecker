@@ -19,7 +19,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 ### Angular CLI Builder (ACB)
 
 - [ ] **ACB-01**: `ng run <project>:typecheck` runs the complete Angular type-check via a `convertNxExecutor`-wrapped builder, producing diagnostics, human output, and an exit/`BuilderOutput.success` verdict identical to the Nx executor.
-- [ ] **ACB-02** (GATE A', GO/NO-GO): a spike proves the CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` engine survives `convertNxExecutor` + a real `ng run`, on-stack (Angular 22) AND off-stack (Angular 21), with no `ERR_REQUIRE_ESM` (incl. the wrapper's eager project-graph prelude). A NO-GO re-scopes the builder (documented) and never falls back to a hand-written architect builder.
+- [ ] **ACB-02** (GATE A', GO/NO-GO): a spike proves the CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` engine survives `convertNxExecutor` + a real `ng run` **on-stack (Angular 22)**, with no `ERR_REQUIRE_ESM` (incl. the wrapper's eager project-graph prelude), verified against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, MIT, non-Nx, app + lib) used for quick verification. A NO-GO re-scopes the builder (documented) and never falls back to a hand-written architect builder. (Off-stack Angular 21 was DROPPED from this gate 2026-07-10 per user directive.)
 - [ ] **ACB-03**: `builders.json` + the `package.json` `builders` field are added additively; `nx run <project>:typecheck` still resolves unchanged (a field-aliasing / Nx-surface regression assertion: `executors ?? builders`).
 
 ### Angular CLI Schematics (ACS)
@@ -39,8 +39,8 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Verification (ACV)
 
-- [ ] **ACV-01**: proven end-to-end against a REAL OSS Angular CLI clone (`realworld-angular/realworld-angular`, exact stack): pack the tarball -> `ng add` -> `ng run <project>:typecheck` -> assert planted diagnostics; off-stack cross-check (`realworld-apps/angular-realworld-example-app`, Angular 21, `--legacy-peer-deps`).
-- [ ] **ACV-02**: proven end-to-end against a freshly SCAFFOLDED workspace (`npm init @angular` + `ng g library`): plant application + spec + library errors and assert each per-project target catches exactly its own leaves.
+- [ ] **ACV-01**: the milestone's FINAL tarball end-to-end verification gate, proven against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, on-stack Angular 22, MIT, non-Nx, app `ngx-leaflet-demo` + lib `ngx-leaflet`): pack the SHIPPED tarball -> `ng add` -> `ng run <project>:typecheck` -> assert planted diagnostics. Real-repo gate run locally/manually (the clone is UNCOMMITTED; reproduction = repo URL + commit SHA). No off-stack Angular 21 cross-check (DROPPED 2026-07-10).
+- [ ] **ACV-02**: the repeatable AUTOMATED e2e (runs in CI with no external clone), proven against a freshly SCAFFOLDED workspace (`npm init @angular` + `ng g library`): plant application + spec + library errors and assert each per-project target catches exactly its own leaves.
 - [ ] **ACV-03**: unit + integration coverage of the Angular-CLI-vs-Nx differences: the `tsConfig: string[]` union; the `angular.json` write-fork on an `angular.json` schematics test tree; the builder over `BuilderContext`; `ng-add` auto-wire-all + idempotency; and no stray `nx.json`.
 
 ### Packaging / deps (ACP)
@@ -74,7 +74,7 @@ Explicitly excluded from v0.2.1.
 | Machine-readable reporters (JSON / SARIF) | Project-wide deferral, unchanged by this milestone. |
 | `NgtscProgram` incremental / `--watch` | Deferred engine work (REP family). |
 | Standalone CLI binary; Jest support; Angular CLI Storybook special-casing | Out of the Angular-CLI-workspace-support charter. |
-| Wider Angular support (20 only via the off-stack e2e cross-check; older majors) | Stack stays Nx 23 / Angular 22 / TS 6; Angular 21 appears only as an off-stack e2e cross-check. |
+| Wider Angular support (off-stack Angular 21/20; older majors) | Stack stays Nx 23 / Angular 22 / TS 6. Off-stack Angular 21 (and any cross-version e2e cross-check) DROPPED 2026-07-10 per user directive -- verification is on-stack Angular 22 only. |
 
 ## Traceability
 
