@@ -26,7 +26,7 @@ import {
 // tarball; staying here inherits the serialized singleFork / fileParallelism:false
 // harness (vitest.config.mts) and the one-build-one-publish global-setup.
 //
-// INSTALL ORDER + HONESTY (B-03, Pitfall 3, mirroring storybook-tarball.int.spec.ts):
+// INSTALL ORDER + HONESTY (B-03, Pitfall 3, mirroring storybook-tarball.e2e.spec.ts):
 // fixture `npm install` -> `nx add angular-typechecker` (NO peer override; resolves
 // the SHIPPED tarball from Verdaccio and the `angular-typechecker:typecheck` executor
 // the fixture targets reference) -> `npm install @storybook/angular@10.4.6
@@ -64,7 +64,7 @@ function fixtureDir(name: string): string {
   );
 }
 
-// stripAllNpmConfig is load-bearing (same reasoning as storybook-tarball.int.spec.ts):
+// stripAllNpmConfig is load-bearing (same reasoning as storybook-tarball.e2e.spec.ts):
 // the shared global-setup sets npm_config_registry process-wide and it would outrank
 // the fixture .npmrc, retargeting the install away from local Verdaccio. Stripping
 // every npm_config_* also drops any leaked legacy-peer-deps so a real consumer

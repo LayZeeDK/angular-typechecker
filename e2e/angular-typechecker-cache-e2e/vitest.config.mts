@@ -22,7 +22,7 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'node',
-    include: ['src/**/*.int.spec.ts'],
+    include: ['src/**/*.e2e.spec.ts'],
     reporters: ['default'],
     pool: 'forks',
     poolOptions: { forks: { singleFork: true } },

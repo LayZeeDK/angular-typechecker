@@ -16,10 +16,10 @@ import {
 
 // NX-ADD-NPM: the REAL `nx add angular-typechecker` on an npm workspace at local
 // Verdaccio. This is DISTINCT from its two siblings:
-//   - verdaccio-publish.int.spec.ts installs BY NAME (`npm install --save-dev
+//   - verdaccio-publish.e2e.spec.ts installs BY NAME (`npm install --save-dev
 //     angular-typechecker`) then runs init/configuration/typecheck MANUALLY -- it
 //     never invokes `nx add`.
-//   - nx-add-e2e.int.spec.ts proves only the `nx g angular-typechecker:init`
+//   - nx-add-e2e.e2e.spec.ts proves only the `nx g angular-typechecker:init`
 //     SUBSTITUTE (tarball install + the internal init command) -- not `nx add`.
 // So nx add's real package-manager orchestration (detectPackageManager -> `npm
 // install -D angular-typechecker@latest` -> runPluginInitGenerator -> the internal
@@ -69,7 +69,7 @@ describe('NX-ADD-NPM: real `nx add` on an npm workspace seeds the typecheck targ
       cpSync(fixtureDir, tmp, { recursive: true });
 
       // Point npm at Verdaccio (registry + minted bearer via the nerf-dart auth
-      // line), same shape as verdaccio-publish.int.spec.ts.
+      // line), same shape as verdaccio-publish.e2e.spec.ts.
       writeVerdaccioNpmrc(tmp, verdaccioUrl, verdaccioToken);
 
       // Seeded-from-absent BASELINE: the key must be undefined BEFORE `nx add`, so

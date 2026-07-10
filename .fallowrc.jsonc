@@ -19,6 +19,13 @@
     // entry point -- declare it (same config-only reachability as the drift
     // tripwires above).
     "e2e/angular-typechecker-install-e2e/src/global-setup.ts",
+    // quick-260710-b9t: the plugin's integration-tier vitest config is reachable
+    // ONLY via the `integration` nx target's `configFile` option, never via the
+    // import graph, so fallow flags it `unused_file`. fallow auto-detects the
+    // conventional `vitest.config.*` name but not this non-standard one; declare
+    // it as the genuine test-runner entry point it is (same config-only
+    // reachability as global-setup.ts above).
+    "packages/angular-typechecker/vitest.integration.config.mts",
   ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
@@ -64,7 +71,21 @@
   //     product/dev dependency of this repo (the published plugin ships zero
   //     Storybook coupling). No shipped code imports either; the published
   //     package.json is independently gated by @nx/dependency-checks.
-  "ignoreDependencies": ["@angular/core", "@org/button", "@storybook/angular"],
+  // quick-260710-b9t: `jsonc-eslint-parser` is a ROOT devDependency (root
+  // package.json) imported ONLY by the ESLint flat configs' `languageOptions.parser`
+  // (`await import('jsonc-eslint-parser')`) -- dev-only tooling, never shipped. The
+  // plugin's own `eslint.config.mjs` triggers the SAME package-level
+  // `unlisted-dependencies` false positive as @angular/core (its nearest package.json
+  // is the PUBLISHED plugin manifest, which correctly does not list a lint parser).
+  // A per-glob override cannot reach a project-level finding (see FAL-01), so the
+  // global ignore is the mechanism; @nx/dependency-checks independently gates the
+  // published manifest.
+  "ignoreDependencies": [
+    "@angular/core",
+    "@org/button",
+    "@storybook/angular",
+    "jsonc-eslint-parser",
+  ],
 
   "rules": {
     // D-06: the dev/tooling deps (ESLint flat-config plugins, swc register,
@@ -96,7 +117,7 @@
       "e2e/**",
       "fixtures/**",
       "**/*.spec.ts",
-      "**/*.int.spec.ts",
+      "**/*.e2e.spec.ts",
       "packages/angular-typechecker/src/core/walk-references.ts",
     ],
   },
@@ -112,13 +133,13 @@
       },
     },
     {
-      // FAL-03 (v0.1.0): Vitest spec files (`*.spec.ts`) and the e2e integration
-      // specs (`*.int.spec.ts`) are TEST-RUNNER entry points -- Vitest discovers
+      // FAL-03 (v0.1.0): Vitest spec files (`*.spec.ts`) and the e2e specs
+      // (`*.e2e.spec.ts`) are TEST-RUNNER entry points -- Vitest discovers
       // and executes them by glob; nothing imports them, so fallow's import-graph
       // reachability reports them as `unused-files` (error). They are not dead
       // code. Scope `unused-files` off for spec globs only; non-spec product files
       // stay gated for `unused-files`.
-      "files": ["**/*.spec.ts", "**/*.int.spec.ts"],
+      "files": ["**/*.spec.ts", "**/*.e2e.spec.ts"],
       "rules": {
         "unused-files": "off",
       },

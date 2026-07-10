@@ -8,7 +8,7 @@
   },
   "include": [
     "vitest.config.mts",
-    "src/**/*.int.spec.ts",
+    "src/**/*.e2e.spec.ts",
     "src/**/*.d.ts",
     "src/global-setup.ts"
   ]

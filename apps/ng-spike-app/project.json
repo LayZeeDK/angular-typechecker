@@ -61,6 +61,12 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "apps/ng-spike-app/tsconfig.app.json"
+      }
+    },
     "serve-static": {
       "continuous": true,
       "executor": "@nx/web:file-server",

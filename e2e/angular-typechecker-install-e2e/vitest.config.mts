@@ -24,7 +24,7 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'node',
-    include: ['src/**/*.int.spec.ts'],
+    include: ['src/**/*.e2e.spec.ts'],
     // Stands up the Verdaccio local-registry, builds dist ONCE, mints a token, and
     // publishes ONCE (finding E1); provides verdaccioUrl + verdaccioToken to the
     // specs. Runs for EVERY invocation (including a single selected spec), so the

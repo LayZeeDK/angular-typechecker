@@ -120,16 +120,23 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
-      # typecheck-drift (HARD-01) folded into the run-many list (Option A): the
-      # build-time drift gate (tsc --noEmit on tsconfig.drift.json) is
-      # OS-independent (depends only on the installed @angular/compiler-cli
-      # typings) and Nx-cached per its inputs, so the per-matrix-cell re-runs are
-      # cheap. Fixed target ids + flags only; no PR-metadata interpolation.
-      # test-util is included so @workspace/test-util's own unit tests (findWorkspaceRoot,
-      # incl. the negative-throw + depth-independence cases) run in CI, not just when a
-      # consuming spec happens to exercise the happy path. It has no typecheck-drift target;
-      # run-many skips that target for it.
-      - run: npx nx run-many -t typecheck-drift test -p angular-typechecker test-util
+      # Unified type-check gate (folds the former typecheck-drift + typecheck-e2e):
+      # run-many runs the `typecheck` target for EVERY project that defines it --
+      # the plugin (spec + drift + tooling configs), the app, the consumer libs,
+      # test-util, the root clean fixtures, and the e2e sources. It is the biggest
+      # coverage surface, so it runs FIRST and fails fast. OS-independent and
+      # Nx-cached per its inputs, so per-matrix-cell re-runs are cheap. Fixed target
+      # ids + flags only; no PR-metadata interpolation.
+      - run: npx nx run-many -t typecheck
+      # Fast unit tier: run-many runs `test` for the two projects that define it
+      # (plugin + test-util). test-util is covered so @workspace/test-util's own
+      # unit tests (findWorkspaceRoot, incl. the negative-throw + depth-independence
+      # cases) run in CI, not just when a consuming spec exercises the happy path.
+      - run: npx nx run-many -t test
+      # Real-compiler integration tier: the plugin's *.integration.spec.ts, each a
+      # cold @angular/compiler-cli performCompilation. Runs after the fast tier so a
+      # unit regression fails first.
+      - run: npx nx run-many -t integration
 
   # The heavy tarball-install gate, Linux-only (RD-03), Node 24 (matching
   # release.yml). Runs the three serialized e2e projects by EXPLICIT project
@@ -169,13 +176,23 @@ jobs:
         with:
           version: 11.9.0
       - run: npm ci
-      # Static type-check gate for the e2e sources (no -p list: run-many runs the
-      # target for every project that defines it -- only the three e2e projects --
-      # so there is no second -p list to drift and GUARD-01 stays untouched). Runs
-      # BEFORE the multi-minute tarball install so a type error fails fast.
-      - run: npx nx run-many -t typecheck-e2e
+      # Static type-check gate for the e2e SOURCES (was typecheck-e2e), run BEFORE
+      # the multi-minute tarball install so a type error in an e2e spec fails fast
+      # (~15s) instead of after an ~8-minute install. SCOPED to the e2e projects via
+      # the `type:e2e` tag ON PURPOSE: the `test` job already runs the FULL
+      # `nx run-many -t typecheck` (every project, incl. these three) across the
+      # matrix, so an UNSCOPED run here would just duplicate that whole-repo
+      # type-check. `typecheck` is a universal target name (unlike the uniquely-named
+      # `e2e` target, which needs no `-p`), so a project selector is the only way to
+      # narrow it to the pre-install-relevant sources; the `tag:type:e2e` selector
+      # auto-covers any future e2e project without editing this line. GUARD-01c
+      # asserts this line runs `run-many -t typecheck`; GUARD-01d asserts the
+      # `type:e2e` tag set is exactly the e2e/* projects (no silent drift).
+      - run: npx nx run-many -t typecheck -p tag:type:e2e
       # Cross-project serialization (extends the intra-project D-21 serialization).
-      # All three e2e projects `npm pack` the SAME dist artifact
+      # `nx run-many -t e2e` runs the `e2e` target for every project that defines it
+      # -- exactly the three e2e projects (no -p list needed; GUARD-01 asserts no
+      # other project defines `e2e`). All three `npm pack` the SAME dist artifact
       # (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in their
       # beforeAll and `rmSync` it in afterAll. Vitest already serializes specs
       # WITHIN each project (singleFork + fileParallelism:false), but `nx run-many`
@@ -183,12 +200,8 @@ jobs:
       # sibling project's afterAll `rmSync` deletes the tarball mid-`pnpm add`
       # (ENOENT). pnpm 11's supply-chain-policy verification widened the window so
       # the latent race now trips deterministically. `--parallel=1` runs the three
-      # projects one at a time; the `-p` list line stays unchanged so the GUARD-01
-      # set-equality test still parses it.
-      - run: >
-          npx nx run-many -t test
-          -p angular-typechecker-install-e2e angular-typechecker-cache-e2e angular-typechecker-matrix-e2e
-          --parallel=1
+      # projects one at a time; GUARD-01b asserts this flag is present.
+      - run: npx nx run-many -t e2e --parallel=1
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned

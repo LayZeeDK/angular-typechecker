@@ -41,6 +41,10 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
+    "typecheck": {
+      "cache": true,
+      "outputs": []
+    },
     "angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],

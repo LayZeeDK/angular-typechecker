@@ -17,7 +17,7 @@ required CI gates: `format:check` (Prettier) and `lint` (ESLint, `maxWarnings: 0
   and vitest globs:
   - `*.spec.ts` -- unit test, colocated next to source.
   - `*.integration.spec.ts` -- real-compiler integration test (runs `performCompilation`).
-  - `*.int.spec.ts` -- e2e test (only under `e2e/*/src/`; the vitest `include` there is `src/**/*.int.spec.ts`).
+  - `*.e2e.spec.ts` -- e2e test (only under `e2e/*/src/`; the vitest `include` there is `src/**/*.e2e.spec.ts`).
   - `*.drift.ts` -- build-time drift tripwires, type-checked by the `typecheck-drift` target, EXCLUDED from both lib and spec compilation.
   - `*.members.ts` / `*.runtime.spec.ts` / `*.structural.spec.ts` -- narrower spec facets.
 - Nx plugin scaffolding files keep their canonical names: `executor.ts`,

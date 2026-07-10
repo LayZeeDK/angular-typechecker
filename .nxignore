@@ -19,7 +19,7 @@ e2e/angular-typechecker-matrix-e2e/fixtures/
 #
 # Same rationale as the matrix-e2e block above: this is a multi-project consumer
 # workspace exercised ONLY from inside the angular-typechecker-install-e2e spec
-# (storybook-composition.int.spec.ts copies it to a per-run tmp dir and runs the
+# (storybook-composition.e2e.spec.ts copies it to a per-run tmp dir and runs the
 # executor by its PUBLISHED id). It must NOT be a member of THIS repo's graph for TWO
 # reasons: (1) its `storybook-host` project name COLLIDES with consumer-storybook-b's
 # `storybook-host` (nx errors: "projects defined in multiple locations"); and (2) each
@@ -29,3 +29,19 @@ e2e/angular-typechecker-matrix-e2e/fixtures/
 # tsConfig paths that do not resolve. The tmp-copied workspace has no such collision
 # and still discovers all three projects.
 e2e/angular-typechecker-install-e2e/fixtures/consumer-storybook-composition/
+
+# quick-260710-b9t: stop the MAIN Nx graph from discovering the install-smoke
+# consumer-app fixture project.
+#
+# Same rationale as the consumer-storybook-composition block above: consumer-app is
+# a standalone consumer-workspace fixture exercised ONLY from inside the
+# angular-typechecker-install-e2e install-smoke spec (which copies it to a per-run
+# tmp dir, installs the packed tarball, and runs `consumer-app:typecheck` by its
+# PUBLISHED, unscoped executor id THERE -- not against this repo's graph). Its
+# committed `typecheck` target uses a fixture-root-relative `tsConfig`
+# (`tsconfig.lib.json`) authored for that tmp-copied consumer context, so the
+# unified `nx run-many -t typecheck` introduced by this task would otherwise sweep
+# it into the dev workspace and fail resolving `<repo-root>/tsconfig.lib.json`
+# (ENOENT). Excluding it here keeps the dev graph clean; the tmp-copied workspace is
+# a separate nx context and still discovers + runs the fixture.
+e2e/angular-typechecker-install-e2e/fixtures/consumer-app/

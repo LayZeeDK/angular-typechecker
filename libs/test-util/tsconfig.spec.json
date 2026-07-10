@@ -2,6 +2,12 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
+    // The solution tsconfig pins `module: commonjs` for the built lib, but the
+    // specs run under Vitest/Vite (esbuild), which uses bundler resolution and
+    // permits `import.meta`. Type-check them under the mode that matches their
+    // real runtime instead of the lib's CommonJS build target.
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "types": [
       "vitest/globals",
       "vitest/importMeta",

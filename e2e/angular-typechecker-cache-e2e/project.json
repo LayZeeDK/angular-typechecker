@@ -3,21 +3,21 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "e2e/angular-typechecker-cache-e2e/src",
-  "tags": ["scope:fixture"],
+  "tags": ["scope:fixture", "type:e2e"],
   "implicitDependencies": [
     "angular-typechecker",
     "typecheck-consumer",
     "typecheck-consumer-dep"
   ],
   "targets": {
-    "test": {
+    "e2e": {
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/e2e/angular-typechecker-cache-e2e"
       }
     },
-    "typecheck-e2e": {
+    "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,
       "inputs": [

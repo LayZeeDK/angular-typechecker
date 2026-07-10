@@ -57,7 +57,7 @@ angular-typechecker/                 # Nx workspace root (@angular-typechecker/s
 - Contains: `configuration/` (wire a `typecheck` target), `init/` (seed `nx.json` targetDefaults; run by `nx add`). Each has `generator.ts`, `schema.json`, `schema.d.ts`, and `schema-parity.spec.ts`.
 
 **`e2e/`:**
-- Purpose: end-to-end verification against the packed tarball and real consumer workspaces. Each project has `implicitDependencies: ["angular-typechecker"]` and a `typecheck-e2e` (`tsc --noEmit`) static gate plus a Vitest `test` target running `*.int.spec.ts`.
+- Purpose: end-to-end verification against the packed tarball and real consumer workspaces. Each project has `implicitDependencies: ["angular-typechecker"]` and a `typecheck` (`tsc --noEmit`) static gate plus a Vitest `e2e` target running `*.e2e.spec.ts`.
 - Contains: install/nx-add/generator/storybook/tarball specs, the 5-project-type matrix + pnpm symlink specs, and cache-invalidation + executor-parity specs. Consumer workspaces live under each project's `fixtures/`.
 
 **`libs/`:**
@@ -88,7 +88,7 @@ angular-typechecker/                 # Nx workspace root (@angular-typechecker/s
 
 **Testing:**
 - Co-located `*.spec.ts` (unit) and `*.integration.spec.ts` (real cold-compiler) under `src/core/`.
-- `*.int.spec.ts` under each `e2e/*/src/`.
+- `*.e2e.spec.ts` under each `e2e/*/src/`.
 - `*.drift.ts` compiled by the `typecheck-drift` target (`tsconfig.drift.json`) as a version-drift tripwire.
 
 ## Naming Conventions
@@ -96,7 +96,7 @@ angular-typechecker/                 # Nx workspace root (@angular-typechecker/s
 **Files:**
 - kebab-case for modules: `run-typecheck.ts`, `filter-diagnostics.ts`, `detect-bundler-query-imports.ts`.
 - Pure advisory detectors prefixed `detect-`: `detect-unchecked-declared.ts`, `detect-bundler-query-imports.ts`.
-- Unit tests `<name>.spec.ts`; real-compiler tests `<name>.integration.spec.ts`; e2e tests `<name>.int.spec.ts`; drift tripwires `<name>.drift.ts`.
+- Unit tests `<name>.spec.ts`; real-compiler tests `<name>.integration.spec.ts`; e2e tests `<name>.e2e.spec.ts`; drift tripwires `<name>.drift.ts`.
 - Nx option contracts always paired: `schema.json` + `schema.d.ts`, guarded by a `schema-parity.spec.ts`.
 
 **Directories:**
@@ -120,7 +120,7 @@ angular-typechecker/                 # Nx workspace root (@angular-typechecker/s
 - `libs/test-util/src/lib/` (exported via `@workspace/test-util`).
 
 **New e2e scenario:**
-- Add a `*.int.spec.ts` under the appropriate `e2e/*/src/`; add a consumer fixture under that project's `fixtures/`.
+- Add a `*.e2e.spec.ts` under the appropriate `e2e/*/src/`; add a consumer fixture under that project's `fixtures/`.
 
 ## Special Directories
 

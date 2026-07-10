@@ -1,0 +1,32 @@
+{
+  // Solution-style tsconfig listing ONLY the empirically-classified type-check-CLEAN
+  // fixture leaves (D1). The `@angular-typechecker/source` root project's `typecheck`
+  // target points here; the angular-typechecker executor resolves one level of
+  // `references`, runs `performCompilation` per leaf as its own program, and unions
+  // the diagnostics. Broken fixtures are excluded simply by OMISSION -- their
+  // brokenness stays asserted by the integration specs, never here.
+  //
+  // REDUNDANCY (RESEARCH Q5/A2): these clean fixtures are ALREADY type-checked by the
+  // real compiler inside the `*.integration.spec.ts` suite, so this target is
+  // redundant coverage kept deliberately (D1: clean fixtures get their own separated
+  // coverage).
+  //
+  // RE-CLASSIFY ON ANY FIXTURE CHANGE: classification is EMPIRICAL, not by name
+  // (`ts-baseline`/`ng-baseline` are broken despite the name). To re-classify a leaf,
+  // run `nx typecheck @angular-typechecker/source --tsConfig=<leaf> --skip-nx-cache`
+  // and keep it here only if the verdict is GREEN (an advisory "not type checked"
+  // notice counts as GREEN). Reference concrete LEAF tsconfigs only -- never a nested
+  // solution-style tsconfig. The `references` array below IS the classified-GREEN set
+  // (single source of truth -- no duplicated prose list to drift).
+  "files": [],
+  "references": [
+    { "path": "./clean-template-host/tsconfig.app.json" },
+    { "path": "./composite-triangle/tsconfig.json" },
+    { "path": "./no-emit-message/tsconfig.app.json" },
+    { "path": "./not-type-checked-clean/tsconfig.json" },
+    { "path": "./not-type-checked-mdx/.storybook/tsconfig.json" },
+    { "path": "./layout-a-storybook-clean/tsconfig.app.json" },
+    { "path": "./layout-a-storybook-clean/.storybook/tsconfig.json" },
+    { "path": "./layout-b-host-clean/.storybook/tsconfig.json" }
+  ]
+}

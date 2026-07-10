@@ -59,22 +59,32 @@
         "cwd": "."
       }
     },
-    "typecheck-drift": {
+    "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,
       "inputs": [
-        "{projectRoot}/src/core/compiler-cli-types.drift.ts",
-        "{projectRoot}/src/core/compiler-cli-types.ts",
-        "{projectRoot}/src/core/extended-catalog.drift.ts",
-        "{projectRoot}/src/core/extended-catalog.members.ts",
-        "{projectRoot}/tsconfig.drift.json",
+        "default",
         "{workspaceRoot}/tsconfig.base.json",
+        "{workspaceRoot}/tsconfig.tools.json",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/vitest.workspace.ts",
+        "{workspaceRoot}/apps/ng-spike-app/eslint.config.mjs",
+        "{workspaceRoot}/libs/test-util/eslint.config.mjs",
+        "{workspaceRoot}/libs/test-util/vitest.config.mts",
+        "{workspaceRoot}/e2e/angular-typechecker-cache-e2e/vitest.config.mts",
+        "{workspaceRoot}/e2e/angular-typechecker-install-e2e/vitest.config.mts",
+        "{workspaceRoot}/e2e/angular-typechecker-matrix-e2e/vitest.config.mts",
         {
           "externalDependencies": ["typescript", "@angular/compiler-cli"]
         }
       ],
       "options": {
-        "command": "tsc --noEmit -p packages/angular-typechecker/tsconfig.drift.json",
+        "commands": [
+          "tsc --noEmit -p packages/angular-typechecker/tsconfig.spec.json",
+          "tsc --noEmit -p packages/angular-typechecker/tsconfig.drift.json",
+          "tsc --noEmit -p tsconfig.tools.json"
+        ],
+        "parallel": false,
         "cwd": "."
       }
     },
@@ -84,6 +94,15 @@
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/packages/angular-typechecker"
+      }
+    },
+    "integration": {
+      "executor": "@nx/vitest:test",
+      "dependsOn": ["build"],
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "configFile": "packages/angular-typechecker/vitest.integration.config.mts",
+        "reportsDirectory": "coverage/packages/angular-typechecker-integration"
       }
     }
   }

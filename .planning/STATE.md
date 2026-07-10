@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-09 -- v0.2.0 RELEASED + published to 
 Phase: Milestone v0.2.0 released
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-07-10 -- Completed quick task 260710-0ch: audited, triaged, and addressed all 5 Dependabot security alerts
+Last activity: 2026-07-10 -- Completed quick task 260710-b9t: dogfooded angular-typechecker with unified typecheck/test/integration/e2e verbs covering every non-broken file (PR #33, ci green)
 
 ## Accumulated Context
 
@@ -99,6 +99,7 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 | # | Description | Date | Commit | Status | Directory |
 |---|-------------|------|--------|--------|-----------|
 | 260710-0ch | Audit, triage, then address Dependabot security alerts | 2026-07-10 | 0fe82a8 | Verified | [260710-0ch-audit-triage-then-address-dependabot-sec](./quick/260710-0ch-audit-triage-then-address-dependabot-sec/) |
+| 260710-b9t | Dogfood angular-typechecker: unified typecheck/test/integration/e2e verbs covering every non-broken file (PR #33) | 2026-07-10 | 1c68811 | Verified | [260710-b9t-dogfood-angular-typechecker-add-typechec](./quick/260710-b9t-dogfood-angular-typechecker-add-typechec/) |
 
 ## Deferred Items
 

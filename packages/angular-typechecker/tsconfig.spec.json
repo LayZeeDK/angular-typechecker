@@ -2,6 +2,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
+    // The solution tsconfig pins `module`/`moduleResolution` to `nodenext` for the
+    // CommonJS-shipped lib (the Nx executor loader is `require()`-based). The specs
+    // do NOT ship: they run under Vitest/Vite (esbuild), which uses bundler module
+    // resolution and permits `import.meta` + extensionless relative/dynamic imports.
+    // Type-check them under the mode that matches their real runtime so the check
+    // reflects execution semantics instead of the lib's shipping constraints.
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "types": [
       "vitest/globals",
       "vitest/importMeta",

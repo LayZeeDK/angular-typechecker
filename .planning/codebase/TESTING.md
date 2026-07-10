@@ -50,7 +50,7 @@ module they test (e.g. `src/core/run-typecheck.ts` <-> `src/core/run-typecheck.s
 - `*.spec.ts` -- unit tier. Mocked, fast, jsdom, parallel.
 - `*.integration.spec.ts` -- integration tier. Runs the REAL `@angular/compiler-cli`
   `performCompilation` against a `fixtures/` project.
-- `*.int.spec.ts` -- e2e tier. `execSync` real toolchain (`nx build` / `npm pack` /
+- `*.e2e.spec.ts` -- e2e tier. `execSync` real toolchain (`nx build` / `npm pack` /
   install / `nx run`), node env, fully serialized.
 
 **Structure:**
@@ -62,7 +62,7 @@ packages/angular-typechecker/src/
   generators/*/*.spec.ts         # generator unit + schema-parity
   *.spec.ts                      # top-level guards (scoped-name-guard, ci-e2e-coverage-guard, package-manifest, storybook-docs)
 libs/test-util/src/lib/*.spec.ts # shared test-helper unit tests
-e2e/<project>/src/*.int.spec.ts  # tarball/verdaccio e2e
+e2e/<project>/src/*.e2e.spec.ts  # tarball/verdaccio e2e
 fixtures/                        # hand-authored Angular projects the integration tier checks
 ```
 
@@ -167,7 +167,7 @@ npx nx test angular-typechecker --coverage
   asserting off the structured `CoreResult`. Run in the SAME plugin vitest project as the
   unit tier (same jsdom config, same 30000ms timeout).
 
-**E2e Tests (`*.int.spec.ts`):**
+**E2e Tests (`*.e2e.spec.ts`):**
 
 - Three dedicated projects: `angular-typechecker-install-e2e` (verdaccio publish/install +
   tarball audit + `nx add` on npm/pnpm/yarn + generators + storybook), `-cache-e2e` (nx cache
@@ -208,7 +208,7 @@ expect(() =>
 - A SAFETY gate refuses to publish to any non-`http://127.0.0.1:` registry.
 - `buildCleanEnv({ stripAllNpmConfig: true })` strips inherited `npm_config_*` (an inherited
   `npm_config_registry` outranks `--registry` and would leak the publish to the public registry).
-- The tarball-audit spec (`src/tarball-audit.int.spec.ts`) packs the shared dist, extracts it
+- The tarball-audit spec (`src/tarball-audit.e2e.spec.ts`) packs the shared dist, extracts it
   under a RELATIVE dir (GNU-vs-BSD `tar` + Windows drive-letter portability), and gates on
   `publint --strict`, `attw --pack --profile node16` (problems empty), a required-files
   positive set, a spec/fixture/`@fixtures` leak-negative set, and no install-lifecycle scripts.
