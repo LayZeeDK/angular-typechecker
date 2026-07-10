@@ -95,6 +95,15 @@
       "options": {
         "reportsDirectory": "coverage/packages/angular-typechecker"
       }
+    },
+    "integration": {
+      "executor": "@nx/vitest:test",
+      "dependsOn": ["build"],
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "configFile": "packages/angular-typechecker/vitest.integration.config.mts",
+        "reportsDirectory": "coverage/packages/angular-typechecker-integration"
+      }
     }
   }
 }

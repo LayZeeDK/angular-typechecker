@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
@@ -12,6 +12,10 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    // Fast tier only: the real-compiler `*.integration.spec.ts` files run in the
+    // dedicated `integration` target (vitest.integration.config.mts). Spread the
+    // Vitest defaults so node_modules/dist stay excluded alongside them.
+    exclude: [...configDefaults.exclude, '**/*.integration.spec.ts'],
     // The real-compiler integration specs (`*.integration.spec.ts`) each run a
     // cold `@angular/compiler-cli` `performCompilation` (ESM module load + a
     // whole-program no-emit type-check). Under Vitest's parallel pool on slower
