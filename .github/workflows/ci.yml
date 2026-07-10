@@ -178,16 +178,17 @@ jobs:
       - run: npm ci
       # Static type-check gate for the e2e SOURCES (was typecheck-e2e), run BEFORE
       # the multi-minute tarball install so a type error in an e2e spec fails fast
-      # (~15s) instead of after an ~8-minute install. SCOPED to the three e2e
-      # projects with `-p` ON PURPOSE: the `test` job already runs the FULL
+      # (~15s) instead of after an ~8-minute install. SCOPED to the e2e projects via
+      # the `type:e2e` tag ON PURPOSE: the `test` job already runs the FULL
       # `nx run-many -t typecheck` (every project, incl. these three) across the
       # matrix, so an UNSCOPED run here would just duplicate that whole-repo
       # type-check. `typecheck` is a universal target name (unlike the uniquely-named
-      # `e2e` target, which needs no `-p`), so `-p` is the only way to narrow it to
-      # the pre-install-relevant sources. GUARD-01c still holds: its regex matches
-      # `run-many -t typecheck` with the trailing `-p` list, and it also asserts each
-      # e2e project defines the target.
-      - run: npx nx run-many -t typecheck -p angular-typechecker-cache-e2e angular-typechecker-install-e2e angular-typechecker-matrix-e2e
+      # `e2e` target, which needs no `-p`), so a project selector is the only way to
+      # narrow it to the pre-install-relevant sources; the `tag:type:e2e` selector
+      # auto-covers any future e2e project without editing this line. GUARD-01c
+      # asserts this line runs `run-many -t typecheck`; GUARD-01d asserts the
+      # `type:e2e` tag set is exactly the e2e/* projects (no silent drift).
+      - run: npx nx run-many -t typecheck -p tag:type:e2e
       # Cross-project serialization (extends the intra-project D-21 serialization).
       # `nx run-many -t e2e` runs the `e2e` target for every project that defines it
       # -- exactly the three e2e projects (no -p list needed; GUARD-01 asserts no

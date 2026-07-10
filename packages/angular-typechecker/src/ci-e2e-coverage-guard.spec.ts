@@ -226,3 +226,49 @@ describe('GUARD-01c: every e2e project defines typecheck and the ci.yml e2e job 
     ).toBe(true);
   });
 });
+
+// GUARD-01d (e2e tag-membership guard). The CI `e2e` job scopes its pre-install
+// fast type-check with `nx run-many -t typecheck -p tag:type:e2e` -- a selector by
+// the `type:e2e` tag. That selection is correct ONLY if the `type:e2e` tag set is
+// EXACTLY the e2e/* projects: (axis 1) a new e2e project that forgets the tag is
+// silently dropped from the pre-install gate, and (axis 2) a stray `type:e2e` on a
+// non-e2e project would pull it into the e2e-scoped run. (The AUTHORITATIVE
+// whole-repo type-check is the unscoped `test`-job `run-many -t typecheck`; this
+// guard keeps the e2e job's fail-fast gate from silently drifting.) Same cheap,
+// READ-ONLY, enumerate-both-directions shape as GUARD-01.
+describe('GUARD-01d: the `type:e2e` tag set is exactly the e2e/* projects', () => {
+  it('every e2e/* project carries the `type:e2e` tag', () => {
+    for (const project of enumerateE2eProjects(workspaceRoot)) {
+      const projectJson = JSON.parse(
+        readFileSync(
+          join(workspaceRoot, 'e2e', project, 'project.json'),
+          'utf8',
+        ),
+      ) as { tags?: string[] };
+
+      expect(
+        projectJson.tags ?? [],
+        `GUARD-01d: e2e/${project} is missing the \`type:e2e\` tag -- \`nx run-many -t typecheck -p tag:type:e2e\` (the ci.yml e2e pre-install gate) would silently skip it.`,
+      ).toContain('type:e2e');
+    }
+  });
+
+  it('no non-e2e project carries the `type:e2e` tag', () => {
+    for (const path of collectProjectJsonPaths(workspaceRoot)) {
+      const relativePath = relative(workspaceRoot, path).split(sep).join('/');
+
+      if (relativePath.startsWith('e2e/')) {
+        continue;
+      }
+
+      const projectJson = JSON.parse(readFileSync(path, 'utf8')) as {
+        tags?: string[];
+      };
+
+      expect(
+        projectJson.tags ?? [],
+        `GUARD-01d: ${relativePath} carries the \`type:e2e\` tag but is not an e2e/* project. \`-p tag:type:e2e\` would pull it into the e2e-scoped type-check. Remove the tag or move the project under e2e/.`,
+      ).not.toContain('type:e2e');
+    }
+  });
+});

@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "e2e/angular-typechecker-matrix-e2e/src",
-  "tags": ["scope:fixture"],
+  "tags": ["scope:fixture", "type:e2e"],
   "implicitDependencies": ["angular-typechecker"],
   "targets": {
     "e2e": {
