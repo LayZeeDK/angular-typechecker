@@ -154,6 +154,26 @@ describe('GUARD-01: run-many -t e2e covers exactly the e2e/* projects', () => {
       ).toBeUndefined();
     }
   });
+
+  // The two invariants above are moot if the ci.yml e2e job never runs
+  // `nx run-many -t e2e` at all. A typo/drop/merge revert (`-t e2e` -> `-t e2ee`,
+  // or back to `-t test`) matches ZERO projects, exits 0, and silently disables the
+  // entire tarball-install tier -- the gate that proves the PUBLISHED artifact
+  // works. Assert the RUN-STEP line specifically: the regex excludes comment lines
+  // (this block's prose also mentions `run-many -t e2e`), so a dropped invocation
+  // cannot pass vacuously behind a stale comment.
+  it('the ci.yml e2e job actually runs `nx run-many -t e2e`', () => {
+    const ci = readFileSync(
+      join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
+      'utf8',
+    );
+    const e2eBlock = extractE2eJobLines(ci).join('\n');
+
+    expect(
+      /^(?!\s*#).*\brun-many\s+-t\s+e2e\b/m.test(e2eBlock),
+      'GUARD-01: the ci.yml `e2e` job must actually RUN `nx run-many -t e2e`. With zero matching projects run-many exits 0, so a typo/drop/revert of this invocation silently disables the entire tarball-install tier (the gate that proves the published artifact works).',
+    ).toBe(true);
+  });
 });
 
 // GUARD-01b (e2e shared-tarball race guard). The correctness of the `e2e` gate
@@ -175,7 +195,8 @@ describe('GUARD-01b: the ci.yml e2e job serializes its projects (shared-tarball 
     const e2eBlock = extractE2eJobLines(ci).join('\n');
 
     expect(
-      /--parallel=1\b/.test(e2eBlock),
+      // Run-step line only (this block's comments also mention `--parallel=1`).
+      /^(?!\s*#).*--parallel=1\b/m.test(e2eBlock),
       'GUARD-01b: the `e2e` job must pass `--parallel=1` to `nx run-many` so the three e2e projects run serially. They share one dist tarball path (each packs it in beforeAll + `rmSync`s it in afterAll); running them in parallel races to an ENOENT on `pnpm add`. If this flag was removed intentionally, first give each e2e project a UNIQUE tarball path so cross-project parallelism is safe.',
     ).toBe(true);
   });
@@ -221,7 +242,8 @@ describe('GUARD-01c: every e2e project defines typecheck and the ci.yml e2e job 
     const e2eBlock = extractE2eJobLines(ci).join('\n');
 
     expect(
-      /\brun-many\s+-t\s+typecheck\b/.test(e2eBlock),
+      // Run-step line only (this block's comments also mention `run-many -t typecheck`).
+      /^(?!\s*#).*\brun-many\s+-t\s+typecheck\b/m.test(e2eBlock),
       'GUARD-01c: the ci.yml `e2e` job must run `nx run-many -t typecheck`. A rename/typo of the target name here would match zero projects and pass vacuously (run-many with zero matches exits 0), silently skipping the e2e static type-check gate.',
     ).toBe(true);
   });

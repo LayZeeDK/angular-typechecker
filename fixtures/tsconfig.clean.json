@@ -16,12 +16,8 @@
   // run `nx typecheck @angular-typechecker/source --tsConfig=<leaf> --skip-nx-cache`
   // and keep it here only if the verdict is GREEN (an advisory "not type checked"
   // notice counts as GREEN). Reference concrete LEAF tsconfigs only -- never a nested
-  // solution-style tsconfig.
-  //
-  // Classified GREEN (verified 2026-07-10):
-  //   clean-template-host, composite-triangle, no-emit-message,
-  //   not-type-checked-clean, not-type-checked-mdx/.storybook,
-  //   layout-a-storybook-clean (app + .storybook), layout-b-host-clean/.storybook.
+  // solution-style tsconfig. The `references` array below IS the classified-GREEN set
+  // (single source of truth -- no duplicated prose list to drift).
   "files": [],
   "references": [
     { "path": "./clean-template-host/tsconfig.app.json" },
