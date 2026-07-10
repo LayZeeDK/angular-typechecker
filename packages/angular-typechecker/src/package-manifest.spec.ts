@@ -32,6 +32,7 @@ const manifestPath = join(packageRoot, 'package.json');
 interface PluginManifest {
   type?: string;
   generators?: string;
+  builders?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   engines?: {
@@ -89,6 +90,7 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
       'src',
       'executors.json',
       'generators.json',
+      'builders.json',
       'README.md',
       'LICENSE',
     ]);
@@ -96,6 +98,10 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
 
   it('registers the generators collection (D-02)', () => {
     expect(manifest.generators).toBe('./generators.json');
+  });
+
+  it('registers the Angular CLI builders collection (ACB-03; additive)', () => {
+    expect(manifest.builders).toBe('./builders.json');
   });
 
   it('declares the minimal CJS exports map (D-02; barrel entry + package.json escape hatch)', () => {

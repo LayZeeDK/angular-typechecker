@@ -63,6 +63,13 @@ const executorJsPath = join(
   'typecheck',
   'executor.js',
 );
+const builderJsPath = join(
+  distRoot,
+  'src',
+  'builders',
+  'typecheck',
+  'builder.js',
+);
 
 /**
  * Strips full-line `//` comments so that a `import(` or
@@ -93,6 +100,19 @@ describe('GATE A static (built artifacts retain literal import() of @angular/com
 
   it('negative: built executors/.../executor.js does NOT require() @angular/compiler-cli', () => {
     const code = stripCommentLines(readFileSync(executorJsPath, 'utf8'));
+
+    expect(code).not.toMatch(/require\(["']@angular\/compiler-cli/);
+  });
+
+  // GATE A' (ACB-02): the Angular CLI builder entry is `convertNxExecutor(executor)`.
+  // The builder .js does NO import() of its own -- it reaches @angular/compiler-cli
+  // through the SAME core/compiler-loader.js the executor uses (the positive import(
+  // assertion above already covers that load site). So only the NEGATIVE assertion is
+  // needed here: a build-graph drift that recompiled the reachable load site under
+  // `module: commonjs` (re-introducing the v0.0.1 import()->require() downlevel) must
+  // never leave a require() of the ESM compiler in the builder entry either.
+  it('negative: built builders/.../builder.js does NOT require() @angular/compiler-cli', () => {
+    const code = stripCommentLines(readFileSync(builderJsPath, 'utf8'));
 
     expect(code).not.toMatch(/require\(["']@angular\/compiler-cli/);
   });
