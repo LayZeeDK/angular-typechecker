@@ -1,0 +1,152 @@
+{
+  "spike": "011-builder-ng-run-esm-bridge",
+  "gates": [
+    "GATE-A'"
+  ],
+  "validates": "the CJS-executor-loads-ESM-@angular/compiler-cli-via-await-import() bridge survives convertNxExecutor + a real ng run on-stack Angular 22 (no ERR_REQUIRE_ESM incl. the eager project-graph prelude)",
+  "clone": {
+    "repoUrl": "https://github.com/bluehalo/ngx-leaflet",
+    "expectedSha": "818e9ae55240b570397ede5a15cb4d466785abdc",
+    "actualSha": "818e9ae55240b570397ede5a15cb4d466785abdc",
+    "path": "D:\\projects\\github\\bluehalo\\ngx-leaflet"
+  },
+  "environment": {
+    "node": "v24.18.0",
+    "npm": "11.16.0",
+    "platform": "win32",
+    "@angular/cli": "22.0.0",
+    "@angular/core": "22.0.0",
+    "@angular/compiler-cli": "22.0.0",
+    "typescript": "6.0.3"
+  },
+  "tarball": {
+    "filename": "angular-typechecker-0.2.0.tgz",
+    "fileCount": 76
+  },
+  "install": {
+    "command": "npm install <tarball> --no-save (clean, no --legacy-peer-deps)",
+    "neededLegacyPeerDeps": false,
+    "exitCode": 0,
+    "outputExcerpt": "added 91 packages, and changed 1 package in 12s\nnpm warn allow-scripts 6 packages have install scripts not yet covered by allowScripts:\nnpm warn allow-scripts   @parcel/watcher@2.5.6 (install: node-gyp rebuild)\nnpm warn allow-scripts   esbuild@0.28.0 (install: (install scripts present))\nnpm warn allow-scripts   lmdb@3.5.4 (install: node-gyp rebuild)\nnpm warn allow-scripts   msgpackr-extract@3.0.4 (install: node-gyp rebuild)\nnpm warn allow-scripts   esbuild@0.27.7 (install: (install scripts present))\nnpm warn allow-scripts   nx@23.0.1 (postinstall: node -e \"try{require('./dist/bin/post-install')}catch(e){}\")\nnpm warn allow-scripts\nnpm warn allow-scripts Run `npm approve-scripts --allow-scripts-pending` to review, or `npm approve-scripts <pkg>` to allow."
+  },
+  "runs": {
+    "appBaseline": {
+      "label": "app clean baseline",
+      "project": "ngx-leaflet-demo",
+      "tsConfig": "tsconfig.app.json",
+      "exitCode": 0,
+      "spawnError": null,
+      "esmSignatures": [],
+      "preludeSignatures": [],
+      "reachedCompiler": true,
+      "outputExcerpt": ""
+    },
+    "libClean": {
+      "label": "library clean",
+      "project": "ngx-leaflet",
+      "tsConfig": "projects/ngx-leaflet/tsconfig.lib.json",
+      "exitCode": 0,
+      "spawnError": null,
+      "esmSignatures": [],
+      "preludeSignatures": [],
+      "reachedCompiler": true,
+      "outputExcerpt": ""
+    },
+    "appPlanted": {
+      "label": "app planted (TS2322)",
+      "project": "ngx-leaflet-demo",
+      "tsConfig": "tsconfig.app.json",
+      "exitCode": 1,
+      "spawnError": null,
+      "esmSignatures": [],
+      "preludeSignatures": [],
+      "reachedCompiler": true,
+      "outputExcerpt": "src/main.ts:17:7 - error TS2322: Type 'string' is not assignable to type 'number'.\n\n17 const __angularTypecheckerGateAPlanted: number = 'gate-a-planted-type-error';\n         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    }
+  },
+  "esmSignaturesScanned": [
+    "ERR_REQUIRE_ESM",
+    "require() of ES Module",
+    "Cannot use import statement outside a module"
+  ],
+  "cloneGitStatusAfter": "(clean)",
+  "assertions": [
+    {
+      "id": "clone-present",
+      "pass": true,
+      "detail": "clone + angular.json at D:\\projects\\github\\bluehalo\\ngx-leaflet"
+    },
+    {
+      "id": "clone-sha",
+      "pass": true,
+      "detail": "actual 818e9ae55240b570397ede5a15cb4d466785abdc vs expected 818e9ae55240b570397ede5a15cb4d466785abdc"
+    },
+    {
+      "id": "build-ok",
+      "pass": true,
+      "detail": "nx build angular-typechecker exit 0"
+    },
+    {
+      "id": "tarball-builder-js",
+      "pass": true,
+      "detail": "tarball carries src/builders/typecheck/builder.js"
+    },
+    {
+      "id": "tarball-builder-schema",
+      "pass": true,
+      "detail": "tarball carries the builder schema.json"
+    },
+    {
+      "id": "tarball-builders-json",
+      "pass": true,
+      "detail": "tarball carries builders.json"
+    },
+    {
+      "id": "install-ok",
+      "pass": true,
+      "detail": "tarball installed (no --legacy-peer-deps)"
+    },
+    {
+      "id": "install-no-legacy-peer-deps",
+      "pass": true,
+      "detail": "on-stack install was clean (no --legacy-peer-deps)"
+    },
+    {
+      "id": "installed-present",
+      "pass": true,
+      "detail": "node_modules/angular-typechecker present in the clone"
+    },
+    {
+      "id": "no-esm-app-baseline",
+      "pass": true,
+      "detail": "no ESM failure signature in app-baseline output"
+    },
+    {
+      "id": "no-esm-lib-clean",
+      "pass": true,
+      "detail": "no ESM failure signature in lib-clean output"
+    },
+    {
+      "id": "no-esm-app-planted",
+      "pass": true,
+      "detail": "no ESM failure signature in app-planted output"
+    },
+    {
+      "id": "app-baseline-green",
+      "pass": true,
+      "detail": "clean control (app, pre-plant) GREEN via ng run (exit 0)"
+    },
+    {
+      "id": "app-planted-red",
+      "pass": true,
+      "detail": "planted TS2322 surfaced RED via ng run (exit 1)"
+    },
+    {
+      "id": "lib-reached-compiler",
+      "pass": true,
+      "detail": "library ng run reached the compiler (exit 0) -- bridge survived for a library project"
+    }
+  ],
+  "verdict": "GO",
+  "verdictDetail": "GO -- the CJS->ESM await import() bridge SURVIVES convertNxExecutor + a real `ng run` on-stack Angular 22 (no ERR_REQUIRE_ESM, incl. the eager project-graph prelude); the planted diagnostic surfaces RED and the clean control is GREEN"
+}

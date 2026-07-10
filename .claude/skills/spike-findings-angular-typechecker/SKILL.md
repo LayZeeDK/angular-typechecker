@@ -1,6 +1,6 @@
 ---
 name: spike-findings-angular-typechecker
-description: Implementation blueprint from spike experiments. Requirements, proven patterns, and verified knowledge for building angular-typechecker -- the v0.1.2 Storybook input-set-membership boundary (Phase 16 gate = GO, branch 4a), the shipped v0.1.0 reference-walk engine, and Vite/Analog Storybook query-import guidance (the `vite/client` recipe + optional advisory). Auto-loaded during implementation work.
+description: Implementation blueprint from spike experiments. Requirements, proven patterns, and verified knowledge for building angular-typechecker -- the v0.1.2 Storybook input-set-membership boundary (Phase 16 gate = GO, branch 4a), the shipped v0.1.0 reference-walk engine, Vite/Analog Storybook query-import guidance (the `vite/client` recipe + optional advisory), and the v0.2.1 Angular CLI builder GATE A' (Phase 21 = GO: the CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run`). Auto-loaded during implementation work.
 ---
 
 <context>
@@ -59,6 +59,7 @@ Spike sessions wrapped: 2026-07-01 (001-005), 2026-07-05 (006-008), 2026-07-07 (
 | Storybook input-set boundary (v0.1.2, Phase 17 build) | references/storybook-input-set-boundary.md | GATE = GO. Layout B type-checkable on the official stack; ship the input-set `keep()` + branch 4a (relatedInformation ownership) + split counter. |
 | Reference-walk engine (v0.1.0, shipped foundation)    | references/reference-walk-engine.md        | The shipped walk the boundary builds on; its rootName-surfacing feeds the new keep-rule.                                                          |
 | Vite/Analog query-import support (v0.1.2 follow-up)   | references/vite-analog-query-imports.md    | `"types": ["vite/client"]` zeroes Vite `?query` TS2307 (radix 227->0) safely; optional diagnostic-based advisory; never auto-suppress.            |
+| Angular CLI builder GATE A' (v0.2.1, Phase 21 gate)   | .planning/spikes/011-builder-ng-run-esm-bridge/ | GATE = GO. The shipped CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run` on-stack Angular 22 (app + library, incl. the eager project-graph prelude); no `ERR_REQUIRE_ESM`, planted `TS2322` RED / clean GREEN, on-stack install needs no `--legacy-peer-deps`. Builder = `convertNxExecutor(typecheckExecutor)`; never hand-write an architect builder (D-04). |
 
 ## Source Files
 
@@ -81,4 +82,5 @@ there). Reproduction of the forced-SB10 spike (007) is documented in its README 
 - 008-external-template-attribution
 - 009-vite-ambient-shim-resolves-query-imports
 - 010-vite-query-detection-advisory
+- 011-builder-ng-run-esm-bridge
   </metadata>
