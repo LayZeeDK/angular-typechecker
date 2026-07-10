@@ -162,9 +162,12 @@ describe('plugin manifest Angular CLI install contract (ACP-01 / NGADD-01 RF-01 
   });
 
   it('declares the converted builder runtime peers with the D-07 ranges', () => {
-    // @angular-devkit/architect uses the 0.22xx.x scheme (NOT 22.x).
+    // @angular-devkit/architect uses the 0.22xx.x scheme (NOT 22.x): 22.0 ->
+    // 0.2200, 22.1 -> 0.2201, ... The range spans ALL of Angular 22.x, symmetric
+    // with the `^22.0.0` compiler-cli peer -- a caret on the leading-zero-major
+    // (`^0.2200.0`) would lock to 22.0.x only.
     expect(manifest.peerDependencies?.['@angular-devkit/architect']).toBe(
-      '^0.2200.0',
+      '>=0.2200.0 <0.2300.0',
     );
     expect(manifest.peerDependencies?.['rxjs']).toBe('^7.8.0');
   });
