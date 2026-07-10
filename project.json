@@ -10,6 +10,19 @@
         "config": ".verdaccio/config.yml",
         "storage": "tmp/local-registry/storage"
       }
+    },
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "fixtures/tsconfig.clean.json"
+      },
+      "inputs": [
+        "{workspaceRoot}/fixtures/**/*",
+        "{workspaceRoot}/tsconfig.base.json",
+        {
+          "externalDependencies": ["typescript", "@angular/compiler-cli"]
+        }
+      ]
     }
   }
 }
