@@ -74,6 +74,21 @@ export default [
           // catches MISSING/OBSOLETE deps; only the version-mismatch autofix is
           // disabled. NEVER run `eslint --fix` blindly on the manifest.
           checkVersionMismatches: false,
+          // ACP-01 (D-07/D-08): @angular-devkit/architect + rxjs are the
+          // runtime peers of the converted `angular-typechecker:typecheck`
+          // builder. Their `require()`s live INSIDE @nx/devkit's
+          // convertNxExecutor bridge, so this plugin's own src/ never imports
+          // them -- without this ignore the rule would flag both declared
+          // (optional) peers as obsoleteDependency and fail `nx lint`
+          // (maxWarnings:0). `peerDependenciesMeta.optional` does NOT exempt a
+          // peer from the obsolete check; ignoredDependencies is the lever.
+          // Consequence (accepted + documented): an `ng add` into a non-Nx
+          // Angular CLI workspace pulls `nx` transitively via @nx/devkit's own
+          // peer and may materialize a `.nx/` cache dir. `nx` is deliberately
+          // NOT declared here (declaring it would double-constrain the
+          // consumer's Nx). The README `## Angular CLI` prose is Phase 24
+          // (ACD-01).
+          ignoredDependencies: ['@angular-devkit/architect', 'rxjs'],
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vitest.config.{js,ts,mjs,mts}',

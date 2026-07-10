@@ -30,6 +30,9 @@
   "generators": "./generators.json",
   "builders": "./builders.json",
   "schematics": "./collection.json",
+  "ng-add": {
+    "save": "devDependencies"
+  },
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json"
@@ -49,7 +52,17 @@
   },
   "peerDependencies": {
     "@angular/compiler-cli": "^22.0.0",
-    "typescript": ">=6.0.0 <6.1.0"
+    "typescript": ">=6.0.0 <6.1.0",
+    "@angular-devkit/architect": "^0.2200.0",
+    "rxjs": "^7.8.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular-devkit/architect": {
+      "optional": true
+    },
+    "rxjs": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.0.0"
