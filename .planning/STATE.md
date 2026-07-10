@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: executing
-last_updated: "2026-07-10T20:43:26.752Z"
+status: verifying
+last_updated: "2026-07-10T20:53:21.757Z"
 last_activity: 2026-07-10
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
-  percent: 25
+  completed_plans: 5
+  percent: 50
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 
 Phase: 22 (configuration-schematic-the-angular-json-write-fork) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-10
 
 ## Accumulated Context
@@ -64,6 +64,7 @@ archives under `.planning/milestones/`.
 - [Phase 21]: 21-02: ENG-01 -- `tsConfig` widened to `string | string[]` at four additive seams (schema.d.ts, both schema.json `oneOf`, normalize-options `map(resolveOne)`, `CoreOptions.tsConfigPath`). Core `handleMultiTsConfig` runs each entry through the SAME single-tsConfig gather logic, UNIONs the raw per-entry diagnostics, and calls `finalize` EXACTLY ONCE over the COMBINED declared input set (`buildFinalizeFilter` combined `rootNamePaths`) -- the surviving-leaf tail of `handleSolutionWalk`, never per-entry `runTypecheck`+merge. Zero-rootNames entry -> `zero-root-names` `SkippedReference` (coverage-incomplete via `evaluateResult`), per-entry 500 / empty array -> infra throw (never a silent pass, T-21-05). Widened union is MUTABLE `string[]` not `readonly` (Array.isArray narrows a readonly union only in the true branch; mutable keeps the single-string body byte-unchanged). Single-string path + Nx executor path byte-unchanged; proven by a hermetic `fixtures/multi-tsconfig-array` real-compiler integration spec (both planted codes surface, `['x']`===`'x'`). nx build/test(259)/integration/lint green.
 - [Phase 21]: 21-03: in-repo CI-authoritative builder guard suite (three specs, NO production code). (1) `schema-parity.spec.ts` locks the SANITIZED builder `schema.json` to `TypecheckExecutorOptions` via `satisfies` + `AssertAssignable` reverse-coverage probe (keys/required:['tsConfig']/additionalProperties:false/defaults + ENG-01 `tsConfig` oneOf string|array) AND asserts sanitized (no `cli`/`version`/`$id`) -- T-21-07. (2) `builder.spec.ts` thin-wrapper: source-regex proves `builder.ts` imports `convertNxExecutor` from `@nx/devkit` + the executor default from `../../executors/typecheck/executor` + default-exports exactly `convertNxExecutor(typecheckExecutor)`, forbidding an engine fork / hand-written architect builder (T-21-09 / D-04); runtime asserts the Architect Builder brand. (3) `nx-surface-regression.spec.ts` asserts package.json `executors` unchanged + `builders` additive + executors.json still declares the `typecheck` impl -> `executors ?? builders` still resolves the executor (T-21-08). DEVIATION (Rule 1): `convertNxExecutor` returns an Architect Builder OBJECT branded `Symbol.for('@angular-devkit/architect:builder')===true` + a `handler` function, NOT a bare function -- the plan's `typeof==='function'` runtime assertion was corrected to the stronger brand+handler check. nx test(274)/lint/format:check green. Phase 21 complete.
 - [Phase 22]: 22-01: Angular CLI write-fork -- an early tree.exists(angular.json) branch in the shared configuration generator writes each per-project architect.typecheck = { builder: angular-typechecker:typecheck, options.tsConfig: [buildLeaf, specLeaf] } via @nx/devkit updateJson (updateProjectConfiguration cannot write angular.json, Pitfall 2), skipping the Nx init (D-04, no stray nx.json). New resolveTsConfigLeaves helper resolves RF-01 to Approach A (projectType-convention tsconfig.app.json/tsconfig.lib.json + tsconfig.spec.json, each tree.exists-probed; --tsConfig override to single-element array; empty result throws) -- NOT Approach B, because the default @angular/build:ng-packagr library builder carries no tsConfig in build.options. Collision by builder id read defensively from architect then targets, written canonically to architect; idempotent rewrite preserves user keys + options. Nx else-branch byte-unchanged (resolveTsConfig/resolveTsConfigOverride untouched; configuration.spec.ts green). Proven by a 10-case angular.json-seeded spec (nx test 284 green, typecheck green). Reachable now via nx g; the ng generate schematic surface + ACS-04 regression are 22-02.
+- [Phase 22]: 22-02: additive ng generate surface -- NEW collection.json (configuration schematic only; init/ng-add are Phase 23) + convertNxGenerator(configurationGenerator) re-export + package.json schematics field + files entry + project.json build asset glob (Pitfall 4: dist ships collection.json). generators ?? schematics keeps the collection Nx-invisible (ACS-04), proven by nx-generators-surface-regression.spec.ts. Schema REUSED verbatim. Zero new production dependency. nx lint/build/test(288)/typecheck green.
 
 ### Roadmap Evolution
 
@@ -123,7 +124,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-10T20:43:01.698Z
+Last session: 2026-07-10T20:52:17.953Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed

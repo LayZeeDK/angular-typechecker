@@ -67,7 +67,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ### [ACTIVE] v0.2.1 -- Angular CLI (`angular.json`) workspace support (Phases 21-24)
 
 - [x] **Phase 21: Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO)** -- Re-export the `typecheck` executor as an Angular CLI builder, widen `tsConfig` to `string | string[]`, and prove the CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run` on-stack (Angular 22) against a real cloned OSS workspace (`bluehalo/ngx-leaflet`). (Off-stack Angular 21 dropped 2026-07-10.) (completed 2026-07-10)
-- [ ] **Phase 22: `configuration` schematic + the `angular.json` write-fork** -- `ng generate angular-typechecker:configuration <project>` wires one per-project `typecheck` architect target (scoped to that project's leaves) via the `tree.exists('angular.json')` fork, with the Nx generator path unchanged.
+- [x] **Phase 22: `configuration` schematic + the `angular.json` write-fork** -- `ng generate angular-typechecker:configuration <project>` wires one per-project `typecheck` architect target (scoped to that project's leaves) via the `tree.exists('angular.json')` fork, with the Nx generator path unchanged. (completed 2026-07-10)
 - [ ] **Phase 23: `init` schematic parity + first-party `ng-add`** -- `ng add angular-typechecker` auto-wires every app + library project in `angular.json`, with the no-caching notice and optional-peer dependency classification.
 - [ ] **Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs** -- prove the full flow against a real OSS `angular.json` workspace and a scaffolded one, audit the additive-only charter, and document the Angular CLI surface.
 
@@ -113,13 +113,13 @@ Plans:
   3. A per-project `typecheck` target type-checks that project's COMPLETE leaf set (application+spec, or library+spec) and ONLY that project's leaves -- proven by scaffolding `ng g library` and asserting per-project scoping with no cross-project bleed (COV-01).
   4. `collection.json` + the `package.json` `schematics` field are added additively, and `nx g angular-typechecker:configuration` still resolves unchanged -- the `generators ?? schematics` Nx-surface regression assertion passes (ACS-04).
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
 
 - [x] 22-01-PLAN.md -- ACS-01/ACS-02/COV-01: the `tree.exists('angular.json')` write-fork in the shared `configuration` generator (new `resolveTsConfigLeaves` Approach A helper + the `updateJson('angular.json')` architect target with the `[buildLeaf, specLeaf]` array), and the `angular.json`-seeded `configuration-angular-cli.spec.ts` (target shape, idempotency, collision, no stray `nx.json`, two-project per-project scoping). Nx path byte-unchanged.
-- [ ] 22-02-PLAN.md -- ACS-04: the four additive manifest edits (`collection.json`, `src/schematics/configuration/schematic.ts` = `convertNxGenerator(configurationGenerator)`, `package.json` `schematics` field + `files` entry, `project.json` `collection.json` build-asset glob) + the `generators ?? schematics` Nx-surface regression spec; `nx lint` hard gate.
+- [x] 22-02-PLAN.md -- ACS-04: the four additive manifest edits (`collection.json`, `src/schematics/configuration/schematic.ts` = `convertNxGenerator(configurationGenerator)`, `package.json` `schematics` field + `files` entry, `project.json` `collection.json` build-asset glob) + the `generators ?? schematics` Nx-surface regression spec; `nx lint` hard gate.
 
 ### Phase 23: `init` schematic parity + first-party `ng-add`
 
@@ -177,6 +177,6 @@ Plans:
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.2.0 | 3/3 | Complete | 2026-07-07 |
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
-| 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 1/2 | In Progress|  |
+| 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete   | 2026-07-10 |
 | 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/? | Not started | - |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |
