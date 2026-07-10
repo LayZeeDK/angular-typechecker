@@ -1,34 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2.0
-milestone_name: Storybook story type-checking
-status: Awaiting next milestone
-stopped_at: "v0.2.0 RELEASED -- angular-typechecker@0.2.0 published to npm 2026-07-07 (PR #29 merged; tag on the release merge commit); awaiting /gsd-new-milestone"
-last_updated: "2026-07-09T21:22:43.067Z"
-last_activity: 2026-07-07 -- v0.2.0 released and published to npm (angular-typechecker@0.2.0)
+milestone: v0.2.1
+milestone_name: Angular CLI workspace support
+status: planning
+last_updated: "2026-07-10T12:02:08.376Z"
+last_activity: 2026-07-10
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 20
-  completed_plans: 20
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-09 -- v0.2.0 RELEASED + published to npm)
+See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** v0.2.0 RELEASED -- `angular-typechecker@0.2.0` published live to npm 2026-07-07 (dist-tag `latest`, tokenless OIDC + SLSA v1 provenance). Next: `/gsd-new-milestone`.
+**Current focus:** v0.2.1 -- Angular CLI (`angular.json`) workspace support (`ng add`, generators as CLI schematics via `convertNxGenerator`, executor as a CLI builder via `convertNxExecutor`), proven against a real OSS Angular CLI repo. ADDITIVE-ONLY (v0.3.0 only if a breaking change is unavoidable). Currently: defining requirements.
 
 ## Current Position
 
-Phase: Milestone v0.2.0 released
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-10 -- Completed quick task 260710-b9t: dogfooded angular-typechecker with unified typecheck/test/integration/e2e verbs covering every non-broken file (PR #33, ci green)
+Status: Defining requirements
+Last activity: 2026-07-10 — Milestone v0.2.1 started
 
 ## Accumulated Context
 
