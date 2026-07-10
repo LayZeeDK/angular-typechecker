@@ -6,14 +6,14 @@
   "tags": ["scope:fixture"],
   "implicitDependencies": ["angular-typechecker"],
   "targets": {
-    "test": {
+    "e2e": {
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
         "reportsDirectory": "coverage/e2e/angular-typechecker-install-e2e"
       }
     },
-    "typecheck-e2e": {
+    "typecheck": {
       "executor": "nx:run-commands",
       "cache": true,
       "inputs": [

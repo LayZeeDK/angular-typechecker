@@ -1,27 +1,31 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
-// GUARD-01 (CI e2e-coverage self-audit). The CI `e2e` job runs its e2e projects
-// by an EXPLICIT `-p` list in .github/workflows/ci.yml, NOT `nx affected`. If a
-// new e2e project is added and the `-p` list is not extended, that project is
-// SILENTLY never run in CI -- exactly the coverage gap a type-checking tool must
-// never tolerate. This guard asserts the `e2e` job's `-p` list EQUALS the set of
-// `e2e/*` projects (bidirectional), so a FORGOTTEN entry (the primary landmine:
-// a real e2e project silently skipped) or a STALE/typo entry becomes a loud,
-// LOCATED test failure instead. It codifies the current-correct coverage and
-// goes RED only on drift.
+// GUARD-01 (CI e2e-coverage self-audit). The CI `e2e` job runs the e2e tier with
+// `nx run-many -t e2e` (no explicit `-p` list): run-many runs the target for
+// EVERY project that defines it. That makes `e2e` coverage depend on TWO
+// invariants that both fail SILENTLY:
+//   (1) every `e2e/*` project must define an `e2e` target -- a project that drops
+//       or renames it is silently never run in CI (the coverage gap a
+//       type-checking tool must never tolerate); and
+//   (2) NO non-e2e project may define an `e2e` target -- a stray `e2e` target on
+//       any other project would be pulled into `run-many -t e2e`, breaking the
+//       "exactly the three tarball projects, serialized" guarantee (they share one
+//       dist tarball path; see GUARD-01b).
+// This guard asserts BOTH directions so a forgotten target or a stray/misplaced
+// one becomes a loud, LOCATED test failure instead of a silent miscoverage.
 //
 // It is a cheap filesystem/text read (NO build/pack/install), so it lives as a
-// plain in-plugin `*.spec.ts` and rides the existing 6-cell `test` matrix -- the
+// plain in-plugin `*.spec.ts` and rides the existing fast `test` matrix -- the
 // loudest, earliest signal on every OS x Node cell (no `ci.yml` structural
-// change). It is READ-ONLY: it reads `ci.yml` + each `e2e/*/project.json` and
-// asserts; it NEVER edits `ci.yml`. YAML is asserted with string/regex (NOT a new
-// parser dependency) -- the invariant is line-level, mirroring the
-// release-hygiene precedent.
+// change). It is READ-ONLY: it reads `ci.yml` + each `project.json` and asserts;
+// it NEVER edits `ci.yml`. YAML is asserted with string/regex (NOT a new parser
+// dependency) -- the invariant is line-level, mirroring the release-hygiene
+// precedent.
 
 // Resolve the workspace root from this spec's location
 // (packages/angular-typechecker/src/<file>); findWorkspaceRoot() walks up to nx.json, so every file read is
@@ -47,12 +51,49 @@ function enumerateE2eProjects(root: string): string[] {
     .sort();
 }
 
+// Build/dep-output + planning trees that never host a first-party `project.json`
+// and would only slow (or error) the walk. Everything else is scanned so a new
+// project anywhere under a standard root is covered without editing this list.
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  'dist',
+  '.nx',
+  '.git',
+  '.angular',
+  '.verdaccio',
+  '.planning',
+  'coverage',
+  'tmp',
+]);
+
+// Recursively collect every `project.json` path under `root` (skipping the
+// output/planning trees above). A cheap FS walk -- no nx runtime, no new
+// dependency -- so the anti-silent-skip guarantee stays a fast-tier check.
+function collectProjectJsonPaths(dir: string, acc: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (!IGNORED_DIRS.has(entry.name)) {
+        collectProjectJsonPaths(join(dir, entry.name), acc);
+      }
+
+      continue;
+    }
+
+    if (entry.isFile() && entry.name === 'project.json') {
+      acc.push(join(dir, entry.name));
+    }
+  }
+
+  return acc;
+}
+
 // Slice the `e2e:` job block (from its key to the next top-level job key) WITHOUT a
 // YAML parser (line-level invariant; reuses the release-hygiene no-parser
-// precedent). Shared by the `-p` list guard (GUARD-01) and the `--parallel=1`
-// serialization guard (GUARD-01b) so there is ONE job-scoping implementation. The
-// job-key regex MUST allow digits or it would miss `e2e:` itself (the `2`). Throws a
-// clear located Error if the `e2e:` job is absent, so a ci.yml refactor fails LOUDLY.
+// precedent). Shared by the `--parallel=1` serialization guard (GUARD-01b) and the
+// typecheck-coverage guard (GUARD-01c) so there is ONE job-scoping implementation.
+// The job-key regex MUST allow digits or it would miss `e2e:` itself (the `2`).
+// Throws a clear located Error if the `e2e:` job is absent, so a ci.yml refactor
+// fails LOUDLY.
 function extractE2eJobLines(ci: string): string[] {
   const lines = ci.split('\n');
   const start = lines.findIndex((line) => /^ {2}e2e:\s*$/.test(line));
@@ -76,53 +117,42 @@ function extractE2eJobLines(ci: string): string[] {
   return lines.slice(start, end);
 }
 
-// Extract the `e2e` job's `-p` project list. The line-start `-p` match uniquely
-// selects the folded (`>`) run scalar's continuation; there is a SECOND `-p` in the
-// `test` job (`-p angular-typechecker`, MID-line) that the anchor never captures.
-function extractE2ePList(ci: string): string[] {
-  const pLine = extractE2eJobLines(ci).find((line) => /^\s*-p\s+\S/.test(line));
+describe('GUARD-01: run-many -t e2e covers exactly the e2e/* projects', () => {
+  const e2eProjects = enumerateE2eProjects(workspaceRoot);
 
-  if (pLine === undefined) {
-    throw new Error(
-      'GUARD-01: no `-p` project list found in the `e2e:` job of ci.yml',
-    );
-  }
+  it('every e2e/* project defines an `e2e` target (no forgotten target -> no silent skip)', () => {
+    for (const project of e2eProjects) {
+      const projectJson = JSON.parse(
+        readFileSync(
+          join(workspaceRoot, 'e2e', project, 'project.json'),
+          'utf8',
+        ),
+      ) as { targets?: Record<string, unknown> };
 
-  return pLine
-    .trim()
-    .replace(/^-p\s+/, '')
-    .split(/\s+/)
-    .sort();
-}
-
-describe('GUARD-01: the ci.yml e2e job -p list equals the e2e/* project set', () => {
-  const ci = readFileSync(
-    join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
-    'utf8',
-  );
-  const pList = extractE2ePList(ci);
-  const graph = enumerateE2eProjects(workspaceRoot);
-
-  it('covers every e2e/* project (no forgotten -p entry -> no silent skip)', () => {
-    for (const project of graph) {
       expect(
-        pList,
-        `e2e/${project} is a graph e2e project but is MISSING from the ci.yml e2e job -p list`,
-      ).toContain(project);
+        projectJson.targets?.['e2e'],
+        `GUARD-01: e2e/${project} does not define an \`e2e\` target -- \`nx run-many -t e2e\` would silently skip it (run-many runs the target only for projects that define it).`,
+      ).toBeDefined();
     }
   });
 
-  it('lists no stale/non-e2e project in the -p list', () => {
-    for (const project of pList) {
-      expect(
-        graph,
-        `"${project}" is in the ci.yml e2e job -p list but is not an e2e/* project`,
-      ).toContain(project);
-    }
-  });
+  it('no non-e2e project defines an `e2e` target (run-many -t e2e stays scoped to the tarball projects)', () => {
+    for (const path of collectProjectJsonPaths(workspaceRoot)) {
+      const relativePath = relative(workspaceRoot, path).split(sep).join('/');
 
-  it('is an exact bidirectional set match', () => {
-    expect(pList).toEqual(graph);
+      if (relativePath.startsWith('e2e/')) {
+        continue;
+      }
+
+      const projectJson = JSON.parse(readFileSync(path, 'utf8')) as {
+        targets?: Record<string, unknown>;
+      };
+
+      expect(
+        projectJson.targets?.['e2e'],
+        `GUARD-01: ${relativePath} defines an \`e2e\` target but is not an e2e/* project. \`nx run-many -t e2e\` would run it too, breaking the "exactly the three tarball projects, serialized" guarantee. Give the target a different name, or move the project under e2e/.`,
+      ).toBeUndefined();
+    }
   });
 });
 
@@ -133,8 +163,8 @@ describe('GUARD-01: the ci.yml e2e job -p list equals the e2e/* project set', ()
 // (singleFork + fileParallelism:false), but `nx run-many` defaults to parallel, so
 // without `--parallel=1` a sibling project's afterAll `rmSync` deletes the tarball
 // mid-`pnpm add` -> a nondeterministic ENOENT flake. `--parallel=1` is therefore
-// load-bearing; guard it the same way the `-p` list is guarded (GUARD-01) so that
-// dropping it becomes a loud, LOCATED test failure instead of a silent flake.
+// load-bearing; guard it the same way the target coverage is guarded (GUARD-01) so
+// that dropping it becomes a loud, LOCATED test failure instead of a silent flake.
 describe('GUARD-01b: the ci.yml e2e job serializes its projects (shared-tarball race guard)', () => {
   const ci = readFileSync(
     join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
@@ -151,23 +181,23 @@ describe('GUARD-01b: the ci.yml e2e job serializes its projects (shared-tarball 
   });
 });
 
-// GUARD-01c (typecheck-e2e coverage guard). The e2e sources are statically
-// type-checked by `nx run-many -t typecheck-e2e`, which relies on TWO conventions
-// that both fail SILENTLY: `nx run-many -t <target>` with ZERO matching projects
-// EXITS 0. So (axis 1) if an `e2e/*` project drops or renames its `typecheck-e2e`
-// target it silently stops type-checking its own specs, and (axis 2) if the target
-// name is renamed/typo'd in ci.yml the run-many matches zero projects and passes
-// vacuously -- a false green either way. This guard closes both axes so a drop or a
-// rename becomes a loud, LOCATED failure:
+// GUARD-01c (typecheck coverage guard). The e2e sources are statically
+// type-checked by the unified `nx run-many -t typecheck`, which relies on TWO
+// conventions that both fail SILENTLY: `nx run-many -t <target>` with ZERO matching
+// projects EXITS 0. So (axis 1) if an `e2e/*` project drops or renames its
+// `typecheck` target it silently stops type-checking its own specs, and (axis 2) if
+// the target name is renamed/typo'd in the ci.yml e2e job the run-many matches zero
+// projects and passes vacuously -- a false green either way. This guard closes both
+// axes so a drop or a rename becomes a loud, LOCATED failure:
 //   (1) EVERY `e2e/*` project (enumerated by the same name===dir convention as
-//       GUARD-01) defines a `typecheck-e2e` target; a missing one names the project.
-//   (2) The ci.yml `e2e` job actually RUNS `nx run-many -t typecheck-e2e`.
+//       GUARD-01) defines a `typecheck` target; a missing one names the project.
+//   (2) The ci.yml `e2e` job actually RUNS `nx run-many -t typecheck` (folding the
+//       former `typecheck-e2e` gate before the multi-minute tarball install).
 // Like GUARD-01/01b it is a cheap READ-ONLY filesystem/text check (reads each
 // e2e/*/project.json + ci.yml and asserts; NEVER edits either) asserted with
-// string/regex, no YAML parser, riding the existing 6-cell `test` matrix. It PASSES
-// as-is today (all three e2e projects define the target; ci.yml runs it).
-describe('GUARD-01c: every e2e project defines typecheck-e2e and the ci.yml e2e job runs it', () => {
-  it('every e2e/* project defines a typecheck-e2e target', () => {
+// string/regex, no YAML parser, riding the existing fast `test` matrix.
+describe('GUARD-01c: every e2e project defines typecheck and the ci.yml e2e job runs it', () => {
+  it('every e2e/* project defines a typecheck target', () => {
     for (const project of enumerateE2eProjects(workspaceRoot)) {
       const projectJson = JSON.parse(
         readFileSync(
@@ -177,13 +207,13 @@ describe('GUARD-01c: every e2e project defines typecheck-e2e and the ci.yml e2e 
       ) as { targets?: Record<string, unknown> };
 
       expect(
-        projectJson.targets?.['typecheck-e2e'],
-        `GUARD-01c: e2e/${project} does not define a \`typecheck-e2e\` target -- it silently stops type-checking its specs while \`nx run-many -t typecheck-e2e\` still exits 0 (run-many with zero matches is a no-op green).`,
+        projectJson.targets?.['typecheck'],
+        `GUARD-01c: e2e/${project} does not define a \`typecheck\` target -- it silently stops type-checking its specs while \`nx run-many -t typecheck\` still exits 0 (run-many with zero matches is a no-op green).`,
       ).toBeDefined();
     }
   });
 
-  it('the ci.yml e2e job runs `nx run-many -t typecheck-e2e`', () => {
+  it('the ci.yml e2e job runs `nx run-many -t typecheck`', () => {
     const ci = readFileSync(
       join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
       'utf8',
@@ -191,8 +221,8 @@ describe('GUARD-01c: every e2e project defines typecheck-e2e and the ci.yml e2e 
     const e2eBlock = extractE2eJobLines(ci).join('\n');
 
     expect(
-      /\brun-many\s+-t\s+typecheck-e2e\b/.test(e2eBlock),
-      'GUARD-01c: the ci.yml `e2e` job must run `nx run-many -t typecheck-e2e`. A rename/typo of the target name here would match zero projects and pass vacuously (run-many with zero matches exits 0), silently skipping the e2e static type-check gate.',
+      /\brun-many\s+-t\s+typecheck\b/.test(e2eBlock),
+      'GUARD-01c: the ci.yml `e2e` job must run `nx run-many -t typecheck`. A rename/typo of the target name here would match zero projects and pass vacuously (run-many with zero matches exits 0), silently skipping the e2e static type-check gate.',
     ).toBe(true);
   });
 });
