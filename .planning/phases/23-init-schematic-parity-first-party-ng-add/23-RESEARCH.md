@@ -343,16 +343,16 @@ Not applicable -- Phase 23 is additive code/config only (new schematics + manife
 
 **Note:** The four load-bearing mechanics (RF-01 `ng-add.save`, RF-02 guard, init no-op, ACP-01 `ignoredDependencies`) are `[VERIFIED: installed source]`, not assumed.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Notice string location**
    - What we know: D-06 wants ONE shared string via `logger.info`, printed once by ng-add (init MAY reuse it).
    - What's unclear: whether to export it from `init/generator.ts` (co-located with `TYPECHECK_EXECUTOR_ID`) or a tiny shared const module.
-   - Recommendation: export a `NO_CACHING_NOTICE` const from `init/generator.ts` (fewest files); planner discretion.
+   - RESOLVED: export a `NO_CACHING_NOTICE` const from `init/generator.ts` (fewest files); baked into plan 23-01.
 
 2. **`ng-add --project` scope**
    - What we know: default + tested behavior is auto-wire-ALL (NGADD-01); optional `--project` is a nice-to-have (Claude's discretion).
-   - Recommendation: include `project?` in the schema; when set, wire only that project (still via `configurationGenerator`); test the all-projects default as the primary case.
+   - RESOLVED: include `project?` in the schema; when set, wire only that project (still via `configurationGenerator`); test the all-projects default as the primary case. Baked into plan 23-03's ng-add schema.
 
 ## Validation Architecture
 
