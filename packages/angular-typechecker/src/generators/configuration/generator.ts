@@ -177,9 +177,10 @@ function resolveTsConfigLeaves(
 
 /**
  * Minimal shape of an Angular CLI `angular.json` workspace, typed just enough
- * for the D-01 write-fork's `updateJson` edit. Both `architect` (the canonical
- * key Angular scaffolds write) and its `targets` alias are modelled so the
- * collision check can read whichever a hand-edited workspace uses.
+ * for the D-01 write-fork's `updateJson` edit. A raw on-disk `angular.json`
+ * uses the `architect` target map -- the Nx `targets` alias only appears in the
+ * config `readProjectConfiguration` RETURNS, never on disk -- so the collision
+ * read and the write both operate on `architect`.
  */
 interface AngularJsonTarget {
   builder?: string;
@@ -189,7 +190,6 @@ interface AngularJsonTarget {
 
 interface AngularJsonProject {
   architect?: Record<string, AngularJsonTarget>;
-  targets?: Record<string, AngularJsonTarget>;
   [key: string]: unknown;
 }
 
@@ -242,9 +242,10 @@ export default async function configurationGenerator(
     updateJson<AngularJsonWorkspace>(tree, 'angular.json', (json) => {
       const project = json.projects[schema.project];
 
-      // D-05 collision by BUILDER id (the SAME string as the executor id), read
-      // defensively from the `architect`/`targets` alias BEFORE seeding architect.
-      const existing = (project.architect ?? project.targets)?.[targetName];
+      // D-05 collision by BUILDER id (the SAME string as the executor id). Read
+      // and write the SAME `architect` map (WR-01): a raw angular.json always uses
+      // `architect`, so reading an alias we never write to would be inconsistent.
+      const existing = project.architect?.[targetName];
 
       if (existing && existing.builder !== TYPECHECK_EXECUTOR_ID) {
         throw new Error(

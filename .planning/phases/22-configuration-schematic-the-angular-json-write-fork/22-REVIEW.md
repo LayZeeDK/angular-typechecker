@@ -14,10 +14,10 @@ files_reviewed_list:
   - packages/angular-typechecker/src/schematics/configuration/schematic.ts
 findings:
   critical: 0
-  warning: 1
+  warning: 0
   info: 2
-  total: 3
-status: issues_found
+  total: 2
+status: resolved
 ---
 
 # Phase 22: Code Review Report
@@ -25,7 +25,22 @@ status: issues_found
 **Reviewed:** 2026-07-10T21:03:16Z
 **Depth:** deep
 **Files Reviewed:** 8
-**Status:** issues_found
+**Status:** resolved (WR-01 fixed; 2 Info are non-actionable)
+
+## Resolution
+
+- **WR-01 (write-fork read/write key asymmetry) -- FIXED.** The collision read now uses
+  `project.architect` only (matching the write); the dead `targets`-alias handling was
+  removed from both the read and the `AngularJsonProject` interface. Root cause: a raw
+  on-disk `angular.json` always uses `architect` -- the Nx `targets` alias appears only in
+  `readProjectConfiguration`'s RETURNED config, never on disk -- so reading an alias we
+  never write to was pure asymmetry. `nx test` (288) + `nx typecheck` + `nx lint` green
+  after the fix.
+- **IN-01 / IN-02 -- no change needed (non-actionable).** IN-01 (`json.projects[p]`
+  unguarded) is defense-in-depth only -- the preceding `readProjectConfiguration` already
+  throws on an absent project. IN-02 (projectType-leaf duplication between `resolveTsConfig`
+  and `resolveTsConfigLeaves`) is an accepted consequence of the byte-unchanged Nx-branch
+  constraint (ACS-02); consolidating is deferred to a future non-additive refactor.
 
 ## Summary
 
