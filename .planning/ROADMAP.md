@@ -86,12 +86,12 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The `tsConfig` option accepts an array: each entry runs through the existing single-`tsConfig` logic, diagnostics UNION, and the v0.2.0 input-set-membership boundary filters over the combined declared input sets; the single-string behavior and the Nx path are byte-unchanged (ENG-01).
   4. `builders.json` + the `package.json` `builders` field are added additively, and `nx run <project>:typecheck` still resolves unchanged -- the `executors ?? builders` Nx-surface regression assertion passes (ACB-03).
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 21-01-PLAN.md -- GATE A' gating plan: minimal `convertNxExecutor` builder + manifests + sanitized schema, extended static byte-guard, and the real-`ng run` GATE A' spike (011) against the cloned Angular 22 `bluehalo/ngx-leaflet` workspace (GO/NO-GO). **Tasks 1-3 committed 2026-07-10 (`4b768d4`, `86d44c4`, `57c391c`); spike 011 VERDICT = GO.** Task 4 (blocking human GATE A' GO/NO-GO checkpoint) PENDING -- box stays unchecked until the human types "GO".
+- [x] 21-01-PLAN.md -- GATE A' gating plan: minimal `convertNxExecutor` builder + manifests + sanitized schema, extended static byte-guard, and the real-`ng run` GATE A' spike (011) against the cloned Angular 22 `bluehalo/ngx-leaflet` workspace (GO/NO-GO). **Tasks 1-3 committed 2026-07-10 (`4b768d4`, `86d44c4`, `57c391c`); spike 011 VERDICT = GO.** Task 4 (blocking human GATE A' GO/NO-GO checkpoint) PENDING -- box stays unchecked until the human types "GO".
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -170,7 +170,7 @@ Plans:
 | 18. Packaged-tarball e2e + docs | v0.2.0 | 5/5 | Complete | 2026-07-06 |
 | 19. Stretch (Layout C / non-TS formats / strict mode) | v0.2.0 | 3/3 | Complete | 2026-07-07 |
 | 20. Vite/Analog Storybook query-import guidance | v0.2.0 | 5/5 | Complete | 2026-07-07 |
-| 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 0/3 | Not started | - |
+| 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 1/3 | In Progress|  |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 0/? | Not started | - |
 | 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 0/? | Not started | - |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |
