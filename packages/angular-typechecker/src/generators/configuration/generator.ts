@@ -5,6 +5,7 @@ import {
   joinPathFragments,
   readJson,
   readProjectConfiguration,
+  updateJson,
   updateProjectConfiguration,
 } from '@nx/devkit';
 import type { ProjectConfiguration, Tree } from '@nx/devkit';
@@ -123,40 +124,160 @@ function resolveTsConfig(
 }
 
 /**
- * The `configuration` generator (GEN-01/02/03/04/08):
- * `nx g angular-typechecker:configuration <project>`.
+ * RF-01 (Approach A): resolves a project's leaf tsconfig ARRAY for the Angular
+ * CLI write-fork -- the counterpart to `resolveTsConfig`'s single-string Nx
+ * output, added ALONGSIDE it (never modifying it) so the Nx path stays
+ * byte-identical (Pitfall 5). Reads the virtual `Tree` ONLY (never `node:fs`).
  *
- * Config-edit only (no `generateFiles`, no file emission). It (1) awaits the
- * `init` generator FIRST with `skipFormat: true` so caching is seeded and we
- * format ONCE at the end (GEN-08 / D-10), (2) reads the project config, (3)
- * resolves the target's `tsConfig` (D-07), (4) collision-checks by EXECUTOR
- * (D-09), (5) writes ONE minimal `typecheck` target
- * `{ executor: 'angular-typechecker:typecheck', options: { tsConfig } }`, and
- * (6) formats once. A re-run for OUR target is idempotent (rewrite to the same
- * shape); a same-named NON-ours target throws a clear, located error.
+ * An explicit `--tsConfig` override short-circuits to a SINGLE-element array
+ * (`[resolved]`) via the same `resolveTsConfigOverride` discipline as the Nx
+ * branch. Otherwise it takes the projectType-convention build leaf
+ * (`application` -> `tsconfig.app.json`, else `tsconfig.lib.json`) plus
+ * `tsconfig.spec.json`, each existence-probed against `projectConfig.root`. A
+ * missing leaf is dropped; a project with a single leaf emits just that one; an
+ * empty result throws the located error (never a silent under-checking target).
+ *
+ * Approach B (reading `architect.build.options.tsConfig`) is deliberately NOT
+ * used: the default `@angular/build:ng-packagr` library builder carries no
+ * `tsConfig` in `options` (it lives under `configurations`), so B would silently
+ * miss the library build leaf (RF-01, Pitfall 2).
+ */
+function resolveTsConfigLeaves(
+  tree: Tree,
+  projectConfig: ProjectConfiguration,
+  schema: ConfigurationGeneratorSchema,
+): string[] {
+  const root = projectConfig.root;
+
+  // explicit override wins -- a single leaf, wrapped as an array for CLI-branch
+  // shape uniformity (the ENG-01 engine accepts string | string[]).
+  if (schema.tsConfig) {
+    return [
+      resolveTsConfigOverride(tree, root, schema.tsConfig, schema.project),
+    ];
+  }
+
+  const buildLeaf =
+    projectConfig.projectType === 'application'
+      ? joinPathFragments(root, 'tsconfig.app.json')
+      : joinPathFragments(root, 'tsconfig.lib.json');
+  const specLeaf = joinPathFragments(root, 'tsconfig.spec.json');
+
+  const leaves = [buildLeaf, specLeaf].filter((leaf) => tree.exists(leaf));
+
+  if (leaves.length === 0) {
+    throw new Error(
+      `Could not resolve a tsconfig for project "${schema.project}": no ` +
+        `"${buildLeaf}" and no "${specLeaf}". Pass --tsConfig explicitly.`,
+    );
+  }
+
+  return leaves;
+}
+
+/**
+ * Minimal shape of an Angular CLI `angular.json` workspace, typed just enough
+ * for the D-01 write-fork's `updateJson` edit. Both `architect` (the canonical
+ * key Angular scaffolds write) and its `targets` alias are modelled so the
+ * collision check can read whichever a hand-edited workspace uses.
+ */
+interface AngularJsonTarget {
+  builder?: string;
+  options?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+interface AngularJsonProject {
+  architect?: Record<string, AngularJsonTarget>;
+  targets?: Record<string, AngularJsonTarget>;
+  [key: string]: unknown;
+}
+
+interface AngularJsonWorkspace {
+  projects: Record<string, AngularJsonProject>;
+  [key: string]: unknown;
+}
+
+/**
+ * The `configuration` generator (GEN-01/02/03/04/08 + D-01 write-fork):
+ * `nx g angular-typechecker:configuration <project>` /
+ * `ng generate angular-typechecker:configuration <project>`.
+ *
+ * Config-edit only (no `generateFiles`, no file emission). The `targetName`
+ * default + empty-name guard are HOISTED so both branches share them. On an
+ * Angular CLI workspace (angular.json present) the D-01 fork writes the target
+ * straight into angular.json's `architect` map with the leaf ARRAY and skips the
+ * Nx init (D-04). Otherwise the byte-unchanged Nx path runs: init-first
+ * (GEN-08 / D-10), single-string solution `tsConfig` (D-07), collision-by-executor
+ * (D-09), one minimal `typecheck` target, format once. A re-run of OUR target is
+ * idempotent on both branches; a same-named NON-ours target throws a clear,
+ * located error.
  */
 export default async function configurationGenerator(
   tree: Tree,
   schema: ConfigurationGeneratorSchema,
 ): Promise<void> {
-  // GEN-08 / D-10: seed workspace caching FIRST via init. `skipFormat: true` so
-  // the nested init does not format -- we format ONCE at the end (first-party
-  // `@nx/eslint:lint-project` / `@nx/vitest:configuration` composition).
-  await initGenerator(tree, { skipFormat: true });
-
-  const projectConfig = readProjectConfiguration(tree, schema.project);
+  // Shared by BOTH branches. GEN-04: `??` only substitutes the default for a
+  // MISSING targetName, not an explicit empty string (`'' ?? x === ''`); an empty
+  // / whitespace-only name would write an unrunnable target keyed by `''`, so
+  // reject it here with a located error.
   const targetName = schema.targetName ?? 'typecheck';
 
-  // GEN-04: `??` above only substitutes the default for a MISSING targetName, not
-  // an explicit empty string (`'' ?? x === ''`). An empty / whitespace-only name
-  // would write an unrunnable target keyed by `''`, so reject it with a located
-  // error rather than silently producing a broken target.
   if (targetName.trim() === '') {
     throw new Error(
       `--targetName for project "${schema.project}" must be a non-empty target ` +
         `name. Omit it to use the default "typecheck".`,
     );
   }
+
+  // D-01 write-fork: an Angular CLI workspace has angular.json (and no nx.json).
+  // `readProjectConfiguration` polyfills root + projectType from angular.json;
+  // `updateProjectConfiguration` cannot write angular.json (Pitfall 2), so the
+  // target is edited straight in via `updateJson`. The Nx init is skipped (D-04):
+  // there is no nx.json / targetDefaults analog off-Nx.
+  if (tree.exists('angular.json')) {
+    const projectConfig = readProjectConfiguration(tree, schema.project);
+    const tsConfig = resolveTsConfigLeaves(tree, projectConfig, schema);
+
+    updateJson<AngularJsonWorkspace>(tree, 'angular.json', (json) => {
+      const project = json.projects[schema.project];
+
+      // D-05 collision by BUILDER id (the SAME string as the executor id), read
+      // defensively from the `architect`/`targets` alias BEFORE seeding architect.
+      const existing = (project.architect ?? project.targets)?.[targetName];
+
+      if (existing && existing.builder !== TYPECHECK_EXECUTOR_ID) {
+        throw new Error(
+          `Project "${schema.project}" already has a "${targetName}" target ` +
+            `using builder "${existing.builder}". Choose a different ` +
+            `--targetName or remove the existing target.`,
+        );
+      }
+
+      project.architect ??= {};
+      // Idempotent re-run of OUR target: preserve user-added keys + extra options,
+      // re-assert only the builder id + the resolved leaf ARRAY.
+      project.architect[targetName] = {
+        ...existing,
+        builder: TYPECHECK_EXECUTOR_ID,
+        options: { ...existing?.options, tsConfig },
+      };
+
+      return json;
+    });
+
+    if (!schema.skipFormat) {
+      await formatFiles(tree);
+    }
+
+    return;
+  }
+
+  // ELSE -- the byte-unchanged Nx path (ACS-02). GEN-08 / D-10: seed workspace
+  // caching FIRST via init with `skipFormat: true` so we format ONCE at the end.
+  await initGenerator(tree, { skipFormat: true });
+
+  const projectConfig = readProjectConfiguration(tree, schema.project);
 
   const tsConfig = resolveTsConfig(tree, projectConfig, schema);
 
