@@ -5,8 +5,11 @@
   "type": "object",
   "properties": {
     "tsConfig": {
-      "type": "string",
-      "description": "Path to the tsconfig to type-check. Resolved relative to the workspace root when not absolute."
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      ],
+      "description": "Path (or array of paths) to the tsconfig(s) to type-check. Resolved relative to the workspace root when not absolute."
     },
     "includeDeps": {
       "type": "boolean",
