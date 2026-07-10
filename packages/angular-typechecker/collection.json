@@ -5,6 +5,11 @@
       "factory": "./src/schematics/configuration/schematic",
       "schema": "./src/generators/configuration/schema.json",
       "description": "Wire a typecheck target into an Angular CLI project's angular.json."
+    },
+    "init": {
+      "factory": "./src/schematics/init/schematic",
+      "schema": "./src/generators/init/schema.json",
+      "description": "Angular CLI init parity: no build cache to seed, so no target caching is configured (and no nx.json is created)."
     }
   }
 }

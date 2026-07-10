@@ -1,4 +1,4 @@
-import { formatFiles, readNxJson, updateNxJson } from '@nx/devkit';
+import { formatFiles, logger, readNxJson, updateNxJson } from '@nx/devkit';
 import type {
   NxJsonConfiguration,
   TargetConfiguration,
@@ -13,6 +13,17 @@ import type { InitGeneratorSchema } from './schema';
 // executor id -- this repo aliases its own package under a scope it does not own
 // or publish).
 export const TYPECHECK_EXECUTOR_ID = 'angular-typechecker:typecheck';
+
+// D-06: the single shared "no target caching on Angular CLI" notice. It is
+// printed by the Angular CLI `init` fork below (ACS-03) AND imported by the
+// first-party `ng-add` generator so the wording lives in ONE place (no drift).
+// End-user-facing -- no internal plan/decision ids: an Angular CLI workspace has
+// no Nx target-result cache to seed, so the typecheck target(s) are wired without
+// caching; on Nx, caching is configured automatically.
+export const NO_CACHING_NOTICE =
+  'angular-typechecker: Angular CLI has no build/target-result cache to seed, so ' +
+  'the typecheck target(s) were wired without caching. On an Nx workspace, target ' +
+  'caching is configured automatically.';
 
 // D-04 / WALK-02: copied VERBATIM from the workspace `nx.json`
 // targetDefaults[TYPECHECK_EXECUTOR_ID] block (the UNSCOPED published executor id,
@@ -62,6 +73,18 @@ export default async function initGenerator(
   tree: Tree,
   schema: InitGeneratorSchema,
 ): Promise<void> {
+  // D-04 / ACS-03 additive fork: an Angular CLI workspace has angular.json (and
+  // no nx.json). There is no nx.json / targetDefaults / task cache to seed off-Nx,
+  // so gate the Nx work out explicitly and return BEFORE readNxJson/updateNxJson
+  // -- mirroring the `configuration` write-fork. (updateNxJson is a verified no-op
+  // when nx.json is absent, but the fork makes the skip by design, not incidental,
+  // and lets the CLI surface print the shared no-caching notice.)
+  if (tree.exists('angular.json')) {
+    logger.info(NO_CACHING_NOTICE);
+
+    return;
+  }
+
   // Pitfall 4: `readNxJson` is typed `NxJsonConfiguration | null` -- guard it.
   const nxJson: NxJsonConfiguration = readNxJson(tree) ?? {};
 
