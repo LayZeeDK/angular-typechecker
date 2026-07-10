@@ -76,3 +76,44 @@ describe('init generator (Angular CLI fork, ACS-03)', () => {
     infoSpy.mockRestore();
   });
 });
+
+// WR-01 lock: nx.json is authoritative when present. A hybrid workspace that
+// carries BOTH nx.json and angular.json is a real Nx workspace, so initGenerator
+// must take the Nx else-branch (seed targetDefaults) rather than the CLI fork
+// (notice-only). Keep nx.json (createTreeWithEmptyWorkspace seeds it) and ADD
+// angular.json so both files are present.
+describe('init generator (hybrid nx.json + angular.json -> Nx branch, WR-01)', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    writeAngularJson(tree, {
+      'ngx-leaflet-demo': { projectType: 'application', root: '' },
+    });
+  });
+
+  it('takes the Nx branch (seeds nx.json targetDefaults) when both files exist', async () => {
+    expect(tree.exists('nx.json')).toBe(true);
+    expect(tree.exists('angular.json')).toBe(true);
+
+    await initGenerator(tree, { skipFormat: true });
+
+    // The CLI fork returns BEFORE seeding, so this key is present only if the Nx
+    // else-branch ran -- proving the discriminator did not misfire on angular.json.
+    expect(
+      readNxJson(tree)?.targetDefaults?.[TYPECHECK_EXECUTOR_ID],
+    ).toBeDefined();
+  });
+
+  it('does NOT print the no-caching notice on the Nx branch', async () => {
+    const infoSpy = vi
+      .spyOn(logger, 'info')
+      .mockImplementation(() => undefined);
+
+    await initGenerator(tree, { skipFormat: true });
+
+    expect(infoSpy).not.toHaveBeenCalledWith(NO_CACHING_NOTICE);
+
+    infoSpy.mockRestore();
+  });
+});

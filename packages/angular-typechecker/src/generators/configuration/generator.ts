@@ -230,12 +230,16 @@ export default async function configurationGenerator(
     );
   }
 
-  // D-01 write-fork: an Angular CLI workspace has angular.json (and no nx.json).
-  // `readProjectConfiguration` polyfills root + projectType from angular.json;
-  // `updateProjectConfiguration` cannot write angular.json (Pitfall 2), so the
-  // target is edited straight in via `updateJson`. The Nx init is skipped (D-04):
-  // there is no nx.json / targetDefaults analog off-Nx.
-  if (tree.exists('angular.json')) {
+  // D-01 write-fork: an Angular CLI workspace has angular.json AND no nx.json.
+  // nx.json is authoritative when present (WR-01): a hybrid workspace carrying BOTH
+  // files is a real Nx workspace and MUST take the Nx path below -- its projects may
+  // be defined via project.json (not angular.json's `projects` map), where the
+  // `json.projects[schema.project]` lookup here would be `undefined` and throw. On a
+  // genuine CLI workspace `readProjectConfiguration` polyfills root + projectType
+  // from angular.json; `updateProjectConfiguration` cannot write angular.json
+  // (Pitfall 2), so the target is edited straight in via `updateJson`. The Nx init
+  // is skipped (D-04): there is no nx.json / targetDefaults analog off-Nx.
+  if (tree.exists('angular.json') && !tree.exists('nx.json')) {
     const projectConfig = readProjectConfiguration(tree, schema.project);
     const tsConfig = resolveTsConfigLeaves(tree, projectConfig, schema);
 

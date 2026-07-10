@@ -73,13 +73,15 @@ export default async function initGenerator(
   tree: Tree,
   schema: InitGeneratorSchema,
 ): Promise<void> {
-  // D-04 / ACS-03 additive fork: an Angular CLI workspace has angular.json (and
-  // no nx.json). There is no nx.json / targetDefaults / task cache to seed off-Nx,
-  // so gate the Nx work out explicitly and return BEFORE readNxJson/updateNxJson
-  // -- mirroring the `configuration` write-fork. (updateNxJson is a verified no-op
-  // when nx.json is absent, but the fork makes the skip by design, not incidental,
-  // and lets the CLI surface print the shared no-caching notice.)
-  if (tree.exists('angular.json')) {
+  // D-04 / ACS-03 additive fork: an Angular CLI workspace has angular.json AND no
+  // nx.json. nx.json is authoritative when present -- a hybrid/legacy workspace
+  // that carries BOTH files is a real Nx workspace (its projects may be defined via
+  // project.json, not angular.json's `projects` map), so it must take the Nx path
+  // below and seed targetDefaults. Gate the CLI fork on the FULL invariant, not
+  // angular.json alone, and return BEFORE readNxJson/updateNxJson -- mirroring the
+  // `configuration` write-fork -- so the CLI surface prints the shared no-caching
+  // notice while the Nx surface seeds caching.
+  if (tree.exists('angular.json') && !tree.exists('nx.json')) {
     logger.info(NO_CACHING_NOTICE);
 
     return;

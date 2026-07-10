@@ -1,4 +1,4 @@
-import { readProjectConfiguration, writeJson } from '@nx/devkit';
+import { readNxJson, readProjectConfiguration, writeJson } from '@nx/devkit';
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -244,5 +244,35 @@ describe('configuration generator (Angular CLI write-fork)', () => {
     await expect(
       configurationGenerator(tree, { project: 'empty-lib' }),
     ).rejects.toThrow(/Could not resolve a tsconfig for project "empty-lib"/);
+  });
+});
+
+// WR-01 lock: nx.json is authoritative when present. A hybrid workspace that
+// carries BOTH nx.json and angular.json is a real Nx workspace, so
+// configurationGenerator must take the Nx else-branch (init-first, seeds
+// targetDefaults) rather than the CLI write-fork. Keep nx.json
+// (createTreeWithEmptyWorkspace seeds it) and ADD angular.json + a leaf.
+describe('configuration generator (hybrid nx.json + angular.json -> Nx branch, WR-01)', () => {
+  it('takes the Nx branch (seeds nx.json targetDefaults) when both files exist', async () => {
+    const tree = createTreeWithEmptyWorkspace();
+    writeAngularJson(tree, {
+      'ngx-leaflet-demo': { projectType: 'application', root: '' },
+    });
+    writeLeaf(tree, 'tsconfig.app.json');
+
+    expect(tree.exists('nx.json')).toBe(true);
+    expect(tree.exists('angular.json')).toBe(true);
+
+    await configurationGenerator(tree, {
+      project: 'ngx-leaflet-demo',
+      skipFormat: true,
+    });
+
+    // The CLI write-fork returns BEFORE the nested init, so this key is present
+    // only if the Nx else-branch ran init -- proving the discriminator did not
+    // misfire on angular.json alone.
+    expect(
+      readNxJson(tree)?.targetDefaults?.['angular-typechecker:typecheck'],
+    ).toBeDefined();
   });
 });
