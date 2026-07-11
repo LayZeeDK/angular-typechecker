@@ -316,3 +316,47 @@ describe('configuration generator', () => {
     ).rejects.toThrow(/already has a "typecheck" target/);
   });
 });
+
+// Full-matrix lock (ACV-01 follow-up, 2026-07-11): a package.json `name` that collides
+// with a project.json `name` is a known Nx-workspace hazard. Unlike the Angular CLI
+// branch -- where a pnpm-workspace name collision makes Nx return a SHADOWING package
+// stub (projectType undefined) that silently drops the build leaf, fixed by reading
+// angular.json directly -- the Nx branch reads the AUTHORITATIVE project.json, so the
+// same-root package.json + project.json merge (project.json wins) and the target lands
+// correctly. This locks that robustness across the Nx x pnpm-workspace x name-collision
+// cell so a future Nx-inference regression is caught here rather than in the field.
+describe('configuration generator (Nx branch: package.json/project.json name collision + pnpm workspace)', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+  });
+
+  it('wires the target to the correct project despite a package.json name collision', async () => {
+    addProjectConfiguration(tree, 'my-lib', {
+      root: 'libs/my-lib',
+      projectType: 'library',
+      targets: {},
+    });
+    writeJson(tree, 'libs/my-lib/tsconfig.json', {
+      references: [{ path: './tsconfig.lib.json' }],
+    });
+    // Collision: the project's OWN package.json `name` === its project.json `name`, plus
+    // a pnpm-workspace.yaml that makes Nx's package.json plugin treat libs/my-lib as a
+    // workspace package (the shape that stubbed the CLI branch).
+    writeJson(tree, 'libs/my-lib/package.json', {
+      name: 'my-lib',
+      version: '0.0.0',
+    });
+    tree.write('pnpm-workspace.yaml', "packages:\n  - 'libs/*'\n");
+
+    await configurationGenerator(tree, { project: 'my-lib' });
+
+    expect(readProjectConfiguration(tree, 'my-lib').targets?.typecheck).toEqual(
+      {
+        executor: 'angular-typechecker:typecheck',
+        options: { tsConfig: 'libs/my-lib/tsconfig.json' },
+      },
+    );
+  });
+});

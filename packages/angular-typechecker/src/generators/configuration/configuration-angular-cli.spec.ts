@@ -1,4 +1,9 @@
-import { readNxJson, readProjectConfiguration, writeJson } from '@nx/devkit';
+import {
+  readJson,
+  readNxJson,
+  readProjectConfiguration,
+  writeJson,
+} from '@nx/devkit';
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -244,6 +249,97 @@ describe('configuration generator (Angular CLI write-fork)', () => {
     await expect(
       configurationGenerator(tree, { project: 'empty-lib' }),
     ).rejects.toThrow(/Could not resolve a tsconfig for project "empty-lib"/);
+  });
+});
+
+// ACV-01 real-clone regression (2026-07-11, realworld-angular @ 9e3528f): on an
+// Angular CLI workspace that is ALSO a pnpm workspace (pnpm-workspace.yaml) whose ROOT
+// package.json `name` collides with the angular.json project name, Nx's project
+// inference returns a package.json project STUB (root ".", projectType undefined) that
+// SHADOWS the angular.json project. The CLI write-fork MUST read projectType/root
+// straight from angular.json (NOT via readProjectConfiguration): otherwise it silently
+// drops the app BUILD leaf for a root app (wiring spec-only -> under-checking) or throws
+// for a subdir app (no leaf resolves at root "."). Trigger is narrow, verified by the
+// blast-radius matrix: pnpm-workspace.yaml AND a name collision are BOTH required
+// (npm/yarn `workspaces`, a lockfile alone, or a name mismatch do NOT reproduce), and
+// the Nx branch is unaffected (project.json is authoritative). Assertions read
+// angular.json DIRECTLY because readProjectConfiguration returns the shadowing stub
+// (which carries no typecheck target) even after a correct write.
+describe('configuration generator (Angular CLI + pnpm-workspace name collision, ACV-01 regression)', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    tree.delete('nx.json');
+  });
+
+  // The collision: root package.json `name` === the angular.json project name, plus a
+  // pnpm-workspace.yaml that makes Nx infer the shadowing package project.
+  function seedPnpmCollision(projectName: string, packagesGlob: string): void {
+    writeJson(tree, 'package.json', { name: projectName });
+    tree.write('pnpm-workspace.yaml', `packages:\n  - '${packagesGlob}'\n`);
+  }
+
+  function writtenTsConfig(project: string): unknown {
+    const json = readJson<{
+      projects: Record<
+        string,
+        { architect?: Record<string, { options?: { tsConfig?: unknown } }> }
+      >;
+    }>(tree, 'angular.json');
+
+    return json.projects[project]?.architect?.['typecheck']?.options?.tsConfig;
+  }
+
+  it('wires the [app, spec] array for a ROOT app despite the pnpm stub (was: spec-only)', async () => {
+    writeAngularJson(tree, {
+      'demo-app': { projectType: 'application', root: '' },
+    });
+    writeLeaf(tree, 'tsconfig.app.json');
+    writeLeaf(tree, 'tsconfig.spec.json');
+    seedPnpmCollision('demo-app', '.');
+    assertCliSubstrate(tree);
+
+    await configurationGenerator(tree, { project: 'demo-app' });
+
+    expect(writtenTsConfig('demo-app')).toEqual([
+      'tsconfig.app.json',
+      'tsconfig.spec.json',
+    ]);
+  });
+
+  it('wires the [app, spec] array for a SUBDIR app despite the pnpm stub (was: throw)', async () => {
+    writeAngularJson(tree, {
+      'demo-app': { projectType: 'application', root: 'apps/demo-app' },
+    });
+    writeLeaf(tree, 'apps/demo-app/tsconfig.app.json');
+    writeLeaf(tree, 'apps/demo-app/tsconfig.spec.json');
+    seedPnpmCollision('demo-app', 'apps/*');
+    assertCliSubstrate(tree);
+
+    await configurationGenerator(tree, { project: 'demo-app' });
+
+    expect(writtenTsConfig('demo-app')).toEqual([
+      'apps/demo-app/tsconfig.app.json',
+      'apps/demo-app/tsconfig.spec.json',
+    ]);
+  });
+
+  it('wires the [lib, spec] array for a SUBDIR library despite the pnpm stub', async () => {
+    writeAngularJson(tree, {
+      'demo-lib': { projectType: 'library', root: 'projects/demo-lib' },
+    });
+    writeLeaf(tree, 'projects/demo-lib/tsconfig.lib.json');
+    writeLeaf(tree, 'projects/demo-lib/tsconfig.spec.json');
+    seedPnpmCollision('demo-lib', 'projects/*');
+    assertCliSubstrate(tree);
+
+    await configurationGenerator(tree, { project: 'demo-lib' });
+
+    expect(writtenTsConfig('demo-lib')).toEqual([
+      'projects/demo-lib/tsconfig.lib.json',
+      'projects/demo-lib/tsconfig.spec.json',
+    ]);
   });
 });
 

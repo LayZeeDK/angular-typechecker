@@ -133,9 +133,16 @@ function resolveTsConfig(
  * (`[resolved]`) via the same `resolveTsConfigOverride` discipline as the Nx
  * branch. Otherwise it takes the projectType-convention build leaf
  * (`application` -> `tsconfig.app.json`, else `tsconfig.lib.json`) plus
- * `tsconfig.spec.json`, each existence-probed against `projectConfig.root`. A
+ * `tsconfig.spec.json`, each existence-probed against the given `root`. A
  * missing leaf is dropped; a project with a single leaf emits just that one; an
  * empty result throws the located error (never a silent under-checking target).
+ *
+ * `root`/`projectType` are read STRAIGHT from angular.json by the caller (NOT via
+ * `readProjectConfiguration`): on a workspace that is ALSO a pnpm workspace whose
+ * root package.json `name` collides with the angular.json project name, Nx infers
+ * a package.json project stub (root ".", projectType undefined) that shadows the
+ * angular.json project -- which would silently drop the app build leaf (root app)
+ * or throw (subdir app). angular.json is authoritative here (ACV-01, 2026-07-11).
  *
  * Approach B (reading `architect.build.options.tsConfig`) is deliberately NOT
  * used: the default `@angular/build:ng-packagr` library builder carries no
@@ -144,11 +151,10 @@ function resolveTsConfig(
  */
 function resolveTsConfigLeaves(
   tree: Tree,
-  projectConfig: ProjectConfiguration,
+  root: string,
+  projectType: 'application' | 'library' | undefined,
   schema: ConfigurationGeneratorSchema,
 ): string[] {
-  const root = projectConfig.root;
-
   // explicit override wins -- a single leaf, wrapped as an array for CLI-branch
   // shape uniformity (the ENG-01 engine accepts string | string[]).
   if (schema.tsConfig) {
@@ -158,7 +164,7 @@ function resolveTsConfigLeaves(
   }
 
   const buildLeaf =
-    projectConfig.projectType === 'application'
+    projectType === 'application'
       ? joinPathFragments(root, 'tsconfig.app.json')
       : joinPathFragments(root, 'tsconfig.lib.json');
   const specLeaf = joinPathFragments(root, 'tsconfig.spec.json');
@@ -189,6 +195,8 @@ interface AngularJsonTarget {
 }
 
 interface AngularJsonProject {
+  projectType?: 'application' | 'library';
+  root?: string;
   architect?: Record<string, AngularJsonTarget>;
   [key: string]: unknown;
 }
@@ -235,13 +243,35 @@ export default async function configurationGenerator(
   // files is a real Nx workspace and MUST take the Nx path below -- its projects may
   // be defined via project.json (not angular.json's `projects` map), where the
   // `json.projects[schema.project]` lookup here would be `undefined` and throw. On a
-  // genuine CLI workspace `readProjectConfiguration` polyfills root + projectType
-  // from angular.json; `updateProjectConfiguration` cannot write angular.json
+  // genuine CLI workspace the project's root + projectType are read STRAIGHT from
+  // angular.json (see the block below -- readProjectConfiguration is unreliable under a
+  // pnpm-workspace name collision); `updateProjectConfiguration` cannot write angular.json
   // (Pitfall 2), so the target is edited straight in via `updateJson`. The Nx init
   // is skipped (D-04): there is no nx.json / targetDefaults analog off-Nx.
   if (tree.exists('angular.json') && !tree.exists('nx.json')) {
-    const projectConfig = readProjectConfiguration(tree, schema.project);
-    const tsConfig = resolveTsConfigLeaves(tree, projectConfig, schema);
+    // Read `root`/`projectType` STRAIGHT from angular.json -- NOT via
+    // readProjectConfiguration. On a workspace that is ALSO a pnpm workspace
+    // (pnpm-workspace.yaml) whose root package.json `name` collides with the
+    // angular.json project name, Nx infers a package.json project stub (root ".",
+    // projectType undefined) that SHADOWS the angular.json project; trusting it
+    // silently drops the app build leaf for a root app (spec-only under-checking)
+    // or throws for a subdir app. angular.json is authoritative on this branch.
+    // (ACV-01 real-clone finding, realworld-angular @ 9e3528f, 2026-07-11.)
+    const cliProject = readJson<AngularJsonWorkspace>(tree, 'angular.json')
+      .projects[schema.project];
+
+    if (!cliProject) {
+      throw new Error(
+        `Project "${schema.project}" was not found in angular.json.`,
+      );
+    }
+
+    const tsConfig = resolveTsConfigLeaves(
+      tree,
+      cliProject.root ?? '',
+      cliProject.projectType,
+      schema,
+    );
 
     updateJson<AngularJsonWorkspace>(tree, 'angular.json', (json) => {
       const project = json.projects[schema.project];
