@@ -288,16 +288,19 @@ describe('ng-add generator (Angular CLI auto-wire-all)', () => {
 
 // ACV-01 real-clone regression AT THE ng-add ENTRY POINT (2026-07-11, realworld-angular
 // @ 9e3528f). The fix (commit 1837b25) made configurationGenerator read root/projectType
-// straight from angular.json instead of readProjectConfiguration -- but the REAL entry
-// point of the ACV-01 gate is `ng add`, which enumerates projects via getProjects(tree)
-// and filters on `project.projectType === 'application' | 'library'`. getProjects uses the
-// SAME Nx project inference that returns the shadowing package stub (projectType undefined)
-// under the pnpm-workspace name collision. If that stub reaches the filter, ng-add would
-// SKIP the colliding app entirely (wire ZERO targets, IN-01 silent return) -- a distinct,
-// arguably worse failure than the leaf-drop the direct-generator tests cover. These cases
-// drive ngAddGenerator over the collision substrate and assert the app is actually wired
-// with the FULL [app, spec] leaf array. Assertions read angular.json DIRECTLY because
-// readProjectConfiguration returns the shadowing stub even after a correct write.
+// straight from angular.json instead of readProjectConfiguration. ngAddGenerator does not
+// resolve leaves itself -- it COMPOSES that shared configurationGenerator once per in-scope
+// project, so it INHERITS the CLI-branch leaf-resolution fix. What these cases lock is the
+// COMPOSED `ng add` entry point end-to-end over the pnpm-collision substrate: it must still
+// write the app's FULL [app, spec] leaf array (it would regress to spec-only for a root app,
+// or drop the build leaf, if the composed configurationGenerator lost the fix and fell back
+// to readProjectConfiguration). NOTE: on this in-memory substrate getProjects(tree) returns
+// the CORRECT angular.json project (projectType 'application'), NOT the shadowing stub --
+// only readProjectConfiguration(tree, name) returns the stub -- so ng-add's own getProjects
+// filter never sees `undefined`, and a getProjects-based skip cannot be reproduced here (it
+// is deferred to the real-clone / e2e tier). Assertions read angular.json DIRECTLY because
+// readProjectConfiguration returns the shadowing stub (which carries no typecheck target)
+// even after a correct write.
 describe('ng-add generator (Angular CLI + pnpm-workspace name collision, ACV-01 regression)', () => {
   let tree: Tree;
 
@@ -335,9 +338,9 @@ describe('ng-add generator (Angular CLI + pnpm-workspace name collision, ACV-01 
     seedPnpmCollision('demo-app');
     assertCliSubstrate(tree);
 
-    // Auto-wire-all (no --project) -- the default `ng add angular-typechecker`. If the
-    // shadowing stub (projectType undefined) reaches ng-add's getProjects filter, the app
-    // is skipped and this target is never written.
+    // Auto-wire-all (no --project) -- the default `ng add angular-typechecker`. The composed
+    // configurationGenerator must resolve the leaf array from angular.json; a regression to
+    // readProjectConfiguration would hit the shadowing stub and drop the app build leaf.
     await ngAddGenerator(tree, {});
 
     expect(writtenTsConfig('demo-app')).toEqual([
