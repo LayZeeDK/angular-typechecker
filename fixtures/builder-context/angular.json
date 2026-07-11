@@ -1,0 +1,21 @@
+{
+  "$schema": "../../node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "builder-context-app": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": ".",
+      "prefix": "app",
+      "architect": {
+        "typecheck": {
+          "builder": "angular-typechecker:typecheck",
+          "options": {
+            "tsConfig": ["tsconfig.app.json", "tsconfig.spec.json"]
+          }
+        }
+      }
+    }
+  }
+}
