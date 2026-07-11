@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
-last_updated: "2026-07-11T08:34:15.062Z"
-last_activity: 2026-07-11 -- Phase 24 execution started
+last_updated: "2026-07-11T08:59:35.505Z"
+last_activity: 2026-07-11
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 11
-  completed_plans: 8
-  percent: 73
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 ## Current Position
 
 Phase: 24 (Real-OSS + scaffolded e2e, additive-only audit, docs) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 24
-Last activity: 2026-07-11 -- Phase 24 execution started
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-07-11
 
 ## Accumulated Context
 
@@ -68,6 +68,8 @@ archives under `.planning/milestones/`.
 - [Phase 23]: 23-01: init parity via an additive tree.exists('angular.json') early-return fork in the shipped initGenerator (mirrors the Phase-22 configuration fork) -- on an Angular CLI workspace it prints the shared NO_CACHING_NOTICE and returns BEFORE readNxJson/updateNxJson, seeding no caching + no stray nx.json (ACS-03, D-04); the Nx else-branch is byte-unchanged (existing init specs still pass). NO_CACHING_NOTICE is exported from init/generator.ts as the single source Plan 03's ng-add imports (D-06). Thin convertNxGenerator(initGenerator) re-export + collection.json init entry (D-05); generators.json still declares init so nx add angular-typechecker runs <pkg>:init resolvable via generators ?? schematics (nx add UNCHANGED, Pitfall 5). nx build/test(293)/lint/format:check green.
 - [Phase 23]: 23-02: classified the converted builder's runtime peers -- @angular-devkit/architect (^0.2200.0) + rxjs (^7.8.0) as OPTIONAL peerDependencies (peerDependenciesMeta.optional:true); nx NOT declared (transitive via @nx/devkit, .nx/ dir accepted+documented as a code comment). ACP-01 lever = @nx/dependency-checks ignoredDependencies (hand-added; peerDependenciesMeta.optional does NOT exempt the obsolete check; checkVersionMismatches:false preserved, never eslint --fix). RF-01 = top-level ng-add.save:devDependencies so ng add installs a dev tool into devDependencies. Static package-manifest.spec.ts contract locks all three; nx lint/test(297)/build green + dist manifest carries the fields.
 - [Phase 23]: 23-03: first-party ng-add (NGADD-01) -- composed ngAddGenerator enumerates getProjects(tree), filters projectType in {application,library} (skips e2e/other, Pitfall 3), and composes configurationGenerator(tree,{project,skipFormat:true}) per in-scope project so idempotency + collision-by-builder-id + leaf-array resolution are all inherited (re-implements nothing); optional --project scopes to one, default auto-wires ALL. RF-01 backstop: a defensive updateJson deps->devDeps move that returns VOID (no install callback -> no redundant npm install; never addDependenciesToPackageJson/GeneratorCallback). RF-02: guard on tree.exists('angular.json') AFTER the devDep ensure -- absent -> devDep-ensure + end-user guidance only, no wiring, no nx.json. D-06: NO_CACHING_NOTICE imported from init/generator (single source), printed exactly once after wiring (configurationGenerator logs nothing on the CLI branch). convertNxGenerator(ngAddGenerator) re-export + collection.json ng-add entry ONLY; generators.json untouched so nx add stays <pkg>:init (Pitfall 5) -- surface-regression asserts ng-add present in collection.json + absent from generators.json. TDD RED(0b28f25)->GREEN(9c3c17e); nx test(308)/build/lint/format:check green.
+- [Phase 24]: 24-01: ACV-03 gap-fill -- builder.integration.spec.ts runs the convertNxExecutor builder over a real BuilderContext via @angular-devkit/architect TestingArchitectHost, asserting BuilderOutput.success (true on a clean leaf, false on a planted-error two-element tsConfig array) AND parity with the Nx executor { success }. DEVIATION (Rule 3): Assumption A1 holds ONLY with NX_DAEMON=false + NX_ISOLATE_PLUGINS=false set at spec module scope -- the ambient dev-repo Nx daemon/isolated plugin workers otherwise resolve the eager retrieveProjectConfigurationsWithAngularProjects prelude against the REAL root (ProjectConfigurationsError readJsonFile ENOENT); the forks pool isolates the env change. New fixtures/builder-context/ minimal angular.json workspace root (Pitfall F). Clean-run parity reuses clean-template-host. nx integration(107)/lint/format green.
+- [Phase 24]: 24-01: ACP-02 enforced + audited -- src/index.drift.ts barrel tripwire (all five exports, 2 value + 3 type-only) wired into tsconfig.drift.json rides the typecheck drift tsc; fail-loud proven (rename a barrel export -> TS2724/TS2305). 24-ADDITIVE-AUDIT.md records the git-diff verdict vs angular-typechecker@0.2.0: barrel byte-unchanged; executor schema tsConfig string->oneOf[string,array] widen-only; generator schemas + executors.json/generators.json unchanged; builders.json/collection.json new files; guard cross-check map all green. Additive-only HOLDS, milestone stays 0.2.x (v0.3.0 NOT triggered). nx test(314)/typecheck green.
 
 ### Roadmap Evolution
 
@@ -127,7 +129,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-11T07:41:02.041Z
+Last session: 2026-07-11T08:57:54.223Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed

@@ -41,12 +41,12 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 - [ ] **ACV-01**: the milestone's FINAL tarball end-to-end verification gate, proven against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, on-stack Angular 22, MIT, non-Nx, app `ngx-leaflet-demo` + lib `ngx-leaflet`): pack the SHIPPED tarball -> `ng add` -> `ng run <project>:typecheck` -> assert planted diagnostics. Real-repo gate run locally/manually (the clone is UNCOMMITTED; reproduction = repo URL + commit SHA). No off-stack Angular 21 cross-check (DROPPED 2026-07-10).
 - [ ] **ACV-02**: the repeatable AUTOMATED e2e (runs in CI with no external clone), proven against a freshly SCAFFOLDED workspace (`npm init @angular` + `ng g library`): plant application + spec + library errors and assert each per-project target catches exactly its own leaves.
-- [ ] **ACV-03**: unit + integration coverage of the Angular-CLI-vs-Nx differences: the `tsConfig: string[]` union; the `angular.json` write-fork on an `angular.json` schematics test tree; the builder over `BuilderContext`; `ng-add` auto-wire-all + idempotency; and no stray `nx.json`.
+- [x] **ACV-03**: unit + integration coverage of the Angular-CLI-vs-Nx differences: the `tsConfig: string[]` union; the `angular.json` write-fork on an `angular.json` schematics test tree; the builder over `BuilderContext`; `ng-add` auto-wire-all + idempotency; and no stray `nx.json`.
 
 ### Packaging / deps (ACP)
 
 - [x] **ACP-01**: `@angular-devkit/architect` + `rxjs` are declared as OPTIONAL `peerDependencies` (runtime-required by the converted builder; present in any Angular CLI workspace); `@nx/dependency-checks` stays green; the "`ng add` pulls `nx` transitively + may create a `.nx/` dir" consequence is documented.
-- [ ] **ACP-02**: additive-only is enforced: no breaking change to the executor id, `runTypecheck`/`CoreResult`/`CoreOptions` (widened only), or the existing schemas (v0.3.0 only if a breaking change proves unavoidable).
+- [x] **ACP-02**: additive-only is enforced: no breaking change to the executor id, `runTypecheck`/`CoreResult`/`CoreOptions` (widened only), or the existing schemas (v0.3.0 only if a breaking change proves unavoidable).
 
 ### Docs (ACD)
 
@@ -94,9 +94,9 @@ Phase numbering continues from v0.2.0's Phase 20.
 | COV-01 | Phase 22 | Complete |
 | ACV-01 | Phase 24 | Pending |
 | ACV-02 | Phase 24 | Pending |
-| ACV-03 | Phase 24 | Pending |
+| ACV-03 | Phase 24 | Complete |
 | ACP-01 | Phase 23 | Complete |
-| ACP-02 | Phase 24 | Pending |
+| ACP-02 | Phase 24 | Complete |
 | ACD-01 | Phase 24 | Pending |
 
 **Coverage:**
