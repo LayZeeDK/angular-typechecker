@@ -25,6 +25,42 @@ grepped/read the cited files and located each mitigation by `file:line`). See th
 
 ---
 
+## Delta: ACV-01 gap-fix re-audit (2026-07-11)
+
+The ACV-01 real-clone gate (realworld-angular @ `9e3528f`) surfaced a correctness bug
+fixed in commits `1837b25` (fix) + `49974f1` (non-vacuous regression tests). This is a
+re-audit of the security posture AFTER that fix. **Verdict: no new threat introduced;
+`threats_open: 0` unchanged.**
+
+**The change (production code, `packages/angular-typechecker/src/generators/configuration/generator.ts`):**
+On the CLI write-fork (`tree.exists('angular.json') && !tree.exists('nx.json')`), the
+project's `root`/`projectType` are now read STRAIGHT from angular.json
+(`readJson<AngularJsonWorkspace>(tree, 'angular.json').projects[project]`) instead of via
+`readProjectConfiguration`. A new `if (!cliProject) throw` guards an absent project.
+`resolveTsConfigLeaves` took a `projectConfig` object before; it now takes
+`(tree, root, projectType, schema)`. The Nx else-branch is byte-unchanged.
+
+**Threat-surface assessment (grep/read-verified against HEAD + both commits):**
+
+| Vector | Finding |
+|--------|---------|
+| Path traversal via `root` | **No new surface.** `root` is joined into leaf paths by the SAME mechanism as pre-fix -- `joinPathFragments(root, 'tsconfig.{app,lib,spec}.json')` (generator.ts:166-170) + a `tree.exists` probe (`:172`). The resolved path is existence-probed on the VIRTUAL Nx `Tree` (never `node:fs`) and written as a config string into `options.tsConfig`; it is NEVER executed, `require`d, or passed to a shell during generation. Confirmed: no `node:fs`/`child_process`/`exec`/`spawn`/`require()` call in generator.ts (only `node:path` `isAbsolute` + `@nx/devkit`). An out-of-workspace path would simply fail the probe and be dropped / throw the located error. |
+| Untrusted-input handling | **No new trust boundary.** `root` now comes from angular.json, a WORKSPACE-controlled file the generator ALREADY reads (the `architect[targetName]` collision read) AND writes (`updateJson`, `:276`). It was already fully inside this generator's read+write trust boundary. `readProjectConfiguration` itself polyfills `root`/`projectType` from the SAME angular.json in the non-collision case, so the source value is identical there; the fix only changes which value wins under a pnpm-workspace name collision (authoritative angular.json vs a shadowing `root:"."` stub). Whoever controls angular.json could already set `options.tsConfig` directly -- no privilege is gained. |
+| Injection | **None.** `root` interpolates only into `joinPathFragments` (path normalization) and a thrown Error message (`:175-178`) -- no shell, regex, query, or `eval` sink. |
+| New `!cliProject` throw | **Reduces** surface -- a defensive guard against an undefined deref; not new surface. |
+| Additive-only (T-24-01) | **Holds.** Both commits touched ONLY `generator.ts` + 2 spec files -- no `schema.json`, `schema.d.ts`, `executors.json`, `TYPECHECK_EXECUTOR_ID`, builder id, collection, or public barrel (`index.ts`) change. `resolveTsConfigLeaves` is a private (non-exported) function; its signature change is internal. The `AngularJsonProject` interface additions (`projectType?`, `root?`) are internal + additive. Cross-confirmed by `24-REVIEW-ACV01FIX.md` (status: resolved, 0 blockers). |
+
+**Threat model impact:** The Phase 24 register (T-24-01..T-24-SC) covers the phase's
+declared surface (barrel drift, fixture, docs, release, loopback e2e publish, npm config,
+supply chain) -- none of those mitigations touch the generator's tsconfig-path resolution,
+so all eight remain CLOSED. The generator's own threat model belongs to the earlier CLI
+write-fork phase; the fix changes the SOURCE of an already-trusted config value, not the
+mechanism, and adds no injection/traversal/untrusted-input sink. No `unregistered_flag`:
+the change is a same-mechanism gap-fix within an existing, already-audited component, not
+new attack surface. **`threats_open: 0` (unchanged).**
+
+---
+
 ## Trust Boundaries
 
 | Boundary | Description | Data Crossing |
@@ -105,6 +141,7 @@ Threat-flag reconciliation: no SUMMARY carries a `## Threat Flags` heading; `24-
 |------------|---------------|--------|------|--------|
 | 2026-07-11 | 8 | 8 | 0 | Claude (gsd-secure-phase; mitigations cross-confirmed by 24-REVIEW.md + 24-VERIFICATION.md) |
 | 2026-07-11 | 8 | 8 | 0 | Claude (gsd-security-auditor; INDEPENDENT file-level re-verification -- each mitigation located by grep/read at `file:line`, draft claims NOT trusted; see Independent Verification Evidence) |
+| 2026-07-11 | 8 | 8 | 0 | Claude (gsd-security-auditor; ACV-01 gap-fix re-audit of commits `1837b25`+`49974f1` -- generator.ts CLI write-fork now reads `root`/`projectType` straight from angular.json; no new threat, same-mechanism gap-fix, additive-only; see Delta section) |
 
 ---
 

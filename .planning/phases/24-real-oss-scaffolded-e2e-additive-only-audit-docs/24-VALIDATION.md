@@ -103,6 +103,61 @@ No test failed; no assertion was weakened; no implementation file was touched. N
 
 ---
 
+## Delta: ACV-01 gap-fix re-audit (2026-07-11, Nyquist auditor)
+
+The ACV-01 real-clone gate (realworld-angular @ `9e3528f`) surfaced a correctness bug
+fixed in commits `1837b25` (fix) + `49974f1` (non-vacuous regression tests). This re-audit
+assesses whether the FIXED behavior is adequately covered.
+
+**The change.** On the Angular CLI write-fork, `configurationGenerator` now reads
+`root`/`projectType` STRAIGHT from angular.json (not via `readProjectConfiguration`), because
+on a workspace that is ALSO a pnpm workspace whose root `package.json` `name` collides with
+the angular.json project name, Nx infers a shadowing package stub (`root:"."`,
+`projectType: undefined`) that silently dropped the app build leaf (root app -> spec-only
+under-check) or threw (subdir app). `resolveTsConfigLeaves` now takes
+`(tree, root, projectType, schema)`; a `!cliProject` throw guards an absent project.
+
+**Coverage assessment.** The four new regression cases (3 CLI + 1 not-found in
+`configuration-angular-cli.spec.ts`, +1 Nx-branch lock in `configuration.spec.ts`) drive
+`configurationGenerator` DIRECTLY and were verified non-vacuous by the phase author. But the
+REAL production entry point of the ACV-01 gate is `ng add angular-typechecker` ->
+`ngAddGenerator`, which enumerates projects via `getProjects(tree)` and filters on
+`project.projectType === 'application' | 'library'` (`ng-add/generator.ts:78-90`).
+`getProjects` uses the SAME Nx project inference that returns the shadowing stub. **Residual
+gap identified:** if that stub reached ng-add's filter with `projectType: undefined`, the
+colliding app would be SKIPPED entirely (zero targets wired, IN-01 silent return) -- a
+distinct, arguably worse failure than the leaf-drop -- and NO test exercised the `ng add`
+composition path under the collision.
+
+**Gap FILLED.** Added two non-vacuous regression cases at the `ng add` entry point in
+`ng-add/ng-add.spec.ts` (new describe: "Angular CLI + pnpm-workspace name collision, ACV-01
+regression"): auto-wire-all (no `--project`) over a root-app and a subdir-app collision
+substrate, each asserting the FULL `[app, spec]` leaf array is written into angular.json.
+
+**Non-vacuity PROVEN.** Transiently restoring the pre-fix generator (`git show 1837b25~1`)
+makes both new ng-add cases FAIL identically to the direct cases -- root app ->
+`['tsconfig.spec.json']` (build leaf dropped), subdir app -> `Could not resolve a tsconfig`
+throw -- and the fixed generator turns them GREEN. This also proved the residual-gap
+hypothesis was NOT a live bug: `getProjects` returns `projectType: 'application'` under the
+collision (the app IS enumerated and reaches `configurationGenerator`), so the fault was the
+leaf resolution the fix corrected -- but the ng-add path now carries its own standing guard.
+
+| Command | Result |
+|---------|--------|
+| `NX_DAEMON=false npx nx test angular-typechecker --skip-nx-cache` | **330 tests PASS** (was 328; +2 ng-add collision cases) |
+| pre-fix generator + `--testNamePattern="name collision"` | 6 FAIL / 1 PASS (RED confirms non-vacuity) |
+| fixed generator + `--testNamePattern="name collision"` | 7 PASS (GREEN restored) |
+
+**Verdict: `nyquist_compliant: true` holds.** The changed behavior (CLI-branch
+angular.json-direct read; both root-app-drop + subdir-throw failure modes; the Nx-branch
+robustness) is covered, and the real `ng add` entry point now has a standing regression guard
+it previously lacked. No implementation file was modified (the pre-fix swap was transient and
+restored to a clean diff). Gaps filled: 1. Escalated: 0.
+
+**File for commit:** `packages/angular-typechecker/src/generators/ng-add/ng-add.spec.ts`
+
+---
+
 ## Validation Sign-Off
 
 - [x] All tasks have `<automated>` verify or Wave 0 dependencies (ACV-01 excepted — manual by design)
