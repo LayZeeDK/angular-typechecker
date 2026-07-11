@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
-last_updated: "2026-07-11T08:59:35.505Z"
+last_updated: "2026-07-11T09:11:25.176Z"
 last_activity: 2026-07-11
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 75
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 ## Current Position
 
 Phase: 24 (Real-OSS + scaffolded e2e, additive-only audit, docs) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-11
 
@@ -70,6 +70,8 @@ archives under `.planning/milestones/`.
 - [Phase 23]: 23-03: first-party ng-add (NGADD-01) -- composed ngAddGenerator enumerates getProjects(tree), filters projectType in {application,library} (skips e2e/other, Pitfall 3), and composes configurationGenerator(tree,{project,skipFormat:true}) per in-scope project so idempotency + collision-by-builder-id + leaf-array resolution are all inherited (re-implements nothing); optional --project scopes to one, default auto-wires ALL. RF-01 backstop: a defensive updateJson deps->devDeps move that returns VOID (no install callback -> no redundant npm install; never addDependenciesToPackageJson/GeneratorCallback). RF-02: guard on tree.exists('angular.json') AFTER the devDep ensure -- absent -> devDep-ensure + end-user guidance only, no wiring, no nx.json. D-06: NO_CACHING_NOTICE imported from init/generator (single source), printed exactly once after wiring (configurationGenerator logs nothing on the CLI branch). convertNxGenerator(ngAddGenerator) re-export + collection.json ng-add entry ONLY; generators.json untouched so nx add stays <pkg>:init (Pitfall 5) -- surface-regression asserts ng-add present in collection.json + absent from generators.json. TDD RED(0b28f25)->GREEN(9c3c17e); nx test(308)/build/lint/format:check green.
 - [Phase 24]: 24-01: ACV-03 gap-fill -- builder.integration.spec.ts runs the convertNxExecutor builder over a real BuilderContext via @angular-devkit/architect TestingArchitectHost, asserting BuilderOutput.success (true on a clean leaf, false on a planted-error two-element tsConfig array) AND parity with the Nx executor { success }. DEVIATION (Rule 3): Assumption A1 holds ONLY with NX_DAEMON=false + NX_ISOLATE_PLUGINS=false set at spec module scope -- the ambient dev-repo Nx daemon/isolated plugin workers otherwise resolve the eager retrieveProjectConfigurationsWithAngularProjects prelude against the REAL root (ProjectConfigurationsError readJsonFile ENOENT); the forks pool isolates the env change. New fixtures/builder-context/ minimal angular.json workspace root (Pitfall F). Clean-run parity reuses clean-template-host. nx integration(107)/lint/format green.
 - [Phase 24]: 24-01: ACP-02 enforced + audited -- src/index.drift.ts barrel tripwire (all five exports, 2 value + 3 type-only) wired into tsconfig.drift.json rides the typecheck drift tsc; fail-loud proven (rename a barrel export -> TS2724/TS2305). 24-ADDITIVE-AUDIT.md records the git-diff verdict vs angular-typechecker@0.2.0: barrel byte-unchanged; executor schema tsConfig string->oneOf[string,array] widen-only; generator schemas + executors.json/generators.json unchanged; builders.json/collection.json new files; guard cross-check map all green. Additive-only HOLDS, milestone stays 0.2.x (v0.3.0 NOT triggered). nx test(314)/typecheck green.
+- [Phase 24]: 24-02: README ## Angular CLI section (ng add auto-wire-all, ng run parity, tsConfig-array targets, nx-transitive/no-caching, off-stack --legacy-peer-deps) + a docs content tripwire (angular-cli-docs.spec.ts) locking those claims; Storybook 'not supported' caveat preserved (deferred, not weakened). Corrected the stale Installation 'no Angular-CLI installer' line (Rule 1).
+- [Phase 24]: 24-02: curated CHANGELOG 0.2.1 entry is PROSE ONLY -- no date/link-ref, no package.json bump (stays 0.2.0), no tag, no nx release; the cut is the human-gated Release-PR flow.
 
 ### Roadmap Evolution
 

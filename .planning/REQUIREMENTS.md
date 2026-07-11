@@ -50,7 +50,7 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Docs (ACD)
 
-- [ ] **ACD-01**: README gains an `## Angular CLI` section (`ng add` auto-wire-all; `ng generate ...:configuration` for a single project; `ng run <project>:typecheck`; per-project targets; the `tsConfig` array; the `nx`-transitive + no-caching notes; the off-stack `--legacy-peer-deps` note), plus a curated CHANGELOG entry in end-user language (no internal ids).
+- [x] **ACD-01**: README gains an `## Angular CLI` section (`ng add` auto-wire-all; `ng generate ...:configuration` for a single project; `ng run <project>:typecheck`; per-project targets; the `tsConfig` array; the `nx`-transitive + no-caching notes; the off-stack `--legacy-peer-deps` note), plus a curated CHANGELOG entry in end-user language (no internal ids).
 
 ## Future Requirements
 
@@ -97,7 +97,7 @@ Phase numbering continues from v0.2.0's Phase 20.
 | ACV-03 | Phase 24 | Complete |
 | ACP-01 | Phase 23 | Complete |
 | ACP-02 | Phase 24 | Complete |
-| ACD-01 | Phase 24 | Pending |
+| ACD-01 | Phase 24 | Complete |
 
 **Coverage:**
 - v0.2.1 requirements: 16 total
