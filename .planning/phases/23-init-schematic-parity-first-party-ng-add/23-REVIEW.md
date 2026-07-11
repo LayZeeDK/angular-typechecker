@@ -110,7 +110,11 @@ Apply the same guard to the `configurationGenerator` write-fork so the two stay 
 
 ### WR-02: `@angular-devkit/architect` peer range `^0.2200.0` only covers Angular 22.0.x, asymmetric with the `^22.0.0` compiler-cli peer
 
-**RESOLVED (4844438):** Decision was KEEP-both-optional-peers + WIDEN (not remove). Widened the `@angular-devkit/architect` peer to `>=0.2200.0 <0.2300.0` (all of Angular 22.x, symmetric with the `^22.0.0` compiler-cli peer); kept `optional: true` and left `rxjs: ^7.8.0` unchanged. Updated the locking assertion in `package-manifest.spec.ts`; verified the built `dist` manifest carries the widened range.
+**RESOLVED (4844438 + 93e6014):** Decision was KEEP-both-optional-peers + WIDEN (not remove), covering BOTH builder runtime peers (same finding class -- each range was narrower than the wrapper needs and narrower than Angular 22 permits):
+- `@angular-devkit/architect` widened to `>=0.2200.0 <0.2300.0` (all of Angular 22.x, symmetric with the `^22.0.0` compiler-cli peer) -- 4844438.
+- `rxjs` widened from `^7.8.0` to `^6.5.3 || ^7.4.0` (Angular 22's own rxjs range; the `convertNxExecutor` wrapper touches only the stable `new Observable`/`next`/`complete`/`error` contract, identical across rxjs 6.5.3+ and all 7.x) -- 93e6014.
+
+Both kept `optional: true` (`peerDependenciesMeta` unchanged). Updated the locking assertions in `package-manifest.spec.ts`; verified the built `dist` manifest carries both widened ranges.
 
 **File:** `packages/angular-typechecker/package.json:56` (asserted by `src/package-manifest.spec.ts:166-169`)
 **Issue:**
