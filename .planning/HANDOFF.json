@@ -1,48 +1,41 @@
 {
   "version": "1.0",
-  "timestamp": "2026-07-10T22:51:07.541Z",
+  "timestamp": "2026-07-11T10:38:15.751Z",
   "context": "phase",
-  "phase": "23",
-  "phase_name": "init-schematic-parity-first-party-ng-add",
-  "phase_dir": ".planning/phases/23-init-schematic-parity-first-party-ng-add",
+  "phase": "24",
+  "phase_name": "Real-OSS + scaffolded e2e, additive-only audit, docs",
+  "phase_dir": ".planning/phases/24-real-oss-scaffolded-e2e-additive-only-audit-docs",
   "plan": 3,
   "task": 0,
-  "total_tasks": 3,
+  "total_tasks": 9,
   "status": "paused",
-  "chain_context": "Auto-chain: /gsd-discuss-phase 23 --analyze --auto --chain -> plan-phase --auto -> execute-phase 23 --auto --no-transition. Paused mid-execute after Wave 1. Resume by re-running execute-phase 23.",
+  "chain_context": "Phase 24 (FINAL phase of v0.2.1) is code-complete + verified (0 gaps) + secured (0 open threats) + Nyquist-validated -- ALL post-execution gates done via their DEDICATED agents. Paused before the ACV-01 real-clone gate. The user is authorizing a FRESH session to run ACV-01 AUTONOMOUSLY, then do phase completion. The prior --auto --chain pipeline (discuss->plan->execute) is otherwise finished.",
   "completed_tasks": [
-    {"id": 1, "name": "Plan 23-01 - init schematic parity (ACS-03): additive tree.exists('angular.json') fork in initGenerator + exported NO_CACHING_NOTICE + convertNxGenerator(initGenerator) + collection.json init entry", "status": "done", "commit": "5addd4a", "summary": "23-01-SUMMARY.md"},
-    {"id": 2, "name": "Plan 23-02 - optional-peer classification (ACP-01) + ng-add.save devDependencies lever (RF-01): package.json optional peers + peerDependenciesMeta.optional + ng-add.save field, eslint.config.mjs ignoredDependencies, package-manifest.spec.ts contract", "status": "done", "commit": "90eaeb4", "summary": "23-02-SUMMARY.md"}
+    {"id": 1, "name": "24-01 ACV-03 builder-over-BuilderContext gap-fill (TestingArchitectHost) + ACP-02 additive-only git-diff audit vs 0.2.0 + index.drift.ts barrel tripwire", "status": "done", "commit": "7a17b46", "summary": "24-01-SUMMARY.md"},
+    {"id": 2, "name": "24-02 ACD-01 README ## Angular CLI section + angular-cli-docs.spec.ts tripwire + prose CHANGELOG 0.2.1 (no cut)", "status": "done", "commit": "d4b47c6", "summary": "24-02-SUMMARY.md"},
+    {"id": 3, "name": "24-03 ACV-02 scaffolded ng-cli-e2e project + committed pinned Ng22 fixture (RF-01 Option B) + ACV-01 UAT doc", "status": "done", "commit": "d391541", "summary": "24-03-SUMMARY.md"},
+    {"id": 4, "name": "code review (gsd-code-reviewer): 0 blockers; WR-01 (builder spec non-vacuity) + IN-01/IN-02 (e2e comment/maxBuffer) fixed + re-verified green; IN-03 deferred to release cut", "status": "done", "commit": "57c6b7e"},
+    {"id": 5, "name": "verify_phase_goal (gsd-verifier): status human_needed, 0 gaps, 4/5 truths automated; 24-HUMAN-UAT.md persisted", "status": "done", "commit": "ba23215"},
+    {"id": 6, "name": "secure-phase (gsd-security-auditor): SECURED, 8/8 threats CLOSED at file:line, threats_open:0", "status": "done", "commit": "dc302c7"},
+    {"id": 7, "name": "validate-phase (gsd-nyquist-auditor): NO GAPS, nyquist_compliant:true (re-ran every command)", "status": "done", "commit": "f065060"}
   ],
   "remaining_tasks": [
-    {"id": 3, "name": "Plan 23-03 (Wave 2) - first-party ng-add schematic (NGADD-01): composed ngAddGenerator (RF-02 tree.exists('angular.json') guard + defensive devDep move + getProjects filter app+library + compose configurationGenerator per project + NO_CACHING_NOTICE once, returns VOID) + schema.json/schema.d.ts + convertNxGenerator re-export + collection.json ng-add entry + ng-add.spec + extend nx-generators-surface-regression.spec", "status": "not_started", "wave": 2, "depends_on": ["23-01", "23-02"]}
-  ],
-  "post_execution_gates_remaining": [
-    "code_review_gate: Skill(gsd-code-review, args=\"23\") - advisory, non-blocking",
-    "regression_gate: run prior-phase tests (nx test) for cross-phase regressions",
-    "schema_drift_gate: N/A (no ORM schema files in this type-checker plugin)",
-    "codebase_drift_gate: non-blocking structural drift check",
-    "verify_phase_goal: spawn gsd-verifier (opus) -> 23-VERIFICATION.md; check must_haves + ACS-03/NGADD-01/ACP-01 vs codebase, goal-backward against ROADMAP Phase 23 SC1-SC4",
-    "update_roadmap: gsd-sdk query phase.complete 23 (ONLY after verification status: passed)"
-  ],
-  "claude_md_post_completion_sequence_MANDATORY": [
-    "After verify passes (per user global CLAUDE.md, NOT optional): /gsd-secure-phase 23 -> 23-SECURITY.md (threat-model gate ON: ASVS L1, block on high; low surface: config-edit schematics editing package.json/angular.json/collection.json)",
-    "/gsd-validate-phase 23 -> nyquist audit of 23-VALIDATION.md + generate tests (workflow.nyquist_validation on)",
-    "LAST: /gsd-extract-learnings 23 -> 23-LEARNINGS.md (run AFTER secure + validate so it captures their fixes)",
-    "Then global-learnings bridge ONLY if features.global_learnings=true (was not enabled this session - verify config): build temp top-level .planning/LEARNINGS.md from 23-LEARNINGS.md, gsd-sdk query learnings.copy, rm immediately (never git add it)",
-    "Run order: execute -> verify_phase_goal -> secure -> validate -> extract-learnings"
+    {"id": 8, "name": "Run ACV-01 real-clone gates AUTONOMOUSLY per 24-ACV-01-UAT.md, IN ORDER: (1) bluehalo/ngx-leaflet @818e9ae55240b570397ede5a15cb4d466785abdc (app ngx-leaflet-demo + lib ngx-leaflet) FIRST, then (2) realworld-angular/realworld-angular @9e3528ff27bad5fedaefb879ccc4aaf4717b137b (single app, app-only). For each: clone -> pack the SHIPPED dist tarball -> ng add angular-typechecker (from tarball) -> plant per-leaf errors -> ng run <project>:typecheck -> assert planted codes + per-project scoping + clean baseline. Record pass/fail in 24-HUMAN-UAT.md. If both PASS, re-run gsd-verifier (or update 24-VERIFICATION.md status:passed) so the phase closes.", "status": "not_started"},
+    {"id": 9, "name": "Phase completion AFTER ACV-01 passes: (a) gsd-sdk query phase.complete 24 (update_roadmap); (b) /gsd-extract-learnings 24 -- INLINE, no agent (it is the ONE exception to the use-dedicated-agents rule); (c) global-learnings bridge (features.global_learnings=true): build temp top-level .planning/LEARNINGS.md from 24-LEARNINGS.md, gsd-sdk query learnings.copy, rm immediately (NEVER git add it); (d) milestone close: /gsd-audit-milestone then /gsd-complete-milestone v0.2.1 (commit the audit). The Release-PR (nx release cut + curated CHANGELOG + PR into PR-only main + tag angular-typechecker@0.2.1 on the merge commit + OIDC publish) is a SEPARATE human-gated step -- do NOT auto-publish.", "status": "not_started"}
   ],
   "blockers": [
-    {"description": "Org monthly Claude spend limit was hit TWICE this session (first planner spawn; again mid-23-02 executor) and reset both times. A fresh session's Opus executor(s)/verifier may hit it again.", "type": "external", "workaround": "Wait for reset; /gsd:execute-phase 23 is idempotent - it skips plans that already have a SUMMARY.md (23-01, 23-02) and resumes from 23-03."}
+    {"description": "ACV-01 needs two OSS repos cloned (UNCOMMITTED) + the real ng/npm toolchain + network; each gate is slow (~2-5 min). MSYS tar/pack needs /d/... paths not D:/... ([[oss-real-repo-verification]]).", "type": "technical", "workaround": "Clone to D:\\projects\\github\\bluehalo\\ngx-leaflet @818e9ae and D:\\projects\\github\\realworld-angular\\realworld-angular @9e3528f. On-stack Angular 22 install needs NO --legacy-peer-deps. The ACV-02 e2e (e2e/angular-typechecker-ng-cli-e2e) already proves the identical ng add->ng run flow on a committed fixture and is green -- reuse its planted-error + assertion patterns."}
   ],
-  "human_actions_pending": [],
+  "human_actions_pending": [
+    {"action": "npm publish of angular-typechecker@0.2.1 (tag push -> release.yml OIDC publish -> APPROVE the npm-publish GitHub environment)", "context": "Irreversible + a deployment/environment approval. Per AGENTS.md Release-PR flow + [[never-approve-github-deployments]] this is ALWAYS human-only and is NOT part of this autonomous handoff. Stop at the gate and hand off.", "blocking": false}
+  ],
   "decisions": [
-    {"decision": "Sequential-on-main-tree execution (NO worktree isolation) for all plans, despite workflow.use_worktrees=true. CONTINUE for 23-03.", "rationale": "This repo's AGENTS.md requires a node_modules junction per worktree (executors cannot verify without deps) with documented Windows teardown hazards; 23-02 changed package.json (invalidates shared-junction Pattern A); Wave 2 is single-plan (AGENTS.md: skip worktrees for single-plan waves); tiny thin-adapter plans = marginal parallelism gain. Sequential-on-main gives each executor real node_modules to verify.", "phase": "23"},
-    {"decision": "RF-01 resolved as Approach C - NOT the CONTEXT.md starting hypothesis. 23-03 MUST honor this.", "rationale": "23-RESEARCH.md verified vs installed @angular/cli@22 source: ng add reads the package's own ng-add.save:devDependencies field and installs --save-dev BEFORE the schematic runs. So ng-add uses that field (landed in 23-02) + a DEFENSIVE in-schematic devDep move and returns VOID; NO addDependenciesToPackageJson / install GeneratorCallback (convertNxGenerator would fire a redundant npm install).", "phase": "23"},
-    {"decision": "ACP-01 lever = ignoredDependencies in eslint.config.mjs (landed in 23-02, verified green).", "rationale": "peerDependenciesMeta.optional does NOT exempt the two optional peers from @nx/dependency-checks' obsolete-dependency check; ignoredDependencies is the operative lever.", "phase": "23"},
-    {"decision": "Two plan-checker warnings fixed inline by the orchestrator (commit 3ea90ba) instead of a full planner+checker revision cycle.", "rationale": "0 blockers; both one-line hygiene fixes (broken git grep|git grep idiom in 23-02 acceptance criteria; RESEARCH.md Open-Questions marker).", "phase": "23"}
+    {"decision": "ACV-01 substrate = TWO on-stack Ng22 clones ORDERED: ngx-leaflet (app+lib) then realworld-angular (app-only)", "rationale": "User directive 2026-07-11; off-stack Ng21 dropped everywhere ([[v021-angular-cli-substrate]])", "phase": "24"},
+    {"decision": "Post-execution gates (verify/secure/validate/code-review) MUST run via their DEDICATED agents; the orchestrator must never self-certify them inline, even on a workflow short-circuit. extract-learnings is the sole INLINE exception (no agent exists).", "rationale": "User rejected inline self-certification 2026-07-11; codified as a global CLAUDE.md GSD rule (agent-reviewed) + [[use-gsd-agents-for-post-execution]]", "phase": "24"},
+    {"decision": "extract-learnings NOT yet run; phase NOT marked complete", "rationale": "CLAUDE.md: skip extract-learnings + phase.complete while unresolved human_needed (ACV-01). Do them only after ACV-01 closes the phase.", "phase": "24"},
+    {"decision": "Executed sequentially on the MAIN tree (no worktree isolation) despite workflow.use_worktrees=true", "rationale": "Background job + the repo's node_modules-junction teardown hazard; Wave 2 (24-03) is a single-plan shared-tarball e2e that MUST run on main. Continue sequential-on-main if re-executing.", "phase": "24"}
   ],
   "uncommitted_files": [],
-  "next_action": "Re-run /gsd:execute-phase 23 --auto --no-transition. It detects 23-01 + 23-02 SUMMARYs, skips them, resumes at Wave 2 (23-03). Run 23-03 as ONE gsd-executor (opus) SEQUENTIALLY on the main tree (no worktree). Then post-execution gates (code review, regression, verify_phase_goal). Then the MANDATORY CLAUDE.md post-completion sequence: secure-phase 23 -> validate-phase 23 -> extract-learnings 23. execute-phase (--no-transition) then returns PHASE COMPLETE to the paused plan-phase chain; next milestone step is /gsd:discuss-phase 24 --auto (Phase 24 = real-OSS + scaffolded e2e, additive-only audit, docs).",
-  "context_notes": "Phase 23 is a small, HEAVILY LOCKED additive thin-adapter phase (design source-verified in .planning/research/v0.2.1-angular-cli/). Wave 1 done, post-plan spot-checked, nx lint + nx test(297) + nx build all green. Only 23-03 + the gates remain. 23-03 composes the already-shipped Phase-22 configuration write-fork; NO_CACHING_NOTICE is exported from init/generator.ts for it to import. Additive-only charter: no breaking changes to executor id / runTypecheck / CoreResult / CoreOptions / existing schemas (widening only)."
+  "next_action": "Read 24-ACV-01-UAT.md AND the green committed e2e (e2e/angular-typechecker-ng-cli-e2e/src/ng-add-ng-run.e2e.spec.ts) for the exact planted-error + assertion pattern. Then clone bluehalo/ngx-leaflet @818e9ae and run gate #1 (pack shipped dist tarball -> ng add -> plant app TS2322 + spec TS2345 + lib TS2554 -> ng run per project -> assert scoping + clean baseline). Then gate #2 realworld-angular @9e3528f (app-only: TS2322 + TS2345). Record both in 24-HUMAN-UAT.md.",
+  "context_notes": "Everything automatable is DONE and independently agent-audited; only the manual-by-design ACV-01 real-clone gate remains, and the user has authorized running it autonomously. After ACV-01 passes: phase.complete -> extract-learnings (INLINE) + learnings bridge -> milestone audit + close. Keep npm publish / tag / deployment approval strictly human-gated. Windows arm64: git grep/rg NEVER grep; Write tool not heredocs; stage files by name; MSYS /d/ tar paths. The full green e2e machinery (Verdaccio publish-once, 127.0.0.1 SAFETY gate, buildCleanEnv stripAllNpmConfig) is in e2e/angular-typechecker-ng-cli-e2e -- reuse it as the reference implementation for the real-clone gate."
 }
