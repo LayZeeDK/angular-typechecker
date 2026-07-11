@@ -199,4 +199,4 @@ Plans:
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete    | 2026-07-10 |
 | 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 3/3 | Complete    | 2026-07-11 |
-| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 3/3 | Complete   | 2026-07-11 |
+| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 3/3 | Complete    | 2026-07-11 |

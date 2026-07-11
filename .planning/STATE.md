@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: verifying
-last_updated: "2026-07-11T09:37:33.021Z"
+status: milestone_complete
+last_updated: 2026-07-11T12:19:07.642Z
 last_activity: 2026-07-11
 progress:
   total_phases: 4
@@ -11,6 +11,7 @@ progress:
   total_plans: 11
   completed_plans: 11
   percent: 100
+stopped_at: Milestone complete (Phase 24 was final phase)
 ---
 
 # Project State
@@ -20,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 24 — Real-OSS + scaffolded e2e, additive-only audit, docs
+**Current focus:** Milestone complete
 
 ## Current Position
 
-Phase: 24 (Real-OSS + scaffolded e2e, additive-only audit, docs) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 24
+Plan: Not started
+Status: Milestone complete
 Last activity: 2026-07-11
 
 ## Accumulated Context
@@ -133,21 +134,30 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-11T09:37:33.012Z
-9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
-ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
-one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed
-REQUIREMENTS.md, added the 7 bare quick-task `SUMMARY.md` markers (audit-open workaround, 3rd close).
-Milestone-close committed on `release/0.2.0`; then RELEASED via the AGENTS.md Release-PR flow:
-PR #29 (`release/0.2.0`, carrying the version cut + curated end-user-facing CHANGELOG) merged into
-`main`; the `angular-typechecker@0.2.0` tag was created on the release merge commit and pushed
-(fired `release.yml` -> OIDC publish through the human-approved `npm-publish` environment); and the
-GitHub Release was cut from the curated CHANGELOG section. `angular-typechecker@0.2.0` is live on npm
-(dist-tag `latest`, published 2026-07-07T22:25:11Z, SLSA v1 provenance);
-`packages/angular-typechecker/package.json` is at `0.2.0`.
-Next step: start the next milestone with `/gsd-new-milestone`. OSS reference clones under
-D:/projects/github/ (radix-ng/primitives et al.) are not committed.
+Last session: 2026-07-11 (autonomous). Resumed from HANDOFF.json to run the Phase-24 ACV-01
+real-clone milestone gate. Gate #1 (bluehalo/ngx-leaflet @818e9ae, npm, app+lib) PASS. Gate #2
+(realworld-angular @9e3528f, pnpm, app-only) initially FAILED -- surfaced a REAL defect in the
+(unreleased) Angular CLI `configuration`/`ng-add` generator: on an Angular CLI workspace that is
+ALSO a pnpm workspace with a name-colliding root package.json, `readProjectConfiguration` returns a
+shadowing package stub, so the CLI write-fork silently dropped the app build leaf (root app ->
+spec-only under-check) or threw (subdir app). FIXED (commit 1837b25): the CLI branch reads
+projectType/root straight from angular.json. Regression tests hardened + proven non-vacuous
+(49974f1) and covered at the ng-add entry point (cf90407); gate #2 re-verified PASS on the real
+clone. Trigger verified NARROW (pnpm-workspace + name collision only; npm/yarn/lockfile/mismatch
+unaffected; Nx branch robust). Additive-only vs 0.2.0 HOLDS (fix is inside the unreleased Angular
+CLI generator). All four post-execution gates re-run via their DEDICATED agents: code-review
+(24-REVIEW-ACV01FIX.md, 0 blockers; 1 major + 1 minor addressed), verify (24-VERIFICATION.md
+passed, 5/5), secure (24-SECURITY.md SECURED, threats_open 0), validate (24-VALIDATION.md compliant,
++ng-add gap filled). nx test(330)/lint/typecheck/build/format all green. Phase 24 complete;
+extract-learnings done (24-LEARNINGS.md) + global-learnings bridged (18 entries).
+`packages/angular-typechecker/package.json` stays at `0.2.0` (v0.2.1 NOT yet cut). OSS clones under
+D:/projects/github/{bluehalo/ngx-leaflet, realworld-angular/realworld-angular} are UNCOMMITTED scratch.
 
 ## Operator Next Steps
 
-- Plan Phase 21 with /gsd-plan-phase 21 (Angular CLI builder + engine multi-tsConfig + GATE A' GO/NO-GO spike)
+- (optional) `/gsd-complete-milestone v0.2.1` if not already done this session -- archive Phase 21-24
+  dirs + collapse ROADMAP + evolve PROJECT.md.
+- HUMAN-GATED RELEASE (do NOT auto-run): cut v0.2.1 via the AGENTS.md Release-PR flow -- branch
+  `release/0.2.1` off main, `npx nx release --dry-run` then `--skip-publish`, curate CHANGELOG,
+  PR into PR-only `main`, tag `angular-typechecker@0.2.1` on the merge commit, push to fire
+  `release.yml` OIDC publish (approve the `npm-publish` environment), cut the GitHub Release.
