@@ -9,7 +9,7 @@ import {
 } from '@nx/devkit';
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NO_CACHING_NOTICE } from '../init/generator';
 import ngAddGenerator from './generator';
@@ -73,6 +73,13 @@ const LIB_TARGET = {
     ],
   },
 };
+
+// Spies created with vi.spyOn are restored after every test so a stubbed
+// logger.info cannot leak into a later test if an assertion throws first
+// (vitest.config.mts sets neither restoreMocks nor clearMocks).
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('ng-add generator (Angular CLI auto-wire-all)', () => {
   let tree: Tree;
@@ -234,8 +241,6 @@ describe('ng-add generator (Angular CLI auto-wire-all)', () => {
       (call) => call[0] === NO_CACHING_NOTICE,
     );
     expect(noticeCalls).toHaveLength(1);
-
-    infoSpy.mockRestore();
   });
 
   it('throws when --project names a project that does not exist (WR-03)', async () => {
@@ -281,8 +286,6 @@ describe('ng-add generator (Angular CLI auto-wire-all)', () => {
     await ngAddGenerator(tree, {});
 
     expect(infoSpy).not.toHaveBeenCalledWith(NO_CACHING_NOTICE);
-
-    infoSpy.mockRestore();
   });
 });
 
@@ -401,7 +404,5 @@ describe('ng-add generator (RF-02 no-angular.json guard)', () => {
     // Guidance printed; the no-caching notice is NOT printed off the CLI path.
     expect(infoSpy).toHaveBeenCalledTimes(1);
     expect(infoSpy.mock.calls[0][0]).not.toBe(NO_CACHING_NOTICE);
-
-    infoSpy.mockRestore();
   });
 });
