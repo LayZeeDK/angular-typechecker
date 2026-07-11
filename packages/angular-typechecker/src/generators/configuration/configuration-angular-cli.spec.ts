@@ -274,10 +274,14 @@ describe('configuration generator (Angular CLI + pnpm-workspace name collision, 
   });
 
   // The collision: root package.json `name` === the angular.json project name, plus a
-  // pnpm-workspace.yaml that makes Nx infer the shadowing package project.
-  function seedPnpmCollision(projectName: string, packagesGlob: string): void {
+  // pnpm-workspace.yaml whose `packages` glob INCLUDES the root (`.`) so Nx treats that
+  // root package.json as a workspace package and infers the shadowing stub at root ".".
+  // The glob must cover the root: a glob that does NOT match the root (e.g. `apps/*`)
+  // leaves the angular.json project un-shadowed and would make these tests VACUOUS
+  // (verified during code review) -- so every case here uses `.`.
+  function seedPnpmCollision(projectName: string): void {
     writeJson(tree, 'package.json', { name: projectName });
-    tree.write('pnpm-workspace.yaml', `packages:\n  - '${packagesGlob}'\n`);
+    tree.write('pnpm-workspace.yaml', "packages:\n  - '.'\n");
   }
 
   function writtenTsConfig(project: string): unknown {
@@ -297,7 +301,7 @@ describe('configuration generator (Angular CLI + pnpm-workspace name collision, 
     });
     writeLeaf(tree, 'tsconfig.app.json');
     writeLeaf(tree, 'tsconfig.spec.json');
-    seedPnpmCollision('demo-app', '.');
+    seedPnpmCollision('demo-app');
     assertCliSubstrate(tree);
 
     await configurationGenerator(tree, { project: 'demo-app' });
@@ -314,7 +318,7 @@ describe('configuration generator (Angular CLI + pnpm-workspace name collision, 
     });
     writeLeaf(tree, 'apps/demo-app/tsconfig.app.json');
     writeLeaf(tree, 'apps/demo-app/tsconfig.spec.json');
-    seedPnpmCollision('demo-app', 'apps/*');
+    seedPnpmCollision('demo-app');
     assertCliSubstrate(tree);
 
     await configurationGenerator(tree, { project: 'demo-app' });
@@ -331,7 +335,7 @@ describe('configuration generator (Angular CLI + pnpm-workspace name collision, 
     });
     writeLeaf(tree, 'projects/demo-lib/tsconfig.lib.json');
     writeLeaf(tree, 'projects/demo-lib/tsconfig.spec.json');
-    seedPnpmCollision('demo-lib', 'projects/*');
+    seedPnpmCollision('demo-lib');
     assertCliSubstrate(tree);
 
     await configurationGenerator(tree, { project: 'demo-lib' });
@@ -340,6 +344,21 @@ describe('configuration generator (Angular CLI + pnpm-workspace name collision, 
       'projects/demo-lib/tsconfig.lib.json',
       'projects/demo-lib/tsconfig.spec.json',
     ]);
+  });
+
+  it('throws a clear located error when the project is absent from angular.json', async () => {
+    writeAngularJson(tree, {
+      'demo-app': { projectType: 'application', root: '' },
+    });
+    writeLeaf(tree, 'tsconfig.app.json');
+    seedPnpmCollision('demo-app');
+    assertCliSubstrate(tree);
+
+    // The CLI branch reads angular.json directly, so an unknown project must fail with
+    // the located angular.json error (not a stray Nx "cannot find configuration").
+    await expect(
+      configurationGenerator(tree, { project: 'does-not-exist' }),
+    ).rejects.toThrow(/"does-not-exist" was not found in angular\.json/);
   });
 });
 
