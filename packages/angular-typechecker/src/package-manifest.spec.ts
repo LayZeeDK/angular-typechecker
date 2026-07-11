@@ -169,7 +169,11 @@ describe('plugin manifest Angular CLI install contract (ACP-01 / NGADD-01 RF-01 
     expect(manifest.peerDependencies?.['@angular-devkit/architect']).toBe(
       '>=0.2200.0 <0.2300.0',
     );
-    expect(manifest.peerDependencies?.['rxjs']).toBe('^7.8.0');
+    // The @nx/devkit convertNxExecutor wrapper touches only the core Observable
+    // contract (`new Observable(subscriber => { subscriber.next/complete/error })`),
+    // identical across rxjs 6.5.3+ and all 7.x -- so mirror Angular 22's own rxjs
+    // range rather than pinning a narrower 7.8.0 the wrapper does not require.
+    expect(manifest.peerDependencies?.['rxjs']).toBe('^6.5.3 || ^7.4.0');
   });
 
   it('classifies both builder runtime peers as OPTIONAL (never forced onto a pure-Nx consumer)', () => {
