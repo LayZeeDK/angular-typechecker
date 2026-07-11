@@ -1,10 +1,11 @@
 ---
 phase: 23
 slug: init-schematic-parity-first-party-ng-add
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: verified
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-10
+updated: 2026-07-11
 ---
 
 # Phase 23 — Validation Strategy
@@ -43,21 +44,21 @@ created: 2026-07-10
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | NGADD-01 | — | ng-add auto-wires app+lib only, idempotent, skips existing/e2e | integration | `npx nx test angular-typechecker` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ACS-03 | — | init schematic seeds no caching, no stray nx.json off-Nx | integration | `npx nx test angular-typechecker` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | ACP-01 | — | optional peers declared, `@nx/dependency-checks` green | lint | `npx nx lint angular-typechecker` | ❌ W0 | ⬜ pending |
+| 23-03 T1/T2 | 23-03 | 2 | NGADD-01 | T-23-01/02b/03/04/05 | ng-add auto-wires app+lib only, idempotent, skips existing (throws on non-ours), skips e2e/other, --project no-match throws, devDep move, notice-once, no-angular.json guard | integration | `npx nx test angular-typechecker` | `src/generators/ng-add/ng-add.spec.ts` (12) | green |
+| 23-01 T1/T2 | 23-01 | 1 | ACS-03 | T-23-06/05a | init schematic seeds no caching, no stray nx.json off-Nx (angular.json && !nx.json fork); hybrid workspace takes Nx branch | integration | `npx nx test angular-typechecker` | `src/generators/init/init-angular-cli.spec.ts` (5) + `src/schematics/configuration/nx-generators-surface-regression.spec.ts` (7) | green |
+| 23-02 T1/T2 | 23-02 | 1 | ACP-01 | T-23-02/07/08 | optional peers declared (widened to Angular 22 ranges) + `@nx/dependency-checks` green + nx not declared + ng-add.save devDependencies | lint + static | `npx nx lint angular-typechecker` + `npx nx test angular-typechecker` | `src/package-manifest.spec.ts` (20) + `eslint.config.mjs` | green |
 
-*Status: pending · green · red · flaky. Concrete task IDs assigned during planning; per-task rows completed by `/gsd-validate-phase`.*
+*Status: pending · green · red · flaky. All three requirement rows are COVERED by shipped, green specs (314 tests / 36 files at audit time). No MISSING/PARTIAL gaps -> nyquist_compliant.*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `src/schematics/ng-add/*.spec.ts` — auto-wire-all + idempotency + skip-existing + no-`angular.json` guard (NGADD-01)
-- [ ] `src/generators/init/init-angular-cli.spec.ts` (or extension) — angular.json-seeded init no-op, no stray nx.json (ACS-03)
-- [ ] `src/schematics/*/nx-generators-surface-regression.spec.ts` — extend `generators ?? schematics` to the new `init`/`ng-add` entries
+- [x] `src/generators/ng-add/ng-add.spec.ts` — auto-wire-all + idempotency + skip-existing (throw-on-non-ours) + skip-e2e/other + `--project` no-match throw + devDep move + notice-once + no-`angular.json` guard (NGADD-01)
+- [x] `src/generators/init/init-angular-cli.spec.ts` — angular.json-seeded init no-op, no stray nx.json, hybrid (angular.json + nx.json) takes Nx branch (ACS-03)
+- [x] `src/schematics/configuration/nx-generators-surface-regression.spec.ts` — `generators ?? schematics` covers the new `init`/`ng-add` entries; `ng-add` absent from generators.json (SC4)
 
-*Existing Vitest infrastructure covers the framework; only the new specs above are net-new.*
+*Existing Vitest infrastructure covers the framework; the net-new specs above all landed green (Wave 0 complete).*
 
 ---
 
@@ -71,13 +72,28 @@ created: 2026-07-10
 
 ---
 
+## Validation Audit 2026-07-11
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All three phase requirements (NGADD-01, ACS-03, ACP-01) are COVERED by shipped,
+green in-repo specs (314 tests / 36 files). No tests needed generating. The only
+Manual-Only item is the real `ng add` tarball e2e, deferred to Phase 24 (ACV-01)
+by design.
+
+---
+
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** verified 2026-07-11
