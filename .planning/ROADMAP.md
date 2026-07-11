@@ -158,7 +158,17 @@ Plans:
   4. Additive-only is enforced and audited: no breaking change to the executor id, the `runTypecheck`/`CoreResult`/`CoreOptions` public API (widened only), or the existing schemas -- v0.3.0 only if a breaking change proves unavoidable (ACP-02).
   5. README gains an `## Angular CLI` section (`ng add` auto-wire-all; single-project `ng generate ...:configuration`; `ng run <project>:typecheck`; per-project targets; the `tsConfig` array; the `nx`-transitive + no-caching notes; the off-stack `--legacy-peer-deps` note), plus a curated CHANGELOG entry in end-user language with no internal ids (ACD-01).
 
-**Plans:** TBD
+**Plans:** 3 plans across 2 waves
+
+Plans:
+**Wave 1**
+
+- [ ] 24-01-PLAN.md -- ACV-03/ACP-02: builder-over-`BuilderContext` integration gap-fill + `src/index.drift.ts` barrel additive-only tripwire + the git-diff audit vs `angular-typechecker@0.2.0`
+- [ ] 24-02-PLAN.md -- ACD-01: README `## Angular CLI` section + curated prose CHANGELOG entry + the `angular-cli-docs.spec.ts` content tripwire
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 24-03-PLAN.md -- ACV-01/ACV-02: the scaffolded `ng add` -> `ng run` e2e project (committed pinned Ng22 fixture) + the real-clone milestone-final UAT procedure
 
 ## Progress
 
@@ -189,4 +199,4 @@ Plans:
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete    | 2026-07-10 |
 | 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 3/3 | Complete    | 2026-07-11 |
-| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/? | Not started | - |
+| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 0/3 | Planned | - |
