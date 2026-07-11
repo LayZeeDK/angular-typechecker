@@ -1,6 +1,7 @@
 import {
   getProjects,
   logger,
+  readJson,
   readNxJson,
   readProjectConfiguration,
   updateJson,
@@ -282,6 +283,84 @@ describe('ng-add generator (Angular CLI auto-wire-all)', () => {
     expect(infoSpy).not.toHaveBeenCalledWith(NO_CACHING_NOTICE);
 
     infoSpy.mockRestore();
+  });
+});
+
+// ACV-01 real-clone regression AT THE ng-add ENTRY POINT (2026-07-11, realworld-angular
+// @ 9e3528f). The fix (commit 1837b25) made configurationGenerator read root/projectType
+// straight from angular.json instead of readProjectConfiguration -- but the REAL entry
+// point of the ACV-01 gate is `ng add`, which enumerates projects via getProjects(tree)
+// and filters on `project.projectType === 'application' | 'library'`. getProjects uses the
+// SAME Nx project inference that returns the shadowing package stub (projectType undefined)
+// under the pnpm-workspace name collision. If that stub reaches the filter, ng-add would
+// SKIP the colliding app entirely (wire ZERO targets, IN-01 silent return) -- a distinct,
+// arguably worse failure than the leaf-drop the direct-generator tests cover. These cases
+// drive ngAddGenerator over the collision substrate and assert the app is actually wired
+// with the FULL [app, spec] leaf array. Assertions read angular.json DIRECTLY because
+// readProjectConfiguration returns the shadowing stub even after a correct write.
+describe('ng-add generator (Angular CLI + pnpm-workspace name collision, ACV-01 regression)', () => {
+  let tree: Tree;
+
+  beforeEach(() => {
+    tree = createTreeWithEmptyWorkspace();
+    tree.delete('nx.json');
+  });
+
+  // Root package.json `name` === the angular.json project name, plus a pnpm-workspace.yaml
+  // whose `packages` glob covers the root (`.`) so Nx infers the shadowing root-package
+  // stub -- the exact shape that broke the direct generator (see configuration-angular-cli
+  // .spec.ts). A glob that does NOT cover the root leaves the project un-shadowed (vacuous).
+  function seedPnpmCollision(projectName: string): void {
+    writeJson(tree, 'package.json', { name: projectName });
+    tree.write('pnpm-workspace.yaml', "packages:\n  - '.'\n");
+  }
+
+  function writtenTsConfig(project: string): unknown {
+    const json = readJson<{
+      projects: Record<
+        string,
+        { architect?: Record<string, { options?: { tsConfig?: unknown } }> }
+      >;
+    }>(tree, 'angular.json');
+
+    return json.projects[project]?.architect?.['typecheck']?.options?.tsConfig;
+  }
+
+  it('auto-wires the ROOT app with the full [app, spec] array despite the pnpm stub (real `ng add` entry point)', async () => {
+    writeAngularJson(tree, {
+      'demo-app': { projectType: 'application', root: '' },
+    });
+    writeLeaf(tree, 'tsconfig.app.json');
+    writeLeaf(tree, 'tsconfig.spec.json');
+    seedPnpmCollision('demo-app');
+    assertCliSubstrate(tree);
+
+    // Auto-wire-all (no --project) -- the default `ng add angular-typechecker`. If the
+    // shadowing stub (projectType undefined) reaches ng-add's getProjects filter, the app
+    // is skipped and this target is never written.
+    await ngAddGenerator(tree, {});
+
+    expect(writtenTsConfig('demo-app')).toEqual([
+      'tsconfig.app.json',
+      'tsconfig.spec.json',
+    ]);
+  });
+
+  it('auto-wires a SUBDIR app with the full [app, spec] array despite the pnpm stub', async () => {
+    writeAngularJson(tree, {
+      'demo-app': { projectType: 'application', root: 'apps/demo-app' },
+    });
+    writeLeaf(tree, 'apps/demo-app/tsconfig.app.json');
+    writeLeaf(tree, 'apps/demo-app/tsconfig.spec.json');
+    seedPnpmCollision('demo-app');
+    assertCliSubstrate(tree);
+
+    await ngAddGenerator(tree, {});
+
+    expect(writtenTsConfig('demo-app')).toEqual([
+      'apps/demo-app/tsconfig.app.json',
+      'apps/demo-app/tsconfig.spec.json',
+    ]);
   });
 });
 
