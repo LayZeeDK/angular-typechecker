@@ -82,7 +82,32 @@ These Angular CLI surface files did not exist at the `0.2.0` tag (confirmed abse
 - **Charter satisfied:** ADDITIVE-ONLY holds. There is no breaking change, so the
   milestone remains on the **0.2.x** line and does NOT re-version to v0.3.0.
 
-Phase 24 itself adds only test/e2e projects, the barrel tripwire, this audit, and docs
-prose -- no production engine/core/generator/schematic surface -- so ACP-02 is trivially
-true by construction for the phase's own changes; this audit confirms the Phases 21-23
-additions that DID add surface stayed additive.
+Phase 24 adds test/e2e projects, the barrel tripwire, this audit, docs prose, AND the
+ACV-01 gap-fix (below) to the Angular CLI `configuration` generator; this audit confirms
+the Phases 21-23 additions that DID add surface stayed additive.
+
+## 5. ACV-01 gap-fix (2026-07-11) -- still ADDITIVE-ONLY
+
+The ACV-01 real-clone gate surfaced a defect in the Angular CLI `configuration` generator
+(Phase 22): on an Angular CLI workspace that is ALSO a pnpm workspace with a name-colliding
+root `package.json`, `readProjectConfiguration().projectType` is `undefined` (Nx infers a
+shadowing package stub), so the CLI write-fork dropped the app build leaf (spec-only
+under-check for a root app) or threw (subdir app). FIX: the CLI branch now reads
+`root`/`projectType` STRAIGHT from `angular.json`; `resolveTsConfigLeaves` takes
+`(tree, root, projectType, schema)`.
+
+Additive-only STILL HOLDS:
+- The changed code (`src/generators/configuration/generator.ts`, CLI write-fork) is part of the
+  **Angular CLI generator, which is NEW in v0.2.1 and UNRELEASED** -- `angular-typechecker@0.2.0`
+  (the baseline / last published version) has NO Angular CLI generator at all. There is no
+  released behavior to break; the fix corrects unreleased code before its first publish.
+- No schema, executor id, builder id, collection entry, or public barrel changed. The generator's
+  `schema.json` / `schema.d.ts` are byte-unchanged. The Nx else-branch is byte-unchanged
+  (`readProjectConfiguration` retained there -- project.json is authoritative).
+- The fix makes the tool MORE correct (wires the build leaf it previously dropped) -- a behavior
+  correction on unreleased surface, not a narrowing/removal/rename of released surface.
+
+Therefore ADDITIVE-ONLY vs `0.2.0` is preserved; the milestone stays on the **0.2.x** line and
+does NOT re-version to v0.3.0. New regression guards lock the fix:
+`configuration-angular-cli.spec.ts` (3 pnpm-collision cases) + `configuration.spec.ts`
+(1 Nx package/project name-collision lock).

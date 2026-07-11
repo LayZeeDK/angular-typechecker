@@ -1,11 +1,16 @@
 ---
-status: pending
+status: executed-fail
 phase: 24-real-oss-scaffolded-e2e-additive-only-audit-docs
 source: [24-03-PLAN.md, 24-RESEARCH.md, 24-CONTEXT.md]
 scope: ACV-01 milestone-FINAL real-clone tarball gate (MANUAL/local -- clones UNCOMMITTED, reproduced from URL + SHA; NOT a CI test)
 gate: manual (D-02)
 substrate: on-stack Angular 22 ONLY (off-stack Angular 21 DROPPED)
 created: 2026-07-11
+executed: 2026-07-11 (autonomous per HANDOFF)
+outcome: gate #1 (ngx-leaflet) PASS; gate #2 (realworld-angular) initially FAILED -- found a
+  real generator defect (silent app-build-leaf drop on Angular-CLI-that-is-also-a-pnpm-workspace);
+  DEFECT FIXED + regression-tested + gate #2 RE-VERIFIED on the real clone with the fixed build:
+  PASS. All three tests now pass. Full evidence + root cause + fix in 24-HUMAN-UAT.md.
 ---
 
 ## About this gate
@@ -48,7 +53,7 @@ no other project's leaf leaked in.
 
 ## Current Test
 
-[not yet run -- execute at phase verification]
+[executed 2026-07-11 autonomously per HANDOFF -- see result fields + 24-HUMAN-UAT.md]
 
 ## Tests
 
@@ -70,8 +75,8 @@ steps: |
   tar -tzf "$TGZ" | rg '\.js$|\.d\.ts$|builders\.json|collection\.json'   # compiled JS, no raw .ts
   ABS_TGZ="$PWD/$TGZ"   # absolute path for the ng add / npm install below
   ```
-result: pending
-evidence: ""
+result: pass
+evidence: "Fresh nx build + npm pack of dist: angular-typechecker-0.2.0.tgz, 25 compiled .js, 0 raw .ts, ships builders.json/collection.json/executors.json/generators.json + src/index.js|.d.ts."
 
 ### 2. bluehalo/ngx-leaflet (app + library) -- ng add auto-wire-all, per-project ng run scoping
 
@@ -113,8 +118,8 @@ steps: |
   # Revert the plants -> both targets return to green.
   git checkout -- .
   ```
-result: pending
-evidence: ""
+result: pass
+evidence: "npm workspace (no pnpm-workspace.yaml), on-stack, NO --legacy-peer-deps. ng add auto-wired BOTH projects with 2-element tsConfig arrays, no stray nx.json; clean baseline both exit 0; per-project scoping proven (Run B: app=TS2322+TS2345, lib=TS2554, bidirectional no-bleed); no ERR_REQUIRE_ESM. See 24-HUMAN-UAT.md gate #1."
 
 ### 3. realworld-angular/realworld-angular (single application) -- ng add + per-leaf ng run scoping
 
@@ -145,21 +150,24 @@ steps: |
   npx ng run realworld-angular:typecheck   # expect non-zero; stdout HAS TS2322 + TS2345
   git checkout -- .                        # revert -> green
   ```
-result: pending
-evidence: ""
+result: PASS (after fix)
+evidence: "pnpm workspace. INSTALL (proper path, documented): pnpm-native -- auto-install-peers brings nx (npm --legacy-peer-deps SUPPRESSES the nx peer -> crash); install the LOCAL tarball via `pnpm add -w -D <tgz>` + `ng g angular-typechecker:ng-add` (NOT `ng add <name>` -- would fetch the published v0.2.0). Initially FAILED: the schematic wired ONLY [tsconfig.spec.json], dropping the app build leaf (readProjectConfiguration returns projectType=undefined on an angular.json+pnpm-workspace+name-collision workspace -- Nx infers a shadowing package stub). FIXED: CLI branch now reads projectType/root from angular.json directly. RE-VERIFIED with the fixed tarball: ng-add auto-wired [tsconfig.app.json, tsconfig.spec.json], no stray nx.json, clean baseline exit 0, planted TS2322 (build leaf) + TS2345 (spec leaf) caught, exit 1, no ERR_REQUIRE_ESM. Full detail in 24-HUMAN-UAT.md."
 
 ## Summary
 
 total: 3
-passed: 0
-pending: 3
+passed: 3
+pending: 0
 issues: 0
 skipped: 0
 blocked: 0
 
 ## Gaps
 
-[none -- procedure documented; execute manually at phase verification and fill result/evidence]
+- RESOLVED (2026-07-11): the gate-#3 defect (CLI-branch app-build-leaf drop on an Angular CLI +
+  pnpm workspace with a name-colliding root package.json) is FIXED (read projectType/root from
+  angular.json), regression-tested (CLI matrix + Nx-collision lock), and gate #3 re-verified PASS
+  on the real clone with the fixed build. No open gaps. See 24-HUMAN-UAT.md "Fix + re-verification".
 
 ## Notes
 
