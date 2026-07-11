@@ -69,7 +69,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] **Phase 21: Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO)** -- Re-export the `typecheck` executor as an Angular CLI builder, widen `tsConfig` to `string | string[]`, and prove the CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run` on-stack (Angular 22) against a real cloned OSS workspace (`bluehalo/ngx-leaflet`). (Off-stack Angular 21 dropped 2026-07-10.) (completed 2026-07-10)
 - [x] **Phase 22: `configuration` schematic + the `angular.json` write-fork** -- `ng generate angular-typechecker:configuration <project>` wires one per-project `typecheck` architect target (scoped to that project's leaves) via the `tree.exists('angular.json')` fork, with the Nx generator path unchanged. (completed 2026-07-10)
 - [x] **Phase 23: `init` schematic parity + first-party `ng-add`** -- `ng add angular-typechecker` auto-wires every app + library project in `angular.json`, with the no-caching notice and optional-peer dependency classification. (completed 2026-07-10)
-- [ ] **Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs** -- prove the full flow against a real OSS `angular.json` workspace and a scaffolded one, audit the additive-only charter, and document the Angular CLI surface.
+- [x] **Phase 24: Real-OSS + scaffolded e2e, additive-only audit, docs** -- prove the full flow against a real OSS `angular.json` workspace and a scaffolded one, audit the additive-only charter, and document the Angular CLI surface. (completed 2026-07-11)
 
 ## Phase Details
 
@@ -158,7 +158,7 @@ Plans:
   4. Additive-only is enforced and audited: no breaking change to the executor id, the `runTypecheck`/`CoreResult`/`CoreOptions` public API (widened only), or the existing schemas -- v0.3.0 only if a breaking change proves unavoidable (ACP-02).
   5. README gains an `## Angular CLI` section (`ng add` auto-wire-all; single-project `ng generate ...:configuration`; `ng run <project>:typecheck`; per-project targets; the `tsConfig` array; the `nx`-transitive + no-caching notes; the off-stack `--legacy-peer-deps` note), plus a curated CHANGELOG entry in end-user language with no internal ids (ACD-01).
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -168,7 +168,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 24-03-PLAN.md -- ACV-01/ACV-02: the scaffolded `ng add` -> `ng run` e2e project (committed pinned Ng22 fixture) + the real-clone milestone-final UAT procedure
+- [x] 24-03-PLAN.md -- ACV-01/ACV-02: the scaffolded `ng add` -> `ng run` e2e project (committed pinned Ng22 fixture) + the real-clone milestone-final UAT procedure
 
 ## Progress
 
@@ -199,4 +199,4 @@ Plans:
 | 21. Angular CLI builder + engine multi-tsConfig + GATE A' spike (GO/NO-GO) | v0.2.1 | 3/3 | Complete    | 2026-07-10 |
 | 22. `configuration` schematic + the `angular.json` write-fork | v0.2.1 | 2/2 | Complete    | 2026-07-10 |
 | 23. `init` schematic parity + first-party `ng-add` | v0.2.1 | 3/3 | Complete    | 2026-07-11 |
-| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 2/3 | In Progress|  |
+| 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 3/3 | Complete   | 2026-07-11 |

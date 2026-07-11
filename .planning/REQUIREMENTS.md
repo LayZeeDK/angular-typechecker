@@ -39,8 +39,8 @@ Requirements for this milestone. Each maps to exactly one roadmap phase (see Tra
 
 ### Verification (ACV)
 
-- [ ] **ACV-01**: the milestone's FINAL tarball end-to-end verification gate, proven against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, on-stack Angular 22, MIT, non-Nx, app `ngx-leaflet-demo` + lib `ngx-leaflet`): pack the SHIPPED tarball -> `ng add` -> `ng run <project>:typecheck` -> assert planted diagnostics. Real-repo gate run locally/manually (the clone is UNCOMMITTED; reproduction = repo URL + commit SHA). No off-stack Angular 21 cross-check (DROPPED 2026-07-10).
-- [ ] **ACV-02**: the repeatable AUTOMATED e2e (runs in CI with no external clone), proven against a freshly SCAFFOLDED workspace (`npm init @angular` + `ng g library`): plant application + spec + library errors and assert each per-project target catches exactly its own leaves.
+- [x] **ACV-01**: the milestone's FINAL tarball end-to-end verification gate, proven against a REAL cloned OSS Angular 22 `angular.json` workspace (`bluehalo/ngx-leaflet`, on-stack Angular 22, MIT, non-Nx, app `ngx-leaflet-demo` + lib `ngx-leaflet`): pack the SHIPPED tarball -> `ng add` -> `ng run <project>:typecheck` -> assert planted diagnostics. Real-repo gate run locally/manually (the clone is UNCOMMITTED; reproduction = repo URL + commit SHA). No off-stack Angular 21 cross-check (DROPPED 2026-07-10).
+- [x] **ACV-02**: the repeatable AUTOMATED e2e (runs in CI with no external clone), proven against a freshly SCAFFOLDED workspace (`npm init @angular` + `ng g library`): plant application + spec + library errors and assert each per-project target catches exactly its own leaves.
 - [x] **ACV-03**: unit + integration coverage of the Angular-CLI-vs-Nx differences: the `tsConfig: string[]` union; the `angular.json` write-fork on an `angular.json` schematics test tree; the builder over `BuilderContext`; `ng-add` auto-wire-all + idempotency; and no stray `nx.json`.
 
 ### Packaging / deps (ACP)
@@ -92,8 +92,8 @@ Phase numbering continues from v0.2.0's Phase 20.
 | ACS-04 | Phase 22 | Complete |
 | NGADD-01 | Phase 23 | Complete |
 | COV-01 | Phase 22 | Complete |
-| ACV-01 | Phase 24 | Pending |
-| ACV-02 | Phase 24 | Pending |
+| ACV-01 | Phase 24 | Complete |
+| ACV-02 | Phase 24 | Complete |
 | ACV-03 | Phase 24 | Complete |
 | ACP-01 | Phase 23 | Complete |
 | ACP-02 | Phase 24 | Complete |

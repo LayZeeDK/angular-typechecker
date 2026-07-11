@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: executing
-last_updated: "2026-07-11T09:11:25.176Z"
+status: verifying
+last_updated: "2026-07-11T09:37:33.021Z"
 last_activity: 2026-07-11
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 11
-  completed_plans: 10
-  percent: 75
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 
 Phase: 24 (Real-OSS + scaffolded e2e, additive-only audit, docs) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-11
 
 ## Accumulated Context
@@ -72,6 +72,8 @@ archives under `.planning/milestones/`.
 - [Phase 24]: 24-01: ACP-02 enforced + audited -- src/index.drift.ts barrel tripwire (all five exports, 2 value + 3 type-only) wired into tsconfig.drift.json rides the typecheck drift tsc; fail-loud proven (rename a barrel export -> TS2724/TS2305). 24-ADDITIVE-AUDIT.md records the git-diff verdict vs angular-typechecker@0.2.0: barrel byte-unchanged; executor schema tsConfig string->oneOf[string,array] widen-only; generator schemas + executors.json/generators.json unchanged; builders.json/collection.json new files; guard cross-check map all green. Additive-only HOLDS, milestone stays 0.2.x (v0.3.0 NOT triggered). nx test(314)/typecheck green.
 - [Phase 24]: 24-02: README ## Angular CLI section (ng add auto-wire-all, ng run parity, tsConfig-array targets, nx-transitive/no-caching, off-stack --legacy-peer-deps) + a docs content tripwire (angular-cli-docs.spec.ts) locking those claims; Storybook 'not supported' caveat preserved (deferred, not weakened). Corrected the stale Installation 'no Angular-CLI installer' line (Rule 1).
 - [Phase 24]: 24-02: curated CHANGELOG 0.2.1 entry is PROSE ONLY -- no date/link-ref, no package.json bump (stays 0.2.0), no tag, no nx release; the cut is the human-gated Release-PR flow.
+- [Phase 24]: 24-03: shipped angular-typechecker-ng-cli-e2e (ACV-02) -- the 4th e2e project proving `ng add` auto-wire-all + per-project `ng run <project>:typecheck` scoping (app TS2322 component + TS2345 spec vs library TS2554, distinct-per-leaf; clean baseline green; no ERR_REQUIRE_ESM) against a COMMITTED pinned Angular 22 app+lib fixture (RF-01 Option B: `ng new` + `ng g library`, frozen on-stack, committed package-lock.json + REGENERATE.md, no legacy-peer-deps). Satisfies the CURRENT 4-guard contract (e2e + typecheck targets + type:e2e tag; CONTEXT D-03's typecheck-e2e is STALE) with no ci.yml edit; verbatim install-e2e Verdaccio global-setup (127.0.0.1 SAFETY gate, publish-once). On-stack install clean (no --legacy-peer-deps); primary `ng add` path worked (no A2 fallback). Local run 94.6s.
+- [Phase 24]: 24-03: ACV-01 = 24-ACV-01-UAT.md, a documented MANUAL/local real-clone milestone-final gate (D-02, clones uncommitted): ngx-leaflet @818e9ae (app+lib) then realworld-angular @9e3528f (app-only), each by URL+SHA with pack -> `ng add` -> plant -> `ng run` -> assert -> clean; on-stack Angular 22 ONLY (off-stack Ng21 dropped). ACV-02 is its CI-authoritative counterpart. Phase 24 changed NO production surface -- additive-only holds by construction.
 
 ### Roadmap Evolution
 
@@ -131,7 +133,7 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-11T08:57:54.223Z
+Last session: 2026-07-11T09:37:33.012Z
 9/9 cross-phase integration, 4/4 E2E flows) then `/gsd-complete-milestone v0.2.0`: archived
 ROADMAP/REQUIREMENTS/audit to `.planning/milestones/v0.2.0-*`, collapsed ROADMAP to a SHIPPED
 one-liner, evolved PROJECT.md (v0.2.0 Active -> Validated), updated MILESTONES/RETROSPECTIVE, removed
