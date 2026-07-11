@@ -49,14 +49,18 @@ function writeLeaf(tree: Tree, path: string): void {
   writeJson(tree, path, { compilerOptions: {} });
 }
 
-// A pnpm-workspace.yaml whose `packages` includes the root (`.`) is the only manifest that
-// makes Nx treat the ROOT package.json as a workspace package (the stub trigger). npm/yarn
-// `workspaces` conventionally target subdirs (never the root), so they do NOT shadow -- the
-// matrix uses each manifest in its realistic shape.
+// A pnpm-workspace.yaml makes Nx treat any package.json under its `packages` glob as a
+// workspace package. Each branch needs a DIFFERENT glob to seed its realistic collision:
+// the CLI branch covers the ROOT (`.`) so the root package.json is the stub trigger for a
+// root-app name collision; the Nx branch covers the project dir (`libs/*`) so the project's
+// own package.json is a real workspace member. npm/yarn `workspaces` conventionally target
+// subdirs (never the root), so on the CLI branch they do NOT shadow -- the matrix uses each
+// manifest in its realistic shape. `pnpmGlob` lets each branch pick its own glob.
 function writeManifest(
   tree: Tree,
   manifest: Manifest,
   rootPkgName: string,
+  pnpmGlob = '.',
 ): void {
   const pkg: { name: string; workspaces?: string[] } = { name: rootPkgName };
   if (manifest === 'npm-workspaces') {
@@ -64,7 +68,7 @@ function writeManifest(
   }
   writeJson(tree, 'package.json', pkg);
   if (manifest === 'pnpm-workspace') {
-    tree.write('pnpm-workspace.yaml', "packages:\n  - '.'\n");
+    tree.write('pnpm-workspace.yaml', `packages:\n  - '${pnpmGlob}'\n`);
   }
 }
 
@@ -166,6 +170,13 @@ describe('configuration generator FULL MATRIX: build leaf is never silently drop
     );
   });
 
+  // ROBUSTNESS LOCK (not a discriminating regression test). The Nx branch reads the
+  // AUTHORITATIVE project.json, so a same-root package.json/project.json name collision --
+  // made a REAL pnpm workspace member here via the `libs/*` glob -- MERGES with project.json
+  // winning. BOTH collision and clean therefore resolve to the same solution tsconfig BY
+  // DESIGN; the `collision` dimension does not change the resolved target, it just proves the
+  // invariant holds across the manifest cross-product so a future Nx-inference regression is
+  // caught. The dedicated same-root collision assertion lives in configuration.spec.ts.
   describe('Nx branch (nx.json + project.json)', () => {
     it.each(nxCells.map((c) => [nxLabel(c), c] as const))(
       'wires a build-covering solution tsConfig — %s',
@@ -185,15 +196,18 @@ describe('configuration generator FULL MATRIX: build leaf is never silently drop
         });
         writeLeaf(tree, `${projectRoot}/tsconfig.app.json`);
         writeLeaf(tree, `${projectRoot}/tsconfig.spec.json`);
-        // Nx collision = the project's OWN package.json name === its project.json name
-        // (same root -> Nx merges them; project.json wins). The ROOT package stays distinct.
+        // Nx collision = the project's OWN package.json name === its project.json name. With
+        // the pnpm `libs/*` glob (below) that package.json is a REAL workspace member, so Nx
+        // MERGES the two same-root projects (project.json wins). The ROOT stays distinct.
         if (cell.collision) {
           writeJson(tree, `${projectRoot}/package.json`, {
             name: PROJECT,
             version: '0.0.0',
           });
         }
-        writeManifest(tree, cell.manifest, 'workspace-root');
+        // pnpm glob covers the project dir so the collision above is a genuine workspace
+        // member (the CLI branch's default `.` would only shadow the root, not libs/demo-app).
+        writeManifest(tree, cell.manifest, 'workspace-root', 'libs/*');
 
         await configurationGenerator(tree, { project: PROJECT });
 
@@ -227,7 +241,7 @@ describe('configuration generator FULL MATRIX: build leaf is never silently drop
 
       await expect(
         configurationGenerator(tree, { project: PROJECT }),
-      ).rejects.toThrow(/defined in multiple locations|same name/i);
+      ).rejects.toThrow(/defined in multiple locations/i);
     });
   });
 });
