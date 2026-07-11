@@ -25,9 +25,12 @@ import {
 // install-e2e specs; it keeps the `@angular/cli` harness SEPARATE (CONTEXT D-03).
 //
 // Runs SEQUENTIALLY on the main tree under the serialized vitest.config.mts + the
-// shared globalSetup (which builds + publishes dist once); this spec CONSUMES that
-// registry via inject(). It shares the ONE dist tarball path with the sibling e2e
-// projects, so the CI e2e job MUST stay `--parallel=1` (GUARD-01b).
+// shared globalSetup (which builds dist + publishes to the local Verdaccio registry
+// ONCE); this spec CONSUMES that registry via inject() and installs the package
+// by-name with `ng add` (NOT by packing a shared `.tgz`). It still shares the single
+// `dist/` build + the one loopback registry with the sibling e2e projects, so the CI
+// e2e job MUST stay `--parallel=1` (GUARD-01b) -- concurrent runs would race the
+// shared dist rebuild + registry publish.
 
 // The rendered diagnostic codes each planted leaf deliberately triggers. Asserting
 // the FULL 'TSxxxx' token (not a bare 4-digit substring) keeps the check from
@@ -69,7 +72,9 @@ const LIB_COMPONENT_INJECTION = `export class MyLib {\n  protected readonly libT
 
 // Resolve the workspace root from this spec's location; findWorkspaceRoot() walks
 // up to nx.json so every path is cwd-independent (main tree).
-const workspaceRoot = findWorkspaceRoot(dirname(fileURLToPath(import.meta.url)));
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const fixtureDir = join(
   workspaceRoot,
@@ -127,6 +132,10 @@ function ngRun(
       cwd,
       env: runEnv,
       encoding: 'utf8',
+      // IN-02: a large failing `ng run` can exceed the default 1 MB buffer and
+      // truncate stdout BEFORE the asserted TSxxxx code -> ENOBUFS + a flaky
+      // `toContain`. 20 MB is ample headroom for a diagnostic dump.
+      maxBuffer: 20 * 1024 * 1024,
     });
 
     return { stdout, code: 0 };

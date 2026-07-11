@@ -113,6 +113,37 @@ async function runNxExecutor(
   return typecheckExecutor({ tsConfig: [...tsConfig] }, context);
 }
 
+/**
+ * Run the builder while capturing the raw `process.stdout.write` the executor
+ * uses for its diagnostic report (executor.ts writes `formatDiagnostics` output to
+ * RAW stdout; infra errors go to `logger.error`/stderr or re-throw). WR-01 fix
+ * (Phase 24 code review): a bare `success === false` is VACUOUS on its own -- a
+ * `TypecheckInfrastructureError` (e.g. the fixture tsconfig ceasing to resolve)
+ * would ALSO yield `success:false` without the planted TS2322/TS2345 ever
+ * surfacing. Asserting the specific codes appear in the report proves the
+ * builder-context fixture actually loaded and the real type-errors drove the
+ * verdict.
+ */
+async function runBuilderCapturingStdout(
+  tsConfig: readonly string[],
+): Promise<{ output: BuilderOutput; stdout: string }> {
+  const chunks: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: unknown): boolean => {
+    chunks.push(typeof chunk === 'string' ? chunk : String(chunk));
+
+    return true;
+  }) as typeof process.stdout.write;
+
+  try {
+    const output = await runBuilder(tsConfig);
+
+    return { output, stdout: chunks.join('') };
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+}
+
 describe('typecheck builder over a real BuilderContext (ACV-03 gap-fill)', () => {
   it('a CLEAN run yields BuilderOutput.success === true', async () => {
     const output = await runBuilder([cleanLeaf]);
@@ -120,12 +151,19 @@ describe('typecheck builder over a real BuilderContext (ACV-03 gap-fill)', () =>
     expect(output.success).toBe(true);
   });
 
-  it('a PLANTED-error run (two-element tsConfig array) yields BuilderOutput.success === false', async () => {
-    const output = await runBuilder([appLeaf, specLeaf]);
+  it('a PLANTED-error run (two-element tsConfig array) fails BECAUSE the planted TS2322 + TS2345 surfaced (not an infra error)', async () => {
+    const { output, stdout } = await runBuilderCapturingStdout([
+      appLeaf,
+      specLeaf,
+    ]);
 
-    // Non-vacuous: a real BuilderOutput flowed and the planted TS2322 + TS2345
-    // across the app + spec leaves drove the verdict to failure.
     expect(output.success).toBe(false);
+    // WR-01: prove the failure is DRIVEN by the planted diagnostics -- the app
+    // build leaf's TS2322 and the app spec leaf's TS2345 both surfaced in the
+    // report -- so `success:false` is not a masked infrastructure error and the
+    // builder-context fixture genuinely resolved + type-checked.
+    expect(stdout).toContain('TS2322');
+    expect(stdout).toContain('TS2345');
   });
 
   it('the builder { success } equals the Nx executor { success } on the CLEAN leaf', async () => {
@@ -137,12 +175,18 @@ describe('typecheck builder over a real BuilderContext (ACV-03 gap-fill)', () =>
   });
 
   it('the builder { success } equals the Nx executor { success } on the planted-error tsConfig array', async () => {
-    const builderOutput = await runBuilder([appLeaf, specLeaf]);
+    const { output: builderOutput, stdout } = await runBuilderCapturingStdout([
+      appLeaf,
+      specLeaf,
+    ]);
     const executorResult = await runNxExecutor([appLeaf, specLeaf]);
 
     // Parity is the load-bearing claim: the builder IS the executor, so their
     // verdicts must be identical for the same fixture + tsConfig array.
     expect(builderOutput.success).toBe(executorResult.success);
     expect(builderOutput.success).toBe(false);
+    // WR-01: and the shared failure is real (planted codes surfaced), not infra.
+    expect(stdout).toContain('TS2322');
+    expect(stdout).toContain('TS2345');
   });
 });
