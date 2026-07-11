@@ -148,8 +148,14 @@ unaffected; Nx branch robust). Additive-only vs 0.2.0 HOLDS (fix is inside the u
 CLI generator). All four post-execution gates re-run via their DEDICATED agents: code-review
 (24-REVIEW-ACV01FIX.md, 0 blockers; 1 major + 1 minor addressed), verify (24-VERIFICATION.md
 passed, 5/5), secure (24-SECURITY.md SECURED, threats_open 0), validate (24-VALIDATION.md compliant,
-+ng-add gap filled). nx test(330)/lint/typecheck/build/format all green. Phase 24 complete;
-extract-learnings done (24-LEARNINGS.md) + global-learnings bridged (18 entries).
++ng-add gap filled). Phase 24 complete; extract-learnings done (24-LEARNINGS.md) +
+global-learnings bridged (18 entries); v0.2.1 MILESTONE AUDIT = PASSED (16/16 reqs, integrated,
+0 gaps, all phases Nyquist-compliant). Follow-on (full-matrix coverage): added
+configuration-matrix.spec.ts locking {CLI,Nx} x {flat,npm/yarn-workspaces,pnpm-workspace} x
+{collision,clean} x {root,subdir} (invariant: build leaf never silently dropped, or loud throw),
+then ran /gsd-code-review --fix on the added tests (gsd-code-reviewer 0 blockers/2 warnings/4 info
+-> gsd-code-fixer applied WR-01/WR-02/IN-02/IN-04; 24-REVIEW-ADDED-TESTS(-FIX).md). nx
+test(349)/lint/typecheck/build/format all green.
 `packages/angular-typechecker/package.json` stays at `0.2.0` (v0.2.1 NOT yet cut). OSS clones under
 D:/projects/github/{bluehalo/ngx-leaflet, realworld-angular/realworld-angular} are UNCOMMITTED scratch.
 
