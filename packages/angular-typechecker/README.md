@@ -38,6 +38,7 @@ run everywhere the editor is not.
 - [Continuous integration](#continuous-integration)
 - [Programmatic API](#programmatic-api)
 - [How it compares](#how-it-compares)
+- [Angular CLI](#angular-cli)
 - [Storybook](#storybook)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
@@ -96,8 +97,9 @@ pnpm add -Dw angular-typechecker
 nx g angular-typechecker:init
 ```
 
-This is `nx add`, not the Angular CLI's `ng add`, and there is no Angular-CLI
-installer.
+This is `nx add`, the Nx installer. In a plain Angular CLI (`angular.json`)
+workspace, use `ng add angular-typechecker` instead; see
+[Angular CLI](#angular-cli).
 
 ## Quick start
 
@@ -375,6 +377,98 @@ For the background on why the whole-program type-check is the dominant, separabl
 cost of an Angular build, see Brandon Roberts' [Angular Compilation, Type-Checking,
 and Build Bottlenecks](https://brandonroberts.dev/blog/posts/angular-compilation-type-checking-and-build-bottlenecks-4n2f)
 (2026).
+
+## Angular CLI
+
+You can run angular-typechecker in a plain Angular CLI (`angular.json`) workspace,
+with no Nx. The package ships an Angular CLI builder and the matching `ng add` and
+`ng generate` schematics, so the same complete Angular type-check runs behind
+`ng run <project>:typecheck`.
+
+### Install and wire every project
+
+```sh
+ng add angular-typechecker
+```
+
+`ng add angular-typechecker` installs the package as a dev dependency and wires a
+`typecheck` target into every `application` and `library` project in your
+`angular.json` at once. It is idempotent: run it again and it leaves your existing
+targets untouched, wiring only projects that are still missing one. On the
+supported Angular 22 stack the install needs no `--legacy-peer-deps` flag. It also
+prints a one-time notice that the Angular CLI path does not cache target results,
+so you know each run does the full check (see
+[Caching and the nx dependency](#caching-and-the-nx-dependency)).
+
+### Wire a single project
+
+For a project you add later, wire just that one:
+
+```sh
+ng generate angular-typechecker:configuration <project>
+```
+
+### Run the check
+
+```sh
+ng run <project>:typecheck
+```
+
+`ng run <project>:typecheck` runs the exact same complete Angular type-check as the
+Nx executor, and its pass/fail exit verdict is identical: it exits zero when no
+error-category diagnostic is reported and non-zero otherwise. Everything under
+[Output](#output) and [Exit codes](#exit-codes) applies unchanged.
+
+### The per-project target
+
+Each wired project gains a `typecheck` target in its `angular.json` `architect`
+block:
+
+```jsonc
+{
+  "architect": {
+    "typecheck": {
+      "builder": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": ["tsconfig.app.json", "tsconfig.spec.json"],
+      },
+    },
+  },
+}
+```
+
+The `tsConfig` array lists the project's build leaf and its spec leaf, so a single
+target checks the project's complete set of files in one run. An application
+resolves to `["tsconfig.app.json", "tsconfig.spec.json"]`; a library resolves to
+`["projects/<lib>/tsconfig.lib.json", "projects/<lib>/tsconfig.spec.json"]`. The
+builder unions the diagnostics from every leaf in the array, the same way the Nx
+target follows a solution `tsconfig.json`'s references.
+
+### Caching and the nx dependency
+
+Two things are different from the Nx target:
+
+- **No target caching.** The Angular CLI `typecheck` target does not cache its
+  result. The Angular CLI has no task-result cache to seed, so every
+  `ng run <project>:typecheck` runs the full check. Rely on your CI cache to skip
+  unchanged work.
+- **`nx` comes along transitively.** The Angular CLI builder reuses the same engine
+  as the Nx executor, so installing angular-typechecker pulls in `nx` as a
+  transitive dependency, and a `.nx/` directory may appear in your workspace even
+  though you never invoke Nx directly. This is expected; leave it in place or add
+  `.nx/` to your `.gitignore`.
+
+This section covers standard application and library projects. A Storybook wired
+through the Angular CLI is a separate, unsupported case, called out under
+[Storybook](#storybook).
+
+### Angular versions before 22
+
+The `@angular/compiler-cli` `^22.0.0` and TypeScript `>=6.0.0 <6.1.0` peer ranges
+mean an Angular workspace older than 22 cannot satisfy them cleanly. To try
+angular-typechecker there anyway, install with `--legacy-peer-deps`, which relaxes
+peer resolution for the whole install; behavior on an unsupported Angular version
+is not verified.
 
 ## Storybook
 
