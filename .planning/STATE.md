@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: verifying
-last_updated: "2026-07-10T23:08:41.628Z"
+status: ready_to_plan
+last_updated: 2026-07-11T07:19:18.840Z
 last_activity: 2026-07-11 -- Phase 23 Plan 03 (first-party ng-add) complete
 progress:
   total_phases: 4
@@ -11,6 +11,7 @@ progress:
   total_plans: 8
   completed_plans: 8
   percent: 75
+stopped_at: Phase 23 complete (3/3) — ready to discuss Phase 24
 ---
 
 # Project State
@@ -20,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 23 — init-schematic-parity-first-party-ng-add
+**Current focus:** Phase 24 — real oss + scaffolded e2e, additive only audit, docs
 
 ## Current Position
 
-Phase: 23 (init-schematic-parity-first-party-ng-add) — EXECUTING
-Plan: 3 of 3 (complete)
-Status: Phase 23 plans complete — ready for verification
-Last activity: 2026-07-11 -- Phase 23 Plan 03 (first-party ng-add) complete
+Phase: 24
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-11
 
 ## Accumulated Context
 
