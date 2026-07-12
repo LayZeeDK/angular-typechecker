@@ -1,4 +1,4 @@
-**Plans:** 3/3 original plans complete; 2 gap-closure plans added (2026-07-12, reopened under --force for a post-verification yarn/nx-peer gap); 24-04 + 24-05 complete (2/2 gap-closure) -- all Phase 24 plans done
+**Plans:** 3/3 original plans complete; 3 gap-closure plans (2026-07-12, reopened under --force for post-verification yarn `ng add` gaps); 24-04 + 24-05 complete, 24-06 planned (awaiting execution) -- the last NGADD-01 yarn auto-wire gap
 
 Plans:
 **Wave 1**
@@ -14,3 +14,4 @@ Plans:
 
 - [x] 24-04-PLAN.md -- ACP-02: declare `nx` as a direct `^23.0.0` dependency (yarn does not auto-install the `@nx/devkit` peer) + invert the `package-manifest.spec.ts`/`@nx/dependency-checks` guards + de-contradict PROJECT.md/CLAUDE.md
 - [x] 24-05-PLAN.md -- ACV-02: finalize the yarn CLI e2e to the real `ng add` (strip debug scaffolding, keep `enableMirror:false`) + add a committed CLI x pnpm-workspace name-collision e2e (app build leaf never dropped)
+- [ ] 24-06-PLAN.md -- NGADD-01/ACV-02/ACP-02: make `ng-add` a vanilla nx-free `@angular-devkit/schematics` schematic sharing one framework-agnostic wiring core with the Nx `configuration` generator (Option C) so `ng add` auto-wires on the FIRST run under yarn 4; flip the yarn CLI e2e to assert first-run auto-wire; retire the resolved README yarn caveat
