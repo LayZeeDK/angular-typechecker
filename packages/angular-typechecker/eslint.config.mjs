@@ -92,7 +92,18 @@ export default [
           // .planning/debug/cli-yarn-e2e-wrong-version.md. An `ng add` into a
           // non-Nx Angular CLI workspace may still materialize a `.nx/` cache
           // dir; the README `## Angular CLI` prose covers it (ACD-01).
-          ignoredDependencies: ['nx', '@angular-devkit/architect', 'rxjs'],
+          // `@angular-devkit/schematics` is likewise ignored (24-06): the vanilla
+          // nx-free ng-add schematic TYPE-imports Rule/Tree/SchematicContext from
+          // it (erased at compile -- the compiled schematic.js requires only the
+          // pure core), and it is an Angular-CLI-provided peer, so without this
+          // ignore the rule would flag it MISSING and fail `nx lint` at
+          // maxWarnings:0.
+          ignoredDependencies: [
+            'nx',
+            '@angular-devkit/architect',
+            '@angular-devkit/schematics',
+            'rxjs',
+          ],
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vitest.config.{js,ts,mjs,mts}',

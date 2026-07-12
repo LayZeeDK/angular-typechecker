@@ -2,11 +2,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { HostTree } from '@angular-devkit/schematics';
+import type { SchematicContext } from '@angular-devkit/schematics';
 import {
   SchematicTestRunner,
   UnitTestTree,
 } from '@angular-devkit/schematics/testing';
-import { lastValueFrom } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -19,11 +19,15 @@ import ngAdd from './schematic';
 // NGADD-01 coverage for the VANILLA (nx-free) ng-add schematic (24-06). Migrated from
 // the deleted generators/ng-add/ng-add.spec.ts: the schematic is now a pure
 // @angular-devkit/schematics Rule (no convertNxGenerator, no @nx/devkit), so it is
-// exercised via SchematicTestRunner.callRule over a UnitTestTree(new HostTree())
-// seeded with angular.json + package.json + leaf tsconfigs. The Rule reads
-// angular.json DIRECTLY, so assertions parse the on-disk `architect` map (with
-// `builder`, not the Nx `executor` alias). Notices are captured by subscribing to
-// runner.logger (context.logger is a child that propagates).
+// exercised over a UnitTestTree(new HostTree()) seeded with angular.json +
+// package.json + leaf tsconfigs. The Rule reads angular.json DIRECTLY, so assertions
+// parse the on-disk `architect` map (with `builder`, not the Nx `executor` alias).
+//
+// The Rule is SYNCHRONOUS and touches only context.logger, so it is invoked directly
+// with a context backed by the SchematicTestRunner's logger -- SchematicTestRunner's
+// own `callRule` cannot capture logger output (it builds the context with a
+// NullLogger when no parent is passed, and crashes if a parent logger is passed), so
+// direct invocation is the faithful way to assert the info notices.
 
 const collectionPath = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -86,16 +90,16 @@ describe('ng-add schematic (vanilla, Angular CLI auto-wire-all)', () => {
     leaf('projects/ngx-leaflet/tsconfig.spec.json');
   }
 
+  // The vanilla Rule is synchronous; invoke it directly with a logger-backed context.
+  // `async` so a synchronous throw surfaces as a rejected promise for rejects.toThrow.
   async function run(options: NgAddGeneratorSchema = {}): Promise<void> {
-    await lastValueFrom(runner.callRule(ngAdd(options), tree));
+    const context = { logger: runner.logger } as unknown as SchematicContext;
+    ngAdd(options)(tree, context);
   }
 
   function target(project: string): unknown {
     const workspace = JSON.parse(tree.readContent('angular.json')) as {
-      projects: Record<
-        string,
-        { architect?: Record<string, unknown> }
-      >;
+      projects: Record<string, { architect?: Record<string, unknown> }>;
     };
 
     return workspace.projects[project]?.architect?.['typecheck'];
@@ -288,7 +292,8 @@ describe('ng-add schematic (RF-02 no-angular.json guard)', () => {
       JSON.stringify({ dependencies: { 'angular-typechecker': '0.2.0' } }),
     );
 
-    await lastValueFrom(runner.callRule(ngAdd({}), tree));
+    const context = { logger: runner.logger } as unknown as SchematicContext;
+    ngAdd({})(tree, context);
 
     // No angular.json -> nothing wired, no nx.json seeded.
     expect(tree.exists('angular.json')).toBe(false);
