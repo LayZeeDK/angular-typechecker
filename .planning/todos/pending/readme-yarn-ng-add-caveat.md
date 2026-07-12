@@ -35,13 +35,22 @@ CONFIRMED (across three e2e runs) that this is INACCURATE for yarn:
    `ng g angular-typechecker:ng-add` afterwards to wire every project (or run `ng add` twice).
    (npm and pnpm auto-wire via `ng add` directly.) Keep the caveat about the OUTCOME, not the
    internal mechanism.
-2. Upstream angular/angular-cli issue -- BLOCKED on a prerequisite: do NOT file until a
-   VANILLA (Nx-free) Angular schematic is shown to ALSO fail the `createSchematic` probe under
-   yarn 4. The observed throw is entirely inside the `@nx/devkit`/`convertNxGenerator` -> `nx`
-   transitive chain, so it may be nx-transitive-specific (an nx-under-yarn packaging problem)
-   rather than a general Angular-CLI-under-yarn bug. Attributing it to Angular CLI (the
-   bare-catch-masks-the-error / yarn-4 `ng add` untested angle) requires the vanilla repro
-   first. (User directive, 2026-07-12.)
+2. Upstream angular/angular-cli issue -- NOT WARRANTED (prerequisite repro done, 2026-07-12,
+   quick task 260712-ft9). The vanilla-repro settled it: a VANILLA (Nx-free) zero-import
+   `ng-add` schematic WIRES cleanly under yarn 4 (Gate 3 `createSchematic('ng-add')` OK, marker
+   lands), and the npm control wires the identical package. So the failure is NX-SPECIFIC -- it
+   needs the `@nx/devkit -> nx -> ora -> log-symbols -> chalk` transitive chain that only nx's
+   packaging drags in under yarn's hoist; it is NOT a general Angular-CLI-under-yarn probe bug.
+   Do NOT file the "Angular CLI's yarn-4 `ng add` probe is broken / bare-catch masks the error"
+   issue -- that framing is refuted. If anything is fileable it is reframed as an nx-under-yarn
+   packaging/hoist consideration (nx's nested chalk/log-symbols interop under yarn 4), and it
+   stays USER-GATED (draft-only, pending an explicit go-ahead). See the resolved OPEN QUESTION in
+   `.planning/debug/resolved/cli-yarn-e2e-wrong-version.md` and the sandbox
+   `D:/projects/sandbox/vanilla-ng-add-repro/FINDINGS.md`.
+
+   NOTE: item 1 (the README yarn caveat) is UNAFFECTED -- the yarn `ng add` no-autowire behavior
+   is real regardless of attribution, so a yarn user still runs `ng g angular-typechecker:ng-add`
+   (or `ng add` twice) to wire. That README decision remains open for the user.
 
 Out of scope for 24-05 (two e2e specs only). Recorded as a release-facing product-doc
 decision for the user.

@@ -299,3 +299,32 @@ angular/angular-cli issue (bare-catch-masks-the-error / yarn-4 `ng add` untested
 non-nx schematic is shown to reproduce the probe failure under yarn 4. Until then the accurate scope is
 "loading this package's `@nx/devkit`-based ng-add factory throws in the CLI's yarn probe", NOT "Angular
 CLI's ng-add detection fails under yarn" in general.
+
+## OPEN QUESTION -- RESOLVED (2026-07-12, quick task 260712-ft9)
+
+**Answer: the failure is NX-SPECIFIC, NOT a general Angular-CLI-under-yarn probe bug.** A VANILLA
+(Nx-free) zero-import ng-add schematic (`exports.default` factory, no `@nx/devkit`, no
+`@angular-devkit/schematics`, no chalk/ora/log-symbols) WIRES cleanly under yarn 4: Gate 3
+`createSchematic('ng-add')` returns OK, the factory runs, and the on-disk marker lands. The npm
+control wires the SAME package identically -- so the package is well-formed and a yarn no-wire (had it
+occurred) could not be dismissed as a malformed repro. Because the vanilla schematic carries NO nx
+transitive chain, Gate 3 does not throw; the angular-typechecker no-wire therefore REQUIRES the
+`@nx/devkit -> nx -> ora -> log-symbols -> chalk` chain (the observed `TypeError: chalk.blue is not a
+function`) that only nx's packaging drags in under yarn's hoist.
+
+Evidence (verbatim, ANSI-stripped) -- BOTH legs, no `[G3-CATCH]` fired:
+- yarn: `[G1] hasSchematics=true manifest.schematics="./collection.json" vanilla-ng-add-repro@0.0.1`;
+  `[G3] createSchematic(ng-add) OK -> stays true`; `[vanilla-ng-add] SCHEMATIC RAN`;
+  `CREATE VANILLA_NG_ADD_RAN.txt (19 bytes)`; `[MARKER yarn] present`.
+- npm: `[G1] hasSchematics=true manifest.schematics="./collection.json" vanilla-ng-add-repro@0.0.1`;
+  `[G3] createSchematic(ng-add) OK -> stays true`; `[vanilla-ng-add] SCHEMATIC RAN`;
+  `[MARKER npm] present`.
+
+**Upstream attribution decision:** NO angular/angular-cli issue is warranted (the "Angular CLI's
+yarn-4 `ng add` probe is broken / bare-catch masks the error" framing is refuted -- a dependency-free
+schematic wires fine under yarn). If anything is fileable it is an nx-under-yarn packaging/hoist
+consideration, and it stays USER-GATED. No issue is filed by the repro task.
+
+Full repro + captured logs (external, uncommitted sandbox):
+`D:/projects/sandbox/vanilla-ng-add-repro/FINDINGS.md` (harness `vanilla-repro.mjs`, combined
+`run.log`, marker files under `vanilla-ng-add-ws-yarn/` and `vanilla-ng-add-ws-npm/`).
