@@ -241,7 +241,7 @@ function setupYarnWorkspace(
 
 describe('CLI-YARN: `ng add` + `ng run :typecheck` on a real yarn 4 workspace', () => {
   it.skipIf(!corepackAvailable).each(['flat', 'workspace'] as const)(
-    'auto-wires every project and catches planted leaf errors — %s layout',
+    'ng add installs, ng g wires every project, catches planted leaf errors -- %s layout',
     (layout) => {
       const verdaccioUrl = inject('verdaccioUrl');
       const verdaccioToken = inject('verdaccioToken');
@@ -322,9 +322,13 @@ describe('CLI-YARN: `ng add` + `ng run :typecheck` on a real yarn 4 workspace', 
         // No stray nx.json (the Angular CLI init fork seeds no Nx caching).
         expect(() => readFileSync(join(tmp, 'nx.json'), 'utf8')).toThrow();
 
-        // CLEAN baseline: the app target type-checks the pristine scaffold GREEN.
+        // CLEAN baseline: BOTH targets type-check the pristine scaffold GREEN (assert the
+        // library baseline too, so the later lib-scoping check is a real regression from a
+        // known-green start, matching the npm/pnpm sibling specs).
         const appClean = ngRun(tmp, `${APP_PROJECT}:typecheck`, npmEnv);
         expect(appClean.code, appClean.stdout).toBe(0);
+        const libClean = ngRun(tmp, `${LIB_PROJECT}:typecheck`, npmEnv);
+        expect(libClean.code, libClean.stdout).toBe(0);
 
         // Plant DISTINCT per-leaf errors and prove per-project scoping under real yarn:
         // the app target catches its own app-component (TS2322) + app-spec (TS2345)
