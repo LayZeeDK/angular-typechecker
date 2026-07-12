@@ -99,6 +99,17 @@ export default async function ({ provide }: TestProject) {
   // dual-stack `localhost` (::1 vs 127.0.0.1) family race that intermittently made
   // yarn 4's fetch phase hit a family verdaccio was not listening on. Must match
   // the target's listenAddress so the readiness scrape (`http://127.0.0.1:`) fires.
+  // Nx 23's TaskInvocationTracker keys a per-root-PID uniqueness constraint on task
+  // invocations (nx tasks-runner/task-orchestrator.js). Under `nx run-many -t e2e`, both
+  // registry-starting e2e projects inherit the SAME NX_INVOCATION_ROOT_PID, and
+  // startLocalRegistry forks `nx run <root>:local-registry` with the inherited env, so the
+  // second fork collides ("already invoked by a parent Nx process in this chain") and
+  // process.exit(1)s. Clearing the inherited root PID makes each forked registry its own
+  // root (Nx's own `?? process.pid` fallback), so the two serialized forks never collide.
+  // Matches buildCleanEnv's NX_RUNNER_ENV_KEYS hygiene; startLocalRegistry takes no env
+  // param, so we clear process.env before it forks.
+  delete process.env.NX_INVOCATION_ROOT_PID;
+
   const stop = await startLocalRegistry({
     localRegistryTarget: `${rootProjectName}:local-registry`,
     storage: './tmp/local-registry/storage',
