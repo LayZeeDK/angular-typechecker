@@ -4,7 +4,7 @@ milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
 last_updated: "2026-07-12T14:33:14.394Z"
-last_activity: 2026-07-12 -- Phase 24 execution started
+last_activity: 2026-07-12 -- Quick task 260712-n7z: resolved e2e local-registry flakiness (run-many -t e2e --parallel=1 now green)
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
 Plan: 6 of 6 (24-06 gap-closure complete)
 Status: Executing Phase 24
-Last activity: 2026-07-12 -- Completed 24-06 (nx-free vanilla ng-add, Option C)
+Last activity: 2026-07-12 -- Completed quick task 260712-n7z (e2e local-registry fix); Phase 24 at 6/6
 
 ## Accumulated Context
 
@@ -127,6 +127,7 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 | 260710-0ch | Audit, triage, then address Dependabot security alerts | 2026-07-10 | 0fe82a8 | Verified | [260710-0ch-audit-triage-then-address-dependabot-sec](./quick/260710-0ch-audit-triage-then-address-dependabot-sec/) |
 | 260710-b9t | Dogfood angular-typechecker: unified typecheck/test/integration/e2e verbs covering every non-broken file (PR #33) | 2026-07-10 | 1c68811 | Verified | [260710-b9t-dogfood-angular-typechecker-add-typechec](./quick/260710-b9t-dogfood-angular-typechecker-add-typechec/) |
 | 260712-ft9 | Vanilla (Nx-free) Angular CLI schematic ng-add repro -- discriminated the yarn ng-add no-autowire as NX-SPECIFIC (not a general Angular CLI bug); upstream issue NOT warranted | 2026-07-12 | b513ac9 | Verified | [260712-ft9-create-vanilla-angular-cli-schematic-min](./quick/260712-ft9-create-vanilla-angular-cli-schematic-min/) |
+| 260712-n7z | Resolve e2e local-registry flakiness under `nx run-many -t e2e --parallel=1` (CI e2e gate, ci.yml:204) -- Option A: clear inherited NX_INVOCATION_ROOT_PID before startLocalRegistry in both registry-starting e2e globalSetups so each forked `nx run <root>:local-registry` keys the invocation tracker on its own pid | 2026-07-12 | a17ee57 | Verified | [260712-n7z-before-phase-completion-research-on-the-](./quick/260712-n7z-before-phase-completion-research-on-the-/) |
 
 ## Deferred Items
 
