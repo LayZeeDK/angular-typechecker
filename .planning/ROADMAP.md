@@ -1,4 +1,4 @@
-**Plans:** 3/3 original plans complete; 2 gap-closure plans added (2026-07-12, reopened under --force for a post-verification yarn/nx-peer gap)
+**Plans:** 3/3 original plans complete; 2 gap-closure plans added (2026-07-12, reopened under --force for a post-verification yarn/nx-peer gap); 24-04 complete (1/2 gap-closure)
 
 Plans:
 **Wave 1**
@@ -12,5 +12,5 @@ Plans:
 
 **Gap closure** *(added 2026-07-12 -- a post-verification gap: yarn does not auto-install the `@nx/devkit` peer `nx`, so `ng add` crashes on a yarn Angular CLI workspace)*
 
-- [ ] 24-04-PLAN.md -- ACP-02: declare `nx` as a direct `^23.0.0` dependency (yarn does not auto-install the `@nx/devkit` peer) + invert the `package-manifest.spec.ts`/`@nx/dependency-checks` guards + de-contradict PROJECT.md/CLAUDE.md
+- [x] 24-04-PLAN.md -- ACP-02: declare `nx` as a direct `^23.0.0` dependency (yarn does not auto-install the `@nx/devkit` peer) + invert the `package-manifest.spec.ts`/`@nx/dependency-checks` guards + de-contradict PROJECT.md/CLAUDE.md
 - [ ] 24-05-PLAN.md -- ACV-02: finalize the yarn CLI e2e to the real `ng add` (strip debug scaffolding, keep `enableMirror:false`) + add a committed CLI x pnpm-workspace name-collision e2e (app build leaf never dropped)
