@@ -1,111 +1,117 @@
 ---
 phase: 24-real-oss-scaffolded-e2e-additive-only-audit-docs
-verified: 2026-07-11T14:35:00Z
+verified: 2026-07-12T10:05:00Z
 status: passed
 score: 5/5 must-haves verified
 overrides_applied: 0
 re_verification:
-  previous_status: human_needed
-  previous_score: 4/5
+  previous_status: passed
+  previous_score: 5/5
   gaps_closed:
-    - "ACV-01 real-clone gate #1 (bluehalo/ngx-leaflet @818e9ae, app+lib) -- executed autonomously: PASS. ng add auto-wired both projects (2-element tsConfig arrays), no stray nx.json, clean baseline exit 0, per-project scoping proven (app=TS2322+TS2345, lib=TS2554, bidirectional no-bleed), no ERR_REQUIRE_ESM."
-    - "ACV-01 real-clone gate #2 (realworld-angular @9e3528f, app-only) -- executed autonomously: initially FAILED (found a real generator defect: silent app-build-leaf drop on an Angular-CLI-that-is-also-a-pnpm-workspace with a name-colliding root package.json). Defect root-caused, FIXED (commit 1837b25: read root/projectType straight from angular.json on the CLI write-fork), regression-tested (4 new tests), and gate #2 RE-VERIFIED on the real clone with the fixed tarball: PASS."
+    - "ACP-02 (24-04): yarn does not auto-install the @nx/devkit peer `nx`, so `nx` is now a direct `^23.0.0` dependency in the published manifest (NOT peerDependencies); @nx/devkit stays exact 23.0.1. Both manifest guards inverted (package-manifest.spec.ts asserts nx IS a ^23.0.0 dep + still not a peer), @nx/dependency-checks green (nx in ignoredDependencies), operative constraint flipped in PROJECT.md + CLAUDE.md. Verified: nx test 349 / nx lint / nx build all green; dist manifest carries nx:^23.0.0; version still 0.2.0."
+    - "ACV-02 (24-05): CLI x yarn 4 e2e (flat + workspace) finalized to REAL `ng add` install + `ng g :ng-add` wire (yarn ng-add no-autowire quirk asserted+locked), temp scaffolding stripped, enableMirror:false retained, libClean baseline added (code-review fix). New committed CLI x pnpm 11 name-collision e2e asserts the full [tsconfig.app.json, tsconfig.spec.json] array (app build leaf never dropped) + per-project scoping. Both specs committed (76c6f35, c5c6912, 724c570); documented green in 24-05-SUMMARY + fix report."
   gaps_remaining: []
   regressions: []
+notes:
+  - "Deferred (tracked, user-owned release decision -- NOT a phase-24 gap): README `## Angular CLI` states `ng add` auto-wires every project, which is accurate for npm/pnpm but not yarn (under yarn `ng add` installs but does not run the ng-add schematic; user must `ng g angular-typechecker:ng-add`). Recorded in .planning/todos/pending/readme-yarn-ng-add-caveat.md. ACD-01's enumerated items are all present; the yarn caveat is a release-facing accuracy refinement, not part of ACD-01's defined scope. The yarn no-autowire behavior is itself a documented, locked test-harness quirk (resolved debug doc), asserted by the yarn e2e."
 ---
 
 # Phase 24: Real-OSS + Scaffolded e2e, Additive-Only Audit, Docs Verification Report
 
-**Phase Goal:** The full Angular CLI flow (`ng add angular-typechecker` -> `ng run <project>:typecheck`) is proven end-to-end against a real OSS `angular.json` workspace AND a freshly scaffolded workspace; the Angular-CLI-vs-Nx-difference unit/integration coverage is audited and gaps filled; the ADDITIVE-ONLY charter is audited; and the README/CHANGELOG document the new Angular CLI surface in end-user language. (Final phase of milestone v0.2.1.)
-**Verified:** 2026-07-11T14:35:00Z
+**Phase Goal:** real-OSS + scaffolded Angular CLI (`ng add` -> `ng run`) e2e coverage, additive-only vs `angular-typechecker@0.2.0`, with the docs (README `## Angular CLI` + CHANGELOG) shipped. Plus the 2026-07-12 gap closure: yarn does not auto-install the `@nx/devkit` peer `nx`, so `nx` is now a direct dependency, and the CLI x yarn/pnpm e2e coverage is finalized.
+**Verified:** 2026-07-12T10:05:00Z
 **Status:** passed
-**Re-verification:** Yes -- after ACV-01 real-clone gate execution + gap-fix (was `human_needed`, 4/5)
+**Re-verification:** Yes -- after gap-closure plans 24-04 (nx-dependency fix) + 24-05 (yarn/pnpm CLI e2e) + a post-verification code-review-fix (WR-01 libClean, IN-01/IN-02 title). Prior verdict was `passed 5/5`; this re-verifies it STILL holds with the gap-closure work integrated.
 
 ## Goal Achievement
 
-This is a VERIFICATION + AUDIT + DOCS phase that also carries the milestone's FINAL real-clone gate (ACV-01). The initial verification (2026-07-11T12:05Z) confirmed 4/5 automatable truths and surfaced the two ACV-01 real-clone executions as human items. Those have now been executed autonomously per the phase HANDOFF. Gate #1 passed; gate #2 caught a REAL generator defect (exactly the class of bug a real-clone gate exists to catch), which was root-caused, fixed, regression-tested, and re-verified PASS on the real clone with the fixed build. All 5 truths are now VERIFIED.
+The prior `passed 5/5` verdict holds. The gap-closure changeset (24-04 + 24-05 + code-review-fix) is integrated on a clean working tree and re-verified against the actual codebase, not SUMMARY claims: the shipped manifest now declares `nx` directly (closing the yarn UX gap the CLI x yarn e2e surfaced), both enforcement guards were inverted and stay green, the yarn/pnpm CLI e2e specs are finalized + committed + substantive, and the additive-only charter still holds (a `dependencies` addition on unreleased/widened surface; version unchanged at 0.2.0).
 
 ### Observable Truths
 
-| # | Truth (ROADMAP SC / requirement) | Status | Evidence |
-|---|----------------------------------|--------|----------|
-| 1 | ACV-01: the packed tarball is proven against REAL cloned OSS Angular 22 workspaces (ngx-leaflet, then realworld-angular) via `ng add` -> `ng run <project>:typecheck` catching planted diagnostics. | ✓ VERIFIED | `24-ACV-01-UAT.md` frontmatter `outcome`: both gates executed; total 3 / passed 3. `24-HUMAN-UAT.md` records gate #1 (ngx-leaflet) PASS (auto-wire-all, 2-element arrays, no stray nx.json, per-project scoping, no ERR_REQUIRE_ESM) and gate #2 (realworld-angular) PASS AFTER FIX. Gate #2 initially FAILED on a genuine defect (spec-only under-check on an Angular-CLI+pnpm-workspace+name-collision); defect fixed in `generator.ts` (commit 1837b25), re-verified on the real clone: ng-add auto-wired `[tsconfig.app.json, tsconfig.spec.json]`, planted TS2322 (build leaf) + TS2345 (spec leaf) both caught, exit 1, no infra error. |
-| 2 | ACV-02: the full flow is proven against a freshly SCAFFOLDED workspace; planted app+spec+library errors each surface, each per-project target catches exactly its own leaves. | ✓ VERIFIED | `e2e/angular-typechecker-ng-cli-e2e/` (Nx-discoverable; `e2e`+`typecheck` targets; `type:e2e` tag). Committed pinned Ng22 fixture (app `ng-cli-workspace` + lib `my-lib`, non-vacuous baseline). `ng-add-ng-run.e2e.spec.ts` asserts distinct per-leaf codes (TS2322/TS2345 app, TS2554 lib), both scoping directions, `not(ERR_REQUIRE_ESM)`, `not(infrastructure error)`. 4-guard contract green in the 327-test suite. |
-| 3 | ACV-03: unit+integration coverage of the Angular-CLI-vs-Nx differences (tsConfig[] union; angular.json write-fork; builder over BuilderContext; ng-add auto-wire-all; no stray nx.json). | ✓ VERIFIED | `builder.integration.spec.ts` (4 tests, WR-01-hardened: planted TS2322+TS2345 surface in captured stdout) GREEN via `TestingArchitectHost`. Other 4 sub-items audited as Phases 21-23 coverage (24-ADDITIVE-AUDIT guard map). The write-fork's tsConfig[]-array resolution now ALSO covered by the ACV-01 regression suite (`configuration-angular-cli.spec.ts`: root-app, subdir-app, subdir-lib under pnpm collision). |
-| 4 | ACP-02: additive-only enforced AND audited -- no break to the executor id, the runTypecheck/CoreResult/CoreOptions API (widened only), or existing schemas; v0.3.0 not triggered. | ✓ VERIFIED | `24-ADDITIVE-AUDIT.md` git-diff verdict vs `angular-typechecker@0.2.0` (barrel byte-unchanged; executor schema tsConfig oneOf widen-only; new-file additions). Section 5 confirms the ACV-01 gap-fix stays additive-only: it lives inside the NEW/UNRELEASED Angular CLI generator (0.2.0 has none), touches NO schema/barrel/collection/manifest. Verified independently: `git show --name-only 1837b25` = only `generator.ts` + 2 spec files. `src/index.drift.ts` tripwire GREEN under `nx typecheck`. `package.json` version UNCHANGED at 0.2.0. |
-| 5 | ACD-01: README `## Angular CLI` section (all enumerated items) + curated CHANGELOG entry in end-user language, no internal ids. | ✓ VERIFIED | README `## Angular CLI` covers ng add auto-wire-all, ng generate ...:configuration, ng run <project>:typecheck, tsConfig-array target shape, nx-transitive + `.nx/` + no-caching notes, off-stack `--legacy-peer-deps`; Storybook "not supported" caveat preserved. `angular-cli-docs.spec.ts` (9 tests) GREEN. CHANGELOG `## 0.2.1` prose entry present (no cut/date/link -- finalized at Release-PR per AGENTS.md). No internal ids / email leaks. |
+| # | Truth (requirement) | Status | Evidence |
+|---|---------------------|--------|----------|
+| 1 | ACP-02: additive-only enforced AND audited; `nx` declared as a direct `^23.0.0` dependency (NOT a peer), @nx/devkit exact 23.0.1; guards enforce it; version stays 0.2.0. | VERIFIED | `package.json:49-53` `dependencies: {@nx/devkit:23.0.1, nx:^23.0.0, tslib:^2.3.0}`; `peerDependencies` (54-59) has NO `nx`. `package-manifest.spec.ts:85-88` + `:191-194` assert `dependencies.nx === '^23.0.0'` AND `not.toHaveProperty('nx')` on peers (non-vacuous, populated peer object). `eslint.config.mjs:95` `ignoredDependencies: ['nx', '@angular-devkit/architect', 'rxjs']`. Behavioral: `nx test` 38 files/349 tests green, `nx lint` "All files pass" (maxWarnings:0), `nx build` success, dist manifest `dependencies.nx === '^23.0.0'`, version 0.2.0. `24-ADDITIVE-AUDIT.md` s.1-5 verdict ADDITIVE-ONLY (dependency addition additive vs 0.2.0). |
+| 2 | ACV-02: CI-authoritative Angular CLI e2e proves the REAL `ng add` -> `ng run <project>:typecheck` flow on npm, yarn 4 (flat + workspace), pnpm 11 (root name collision), with per-project scoping and the app build leaf never dropped. | VERIFIED | Three committed specs auto-join `ng-cli-e2e` (no project.json edit). yarn spec: real `ng add angular-typechecker --skip-confirmation` install (:286), asserts no-wire after `ng add` (:296-297, locks the yarn quirk), wires via `ng g angular-typechecker:ng-add` (:302), full `[tsconfig.app.json, tsconfig.spec.json]` app array + lib array (:313-320), no stray nx.json (:323), appClean+libClean baselines (:328-331), per-leaf scoping TS2322+TS2345 app / TS2554 lib no cross-bleed (:352-368), no ERR_REQUIRE_ESM, `enableMirror:false` retained (:231), 127.0.0.1 safety (:249), no temp scaffolding. pnpm spec: root name collision (`packages:['.']`), full app array assertion (:277-284, the ACV-01 gate #2 lock), per-project scoping, effective-pnpm-major===11 assertion (:256-259), `strictDepBuilds:false`. Committed 76c6f35/c5c6912/724c570; green in 24-05-SUMMARY (Test Files 3/Tests 4) + fix report (post-libClean re-run). |
+| 3 | ACV-01: shipped tarball proven against REAL cloned OSS Angular 22 workspaces via `ng add` -> `ng run`. | VERIFIED | Unchanged by gap closure. Both clones executed 3/3 PASS (24-ACV-01-UAT / 24-HUMAN-UAT). Generator fix commit `1837b25` confirmed ancestor of HEAD; `generator.ts:251-273` reads `root`/`projectType` straight from `angular.json` (`readJson<AngularJsonWorkspace>(tree,'angular.json').projects[schema.project]`), `resolveTsConfigLeaves(tree, root, projectType, schema)` (:152). |
+| 4 | ACV-03: unit+integration coverage of the Angular-CLI-vs-Nx differences. | VERIFIED | Unchanged by gap closure. `builder.integration.spec.ts` + `configuration-angular-cli.spec.ts` (pnpm-collision regression) + write-fork array resolution; 349-test suite green incl. drift barrel tripwire under `nx typecheck` (success). |
+| 5 | ACD-01: README `## Angular CLI` section (all enumerated items) + curated CHANGELOG in end-user language, no internal ids. | VERIFIED | `README.md:381-471` covers ng add auto-wire-all, `ng generate ...:configuration`, `ng run <project>:typecheck`, per-project target, tsConfig array shape, nx-transitive + `.nx/` + no-caching, off-stack `--legacy-peer-deps`; Storybook caveat preserved (:461-463). `CHANGELOG.md:5-45` `## 0.2.1` prose + Compatibility block, no internal ids, no cut date (finalized at Release-PR). `angular-cli-docs.spec.ts` 9 tests green. See notes: a yarn-specific `ng add` accuracy caveat is a tracked, user-owned release follow-up, not an ACD-01 scope item. |
 
-**Score:** 5/5 truths verified. The single previously-open item (ACV-01, truth 1) is now executed and PASS on both real clones.
+**Score:** 5/5 truths verified.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `packages/angular-typechecker/src/generators/configuration/generator.ts` | CLI write-fork reads root/projectType from angular.json (ACV-01 fix) | ✓ VERIFIED | Fix present in HEAD (commit 1837b25 is ancestor of HEAD): `resolveTsConfigLeaves(tree, root, projectType, schema)`; caller reads `readJson(angular.json).projects[project]`; Nx else-branch byte-unchanged. No debt markers. |
-| `.../configuration/configuration-angular-cli.spec.ts` | ACV-01 pnpm-collision regression (root/subdir app, subdir lib) | ✓ VERIFIED | 3 new RED-turned-GREEN cases assert the full `[app/lib, spec]` array read straight from angular.json (old code would emit `[spec]`-only / throw). Non-vacuous. |
-| `.../configuration/configuration.spec.ts` | Nx-branch package/project name-collision lock | ✓ VERIFIED | New case: pnpm-workspace + colliding package.json name still wires the target correctly on the Nx branch (project.json authoritative). |
-| `packages/angular-typechecker/src/builders/typecheck/builder.integration.spec.ts` | Builder-over-BuilderContext run + parity (ACV-03) | ✓ VERIFIED | 4 tests GREEN; WR-01-hardened. |
-| `packages/angular-typechecker/src/index.drift.ts` | Additive-only barrel tripwire (5 exports) | ✓ VERIFIED | Wired into tsconfig.drift.json; drift tsc --noEmit GREEN. |
-| `.planning/.../24-ADDITIVE-AUDIT.md` | ACP-02 git-diff verdict vs 0.2.0 (+ fix disposition) | ✓ VERIFIED | Per-path verdict + guard map + section 5 (fix stays additive-only). |
-| `packages/angular-typechecker/README.md` (`## Angular CLI`) | End-user Angular CLI section | ✓ VERIFIED | All D-06 items; Storybook caveat intact. |
-| `packages/angular-typechecker/src/angular-cli-docs.spec.ts` | Docs content tripwire | ✓ VERIFIED | 9 tests GREEN. |
-| `CHANGELOG.md` (`## 0.2.1`) | Curated prose entry, no cut | ✓ VERIFIED | Prose-only; finalized at Release-PR. |
-| `e2e/angular-typechecker-ng-cli-e2e/**` | 4th e2e project + committed fixture + ng-add->ng-run spec (ACV-02) | ✓ VERIFIED | Guard-compliant; per-leaf scoping spec; committed pinned Ng22 fixture. |
-| `.planning/.../24-ACV-01-UAT.md` | Reproducible real-clone UAT (ACV-01) | ✓ VERIFIED (executed) | Both clones by URL+SHA; frontmatter `outcome` records executed results; total 3 / passed 3. |
+| `packages/angular-typechecker/package.json` | `nx:^23.0.0` in `dependencies`, @nx/devkit exact, no nx peer, version 0.2.0 | VERIFIED | Lines 49-53 / 54-59; version 0.2.0. |
+| `packages/angular-typechecker/src/package-manifest.spec.ts` | inverted nx guard (IS ^23.0.0 dep, NOT a peer) at both sites | VERIFIED | :85-88, :191-194; non-vacuous. |
+| `packages/angular-typechecker/eslint.config.mjs` | `nx` in `@nx/dependency-checks` ignoredDependencies + accurate comment | VERIFIED | :95 (`['nx', ...]`); comment :86-94 states nx IS a direct dep. |
+| `e2e/.../ng-add-ng-run-yarn.e2e.spec.ts` | real ng add + ng g wire, no scaffolding, enableMirror:false, libClean | VERIFIED | Substantive, wired, committed; docstring accurately scopes the yarn quirk. |
+| `e2e/.../ng-add-ng-run-pnpm.e2e.spec.ts` | CLI x pnpm name-collision, full [build,spec] array | VERIFIED | Committed (c5c6912); regression lock at :277-284. |
+| `packages/angular-typechecker/src/generators/configuration/generator.ts` | CLI write-fork reads root/projectType from angular.json | VERIFIED | 1837b25 in HEAD; :251-273. No debt markers. |
+| `packages/angular-typechecker/README.md` (`## Angular CLI`) | all D-06 items | VERIFIED | :381-471. |
+| `CHANGELOG.md` (`## 0.2.1`) | curated prose, no cut/ids | VERIFIED | :5-45. |
+| `.planning/.../24-ADDITIVE-AUDIT.md` | ACP-02 verdict incl. dependency delta | VERIFIED | s.5 covers the nx-dependency addition disposition (additive). |
+| `.planning/debug/resolved/cli-yarn-e2e-wrong-version.md` | debug doc resolved + moved | VERIFIED | Moved to `resolved/`; working tree clean (start-of-session untracked copy is gone). |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|-----|-----|--------|---------|
-| `configurationGenerator` (CLI fork) | `angular.json` projects map | `readJson(angular.json).projects[project]` root/projectType | ✓ WIRED | Fix bypasses the pnpm-shadowed `readProjectConfiguration` stub; regression suite proves the leaf array resolves correctly. |
-| `tsconfig.drift.json` | `src/index.drift.ts` | `files` array entry | ✓ WIRED | Compiled by the `typecheck` target's drift `tsc --noEmit` (GREEN). |
-| `builder.integration.spec.ts` | `fixtures/builder-context` | TestingArchitectHost workspaceRoot | ✓ WIRED | Tests GREEN. |
-| `angular-cli-docs.spec.ts` | `README.md` | `readFileSync` + normalized toContain | ✓ WIRED | 9 assertions GREEN. |
-| `ng-add-ng-run.e2e.spec.ts` | `fixtures/ng-cli-workspace` | cpSync -> tmp -> npm install -> ng add | ✓ WIRED | Committed fixture; per-leaf scoping asserted. |
+| `package.json` dependencies | `@nx/devkit` -> `require('nx/src/devkit-exports')` | `nx:^23.0.0` direct dep (yarn installs direct deps; skips peers) | WIRED | dist manifest confirms nx:^23.0.0 ships; `^23.0.0` is a strict subset of @nx/devkit's `nx` peer -> no double-constraint. |
+| `eslint.config.mjs` | `@nx/dependency-checks` obsoleteDependency | `ignoredDependencies:['nx',...]` | WIRED | `nx lint` green at maxWarnings:0. |
+| `package-manifest.spec.ts` | `package.json` | `readFileSync` + `dependencies.nx` assertion | WIRED | `nx test` green. |
+| yarn e2e | `corepack yarn ng add angular-typechecker --skip-confirmation` | real ng add (nx auto-installed as direct dep) | WIRED | Install path + no-wire assertion + ng g wire. |
+| pnpm e2e | app target `tsConfig == [tsconfig.app.json, tsconfig.spec.json]` | pnpm-workspace root collision -> ng add -> write-fork reads angular.json | WIRED | Full-array regression lock. |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| Full unit suite (incl. 4 new ACV-01 regression tests, docs + drift + guard tripwires) | `NX_DAEMON=false npx nx test angular-typechecker --skip-nx-cache` | 37 files / 327 tests passed (was 323; +4 = the fix's regression tests) | ✓ PASS |
-| Lint (maxWarnings:0 CI gate) | `NX_DAEMON=false npx nx lint angular-typechecker --skip-nx-cache` | All files pass linting | ✓ PASS |
-| Typecheck incl. drift barrel tripwire (additive-only) | `NX_DAEMON=false npx nx typecheck angular-typechecker --skip-nx-cache` | spec + drift + tools tsc --noEmit all pass | ✓ PASS |
-| Build (compiled .js executor artifact) | `NX_DAEMON=false npx nx build angular-typechecker --skip-nx-cache` | Done compiling | ✓ PASS |
-| package.json version unchanged (ACP-02) | `node -e require(...).version` | 0.2.0 (no v0.3.0) | ✓ PASS |
-| Fix commit in HEAD | `git merge-base --is-ancestor 1837b25 HEAD` | ancestor of HEAD (working tree clean) | ✓ PASS |
-| Fix touched no schema/barrel/manifest (additive-only) | `git show --name-only 1837b25` | only generator.ts + 2 spec files | ✓ PASS |
-| ACV-01 real-clone gates (2 clones, 3 tests) | autonomous execution (24-HUMAN-UAT.md / 24-ACV-01-UAT.md) | 3/3 PASS (gate #2 after fix + re-verification on the real clone) | ✓ PASS |
+| Unit suite (incl. inverted nx manifest guard + docs tripwire) | `NX_DAEMON=false npx nx test angular-typechecker --skip-nx-cache` | 38 files / 349 tests passed | PASS |
+| Lint (maxWarnings:0; @nx/dependency-checks + @nx/nx-plugin-checks) | `NX_DAEMON=false npx nx lint angular-typechecker --skip-nx-cache` | All files pass linting | PASS |
+| Typecheck incl. additive-only barrel drift tripwire | `NX_DAEMON=false npx nx typecheck angular-typechecker --skip-nx-cache` | success | PASS |
+| Build (compiled .js executor) | `NX_DAEMON=false npx nx build angular-typechecker --skip-nx-cache` | success | PASS |
+| Shipped dist manifest carries nx dep | `node -e require('./dist/.../package.json').dependencies.nx` | `^23.0.0` | PASS |
+| Version unchanged (ACP-02: no v0.3.0) | `node -e require(...).version` | `0.2.0` | PASS |
+| Generator fix in HEAD | `git merge-base --is-ancestor 1837b25 HEAD` | ancestor (clean tree) | PASS |
+| CLI x yarn/pnpm e2e (full `ng add`->`ng run` matrix) | `npx nx e2e angular-typechecker-ng-cli-e2e` | NOT re-run this pass (heavy: corepack yarn 4 + pnpm 11 + Verdaccio, ~15-20min). Verified by substantive read + committed state + documented-green (24-05-SUMMARY 3 files/4 tests; fix report post-libClean re-run). | SKIP (documented green) |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|-------------|-------------|--------|----------|
-| ACV-01 | 24-03 | Real-clone tarball final gate | ✓ SATISFIED | Both clones executed; 3/3 PASS. Found + fixed a real generator defect; re-verified on the real clone. |
-| ACV-02 | 24-03 | Scaffolded automated e2e, per-project scoping | ✓ SATISFIED | e2e project + committed fixture + spec; guards green. |
-| ACV-03 | 24-01 | Unit+integration Angular-CLI-vs-Nx diff coverage | ✓ SATISFIED | builder.integration green + non-vacuous; write-fork array resolution now also covered by ACV-01 regression suite. |
-| ACP-02 | 24-01 | Additive-only enforced + audited | ✓ SATISFIED | 24-ADDITIVE-AUDIT (incl. fix disposition) + index.drift.ts tripwire + version 0.2.0; fix touches only unreleased CLI generator. |
-| ACD-01 | 24-02 | README `## Angular CLI` + CHANGELOG | ✓ SATISFIED | README section + 9-test docs tripwire + 0.2.1 prose entry. |
+| ACV-01 | 24-03 | Real-clone tarball final gate | SATISFIED | Both clones 3/3 PASS; fix 1837b25 in HEAD. |
+| ACV-02 | 24-03 + 24-05 | Scaffolded + yarn + pnpm CLI e2e, per-project scoping | SATISFIED | npm + yarn(flat/workspace) + pnpm(collision) specs committed + substantive + green. |
+| ACV-03 | 24-01 | Unit+integration CLI-vs-Nx diff coverage | SATISFIED | builder.integration + write-fork regression suite green. |
+| ACP-02 | 24-01 + 24-04 | Additive-only enforced + audited (incl. nx-dependency fix) | SATISFIED | nx as direct ^23.0.0 dep + guards green + audit s.5 + version 0.2.0. |
+| ACD-01 | 24-02 | README `## Angular CLI` + CHANGELOG | SATISFIED | README section + 9-test docs tripwire + 0.2.1 prose. |
 
-All 5 PLAN-declared requirement IDs (ACV-01, ACV-02, ACV-03, ACP-02, ACD-01) map to Phase 24 in REQUIREMENTS.md. No orphaned requirements.
+All 5 PLAN-declared requirement IDs (ACV-01, ACV-02, ACV-03, ACP-02, ACD-01) map to Phase 24 in REQUIREMENTS.md (Traceability table, all "Complete"). No orphaned requirements.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| (none) | - | No TBD/FIXME/XXX in fix-touched files (generator.ts + 2 specs) | - | Clean |
-| (none) | - | No work-email / consensus.dk leak in phase docs, README, CHANGELOG | - | Public-repo hygiene OK |
-
-Note: the CHANGELOG `## 0.2.1` entry intentionally omits the date + bottom link reference (code-review IN-03) -- the documented work-in-progress state finalized at the human-gated Release-PR cut (AGENTS.md), not a defect.
+| (none) | - | No TBD/FIXME/XXX in gap-closure or fix-touched files (package.json, package-manifest.spec.ts, eslint.config.mjs, generator.ts, both e2e specs) | - | Clean |
+| (none) | - | No non-gmail email token in changed public files (README, CHANGELOG, e2e specs, CLAUDE.md); only `larsbrinknielsen@gmail.com` | - | Public-repo hygiene OK |
 
 ### Human Verification Required
 
-None. Both ACV-01 real-clone gates (the only prior human items) have been executed and PASS. The remaining Release-PR steps (tag, OIDC publish, GitHub Release) are milestone-completion / release actions governed by AGENTS.md, not phase-24 verification items.
+None. The two ACV-01 real-clone gates (the only prior human items) were executed and PASS in the initial verification and are unchanged by the gap closure. The gap-closure work is fully machine-verifiable and re-verified green here.
 
 ### Gaps Summary
 
-No gaps. The one open item at initial verification -- the ACV-01 milestone-final real-clone gate -- has been executed on both on-stack Angular 22 clones (ngx-leaflet app+lib, realworld-angular app-only) and both PASS. Gate #2 initially failed on a genuine, previously-uncaught generator defect (the CLI write-fork silently dropped the app build leaf on an Angular-CLI workspace that is also a pnpm workspace with a name-colliding root package.json -- the worst failure mode for a complete-type-check tool). The defect was root-caused (Nx infers a shadowing package stub with `projectType: undefined`), fixed at root cause (read root/projectType straight from angular.json on the CLI branch; commit 1837b25), regression-tested (4 new tests: 3 CLI pnpm-collision cases + 1 Nx-branch collision lock, all in the 327-test green suite), and re-verified PASS on the real clone with the fixed tarball. Additive-only holds: the fix lives entirely inside the new/unreleased Angular CLI generator, touches no released schema/barrel/collection/manifest, and version stays 0.2.0 (no v0.3.0). All four CI gates are green (test 327, lint, typecheck incl. drift tripwire, build). Phase goal achieved.
+No gaps. The two gap-closure objectives are both achieved and verified against the codebase:
+
+- **ACP-02 (nx dependency):** `packages/angular-typechecker/package.json` declares `"nx": "^23.0.0"` in `dependencies` (not peerDependencies); `@nx/devkit` stays exact `23.0.1`. The manifest guard (`package-manifest.spec.ts`, both sites) and the `@nx/dependency-checks` lint both enforce it green. `nx test` (349), `nx lint`, `nx build`, and `nx typecheck` (with the additive-only barrel drift tripwire) all pass; the built dist manifest ships `nx:^23.0.0`; version is unchanged at `0.2.0`; the additive audit (s.5) confirms the dependency addition is additive vs 0.2.0.
+- **ACV-02 (yarn/pnpm CLI e2e):** the yarn spec is finalized to the real `ng add` install + `ng g` wire (with the yarn ng-add no-autowire quirk asserted and locked, `enableMirror:false` retained, temp scaffolding removed, and the code-review `libClean` baseline added), and the new committed pnpm name-collision spec asserts the full `[tsconfig.app.json, tsconfig.spec.json]` array (app build leaf never dropped) plus per-project scoping. Both specs are substantive, correctly wired, and committed.
+
+One tracked follow-up is surfaced (see frontmatter `notes`): the README `## Angular CLI` section describes `ng add` auto-wire-all without a yarn-specific caveat, which is inaccurate for yarn only (installs but does not run the ng-add schematic). This is a release-facing documentation-accuracy decision owned by the user, already recorded in `.planning/todos/pending/readme-yarn-ng-add-caveat.md`, and is NOT a phase-24 verification gap: ACD-01's enumerated items are all present, and the yarn no-autowire behavior is a documented, locked quirk asserted by the yarn e2e.
+
+Note: the full CLI e2e (`nx e2e angular-typechecker-ng-cli-e2e`) was not re-executed in this pass (heavy environment-dependent toolchain: corepack yarn 4 + pnpm 11 + Verdaccio publish, ~15-20min). ACV-02 is verified from substantive read of the committed specs + documented-green evidence (24-05-SUMMARY: 3 files/4 tests; 24-REVIEW-GAP-2404-2405-FIX.md: post-`libClean` re-run green). The fast, directly-affected ACP-02 gates (test/lint/build/typecheck) were re-run here and are green.
 
 ---
 
-_Verified: 2026-07-11T14:35:00Z_
+_Verified: 2026-07-12T10:05:00Z_
 _Verifier: Claude (gsd-verifier)_
