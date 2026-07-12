@@ -22,8 +22,8 @@ import {
   type RunResult,
 } from '@workspace/test-util';
 
-// CLI-YARN e2e: the Angular CLI `ng generate <pkg>:ng-add` + `ng run
-// <project>:typecheck` flow on a REAL yarn 4 (berry) workspace, in BOTH the flat
+// CLI-YARN e2e: the Angular CLI `ng add <pkg>` (install) + `ng g <pkg>:ng-add` (wire) +
+// `ng run <project>:typecheck` flow on a REAL yarn 4 (berry) workspace, in BOTH the flat
 // layout (single package.json, no `workspaces` field) and the yarn-workspace layout
 // (root `workspaces: ['projects/*']`, which makes the library a workspace member whose
 // package.json `name` `my-lib` collides with its angular.json project name -- proving,
@@ -33,17 +33,25 @@ import {
 // This is the yarn analogue of ng-add-ng-run.e2e.spec.ts (ACV-02, npm/flat) and fills
 // the CLI x yarn x {flat, workspace} cells of the workspace matrix.
 //
-// INSTALL PATH: the REAL `ng add angular-typechecker`, mirroring the npm ACV-02 spec but
-// with yarn as the package manager. Both registries are pinned to local Verdaccio so ng
-// add resolves the LOCAL unreleased dist (WITH the Angular CLI schematics), never the
-// public-npm 0.2.0 that predates them: the tmp `.npmrc` (writeVerdaccioNpmrc) feeds Angular
-// CLI's npm-based package-metadata fetch, and `.yarnrc.yml` feeds yarn's actual install.
-// ng detects yarn (yarn.lock + packageManager) -> `yarn add angular-typechecker` -> runs the
-// ng-add schematic (auto-wires every app + library project). (We do NOT use
-// `ng generate angular-typechecker:ng-add` here: `ng generate <collection>` resolution
-// behaves differently under yarn 4's node-modules linker than `ng add` -- "does not support
-// schematics" -- whereas `ng add` uses the same install+schematic path proven green under
-// npm.) yarn 4 is delivered via corepack, pinned to one literal; the spec skips cleanly where
+// INSTALL + WIRE PATH: the REAL `ng add angular-typechecker` does the INSTALL -- it
+// resolves the LOCAL unreleased Verdaccio dist and installs angular-typechecker PLUS `nx`
+// (a DIRECT dependency since Plan 24-04, so yarn pulls it transitively; yarn does NOT
+// auto-install the `@nx/devkit` peer that npm/pnpm add -- the pre-24-04 crash was
+// "Cannot find module 'nx/src/devkit-exports'"). Both registries point at Verdaccio (the
+// tmp `.npmrc` (writeVerdaccioNpmrc) feeds Angular CLI's npm-based metadata fetch,
+// `.yarnrc.yml` feeds yarn's actual install).
+//
+// BUT under yarn, `ng add` INSTALLS WITHOUT AUTO-WIRING: Angular CLI's post-install ng-add
+// detection (`createSchematic('ng-add')` in @angular/cli's add command) silently fails
+// under yarn's node-modules layout, so the CLI reports "does not provide any ng add
+// actions" and runs no schematic. (npm and pnpm run the SAME schematic on the identical
+// installed package and DO wire -- this is an Angular-CLI-under-yarn behavior, NOT an
+// angular-typechecker defect, and NOT a collection-resolution issue.) The ng-add schematic
+// ITSELF runs fine under yarn, so wiring is performed with an explicit
+// `ng g angular-typechecker:ng-add` (the plan's authorized `ng add`-misbehaves -> `ng g`
+// fallback). The spec asserts the no-wire state right after `ng add` to lock the quirk.
+//
+// yarn 4 is delivered via corepack, pinned to one literal; the spec skips cleanly where
 // corepack yarn is unavailable. Runs SEQUENTIALLY on the main tree under the serialized
 // vitest.config.mts + the shared globalSetup (build + publish ONCE); the CI e2e job stays
 // --parallel=1 (GUARD-01b).
@@ -71,7 +79,9 @@ const APP_SPEC_INJECTION = `\n// planted app spec-leaf error (per-project scopin
 const LIB_COMPONENT_ANCHOR = 'export class MyLib {';
 const LIB_COMPONENT_INJECTION = `export class MyLib {\n  protected readonly libTypeError = parseInt();`;
 
-const workspaceRoot = findWorkspaceRoot(dirname(fileURLToPath(import.meta.url)));
+const workspaceRoot = findWorkspaceRoot(
+  dirname(fileURLToPath(import.meta.url)),
+);
 
 const fixtureDir = join(
   workspaceRoot,
@@ -183,6 +193,20 @@ function setupYarnWorkspace(
   // npmMinimalAgeGate 0 (yarn quarantines the seconds-old Verdaccio publish otherwise);
   // enableImmutableInstalls false (yarn auto-enables immutable under CI env); per-fixture
   // cache so the LOCAL published dist is used, not a globally-cached copy.
+  //
+  // enableMirror false is LOAD-BEARING (the CLI-YARN root cause): with the default
+  // enableMirror: true, yarn -- even under enableGlobalCache: false -- serves a package
+  // from the developer/CI global mirror (globalFolder) BY LOCATOR, i.e. by
+  // `angular-typechecker@npm:<version>`, WITHOUT re-verifying the tarball against the
+  // resolved registry. Because the local Verdaccio dist and the public-npm release share
+  // the SAME version (0.2.0), a stale public-npm 0.2.0 sitting in the global mirror --
+  // one that PREDATES the Angular CLI `schematics` surface -- gets copied into the
+  // per-fixture cache instead of the fresh Verdaccio dist, so `ng add
+  // angular-typechecker` errors "does not support schematics". Disabling the mirror
+  // makes yarn ignore the global mirror entirely and download the fresh Verdaccio tarball
+  // into the (fresh, per-fixture) cacheFolder. (nx-add-yarn dodged this only because the
+  // stale zip still carried `generators`, all `nx add`'s init needs; the Angular CLI flow
+  // needs the newer `schematics`, absent from the stale zip.)
   const yarnrc = [
     'nodeLinker: node-modules',
     `npmRegistryServer: "${verdaccioUrl}"`,
@@ -194,6 +218,7 @@ function setupYarnWorkspace(
     'enableImmutableInstalls: false',
     'cacheFolder: ./.yarn/cache',
     'enableGlobalCache: false',
+    'enableMirror: false',
     '',
   ].join('\n');
   writeFileSync(join(tmp, '.yarnrc.yml'), yarnrc);
@@ -204,7 +229,7 @@ function setupYarnWorkspace(
   writeVerdaccioNpmrc(tmp, verdaccioUrl, verdaccioToken);
 }
 
-describe('CLI-YARN: `ng g :ng-add` + `ng run :typecheck` on a real yarn 4 workspace', () => {
+describe('CLI-YARN: `ng add` + `ng run :typecheck` on a real yarn 4 workspace', () => {
   it.skipIf(!corepackAvailable).each(['flat', 'workspace'] as const)(
     'auto-wires every project and catches planted leaf errors — %s layout',
     (layout) => {
@@ -238,23 +263,32 @@ describe('CLI-YARN: `ng g :ng-add` + `ng run :typecheck` on a real yarn 4 worksp
         // corepack enable puts the bare `yarn` shim on PATH; install the fixture deps
         // (real yarn.lock), then run the REAL `ng add` -> yarn installs the local dist
         // from Verdaccio + the ng-add schematic auto-wires every app + library project.
+        // No explicit `nx` install: Plan 24-04 declared `nx` a DIRECT dependency of
+        // angular-typechecker, so `yarn add angular-typechecker` (which `ng add` runs)
+        // installs it transitively -- yarn installs direct deps and only skips the
+        // `@nx/devkit` peer that npm/pnpm auto-add (the pre-24-04 crash was
+        // "Cannot find module 'nx/src/devkit-exports'" when that peer was absent).
         sh('corepack enable', { cwd: tmp, env: npmEnv });
         sh('corepack yarn install', { cwd: tmp, env: npmEnv });
-        // [TEMP DIAGNOSTIC] install explicitly, then probe the INSTALLED resolution.
-        sh('corepack yarn add -D angular-typechecker', { cwd: tmp, env: npmEnv });
-        writeFileSync(
-          join(tmp, 'atc-probe.cjs'),
-          [
-            "console.log('LS_NM=' + require('fs').existsSync('node_modules/angular-typechecker'));",
-            "try{const p=require.resolve('angular-typechecker/package.json');console.log('PKGJSON='+p);const j=require(p);console.log('VERSION='+j.version+' SCHEMATICS='+JSON.stringify(j.schematics)+' EXPORTS='+JSON.stringify(j.exports));}catch(e){console.log('PKGJSON_ERR='+e.code+' '+e.message);}",
-            "try{console.log('COLLECTION='+require.resolve('angular-typechecker/collection.json'));}catch(e){console.log('COLLECTION_ERR='+e.code+' '+String(e.message).split('\\n')[0]);}",
-          ].join('\n'),
-        );
-        console.log(
-          '[ATC-PROBE]\n' +
-            sh('corepack yarn node atc-probe.cjs', { cwd: tmp, env: npmEnv }),
-        );
+        // The REAL `ng add` does the install: yarn resolves the local Verdaccio dist +
+        // `nx` transitively (24-04's direct dependency), so no explicit `nx` install is
+        // needed (yarn skips only the `@nx/devkit` peer that npm/pnpm add).
+        sh('corepack yarn ng add angular-typechecker --skip-confirmation', {
+          cwd: tmp,
+          env: npmEnv,
+        });
 
+        // YARN QUIRK (locked): `ng add` INSTALLED angular-typechecker but did NOT wire --
+        // Angular CLI's post-install ng-add detection silently fails under yarn's
+        // node-modules layout (npm/pnpm both wire on the identical package). Assert the
+        // no-wire state so a future Angular CLI change that starts auto-wiring under yarn
+        // is noticed; then wire with the schematic explicitly below.
+        expect(typecheckTarget(tmp, APP_PROJECT)).toBeUndefined();
+        expect(typecheckTarget(tmp, LIB_PROJECT)).toBeUndefined();
+
+        // Wire via the ng-add schematic (runs fine under yarn) -- auto-wires EVERY app +
+        // library project in one command. This is the plan's authorized
+        // `ng add`-misbehaves -> `ng g` fallback.
         sh('corepack yarn ng g angular-typechecker:ng-add', {
           cwd: tmp,
           env: npmEnv,
