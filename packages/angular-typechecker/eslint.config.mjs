@@ -82,13 +82,17 @@ export default [
           // (optional) peers as obsoleteDependency and fail `nx lint`
           // (maxWarnings:0). `peerDependenciesMeta.optional` does NOT exempt a
           // peer from the obsolete check; ignoredDependencies is the lever.
-          // Consequence (accepted + documented): an `ng add` into a non-Nx
-          // Angular CLI workspace pulls `nx` transitively via @nx/devkit's own
-          // peer and may materialize a `.nx/` cache dir. `nx` is deliberately
-          // NOT declared here (declaring it would double-constrain the
-          // consumer's Nx). The README `## Angular CLI` prose is Phase 24
-          // (ACD-01).
-          ignoredDependencies: ['@angular-devkit/architect', 'rxjs'],
+          // `nx` is likewise ignored: v0.2.1 declares it as a DIRECT `^23.0.0`
+          // dependency (so yarn / any non-peer-auto-installing consumer gets it
+          // -- @nx/devkit's entrypoint require()s `nx/src/devkit-exports` at
+          // load), but this plugin's own `src/` never imports `nx` (it is a
+          // runtime-transitive requirement satisfied via @nx/devkit). Without
+          // this ignore @nx/dependency-checks would flag `nx` obsoleteDependency
+          // and fail `nx lint` at maxWarnings:0. See
+          // .planning/debug/cli-yarn-e2e-wrong-version.md. An `ng add` into a
+          // non-Nx Angular CLI workspace may still materialize a `.nx/` cache
+          // dir; the README `## Angular CLI` prose covers it (ACD-01).
+          ignoredDependencies: ['nx', '@angular-devkit/architect', 'rxjs'],
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vitest.config.{js,ts,mjs,mts}',

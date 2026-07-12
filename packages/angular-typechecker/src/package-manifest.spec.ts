@@ -14,10 +14,15 @@ import { describe, expect, it } from 'vitest';
 //   - CMP-02: `engines.node` is the exact intersection range of Angular 22 + Nx 23.
 //   - CMP-01 (manifest portion): the runtime-version compatibility contract is
 //     DECLARED correctly -- `@nx/devkit` pinned EXACT as a `dependency` (registry
-//     listing requires devkit-as-dependency; D-14), and `nx` declared by NO ONE
-//     (devkit's own peer carries the consumer's nx transitively -- declaring it
-//     ourselves double-constrains). The peer ranges (`@angular/compiler-cli`,
-//     `typescript`) are the consumer-supplied compiler/TS versions.
+//     listing requires devkit-as-dependency; D-14), and `nx` declared as a direct
+//     `^23.0.0` runtime dependency. `@nx/devkit`'s entrypoint `require()`s
+//     `nx/src/devkit-exports` at load, and yarn does NOT auto-install the peer
+//     (npm/pnpm do), so a yarn Angular CLI consumer would crash with `Cannot find
+//     module 'nx/src/devkit-exports'` unless `nx` is present directly. Range
+//     `^23.0.0` (>=23.0.0 <24.0.0) pins Nx-23-only support and cannot pull nx
+//     22/24 (v0.2.1 correction; see .planning/debug/cli-yarn-e2e-wrong-version.md).
+//     The peer ranges (`@angular/compiler-cli`, `typescript`) are the
+//     consumer-supplied compiler/TS versions.
 //   - `type: "commonjs"`: the executor is loaded by Nx via `require()`; an ESM
 //     manifest here breaks the loader.
 //
@@ -77,8 +82,8 @@ describe('plugin manifest compatibility contract (CMP-01 manifest / CMP-02 / D-1
     expect(manifest.dependencies?.['@nx/devkit']).toBe('23.0.1');
   });
 
-  it('does NOT declare nx in dependencies or peerDependencies (devkit peer carries the consumer nx; declaring it double-constrains)', () => {
-    expect(manifest.dependencies ?? {}).not.toHaveProperty('nx');
+  it('declares nx as a ^23.0.0 runtime dependency (yarn does not auto-install the @nx/devkit peer) and NOT a peer', () => {
+    expect(manifest.dependencies?.['nx']).toBe('^23.0.0');
     expect(manifest.peerDependencies ?? {}).not.toHaveProperty('nx');
   });
 
@@ -183,8 +188,8 @@ describe('plugin manifest Angular CLI install contract (ACP-01 / NGADD-01 RF-01 
     expect(manifest.peerDependenciesMeta?.['rxjs']?.optional).toBe(true);
   });
 
-  it('still does NOT declare nx (the optional peers must not reintroduce an explicit nx constraint)', () => {
-    expect(manifest.dependencies ?? {}).not.toHaveProperty('nx');
+  it('declares nx as a ^23.0.0 dependency; the optional peers do not move it into peerDependencies', () => {
+    expect(manifest.dependencies?.['nx']).toBe('^23.0.0');
     expect(manifest.peerDependencies ?? {}).not.toHaveProperty('nx');
   });
 });
