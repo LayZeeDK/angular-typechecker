@@ -67,5 +67,18 @@ CONFIRMED (across three e2e runs) that this is INACCURATE for yarn:
    caveat (the workaround is one documented command); revisit the nx-free refactor later if desired.
    Spike detail: `.planning/debug/resolved/cli-yarn-e2e-wrong-version.md` ("Option D spike").
 
+   UPDATE (2026-07-12): Option C (nx-free vanilla ng-add) was SPIKED and CONFIRMED -- first-run
+   `ng add angular-typechecker` AUTO-WIRES under yarn 4 (correct target + [build, spec] array, both
+   projects, no chalk error), because the ng-add execution never loads `@nx/devkit`. Exhaustive web
+   research confirmed the mechanism (nx's CJS `log-symbols@4` resolving Angular schematics' ESM
+   chalk@5 under yarn's last-in-wins hoisting) and that there is NO cheaper alternative: no nx version
+   fixes it, no clean yarn-config fix (`yarn dedupe` no-op; `resolutions:{chalk:"4.1.2"}` untested +
+   heavy; `nmHoistingLimits` buggy), and no upstream angular-cli issue tracks it. So the clean fix IS
+   Option C, landed as a scoped v0.2.2 (vanilla ng-add sharing a framework-agnostic wiring core with
+   the Nx generator; `configuration`/`init` stay convertNx; update the yarn e2e to assert auto-wire;
+   retire this caveat; add `@angular-devkit/schematics` to eslint ignoredDependencies). DECISION PENDING
+   (user): land Option C in v0.2.2 vs fold into v0.2.1 vs ship the caveat and defer. See the debug doc
+   "Option C spike" + "Web research + consolidated fix ranking" sections.
+
 Out of scope for 24-05 (two e2e specs only). Recorded as a release-facing product-doc
 decision for the user.

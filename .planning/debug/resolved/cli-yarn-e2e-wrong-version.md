@@ -361,3 +361,74 @@ refactor (extract the collision-fixed wiring core to be devkit-Tree-agnostic so 
 the Nx generator share it -- NOT a blind duplicate), warranted only if the yarn first-run `ng add` UX is
 prioritized (v0.2.2/v0.3.0). Otherwise the standing workaround holds: `ng g angular-typechecker:ng-add`
 or run `ng add` twice (README caveat, todo item 1). Spike log: `verdaccio-optionD.log` (job tmp).
+
+## Option C spike -- nx-free vanilla ng-add CONFIRMED (2026-07-12, instrumented; change REVERTED)
+
+Tested the only remaining in-product fix: replace the `convertNxGenerator` ng-add SCHEMATIC with a
+VANILLA `@angular-devkit/schematics` ng-add that wires angular.json with ZERO `@nx/devkit` import in
+its load OR execution path (reads root/projectType straight from angular.json -> inherently
+collision-immune; writes the SAME `angular-typechecker:typecheck` target + `[build, spec]` leaf array).
+Rebuilt (compiled ng-add schematic.js contains NO `@nx/devkit`), re-ran the instrumented Verdaccio
+first-run `ng add` under yarn 4. RESULT (`verdaccio-optionC.log`) -- FIRST RUN AUTO-WIRES:
+
+- `[G1] hasSchematics=true`, `[G3] createSchematic(ng-add) OK`, `[G3-CATCH]` = 0, no `chalk.blue`.
+- `angular-typechecker: wired typecheck target into 2 project(s)` on the FIRST run.
+- `[WIRED?] app typecheck target after first-run ng add:
+  {"builder":"angular-typechecker:typecheck","options":{"tsConfig":["tsconfig.app.json","tsconfig.spec.json"]}}`
+  (previously `undefined`). Both app + lib wired with the correct arrays.
+
+So Option C WORKS where D/G cannot: because the ng-add EXECUTION never loads `@nx/devkit`, the
+listr2-polluted first-run process never resolves nx's broken nested chalk. The change was REVERTED
+(throwaway spike -- no RF-01 devDep move, no RF-02 notice, only the app/lib rung of tsConfig resolution,
+no shared core, no tests/lint).
+
+**Landing shape (if the yarn first-run `ng add` UX is prioritized):** make the ng-add schematic vanilla
+(pure `@angular-devkit/schematics`, no convertNx) and have it + the Nx `configuration` generator share a
+FRAMEWORK-AGNOSTIC wiring core (the leaf resolution + devDep-ensure + collision handling as pure
+functions over plain data, so neither path is a blind duplicate). `configuration`/`init` stay convertNx
+(they run via `ng g`, a different command with no add-listr2, and work under yarn). Then update the yarn
+CLI e2e to assert `ng add` AUTO-WIRES under yarn (drop the `ng g` fallback + no-wire assertion) and
+retire/narrow the README yarn caveat. Add `@angular-devkit/schematics` to the eslint
+`ignoredDependencies` (it is a legit Angular-CLI-provided peer, like `@angular-devkit/architect`). Scope:
+a v0.2.2 change. Spike log: `verdaccio-optionC.log` (job tmp).
+
+## Web research + consolidated fix ranking (2026-07-12)
+
+Exhaustive web/GitHub research (report: `web-research-yarn-chalk-fixes.md`, job tmp) confirmed the
+mechanism from source and refined one attribution:
+
+- **Precise cause:** nx's bundled `log-symbols@4.1.0` (CJS) calls `chalk.blue('..')` at MODULE LOAD,
+  expecting chalk v4 (CJS: `module.exports` is the instance, `.blue` exists). The `ng add` process
+  ALSO carries chalk v5 (pure ESM: `export default chalk`, NO named `.blue`) via
+  `@angular-devkit/schematics -> ora@8 -> log-symbols@6 -> chalk@5`. On Node >= 22.12/20.19/23 (the
+  whole supported range) `require()` of an ESM module is unflagged-ON, so the CJS `require('chalk')`
+  reaching chalk v5 SUCCEEDS and returns the namespace `{default: chalk, ...}` whose top-level `.blue`
+  is `undefined` -> `TypeError: chalk.blue is not a function`. (On old Node it threw a clear
+  `ERR_REQUIRE_ESM` instead -- the require(esm) improvement made this failure mode more confusing.)
+- **CORRECTION to the earlier listr2 attribution (Option D note above):** listr2 uses colorette, NOT
+  chalk. The v5-chalk provider in the add process is `@angular-devkit/schematics -> ora@8`, not
+  listr2. The "process-wide" conclusion stands; the concrete v5 source is schematics' ora@8.
+- **yarn-specific:** yarn 4's node-modules "last-in-wins" hoisting (berry #6662 / #7215, both OPEN)
+  lets the CJS `log-symbols@4` resolve the hoisted v5 chalk; npm/pnpm place a v4 chalk for it, so they
+  wire fine.
+- **No nx version fixes it:** nx 19-23 all ship the ora@5/log-symbols@4/chalk@4 CJS stack (nx@23 pins
+  them exactly). `@nx/devkit` reaches them via the `nx` peer. Upgrading/downgrading nx does not help.
+- **Not tracked upstream:** no angular/angular-cli issue is about this chalk failure (the sibling
+  first-run-`ng add`-under-yarn issues have OTHER causes: #30435 listr2-adapter-missing-dep [fixed
+  listr2#740], #33060/#33285 registry-strips-schematics [fixed in 22.0.x], #30448, #29968). So even the
+  nx-reframed upstream filing has no tracking issue to ride, and the CLI angle is refuted.
+
+### Fix ranking (proven vs speculative)
+
+- AUTHOR (recommended): **A1 nx-free ng-add (Option C) -- PROVEN by the spike above.** The strongest
+  and only clean fix; the ng-add execution never loads `@nx/devkit`/nx, so the crash cannot occur
+  regardless of the user's yarn layout. A2 (document the workaround) is the immediate stopgap.
+- USER (workarounds, no clean config fix): `ng g angular-typechecker:ng-add` or run `ng add` twice
+  (PROVEN). Speculative single knob: root `"resolutions": { "chalk": "4.1.2" }` (collapse to one CJS
+  chalk -- UNTESTED, heavy, could surface a v5-only API use; do NOT force chalk to v5). `yarn dedupe`
+  is a NO-OP (never merges ^4/^5); `nmHoistingLimits: dependencies` is buggy; `packageExtensions` N/A.
+
+**CONSOLIDATED RECOMMENDATION:** there is NO cheaper alternative to Option C -- no nx upgrade, no clean
+yarn-config fix, no upstream issue. So the clean fix is the nx-free ng-add (A1/Option C, proven), landed
+as a scoped v0.2.2 with a shared framework-agnostic wiring core. Ship v0.2.1 now with the README caveat
+(A2); optionally document `resolutions: {chalk: "4.1.2"}` as an untested workspace-wide alternative.
