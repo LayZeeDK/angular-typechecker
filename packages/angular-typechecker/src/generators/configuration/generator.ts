@@ -1,5 +1,3 @@
-import { isAbsolute } from 'node:path';
-
 import {
   formatFiles,
   joinPathFragments,
@@ -10,38 +8,15 @@ import {
 } from '@nx/devkit';
 import type { ProjectConfiguration, Tree } from '@nx/devkit';
 
+import {
+  resolveTargetName,
+  resolveTsConfigLeaves,
+  resolveTsConfigOverride,
+  wireTypecheckTarget,
+} from '../../core/angular-cli-wiring';
+import type { AngularJsonWorkspace } from '../../core/angular-cli-wiring';
 import initGenerator, { TYPECHECK_EXECUTOR_ID } from '../init/generator';
 import type { ConfigurationGeneratorSchema } from './schema';
-
-/**
- * OQ-1: resolves an explicit `--tsConfig` override. An ABSOLUTE path passes through
- * verbatim (it cannot be existence-probed against the workspace-relative tree); a
- * relative one is interpreted project-root-relative and existence-probed so a typo
- * fails HERE with a clear located error (matching the other resolution rungs)
- * rather than silently writing a broken target that only fails at execute time.
- */
-function resolveTsConfigOverride(
-  tree: Tree,
-  projectRoot: string,
-  tsConfig: string,
-  project: string,
-): string {
-  if (isAbsolute(tsConfig)) {
-    return tsConfig;
-  }
-
-  const overridePath = joinPathFragments(projectRoot, tsConfig);
-
-  if (!tree.exists(overridePath)) {
-    throw new Error(
-      `--tsConfig "${tsConfig}" for project "${project}" resolves to ` +
-        `"${overridePath}", which does not exist. Pass a path relative to the ` +
-        `project root (or an absolute path).`,
-    );
-  }
-
-  return overridePath;
-}
 
 /**
  * Resolves the WORKSPACE-root-relative tsconfig path the generated target points
@@ -76,10 +51,12 @@ function resolveTsConfig(
 ): string {
   const root = projectConfig.root;
 
-  // 1. explicit override wins (OQ-1) -- a cohesive sub-decision, so it lives in its
-  // own helper (absolute verbatim / relative probed-and-located).
+  // 1. explicit override wins (OQ-1) -- a cohesive sub-decision routed to the shared
+  // core helper (absolute verbatim / relative probed-and-located).
   if (schema.tsConfig) {
-    return resolveTsConfigOverride(tree, root, schema.tsConfig, schema.project);
+    return resolveTsConfigOverride(root, schema.tsConfig, schema.project, (p) =>
+      tree.exists(p),
+    );
   }
 
   // 2. solution tsconfig.json WITH a non-empty references[] -> point at it.
@@ -124,89 +101,6 @@ function resolveTsConfig(
 }
 
 /**
- * RF-01 (Approach A): resolves a project's leaf tsconfig ARRAY for the Angular
- * CLI write-fork -- the counterpart to `resolveTsConfig`'s single-string Nx
- * output, added ALONGSIDE it (never modifying it) so the Nx path stays
- * byte-identical (Pitfall 5). Reads the virtual `Tree` ONLY (never `node:fs`).
- *
- * An explicit `--tsConfig` override short-circuits to a SINGLE-element array
- * (`[resolved]`) via the same `resolveTsConfigOverride` discipline as the Nx
- * branch. Otherwise it takes the projectType-convention build leaf
- * (`application` -> `tsconfig.app.json`, else `tsconfig.lib.json`) plus
- * `tsconfig.spec.json`, each existence-probed against the given `root`. A
- * missing leaf is dropped; a project with a single leaf emits just that one; an
- * empty result throws the located error (never a silent under-checking target).
- *
- * `root`/`projectType` are read STRAIGHT from angular.json by the caller (NOT via
- * `readProjectConfiguration`): on a workspace that is ALSO a pnpm workspace whose
- * root package.json `name` collides with the angular.json project name, Nx infers
- * a package.json project stub (root ".", projectType undefined) that shadows the
- * angular.json project -- which would silently drop the app build leaf (root app)
- * or throw (subdir app). angular.json is authoritative here (ACV-01, 2026-07-11).
- *
- * Approach B (reading `architect.build.options.tsConfig`) is deliberately NOT
- * used: the default `@angular/build:ng-packagr` library builder carries no
- * `tsConfig` in `options` (it lives under `configurations`), so B would silently
- * miss the library build leaf (RF-01, Pitfall 2).
- */
-function resolveTsConfigLeaves(
-  tree: Tree,
-  root: string,
-  projectType: 'application' | 'library' | undefined,
-  schema: ConfigurationGeneratorSchema,
-): string[] {
-  // explicit override wins -- a single leaf, wrapped as an array for CLI-branch
-  // shape uniformity (the ENG-01 engine accepts string | string[]).
-  if (schema.tsConfig) {
-    return [
-      resolveTsConfigOverride(tree, root, schema.tsConfig, schema.project),
-    ];
-  }
-
-  const buildLeaf =
-    projectType === 'application'
-      ? joinPathFragments(root, 'tsconfig.app.json')
-      : joinPathFragments(root, 'tsconfig.lib.json');
-  const specLeaf = joinPathFragments(root, 'tsconfig.spec.json');
-
-  const leaves = [buildLeaf, specLeaf].filter((leaf) => tree.exists(leaf));
-
-  if (leaves.length === 0) {
-    throw new Error(
-      `Could not resolve a tsconfig for project "${schema.project}": no ` +
-        `"${buildLeaf}" and no "${specLeaf}". Pass --tsConfig explicitly.`,
-    );
-  }
-
-  return leaves;
-}
-
-/**
- * Minimal shape of an Angular CLI `angular.json` workspace, typed just enough
- * for the D-01 write-fork's `updateJson` edit. A raw on-disk `angular.json`
- * uses the `architect` target map -- the Nx `targets` alias only appears in the
- * config `readProjectConfiguration` RETURNS, never on disk -- so the collision
- * read and the write both operate on `architect`.
- */
-interface AngularJsonTarget {
-  builder?: string;
-  options?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-interface AngularJsonProject {
-  projectType?: 'application' | 'library';
-  root?: string;
-  architect?: Record<string, AngularJsonTarget>;
-  [key: string]: unknown;
-}
-
-interface AngularJsonWorkspace {
-  projects: Record<string, AngularJsonProject>;
-  [key: string]: unknown;
-}
-
-/**
  * The `configuration` generator (GEN-01/02/03/04/08 + D-01 write-fork):
  * `nx g angular-typechecker:configuration <project>` /
  * `ng generate angular-typechecker:configuration <project>`.
@@ -225,18 +119,9 @@ export default async function configurationGenerator(
   tree: Tree,
   schema: ConfigurationGeneratorSchema,
 ): Promise<void> {
-  // Shared by BOTH branches. GEN-04: `??` only substitutes the default for a
-  // MISSING targetName, not an explicit empty string (`'' ?? x === ''`); an empty
-  // / whitespace-only name would write an unrunnable target keyed by `''`, so
-  // reject it here with a located error.
-  const targetName = schema.targetName ?? 'typecheck';
-
-  if (targetName.trim() === '') {
-    throw new Error(
-      `--targetName for project "${schema.project}" must be a non-empty target ` +
-        `name. Omit it to use the default "typecheck".`,
-    );
-  }
+  // Shared by BOTH branches. GEN-04 default + empty-name guard, routed to the shared
+  // core (same located error string).
+  const targetName = resolveTargetName(schema.targetName, schema.project);
 
   // D-01 write-fork: an Angular CLI workspace has angular.json AND no nx.json.
   // nx.json is authoritative when present (WR-01): a hybrid workspace carrying BOTH
@@ -266,37 +151,21 @@ export default async function configurationGenerator(
       );
     }
 
+    // RF-01 (Approach A) leaf-array resolution, routed to the shared core. `root`/
+    // `projectType` come STRAIGHT from angular.json (read above) so a pnpm-workspace
+    // name collision cannot shadow them (ACV-01).
     const tsConfig = resolveTsConfigLeaves(
-      tree,
       cliProject.root ?? '',
       cliProject.projectType,
-      schema,
+      schema.tsConfig,
+      schema.project,
+      (p) => tree.exists(p),
     );
 
+    // D-05 collision-by-builder + idempotent [build, spec] merge, routed to the
+    // shared core (mutates the parsed workspace; updateJson persists it).
     updateJson<AngularJsonWorkspace>(tree, 'angular.json', (json) => {
-      const project = json.projects[schema.project];
-
-      // D-05 collision by BUILDER id (the SAME string as the executor id). Read
-      // and write the SAME `architect` map (WR-01): a raw angular.json always uses
-      // `architect`, so reading an alias we never write to would be inconsistent.
-      const existing = project.architect?.[targetName];
-
-      if (existing && existing.builder !== TYPECHECK_EXECUTOR_ID) {
-        throw new Error(
-          `Project "${schema.project}" already has a "${targetName}" target ` +
-            `using builder "${existing.builder}". Choose a different ` +
-            `--targetName or remove the existing target.`,
-        );
-      }
-
-      project.architect ??= {};
-      // Idempotent re-run of OUR target: preserve user-added keys + extra options,
-      // re-assert only the builder id + the resolved leaf ARRAY.
-      project.architect[targetName] = {
-        ...existing,
-        builder: TYPECHECK_EXECUTOR_ID,
-        options: { ...existing?.options, tsConfig },
-      };
+      wireTypecheckTarget(json, schema.project, targetName, tsConfig);
 
       return json;
     });

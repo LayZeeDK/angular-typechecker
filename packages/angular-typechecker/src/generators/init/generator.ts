@@ -5,25 +5,24 @@ import type {
   Tree,
 } from '@nx/devkit';
 
+import {
+  NO_CACHING_NOTICE,
+  TYPECHECK_EXECUTOR_ID,
+} from '../../core/angular-cli-wiring';
 import type { InitGeneratorSchema } from './schema';
 
-// The UNSCOPED published executor id -- ALSO the key Nx uses for this executor's
-// `targetDefaults` entry. Exported so the `configuration` generator wires the
-// target with the SAME id (Landmine 3 / Pitfall 2: never a scoped dev-repo
-// executor id -- this repo aliases its own package under a scope it does not own
-// or publish).
-export const TYPECHECK_EXECUTOR_ID = 'angular-typechecker:typecheck';
-
-// D-06: the single shared "no target caching on Angular CLI" notice. It is
-// printed by the Angular CLI `init` fork below (ACS-03) AND imported by the
-// first-party `ng-add` generator so the wording lives in ONE place (no drift).
-// End-user-facing -- no internal plan/decision ids: an Angular CLI workspace has
-// no Nx target-result cache to seed, so the typecheck target(s) are wired without
-// caching; on Nx, caching is configured automatically.
-export const NO_CACHING_NOTICE =
-  'angular-typechecker: Angular CLI has no build/target-result cache to seed, so ' +
-  'the typecheck target(s) were wired without caching. On an Nx workspace, target ' +
-  'caching is configured automatically.';
+// TYPECHECK_EXECUTOR_ID + NO_CACHING_NOTICE MOVED to src/core/angular-cli-wiring.ts
+// (24-06): the shared wiring core is the single source now. Re-exported here so the
+// existing importers (configuration/generator.ts, the init specs,
+// core/nx-target-defaults.spec.ts) keep resolving them from `../init/generator`
+// unchanged. TYPECHECK_EXECUTOR_ID is the UNSCOPED published executor id -- ALSO the
+// key Nx uses for this executor's `targetDefaults` entry. NO_CACHING_NOTICE (D-06) is
+// the single shared "no target caching on Angular CLI" notice printed by the Angular
+// CLI init fork below (ACS-03) and the vanilla ng-add schematic.
+export {
+  NO_CACHING_NOTICE,
+  TYPECHECK_EXECUTOR_ID,
+} from '../../core/angular-cli-wiring';
 
 // D-04 / WALK-02: copied VERBATIM from the workspace `nx.json`
 // targetDefaults[TYPECHECK_EXECUTOR_ID] block (the UNSCOPED published executor id,
