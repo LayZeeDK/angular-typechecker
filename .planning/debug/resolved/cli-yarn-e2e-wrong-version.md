@@ -257,3 +257,45 @@ out_of_scope_product_followup: the README `## Angular CLI` "ng add auto-wire-all
   `ng g angular-typechecker:ng-add`). Recorded as a release-facing decision in
   `.planning/todos/pending/readme-yarn-ng-add-caveat.md` (README yarn caveat +/- an upstream Angular CLI
   issue). Deliberately NOT auto-fixed in 24-05 (that plan ships two e2e specs only).
+
+## Post-24-05 root-cause pin (2026-07-12, instrumented)
+
+Item 3 above named the cause correctly (the `createSchematic('ng-add')` probe) but phrased it too
+broadly ("silently failing under yarn's node-modules layout"). A faithful, INSTRUMENTED first-run
+`ng add` against Verdaccio (fresh yarn-4 node-modules workspace; @angular/cli 22.0.6 gates logged;
+cross-checked against the `angular-cli` clone branch `22.0.x`) pinned it gate-by-gate:
+
+- **Gate 1 (registry metadata) = TRUE.** `[G1] hasSchematics=true manifest.schematics="./collection.json"`.
+  `yarn npm info` returns the custom `schematics` field (the CLI requests it in MANIFEST_FIELDS). So this
+  is NOT a metadata-stripping issue and NOT the registry-metadata bug angular/angular-cli #33060 (already
+  fixed by #33285 and present in 22.0.6).
+- **Gate 2 (`resolvePackageJson` on-disk fallback) is NOT the cause** (a standalone probe resolves the
+  installed manifest fine under yarn's node-modules linker).
+- **Gate 3 (`createSchematic('ng-add')` probe) THROWS** while LOADING this package's ng-add factory.
+  That factory is `convertNxGenerator(...)` from `@nx/devkit`, so the require chain pulls in `nx` + its
+  transitive deps; under yarn 4's hoist the load fails and @angular/cli's add command swallows it in a
+  bare `catch {}` (introduced upstream in `a73f4fb8b`, no issue ref) -> `hasSchematics=false` -> the
+  "does not provide any ng add actions" message -> NO wire. Observed throw:
+  `TypeError: chalk.blue is not a function` at `nx/node_modules/log-symbols/index.js:6`, reached via
+  `nx/node_modules/ora`. (On disk that `log-symbols` resolves `chalk@4.1.2`, which HAS `.blue`, so the
+  failure is a yarn-4 RUNTIME/interop resolution quirk inside the full `ng add` process -- a clean
+  standalone `createSchematic` does not reproduce it.) The pre-24-04 form of the same probe failure was
+  `Cannot find module 'nx/src/devkit-exports'` (the missing `nx` peer, fixed by 24-04's direct `nx`
+  dep); this chalk/log-symbols form is the same CLASS post-24-04 (the probe fails loading the nx-based
+  factory under yarn, masked by the bare catch), just a different sub-error.
+
+**npm/pnpm** hoist nx's transitive deps so the SAME probe succeeds and they wire the identical dist ->
+confirms it is NOT an angular-typechecker packaging defect.
+
+**Workarounds (both verified in the repro):** `ng g angular-typechecker:ng-add`, OR a SECOND `ng add`
+(the CLI's already-installed short-circuit at `cli.js:167-176` -> `executeSchematic`, bypassing the
+probe). Both wire the full `[tsconfig.app.json, tsconfig.spec.json]` array.
+
+**OPEN QUESTION (gates any upstream attribution).** It is NOT established whether a VANILLA (Nx-free)
+Angular schematic ALSO fails the probe under yarn. The observed throw is entirely inside the
+`@nx/devkit` -> `nx` (`convertNxGenerator`) transitive chain, so the failure may be nx-transitive-specific
+under yarn's hoist rather than a general Angular-CLI-under-yarn probe bug. Do NOT file an upstream
+angular/angular-cli issue (bare-catch-masks-the-error / yarn-4 `ng add` untested) until a vanilla
+non-nx schematic is shown to reproduce the probe failure under yarn 4. Until then the accurate scope is
+"loading this package's `@nx/devkit`-based ng-add factory throws in the CLI's yarn probe", NOT "Angular
+CLI's ng-add detection fails under yarn" in general.

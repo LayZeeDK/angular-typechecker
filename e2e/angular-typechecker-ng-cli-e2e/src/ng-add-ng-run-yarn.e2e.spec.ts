@@ -41,15 +41,25 @@ import {
 // tmp `.npmrc` (writeVerdaccioNpmrc) feeds Angular CLI's npm-based metadata fetch,
 // `.yarnrc.yml` feeds yarn's actual install).
 //
-// BUT under yarn, `ng add` INSTALLS WITHOUT AUTO-WIRING: Angular CLI's post-install ng-add
-// detection (`createSchematic('ng-add')` in @angular/cli's add command) silently fails
-// under yarn's node-modules layout, so the CLI reports "does not provide any ng add
-// actions" and runs no schematic. (npm and pnpm run the SAME schematic on the identical
-// installed package and DO wire -- this is an Angular-CLI-under-yarn behavior, NOT an
-// angular-typechecker defect, and NOT a collection-resolution issue.) The ng-add schematic
-// ITSELF runs fine under yarn, so wiring is performed with an explicit
-// `ng g angular-typechecker:ng-add` (the plan's authorized `ng add`-misbehaves -> `ng g`
-// fallback). The spec asserts the no-wire state right after `ng add` to lock the quirk.
+// BUT under yarn, `ng add` INSTALLS WITHOUT AUTO-WIRING. Root cause, PINNED 2026-07-12 by an
+// instrumented first-run `ng add` against Verdaccio (see the resolved debug doc): the CLI's
+// registry-metadata gate reports hasSchematics=true (Angular CLI DOES see `schematics` via
+// `yarn npm info` -- it is NOT a metadata-stripping issue), but the post-install
+// `createSchematic('ng-add')` PROBE in @angular/cli's add command throws while LOADING this
+// package's ng-add factory. That factory is `convertNxGenerator(...)` from `@nx/devkit`, so
+// loading it pulls in `nx` + its transitive deps; under yarn 4's node-modules hoist the load
+// fails (observed: `TypeError: chalk.blue is not a function` from nx's nested `log-symbols`/`ora`;
+// the pre-24-04 form was `Cannot find module 'nx/src/devkit-exports'`), and the add command
+// swallows it in a bare `catch {}` -> hasSchematics=false -> "does not provide any ng add
+// actions", no wire. npm and pnpm hoist nx's deps so the SAME probe succeeds and they wire the
+// identical dist -- so this is NOT an angular-typechecker defect and NOT a collection-resolution
+// issue. NOTE (scope): it is NOT established that a vanilla (Nx-free) Angular schematic also fails
+// the probe under yarn, so this is scoped to this package's `@nx/devkit`-based factory, NOT
+// asserted as a general Angular-CLI-under-yarn bug. The schematic ITSELF runs fine under yarn (the
+// probe is a pre-check, not execution), so wiring is performed with an explicit
+// `ng g angular-typechecker:ng-add` (the plan's authorized `ng add`-misbehaves -> `ng g` fallback;
+// a SECOND `ng add` also wires, via the CLI's already-installed short-circuit). The spec asserts
+// the no-wire state right after `ng add` to lock the quirk.
 //
 // yarn 4 is delivered via corepack, pinned to one literal; the spec skips cleanly where
 // corepack yarn is unavailable. Runs SEQUENTIALLY on the main tree under the serialized
