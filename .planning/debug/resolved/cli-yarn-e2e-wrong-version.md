@@ -328,3 +328,36 @@ consideration, and it stays USER-GATED. No issue is filed by the repro task.
 Full repro + captured logs (external, uncommitted sandbox):
 `D:/projects/sandbox/vanilla-ng-add-repro/FINDINGS.md` (harness `vanilla-repro.mjs`, combined
 `run.log`, marker files under `vanilla-ng-add-ws-yarn/` and `vanilla-ng-add-ws-npm/`).
+
+## Option D spike -- lazy-require refuted (2026-07-12, instrumented; change REVERTED)
+
+Tested whether deferring the `@nx/devkit` load out of the ng-add factory's MODULE TOP-LEVEL fixes
+the yarn first-run `ng add` (goal: keep `convertNxGenerator` + the single generator implementation,
+just avoid the probe-time load). Changed `src/schematics/ng-add/schematic.ts` to lazy-`require`
+`@nx/devkit` + the generator INSIDE the factory, rebuilt, and re-ran the instrumented Verdaccio
+first-run `ng add`. RESULT (`verdaccio-optionD.log`):
+
+- The PROBE was fixed: `[G1] hasSchematics=true`, `[G3] createSchematic(ng-add) OK`, `[G3-CATCH]` = 0
+  (the createSchematic probe no longer throws -- the light module loads clean).
+- But `executeSchematic` (which the CLI now proceeds to, since hasSchematics stayed true) THREW
+  `chalk.blue is not a function` anyway -> the schematic errored -> STILL no wire on the first run.
+  Option D merely RELOCATED the failure from a silent swallow ("does not provide any ng add actions")
+  to a loud exception; net outcome unchanged. REVERTED.
+
+**Refined root cause (the important learning): the chalk breakage is PROCESS-WIDE, not probe-timing.**
+The first-run `ng add` process instantiates the add command's **listr2** task renderer (for the
+install task) BEFORE `@nx/devkit -> nx -> ora -> log-symbols -> chalk` is loaded; that pollutes chalk
+resolution under yarn 4's hoist, so the load throws WHENEVER it happens in that process (probe OR
+execution). The SECOND `ng add` run wires because the already-installed short-circuit (`cli.js:167-176`)
+returns `executeSchematic` BEFORE `new Listr([...])` is ever constructed -- a clean process. `ng g` is a
+different command (no add-listr2) -> also clean.
+
+**Consequence for the fix menu:** any fix that loads `@nx/devkit` during the first-run `ng add`
+EXECUTION -- lazy-require (D) AND a native-composition ng-add that runs the convertNx `configuration`
+schematic (G) -- fails identically. ONLY a genuinely nx-free ng-add execution path (a vanilla schematic
+that wires `angular.json` via pure `@angular-devkit/schematics` + a framework-agnostic leaf-resolution
+function, never loading `@nx/devkit`) would auto-wire the first run under yarn. That is a real
+refactor (extract the collision-fixed wiring core to be devkit-Tree-agnostic so the vanilla ng-add and
+the Nx generator share it -- NOT a blind duplicate), warranted only if the yarn first-run `ng add` UX is
+prioritized (v0.2.2/v0.3.0). Otherwise the standing workaround holds: `ng g angular-typechecker:ng-add`
+or run `ng add` twice (README caveat, todo item 1). Spike log: `verdaccio-optionD.log` (job tmp).

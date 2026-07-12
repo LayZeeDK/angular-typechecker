@@ -52,5 +52,20 @@ CONFIRMED (across three e2e runs) that this is INACCURATE for yarn:
    is real regardless of attribution, so a yarn user still runs `ng g angular-typechecker:ng-add`
    (or `ng add` twice) to wire. That README decision remains open for the user.
 
+3. In-product auto-wire fix -- CHEAP OPTION REFUTED (2026-07-12 spike). Deferring the `@nx/devkit`
+   load out of the ng-add factory's module top-level (lazy-require, "Option D") was spiked: it fixed
+   the CLI probe (`createSchematic` OK, no swallowed catch) but `executeSchematic` then threw
+   `chalk.blue is not a function` anyway -> still no first-run wire (just a loud error instead of a
+   silent one). Root cause is PROCESS-WIDE: the add command's listr2 renderer pollutes chalk before
+   nx's nested `log-symbols` loads, so any fix that loads `@nx/devkit` during the first-run `ng add`
+   execution (lazy-require D, or a native-composition ng-add running the convertNx `configuration`
+   schematic, "Option G") fails the same way. The ONLY in-product fix that auto-wires the yarn first
+   run is a genuinely nx-free ng-add execution path -- a vanilla `@angular-devkit/schematics` ng-add
+   that wires `angular.json` via a framework-agnostic leaf-resolution function SHARED with the Nx
+   generator (extract-not-duplicate). That is a real refactor, warranted only if the yarn first-run
+   `ng add` UX is prioritized (v0.2.2/v0.3.0). RECOMMENDATION: for v0.2.x, ship the item-1 README
+   caveat (the workaround is one documented command); revisit the nx-free refactor later if desired.
+   Spike detail: `.planning/debug/resolved/cli-yarn-e2e-wrong-version.md` ("Option D spike").
+
 Out of scope for 24-05 (two e2e specs only). Recorded as a release-facing product-doc
 decision for the user.
