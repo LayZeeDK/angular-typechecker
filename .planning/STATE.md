@@ -4,7 +4,7 @@ milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: milestone_complete
 last_updated: 2026-07-12T08:26:41.364Z
-last_activity: 2026-07-12 -- Phase 24 plan 24-05 executed (yarn + pnpm CLI e2e finalization)
+last_activity: 2026-07-12 -- Quick task 260712-ft9: vanilla Nx-free ng-add repro (yarn no-autowire is NX-SPECIFIC, not a general Angular CLI bug)
 progress:
   total_phases: 4
   completed_phases: 4
@@ -125,6 +125,7 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 |---|-------------|------|--------|--------|-----------|
 | 260710-0ch | Audit, triage, then address Dependabot security alerts | 2026-07-10 | 0fe82a8 | Verified | [260710-0ch-audit-triage-then-address-dependabot-sec](./quick/260710-0ch-audit-triage-then-address-dependabot-sec/) |
 | 260710-b9t | Dogfood angular-typechecker: unified typecheck/test/integration/e2e verbs covering every non-broken file (PR #33) | 2026-07-10 | 1c68811 | Verified | [260710-b9t-dogfood-angular-typechecker-add-typechec](./quick/260710-b9t-dogfood-angular-typechecker-add-typechec/) |
+| 260712-ft9 | Vanilla (Nx-free) Angular CLI schematic ng-add repro -- discriminated the yarn ng-add no-autowire as NX-SPECIFIC (not a general Angular CLI bug); upstream issue NOT warranted | 2026-07-12 | b513ac9 | Verified | [260712-ft9-create-vanilla-angular-cli-schematic-min](./quick/260712-ft9-create-vanilla-angular-cli-schematic-min/) |
 
 ## Deferred Items
 
