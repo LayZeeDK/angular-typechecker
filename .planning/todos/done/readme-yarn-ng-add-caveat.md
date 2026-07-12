@@ -1,10 +1,31 @@
 ---
-status: pending
+status: done
 created: 2026-07-12
+resolved: 2026-07-12
+resolved_by: 24-06 (nx-free vanilla ng-add, Option C)
 source: 24-05 (CLI x yarn e2e finalization)
 severity: blocker-before-release
 decision_owner: user
 ---
+
+## RESOLUTION (2026-07-12, Plan 24-06)
+
+RESOLVED by the product fix, so no README caveat is needed.
+
+- Item 1 (README yarn caveat) is now OBSOLETE. Plan 24-06 landed Option C: the
+  ng-add schematic is a VANILLA `@angular-devkit/schematics` Rule that never loads
+  the Nx devkit / nx runtime, so the Angular CLI's post-install
+  `createSchematic('ng-add')` probe no longer pulls in nx's `ora -> log-symbols ->
+  chalk` chain that threw under yarn 4's hoist. `ng add angular-typechecker` now
+  AUTO-WIRES every application + library project on the FIRST run under yarn -- same
+  as npm and pnpm. The README `## Angular CLI` "auto-wire every project" claim is
+  therefore ACCURATE for all three package managers, and no yarn caveat is added
+  (the CI-authoritative `ng-add-ng-run-yarn.e2e.spec.ts` now asserts first-run
+  auto-wire under yarn, flat + workspace layouts).
+- Item 2 (upstream angular/angular-cli issue) was already NOT WARRANTED (the failure
+  was NX-SPECIFIC, not a general Angular-CLI-under-yarn bug; quick task 260712-ft9).
+- Item 3 (in-product auto-wire fix) is DONE -- Option C is the nx-free refactor it
+  described, landed in 24-06 with a shared framework-agnostic wiring core.
 
 # README `## Angular CLI` overstates `ng add` auto-wiring for yarn
 

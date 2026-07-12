@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: milestone_complete
-last_updated: 2026-07-12T08:26:41.364Z
-last_activity: 2026-07-12 -- Quick task 260712-ft9: vanilla Nx-free ng-add repro (yarn no-autowire is NX-SPECIFIC, not a general Angular CLI bug)
+status: executing
+last_updated: "2026-07-12T14:33:14.394Z"
+last_activity: 2026-07-12 -- Phase 24 execution started
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 13
+  completed_phases: 3
+  total_plans: 14
   completed_plans: 13
-  percent: 100
-stopped_at: Milestone complete (Phase 24 was final phase)
+  percent: 75
 ---
 
 # Project State
@@ -21,14 +20,14 @@ stopped_at: Milestone complete (Phase 24 was final phase)
 See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone complete
+**Current focus:** Phase 24 — real-oss-scaffolded-e2e-additive-only-audit-docs
 
 ## Current Position
 
-Phase: 24
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-07-12
+Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
+Plan: 6 of 6 (24-06 gap-closure complete)
+Status: Executing Phase 24
+Last activity: 2026-07-12 -- Completed 24-06 (nx-free vanilla ng-add, Option C)
 
 ## Accumulated Context
 
@@ -78,6 +77,8 @@ archives under `.planning/milestones/`.
 - [Phase 24]: 24-05 (gap closure): finalized the CI-authoritative CLI e2e coverage on the 24-04 fix. YARN spec (flat + workspace): stripped debug scaffolding, installs via the REAL `ng add angular-typechecker` (nx now transitive via 24-04), asserts `ng add` did NOT wire under yarn, then wires via `ng g angular-typechecker:ng-add`. KEY FINDING (three e2e runs): yarn's `ng add` INSTALLS but does NOT auto-wire -- Angular CLI's post-install ng-add detection (`createSchematic('ng-add')`) silently fails on yarn's node-modules layout; npm + pnpm both run the same schematic on the identical package (NOT an angular-typechecker defect, NOT collection-resolution). Coordinator-approved Option A1: keep real `ng add` install + `ng g` wire (the plan's own authorized `ng add`-misbehaves->`ng g` fallback); Task-1 acceptance grep `ng g...` becomes 1 (approved deviation), other 3 scaffolding tokens 0, `enableMirror:false` retained. NEW pnpm spec: committed ACV-01 gate #2 (CLI x pnpm-workspace root-name-collision) -- `ng add` wires the app target with the FULL `[tsconfig.app.json, tsconfig.spec.json]` array (build leaf never dropped) + per-project scoping. pnpm build-gate satisfied via `strictDepBuilds: false` (skip ALL build scripts) NOT the planned `allowBuilds:{nx:true}` (the full Angular fixture flags 5-6 native build-script deps, not just nx); this changes threat T-24-10 to "no dependency build scripts run at all" (MORE restrictive, mirrors npm's skip-and-succeed). All 4 specs green (npm+yarnx2+pnpm); coverage guard green (349). Debug doc `cli-yarn-e2e-wrong-version.md` resolved.
 - [Phase 24]: 24-04 (gap closure): ACP-02 root-cause product fix -- declared `nx` as a DIRECT `^23.0.0` dependency in the plugin manifest (NOT a peer). `@nx/devkit`'s entrypoint `require()`s `nx/src/devkit-exports` at load and yarn does not auto-install peers (npm/pnpm do), so a yarn Angular CLI consumer crashed on `ng add`/`ng run` with `Cannot find module 'nx/src/devkit-exports'`; declaring `nx` directly fixes it for every PM. Range `^23.0.0` is a strict subset of `@nx/devkit@23.0.1`'s `nx` peer -> no double-constraint, cannot pull nx 22/24. Inverted BOTH `package-manifest.spec.ts` nx-absent guards (now assert `dependencies.nx === '^23.0.0'`, still not a peer) + restated header comment/it-titles; added `'nx'` to `@nx/dependency-checks` `ignoredDependencies` (unimported runtime-transitive dep) so `nx lint` stays green at maxWarnings:0. Flipped the identical operative Dependencies constraint in PROJECT.md + CLAUDE.md and date-annotated (not rewrote) the CLAUDE.md STACK-research rows + the "What NOT to Use" nx row with `[v0.2.1 CORRECTION (2026-07-12): ...]`; AGENTS.md byte-unchanged. nx test(349)/lint/build green; dist manifest carries `nx: ^23.0.0`.
 
+- [Phase 24]: 24-06 (gap closure): NGADD-01 yarn first-run auto-wire (Option C, spike-CONFIRMED). Made the ng-add schematic a VANILLA @angular-devkit/schematics Rule -- Rule/Tree/SchematicContext type-only imports (erased at compile), so the compiled schematic.js requires ONLY the pure first-party core (ZERO @nx/devkit). The Angular CLI post-install createSchematic('ng-add') probe no longer loads nx's ora/log-symbols/chalk chain (the `chalk.blue is not a function` throw under yarn 4's last-in-wins hoist), so `ng add angular-typechecker` AUTO-WIRES every application + library project on the FIRST run under yarn 4 (npm+pnpm already worked). Reading angular.json directly is also collision-immune (ACV-01). EXTRACTED (not duplicated) the leaf-array resolution + targetName default/empty-guard + collision-by-builder + [build,spec] idempotent merge into src/core/angular-cli-wiring.ts -- pure (node:path posix.join replaces devkit joinPathFragments; an injected exists() callback replaces tree.exists; every error string byte-preserved), enforced framework-agnostic by the D-11 core/** lint boundary. BOTH the vanilla ng-add AND the Nx configuration generator import it; the Nx configuration observable behavior is byte-identical (configuration.spec + configuration-angular-cli.spec + configuration-matrix.spec + schema-parity.spec + all init specs green). Deleted the dead generators/ng-add/generator.ts (schema.json/schema.d.ts kept; collection.json byte-unchanged; ng-add still absent from generators.json). Flipped the CI-authoritative yarn CLI e2e to assert first-run `ng add` auto-wire (dropped the `ng g` fallback + the no-wire quirk-lock; enableMirror:false retained); retired the README yarn-caveat todo (product-fixed -> pending/->done/, README needs no edit). Additive-only vs 0.2.0 holds (unreleased-surface implementation change). Deviations (Rule 3): the migrated ng-add spec invokes the synchronous Rule directly with a runner.logger-backed context (SchematicTestRunner.callRule builds a NullLogger context and crashes on a passed parent logger, so it cannot capture context.logger notices); removed a non-null assertion (read angular.json once, null => absent) for maxWarnings:0. nx test(366)/build/lint/typecheck green; standalone nx e2e angular-typechecker-ng-cli-e2e green 4/4 (npm + yarn flat + yarn workspace first-run auto-wire + pnpm collision). KNOWN INFRA (not 24-06): `nx run-many -t e2e --parallel=1` fails only on ng-cli-e2e via an Nx local-registry task re-invocation ("already invoked by a parent Nx process in this chain"), Nx-flagged flaky; install(37)/matrix(7)/cache(9) pass under run-many and ng-cli-e2e passes standalone -- CI runs each e2e as a fresh per-job `npm ci` (not run-many), so the conflict does not occur in CI.
+
 ### Roadmap Evolution
 
 - v0.2.1 roadmap created 2026-07-10: 4 phases (21-24), numbering continued from v0.2.0's Phase 20. All 16 v0.2.1 requirements (ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD) mapped to exactly one phase, 100% coverage, 0 unmapped. Structure follows the research build-order (`.planning/research/v0.2.1-angular-cli/SUMMARY.md`, CORRECTION & LOCKED DECISIONS): Phase 21 carries the GATE A' GO/NO-GO spike (ACB-02 -- the CJS->ESM `await import()` bridge surviving `convertNxExecutor` + a real `ng run`, on-stack Ng22 + off-stack Ng21) and gates the milestone; Phase 22 carries the highest design weight (the `angular.json` write-fork, Option A `tsConfig: [buildLeaf, specLeaf]`); Phase 23 is `ng-add` auto-wire-all + `init` parity + optional-peer classification; Phase 24 is the real-OSS + scaffolded e2e, the additive-only audit, and docs. ADDITIVE-ONLY charter: re-versions to v0.3.0 only if a breaking change proves unavoidable.
@@ -85,13 +86,13 @@ archives under `.planning/milestones/`.
 
 ### Blockers/Concerns
 
-- **RELEASE-FACING (decide before v0.2.1 release; decision owner: user):** the README `## Angular CLI`
-  section claims `ng add` auto-wire-all, which is INACCURATE for yarn. Plan 24-05's e2e confirmed (3 runs)
-  that under yarn, `ng add angular-typechecker` INSTALLS (incl. nx transitively) but wires NOTHING --
-  Angular CLI's post-install ng-add detection silently fails on yarn's node-modules layout; a yarn user
-  must run `ng g angular-typechecker:ng-add` manually. npm + pnpm auto-wire via `ng add`. Decide: add a
-  README yarn caveat +/- an upstream Angular CLI issue. Recorded in
-  `.planning/todos/pending/readme-yarn-ng-add-caveat.md`. NOT auto-fixed in 24-05 (two e2e specs only).
+- **RELEASE-FACING yarn `ng add` caveat -- RESOLVED 2026-07-12 (Plan 24-06).** The former concern
+  (README `## Angular CLI` "auto-wire-all" was inaccurate for yarn because `ng add` installed but wired
+  nothing) is fixed IN THE PRODUCT: 24-06's nx-free vanilla ng-add schematic makes `ng add
+  angular-typechecker` auto-wire every application + library project on the FIRST run under yarn 4 too
+  (no `@nx/devkit`/nx load -> no `chalk.blue` throw in the CLI's post-install probe). The README claim is
+  now accurate for npm + pnpm + yarn (no edit needed), proven by the flipped CI-authoritative yarn CLI
+  e2e (first-run auto-wire, flat + workspace). The todo moved to `.planning/todos/done/`.
 
 - **v0.2.0 GATE -- RESOLVED 2026-07-05 = GO (was: Layout B rested on unverified official-stack
   empirics).** Phase 16 spikes 006-008 confirmed G2/G3/G4 all YES and selected external-template
@@ -145,7 +146,12 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-12 (autonomous). Executed the paused Phase-24 gap-closure Wave 2 (plan 24-05):
+Last session: 2026-07-12T14:33:14.385Z
+(nx-free vanilla ng-add, Option C -- plan-checked PASSED, 0/3 tasks). Proceeding to
+`/gsd-execute-phase 24 --gaps-only` on the main checkout (single-plan wave, no worktree). HANDOFF.json
+retained until 24-06 execution completes.
+
+Prior session: 2026-07-12 (autonomous). Executed the paused Phase-24 gap-closure Wave 2 (plan 24-05):
 finalized the yarn + pnpm CLI e2e. Yarn spec installs via the REAL `ng add` (nx transitive via 24-04)
 and wires via `ng g` -- Angular CLI's `ng add` does NOT run the ng-add schematic under yarn
 (post-install detection fails on yarn's node-modules layout; npm + pnpm both wire). New committed
