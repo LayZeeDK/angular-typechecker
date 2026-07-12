@@ -61,6 +61,61 @@ new attack surface. **`threats_open: 0` (unchanged).**
 
 ---
 
+## Delta: 24-04 / 24-05 gap-closure re-audit (2026-07-12)
+
+Two gap-closure plans landed on the already-secured phase after the original
+24-01/02/03 audit: **24-04** (declare `nx` as a direct `^23.0.0` dependency so yarn
+consumers get it) and **24-05** (finalize the yarn CLI e2e + add the committed pnpm
+name-collision e2e). This is a re-audit of the NEW threat surface those plans introduced,
+verified INDEPENDENTLY by read against the working tree (not from the plan drafts or the
+code review). **Verdict: 3 new threats (T-24-08/09/10) all CLOSED; the 3 pre-existing
+e2e threats (T-24-05/07/SC) re-verified against the extended surface; `threats_open: 0`
+unchanged; no BLOCKER.**
+
+**Threat total: 8 -> 11 (all CLOSED).**
+
+### New + re-verified threats (grep/read-located)
+
+| Threat ID | Category | Disposition | Evidence (file:line) | Verdict |
+|-----------|----------|-------------|----------------------|---------|
+| T-24-08 | Tampering (supply chain) | accept | `packages/angular-typechecker/package.json:49-53` declares `"nx": "^23.0.0"` in `dependencies` only; `peerDependencies` (`:54-59`) has NO `nx`. `^23.0.0` (`>=23.0.0 <24.0.0`) is a strict subset of `@nx/devkit@23.0.1`'s `nx` peer (`>= 22 <= 24 \|\| ^23.0.0-0`) -- cannot pull nx 22/24. `nx` was ALREADY in the tree transitively via devkit's peer, so no NEW package enters. | closed |
+| T-24-09 | Denial of service (version skew) | accept | `packages/angular-typechecker/eslint.config.mjs:76` `checkVersionMismatches: false` (no autofix range rewrite); `:95` `ignoredDependencies: ['nx', '@angular-devkit/architect', 'rxjs']` includes `'nx'` (dep-checks stays green at maxWarnings:0). The `^23.0.0` subset means no double-constraint vs devkit's peer. | closed |
+| T-24-10 | Elevation of privilege (pnpm build-scripts) | accept (**disposition change -- see below**) | `e2e/.../ng-add-ng-run-pnpm.e2e.spec.ts:212-215` writes `pnpm-workspace.yaml` with `strictDepBuilds: false` -- NOT the plan's `allowBuilds: { nx: true }`. Rationale documented at `:202-211`. | closed |
+| T-24-05 | Tampering (registry) | mitigate | Global-setup loopback gate `e2e/.../global-setup.ts:118-122` (`if (!registryUrl.startsWith('http://127.0.0.1:')) throw`) intact; BOTH new specs re-assert it: yarn `ng-add-ng-run-yarn.e2e.spec.ts:249`, pnpm `ng-add-ng-run-pnpm.e2e.spec.ts:183`. | closed |
+| T-24-07 | Tampering (env) | mitigate | `buildCleanEnv({ stripAllNpmConfig: true })` yarn `:107` / pnpm `:102`; `npm_config_userconfig -> .npmrc.nonexistent` yarn `:268-271` / pnpm `:235-238`; yarn keeps `enableMirror: false` (`:231`, load-bearing anti-stale-tarball); pnpm reads the tmp Verdaccio `.npmrc` via `writeVerdaccioNpmrc` (`:231`). | closed |
+| T-24-SC | Tampering (installs) | accept | No NEW shipped package: the only `dependencies` delta is `nx`, a first-party Nrwl package already present transitively (T-24-08). e2e installs are all from local Verdaccio on 127.0.0.1 (T-24-05). Fixture ships canonical first-party Angular 22 devDeps only. | closed |
+
+### T-24-10 disposition change (recorded)
+
+The 24-05 plan declared the mitigation as `allowBuilds: { nx: true }` (approve ONLY nx's
+postinstall). The executor DEVIATED and used `strictDepBuilds: false` instead. This is a
+**strictly more restrictive** posture, not a regression:
+
+- `allowBuilds: { nx: true }` would **RUN** nx's approved postinstall build script.
+- `strictDepBuilds: false` disables pnpm 11's build-script gate so the install does not
+  fail on the fixture's 5-6 unapproved native build-script packages
+  (`@parcel/watcher`, `esbuild`, `lmdb`, `msgpackr-extract`, `nx`) -- and, with no
+  `allowBuilds` allowlist, runs **ZERO** dependency postinstall scripts.
+
+The type-check e2e needs none of those native postinstall artifacts (only wiring +
+`ng run typecheck`), so skipping all build scripts is both sufficient AND the safest
+posture (it avoids `@parcel/watcher`'s fragile build-from-source on Windows arm64). It
+mirrors npm's proven skip-and-succeed on the same fixture. The threat's `accept`
+disposition holds; the mitigation actually shipped is more restrictive than planned.
+
+### Threat-flag / unregistered-surface reconciliation
+
+No new production runtime code, network endpoint, auth surface, or shipped dependency
+(beyond the already-transitive `nx`) was introduced. The e2e `ngRun` shell strings
+(`corepack yarn ng run ${target}` / `npx ng run ${target}`) interpolate only
+constant project ids (`APP_PROJECT`/`LIB_PROJECT`), not untrusted input -- no injection
+sink. No `unregistered_flag`. The CLI-x-yarn `ng add` no-autowire (the retained
+`ng g angular-typechecker:ng-add` wire step at `ng-add-ng-run-yarn.e2e.spec.ts:302`) is a
+documented Angular-CLI / nx-transitive-hoist quirk (resolved debug doc +
+24-REVIEW-GAP-2404-2405-FIX.md), NOT a security concern.
+
+---
+
 ## Trust Boundaries
 
 | Boundary | Description | Data Crossing |
@@ -86,6 +141,9 @@ new attack surface. **`threats_open: 0` (unchanged).**
 | T-24-06 | Information disclosure | committed fixture ships a secret/token or a peer-masking `.npmrc` | mitigate | Fixture stripped of `node_modules`/`.git`; first-party pinned Angular deps only + committed `package-lock.json`; no fixture `.npmrc` with `legacy-peer-deps`; the Verdaccio `.npmrc` is written to tmp at test time, never committed. Verified: no secret/email/`consensus.dk` leak in phase-new files. | closed |
 | T-24-07 | Tampering | inherited npm config masks a real on-stack peer result | mitigate | `buildCleanEnv({ stripAllNpmConfig: true })` strips every `npm_config_*`; the spec asserts the on-stack Angular 22 install needs no `--legacy-peer-deps` flag. Verified intact by code review. | closed |
 | T-24-SC | Tampering | supply chain (npm/pip/cargo installs) | accept | No new package enters the SHIPPED plugin; `@angular-devkit/architect/testing` is an already-installed optional peer; the fixture declares canonical first-party Angular 22 devDeps only. See Accepted Risks. | closed |
+| T-24-08 | Tampering (supply chain) | `nx` added to `dependencies` (24-04) | accept | `nx@^23.0.0` declared in `dependencies` only (`package.json:49-53`), NOT a peer; strict subset of devkit's `nx` peer; same first-party package already present transitively -- no NEW package. See Delta 24-04/24-05. | closed |
+| T-24-09 | Denial of service | `nx` version-range skew (24-04) | accept | `checkVersionMismatches: false` + `'nx'` in `ignoredDependencies` (`eslint.config.mjs:76,95`); `^23.0.0` subset avoids double-constraint. See Delta 24-04/24-05. | closed |
+| T-24-10 | Elevation of privilege | pnpm postinstall build scripts (24-05) | accept | `strictDepBuilds: false` (`ng-add-ng-run-pnpm.e2e.spec.ts:212-215`) runs ZERO dependency build scripts -- MORE restrictive than the planned `allowBuilds: { nx: true }` (which would run nx's postinstall). Disposition change recorded in Delta 24-04/24-05. | closed |
 
 *Status: open · closed*
 *Disposition: mitigate (implementation required) · accept (documented risk) · transfer (third-party)*
@@ -130,6 +188,8 @@ Threat-flag reconciliation: no SUMMARY carries a `## Threat Flags` heading; `24-
 | Risk ID | Threat Ref | Rationale | Accepted By | Date |
 |---------|------------|-----------|-------------|------|
 | AR-24-01 | T-24-SC | Phase 24 adds no new dependency to the shipped plugin. The only dev-time libraries used (`@angular-devkit/architect/testing`, `@angular/cli`, first-party pinned Angular 22 packages in the committed fixture) are canonical first-party Angular packages, already installed / already optional peers, verified against `registry.npmjs.org` (RESEARCH.md Package Legitimacy Audit — none `[ASSUMED]`/`[SUS]`). Verdaccio proxies upstream at pinned versions. | Lars Gyrup Brink Nielsen | 2026-07-11 |
+| AR-24-02 | T-24-08 | 24-04 adds `nx@^23.0.0` to the shipped plugin's `dependencies`. This is NOT a new package: `nx` is the same first-party Nrwl package already pulled transitively via `@nx/devkit`'s `nx` peer (npm/pnpm auto-install it). Declaring it direct only ensures yarn consumers (which do not auto-install peers) get it. `^23.0.0` is Nx-23-only and a strict subset of devkit's peer range -- cannot introduce nx 22/24. No new attack surface. | Lars Gyrup Brink Nielsen | 2026-07-12 |
+| AR-24-03 | T-24-10 | The pnpm CLI e2e disables pnpm 11's build-script gate with `strictDepBuilds: false` rather than approving nx's postinstall via `allowBuilds`. This runs ZERO dependency build scripts (strictly safer than the planned allowlist) and is test-infra only -- the shipped plugin is unaffected. | Lars Gyrup Brink Nielsen | 2026-07-12 |
 
 *Accepted risks do not resurface in future audit runs.*
 
@@ -142,6 +202,7 @@ Threat-flag reconciliation: no SUMMARY carries a `## Threat Flags` heading; `24-
 | 2026-07-11 | 8 | 8 | 0 | Claude (gsd-secure-phase; mitigations cross-confirmed by 24-REVIEW.md + 24-VERIFICATION.md) |
 | 2026-07-11 | 8 | 8 | 0 | Claude (gsd-security-auditor; INDEPENDENT file-level re-verification -- each mitigation located by grep/read at `file:line`, draft claims NOT trusted; see Independent Verification Evidence) |
 | 2026-07-11 | 8 | 8 | 0 | Claude (gsd-security-auditor; ACV-01 gap-fix re-audit of commits `1837b25`+`49974f1` -- generator.ts CLI write-fork now reads `root`/`projectType` straight from angular.json; no new threat, same-mechanism gap-fix, additive-only; see Delta section) |
+| 2026-07-12 | 11 | 11 | 0 | Claude (gsd-security-auditor; 24-04/24-05 gap-closure re-audit -- 3 NEW threats T-24-08/09/10 verified by read against package.json + eslint.config.mjs + the two new CLI e2e specs; T-24-05/07/SC re-verified on the extended surface; T-24-10 disposition change recorded (`strictDepBuilds:false` > planned `allowBuilds`); no BLOCKER; see Delta 24-04/24-05) |
 
 ---
 
