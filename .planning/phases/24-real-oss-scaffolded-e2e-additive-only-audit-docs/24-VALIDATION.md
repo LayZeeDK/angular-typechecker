@@ -5,7 +5,7 @@ status: verified
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-07-12
 ---
 
 # Phase 24 — Validation Strategy
@@ -158,6 +158,87 @@ restored to a clean diff). Gaps filled: 1. Escalated: 0.
 
 ---
 
+## Delta: gap-closure re-audit — 24-04 (nx-dep) + 24-05 (yarn/pnpm CLI e2e) (2026-07-12, Nyquist auditor)
+
+Re-validation after the gap-closure plans (24-04, 24-05) + the code-review-fix landed on the
+already-validated phase (commits `fd41260`, `dcfb0be`, `5502137`, `76c6f35`, `c5c6912`,
+`724c570`, `9d25925`; phase re-verified `1b42eff` 5/5, re-secured `44a7884`). Focus: do the
+gap-closure additions constitute ADEQUATE Nyquist sample points for **ACP-02** and **ACV-02**
+(not merely "the tasks ran")? Each requirement was re-classified against the actual shipped
+tests, then every automated leg was executed THIS session and its green result observed
+directly — prior inline/self-certified classifications not trusted.
+
+### ACP-02 — `nx` as a direct `^23.0.0` dependency + additive-only charter — CONFIRMED (no gap)
+
+Sample points and their standing guards, all re-run green:
+
+- **Product manifest** — `packages/angular-typechecker/package.json` `dependencies.nx === "^23.0.0"`
+  (alongside exact-pinned `@nx/devkit@23.0.1`), and `nx` is absent from `peerDependencies`
+  (verified by direct read).
+- **Inverted unit guard** — `src/package-manifest.spec.ts` (20 tests) asserts
+  `manifest.dependencies['nx'] === '^23.0.0'` AND not-a-peer at BOTH describe sites
+  (CMP-01/D-14 lines 85-88 + ACP-01/NGADD-01/D-07 lines 191-194). Two independent sample
+  points, both green.
+- **Lint gate** — `eslint.config.mjs` `ignoredDependencies: ['nx', '@angular-devkit/architect', 'rxjs']`
+  keeps `@nx/dependency-checks` from flagging the (unimported, runtime-transitive) `nx`
+  obsolete at `maxWarnings:0`.
+- **Additive-only** — `src/index.drift.ts` barrel tripwire via `tsconfig.drift.json` type-checks
+  clean (the dependency addition touches no public barrel / schema / executor id), backed by
+  `24-ADDITIVE-AUDIT.md`'s git-diff verdict vs `0.2.0`.
+- **Behavioral consequence** — the fix's whole point (a yarn Angular CLI consumer gets `nx`
+  installed so `@nx/devkit`'s top-level `require("nx/src/devkit-exports")` resolves) is proven
+  end-to-end by the yarn e2e below: `ng g angular-typechecker:ng-add` (which loads the
+  `convertNxGenerator` factory, pulling in `nx`) wires successfully — impossible if `nx` were
+  absent (the pre-24-04 `Cannot find module 'nx/src/devkit-exports'` crash).
+
+### ACV-02 — CI-authoritative Angular CLI e2e — CONFIRMED (no gap)
+
+The gap-closure widened the e2e matrix to three package managers, all committed to the existing
+`angular-typechecker-ng-cli-e2e` project (auto-join `run-many -t e2e`, no ci.yml edit). Every
+cell asserts: non-vacuous baseline (no `typecheck` target before install), per-project scoping
+with DISTINCT planted leaf codes (app `TS2322`+`TS2345` vs lib `TS2554`) proven BIDIRECTIONALLY
+(each `.toContain` its own + `.not.toContain` the other project's), clean baseline exit 0
+(app + lib), no stray `nx.json`, no `ERR_REQUIRE_ESM` / `infrastructure error`. Adequate
+sample points for the requested edges:
+
+- **npm / flat** — `ng-add-ng-run.e2e.spec.ts` (real `ng add` auto-wire-all).
+- **yarn 4 / flat + yarn-workspace** — `ng-add-ng-run-yarn.e2e.spec.ts` (`.each(['flat','workspace'])`;
+  the `workspace` layout makes the lib a `workspaces:['projects/*']` member whose name collides,
+  proving a yarn name collision does NOT shadow). The CLI-x-yarn no-autowire is a DOCUMENTED,
+  LOCKED quirk — the spec asserts the no-wire state right after `ng add`, then wires via the
+  authorized `ng g` fallback — NOT an uncovered gap.
+- **pnpm 11 / root name-collision** — `ng-add-ng-run-pnpm.e2e.spec.ts` (root `packages:['.']` so the
+  root package.json name collides with the app project name → Nx shadowing stub). REGRESSION
+  LOCK: the app `typecheck` target keeps the FULL `['tsconfig.app.json','tsconfig.spec.json']`
+  array — the app BUILD leaf is never silently dropped (the committed form of the manual ACV-01
+  gate #2 realworld-angular scenario). Effective-pnpm-major===11 assertion ran (not skipped),
+  so the collision was reproduced on the CI-matched PM major.
+- **Coverage self-audit** — `ci-e2e-coverage-guard.spec.ts` (GUARD-01/01b/01c/01d) enforces the
+  e2e set membership, the `type:e2e` tag set, `run-many -t e2e`/`-t typecheck` presence, and the
+  `--parallel=1` shared-tarball serialization.
+
+No package-manager / layout / collision / cross-bleed edge is left unsampled. The unit-level
+collision invariant (`configuration-matrix.spec.ts` name-COLLISION cells; `ng-add.spec.ts` SUBDIR
+stub) backs the tarball-level e2e.
+
+### Commands executed this session (all green, observed directly)
+
+| Command | Result |
+|---------|--------|
+| `NX_DAEMON=false npx nx test angular-typechecker --skip-nx-cache` | **38 files / 349 tests PASS** (incl. `package-manifest.spec.ts` 20 — ACP-02; `ci-e2e-coverage-guard`; `configuration-matrix` 19 w/ name-COLLISION cells; `ng-add.spec.ts` 14 w/ SUBDIR-stub case) |
+| `NX_DAEMON=false npx nx typecheck angular-typechecker --skip-nx-cache` | PASS — drift `tsc --noEmit` incl. `tsconfig.drift.json` (ACP-02 additive barrel tripwire) |
+| `NX_DAEMON=false npx nx e2e angular-typechecker-ng-cli-e2e --skip-nx-cache` | **3 files / 4 tests PASS** (555s): npm flat (148s), yarn flat (157s), yarn workspace/lib-collision (144s), pnpm root-collision (84s) — no vacuous skips; per-leaf scoping proven each cell (ACV-02) |
+
+### Verdict
+
+**`nyquist_compliant: true` holds; `wave_0_complete: true` holds.** ACP-02 and ACV-02 each have
+adequate, executed, green Nyquist sample points covering the two package-manager layouts, the
+name-collision cell, and the bidirectional per-leaf cross-bleed guards. Coverage already
+existed — **0 tests generated** (no redundant tests added), 0 gaps filled, 0 escalated. No
+implementation file was touched; no assertion was weakened. The prior verdict stands.
+
+---
+
 ## Validation Sign-Off
 
 - [x] All tasks have `<automated>` verify or Wave 0 dependencies (ACV-01 excepted — manual by design)
@@ -167,4 +248,4 @@ restored to a clean diff). Gaps filled: 1. Escalated: 0.
 - [x] Feedback latency < 60s (unit/integration/drift tier)
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** verified 2026-07-11 (Nyquist auditor — 4/4 automatable requirements green; ACV-01 manual-only by design)
+**Approval:** verified 2026-07-11; re-audited 2026-07-12 after gap closure (24-04 nx-dep + 24-05 yarn/pnpm CLI e2e) — Nyquist auditor: ACP-02 + ACV-02 adequately sampled and re-run green (349 unit + drift typecheck + 4 CLI e2e); 0 tests generated (coverage pre-existing), 0 gaps, 0 escalations; ACV-01 manual-only by design. `nyquist_compliant: true` holds.
