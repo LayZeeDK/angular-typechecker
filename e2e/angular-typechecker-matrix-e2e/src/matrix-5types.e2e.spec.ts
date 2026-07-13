@@ -79,15 +79,9 @@ let consumerWorkspace = '';
 // real run every time.
 
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source (packing a
-  // stale dist would smoke-test a stale artifact -- Pitfall 6). --skip-nx-cache
-  // forces a real emit even when the outer run is cached.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
+  // dist is built ONCE upstream by the `e2e` target's dependsOn (nx.json
+  // targetDefaults) and is read-only during e2e -- no per-spec rebuild.
+  //
   // npm pack --json from the dist dir produces the EXACT artifact `nx release
   // publish` ships and writes the .tgz on disk. Capture its absolute path.
   const packOutput = execSync('npm pack --json', {

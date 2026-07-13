@@ -80,14 +80,8 @@ let consumerWorkspace = '';
 // project's concern; here we want a real run every time.
 
 beforeAll(() => {
-  // FRESH dist -> packed tarball reflects current source (--skip-nx-cache forces a
-  // real emit even when the outer run is cached).
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
+  // dist is built ONCE upstream by the `e2e` target's dependsOn (nx.json
+  // targetDefaults) and is read-only during e2e -- no per-spec rebuild.
   const packOutput = execSync('npm pack --json', {
     cwd: distDir,
     env,

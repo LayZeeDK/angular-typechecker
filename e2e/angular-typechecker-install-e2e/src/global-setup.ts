@@ -6,11 +6,12 @@ import type { TestProject } from 'vitest/node';
 import { buildCleanEnv, findWorkspaceRoot, sh } from '@workspace/test-util';
 
 // Shared vitest globalSetup for the angular-typechecker-install-e2e project. It
-// stands up the first-party @nx/js Verdaccio local-registry, builds dist ONCE,
-// mints a REAL publish token, strips CI-only provenance, and publishes the built
-// dist ONCE via the real `nx release publish` path -- then provides the registry
-// URL + token to every spec (finding E1: one build + one publish shared across
-// the specs, which is why the sibling specs drop their own per-spec builds).
+// stands up the first-party @nx/js Verdaccio local-registry, mints a REAL publish
+// token, strips CI-only provenance, and publishes the dist (built ONCE upstream by
+// the `e2e` target's dependsOn, nx.json targetDefaults) via the real
+// `nx release publish` path -- then provides the registry URL + token to every spec
+// (finding E1: one build + one publish shared across the specs, which is why the
+// sibling specs drop their own per-spec builds).
 //
 // This adopts the canonical @nx/js `startLocalRegistry` runtime but DIVERGES from
 // the nx.dev recipe's `releaseVersion({ specifier: '0.0.0-e2e' })` step, which
@@ -139,9 +140,11 @@ export default async function ({ provide }: TestProject) {
       );
     }
 
-    // Mint a REAL token (behavior 2) and build FRESH dist ONCE (finding E1).
+    // Mint a REAL token (behavior 2). dist is built ONCE upstream by the `e2e`
+    // target's dependsOn (nx.json targetDefaults) -- Nx input hashing over src keeps
+    // it fresh, so the former in-setup `nx build --skip-nx-cache` is gone and dist is
+    // read-only during e2e (a prerequisite for --parallel=2).
     const token = await mintCiToken(registryUrl);
-    sh('npx nx build angular-typechecker --skip-nx-cache', { cwd: root, env });
 
     // The dist manifest carries publishConfig.provenance:true for the CI OIDC
     // release job. Provenance generation only works inside a supported CI with
@@ -175,8 +178,8 @@ export default async function ({ provide }: TestProject) {
     // dependsOn ["build"] (M14). Without this flag the publish would re-run build
     // -- a cache HIT that RE-MATERIALIZES dist from the cache and CLOBBERS the
     // provenance strip above (re-introducing publishConfig.provenance:true, which
-    // aborts a non-CI publish). The explicit build above already produced dist, so
-    // we skip the dependent build and publish the stripped dist we just prepared.
+    // aborts a non-CI publish). The upstream `e2e` dependsOn build already produced
+    // dist, so we skip the dependent build and publish the stripped dist we prepared.
     const nerfDart = `//${new URL(registryUrl).host}/`;
     const publishNpmrc = join(root, 'tmp', 'local-registry', 'publish.npmrc');
     mkdirSync(dirname(publishNpmrc), { recursive: true });
