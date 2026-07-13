@@ -9,6 +9,7 @@
     "e2e": {
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
+      "parallelism": false,
       "options": {
         "reportsDirectory": "coverage/e2e/angular-typechecker-install-e2e"
       }

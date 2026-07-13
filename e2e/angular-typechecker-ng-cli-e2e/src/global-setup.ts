@@ -17,6 +17,12 @@ import { buildCleanEnv, findWorkspaceRoot, sh } from '@workspace/test-util';
 // (RESEARCH "Don't Hand-Roll": the 127.0.0.1 loopback, real-token mint, provenance
 // strip, and SAFETY gate are all load-bearing and already solved). The only
 // consumer difference lives in the specs (`ng add` / `ng run` instead of `nx add`).
+// Both projects use the SAME `local-registry` (port 4873) + storage; they never
+// co-run because install-e2e's `e2e` target is `parallelism: false` (Fallback A), so
+// the shared registry / storage / htpasswd are never touched concurrently. yarn 4's
+// metadata cache is keyed by HOST (127.0.0.1), not host:port, so a second registry on
+// a distinct port would make yarn reuse stale cross-registry tarball URLs -- another
+// reason both stay on 4873.
 //
 // It adopts the canonical @nx/js `startLocalRegistry` runtime but DIVERGES from
 // the nx.dev recipe's `releaseVersion({ specifier: '0.0.0-e2e' })` step, which

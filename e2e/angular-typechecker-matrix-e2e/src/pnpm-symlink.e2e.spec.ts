@@ -71,6 +71,9 @@ const fixtureDir = join(
 const env = buildCleanEnv();
 
 let tarballPath = '';
+// A per-spec OS-temp dir the tarball is packed INTO so dist stays read-only during
+// e2e and no sibling e2e project shares the tarball path.
+let packDest = '';
 let consumerWorkspace = '';
 
 // The shared run() wraps `npx nx run <target> --output-style=static
@@ -81,14 +84,21 @@ let consumerWorkspace = '';
 
 beforeAll(() => {
   // dist is built ONCE upstream by the `e2e` target's dependsOn (nx.json
-  // targetDefaults) and is read-only during e2e -- no per-spec rebuild.
-  const packOutput = execSync('npm pack --json', {
-    cwd: distDir,
-    env,
-    encoding: 'utf8',
-  });
+  // targetDefaults) and is read-only during e2e -- no per-spec rebuild. Pack into a
+  // per-spec OS-temp dir (`npm pack --json --pack-destination <dir>`) so no sibling
+  // e2e project shares the tarball path; cwd stays distDir so pack reads the dist
+  // package and reports the bare filename.
+  packDest = mkdtempSync(join(tmpdir(), 'atc-pack-pnpm-'));
+  const packOutput = execSync(
+    `npm pack --json --pack-destination "${packDest}"`,
+    {
+      cwd: distDir,
+      env,
+      encoding: 'utf8',
+    },
+  );
   const packed = JSON.parse(packOutput) as Array<{ filename: string }>;
-  tarballPath = join(distDir, packed[0].filename);
+  tarballPath = join(packDest, packed[0].filename);
 
   // Copy the committed fixture into the OS temp dir. The committed pnpm-lock.yaml
   // (generated at pnpm 11.9.0) makes the fixture deps reproducible; the empty
@@ -172,8 +182,10 @@ beforeAll(() => {
 }, 300000);
 
 afterAll(() => {
-  if (tarballPath) {
-    rmSync(tarballPath, { force: true });
+  // Remove the per-spec pack dir (the .tgz lives under it) and discard the shared
+  // tmp consumer-workspace. force:true keeps teardown non-fatal if either is gone.
+  if (packDest) {
+    rmSync(packDest, { recursive: true, force: true });
   }
 
   if (consumerWorkspace) {
