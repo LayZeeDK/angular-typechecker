@@ -14,8 +14,8 @@ import { findWorkspaceRoot } from '@workspace/test-util';
 //       type-checking tool must never tolerate); and
 //   (2) NO non-e2e project may define an `e2e` target -- a stray `e2e` target on
 //       any other project would be pulled into `run-many -t e2e`, breaking the
-//       "exactly the three tarball projects, serialized" guarantee (they share one
-//       dist tarball path; see GUARD-01b).
+//       "exactly the e2e/* projects" guarantee (see GUARD-01b, which asserts the
+//       isolation that makes running the tier at --parallel=2 safe).
 // This guard asserts BOTH directions so a forgotten target or a stray/misplaced
 // one becomes a loud, LOCATED test failure instead of a silent miscoverage.
 //
@@ -89,7 +89,7 @@ function collectProjectJsonPaths(dir: string, acc: string[] = []): string[] {
 
 // Slice the `e2e:` job block (from its key to the next top-level job key) WITHOUT a
 // YAML parser (line-level invariant; reuses the release-hygiene no-parser
-// precedent). Shared by the `--parallel=1` serialization guard (GUARD-01b) and the
+// precedent). Shared by the e2e --parallel=2 isolation guard (GUARD-01b) and the
 // typecheck-coverage guard (GUARD-01c) so there is ONE job-scoping implementation.
 // The job-key regex MUST allow digits or it would miss `e2e:` itself (the `2`).
 // Throws a clear located Error if the `e2e:` job is absent, so a ci.yml refactor
@@ -150,7 +150,7 @@ describe('GUARD-01: run-many -t e2e covers exactly the e2e/* projects', () => {
 
       expect(
         projectJson.targets?.['e2e'],
-        `GUARD-01: ${relativePath} defines an \`e2e\` target but is not an e2e/* project. \`nx run-many -t e2e\` would run it too, breaking the "exactly the three tarball projects, serialized" guarantee. Give the target a different name, or move the project under e2e/.`,
+        `GUARD-01: ${relativePath} defines an \`e2e\` target but is not an e2e/* project. \`nx run-many -t e2e\` would run it too, breaking the "exactly the e2e/* projects" guarantee. Give the target a different name, or move the project under e2e/.`,
       ).toBeUndefined();
     }
   });
@@ -176,29 +176,141 @@ describe('GUARD-01: run-many -t e2e covers exactly the e2e/* projects', () => {
   });
 });
 
-// GUARD-01b (e2e shared-tarball race guard). The correctness of the `e2e` gate
-// depends on `--parallel=1`: all three e2e projects `npm pack` the SAME dist
-// artifact (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in
-// beforeAll and `rmSync` it in afterAll. Vitest serializes specs WITHIN each project
-// (singleFork + fileParallelism:false), but `nx run-many` defaults to parallel, so
-// without `--parallel=1` a sibling project's afterAll `rmSync` deletes the tarball
-// mid-`pnpm add` -> a nondeterministic ENOENT flake. `--parallel=1` is therefore
-// load-bearing; guard it the same way the target coverage is guarded (GUARD-01) so
-// that dropping it becomes a loud, LOCATED test failure instead of a silent flake.
-describe('GUARD-01b: the ci.yml e2e job serializes its projects (shared-tarball race guard)', () => {
+// Is `line` a TypeScript comment line? True when the first non-space chars are `//`
+// (line comment) or `*` (block-comment continuation). Used by the TS-source scans
+// below so a `npm pack --json` / `nx build` mentioned in a comment does NOT
+// false-trigger. NOTE: this is the TS marker; the ci.yml scans use the YAML `#`
+// marker built into their regexes -- do not conflate the two.
+function isTsComment(line: string): boolean {
+  const trimmed = line.trimStart();
+
+  return trimmed.startsWith('//') || trimmed.startsWith('*');
+}
+
+// Recursively collect every file under `e2e/` whose name ends with `suffix`
+// (e.g. `.e2e.spec.ts` for the pack specs, `global-setup.ts` for the registry
+// setups), skipping the output/planning trees in IGNORED_DIRS. A cheap FS walk --
+// no nx runtime -- so the isolation guard stays a fast-tier check.
+function collectE2eFiles(suffix: string): string[] {
+  const acc: string[] = [];
+
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        if (!IGNORED_DIRS.has(entry.name)) {
+          walk(join(dir, entry.name));
+        }
+
+        continue;
+      }
+
+      if (entry.isFile() && entry.name.endsWith(suffix)) {
+        acc.push(join(dir, entry.name));
+      }
+    }
+  };
+
+  walk(join(workspaceRoot, 'e2e'));
+
+  return acc.sort();
+}
+
+// Read the `parallelism` flag off an e2e project's `e2e` target.
+function e2eTargetParallelism(project: string): boolean | undefined {
+  const projectJson = JSON.parse(
+    readFileSync(join(workspaceRoot, 'e2e', project, 'project.json'), 'utf8'),
+  ) as { targets?: { e2e?: { parallelism?: boolean } } };
+
+  return projectJson.targets?.e2e?.parallelism;
+}
+
+// GUARD-01b (e2e --parallel=2 isolation guard). The CI `e2e` job runs the tier at
+// `--parallel=2`: install-e2e and cache-e2e each run ALONE (parallelism:false) while
+// ng-cli-e2e and matrix-e2e may overlap. That is safe ONLY while the four formerly
+// shared resources stay isolated, so this guard (REWRITTEN from the old
+// `--parallel=1` serialization guard) fails LOUDLY on regression of ANY invariant.
+// Each assertion is fail-loud + located; all are cheap READ-ONLY filesystem/text
+// checks that NEVER edit a file. The ci.yml scan (a) uses the YAML `#` comment
+// marker; the TS-source scans (b, e) use the `//`/`*` marker via isTsComment.
+describe('GUARD-01b: the ci.yml e2e job runs --parallel=2 with the shared resources isolated', () => {
   const ci = readFileSync(
     join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
     'utf8',
   );
 
-  it('passes --parallel=1 to the e2e run-many', () => {
+  it('the e2e job passes --parallel=2 and NOT --parallel=1', () => {
     const e2eBlock = extractE2eJobLines(ci).join('\n');
 
     expect(
-      // Run-step line only (this block's comments also mention `--parallel=1`).
-      /^(?!\s*#).*--parallel=1\b/m.test(e2eBlock),
-      'GUARD-01b: the `e2e` job must pass `--parallel=1` to `nx run-many` so the three e2e projects run serially. They share one dist tarball path (each packs it in beforeAll + `rmSync`s it in afterAll); running them in parallel races to an ENOENT on `pnpm add`. If this flag was removed intentionally, first give each e2e project a UNIQUE tarball path so cross-project parallelism is safe.',
+      // Run-step line only (this block's comments also mention `--parallel=2`).
+      /^(?!\s*#).*--parallel=2\b/m.test(e2eBlock),
+      'GUARD-01b: the `e2e` job must pass `--parallel=2` to `nx run-many`. This is safe only because dist is built once upstream (no in-spec build), each packing spec uses --pack-destination, and install-e2e + cache-e2e are parallelism:false. If you deliberately fell back to serial, update this guard too.',
     ).toBe(true);
+
+    expect(
+      // Reject a lingering `--parallel=1` run step (a revert of the flip).
+      /^(?!\s*#).*--parallel=1\b/m.test(e2eBlock),
+      'GUARD-01b: the `e2e` job must NOT pass `--parallel=1` -- the isolation work (build de-dup, per-spec --pack-destination, install-e2e + cache-e2e parallelism:false) exists precisely so the tier runs at --parallel=2.',
+    ).toBe(false);
+  });
+
+  it('every e2e spec that packs uses --pack-destination (no shared dist tarball path)', () => {
+    for (const specPath of collectE2eFiles('.e2e.spec.ts')) {
+      const relativePath = relative(workspaceRoot, specPath)
+        .split(sep)
+        .join('/');
+      const lines = readFileSync(specPath, 'utf8').split('\n');
+
+      lines.forEach((line, index) => {
+        if (isTsComment(line) || !/npm pack --json/.test(line)) {
+          return;
+        }
+
+        expect(
+          line.includes('--pack-destination'),
+          `GUARD-01b: ${relativePath}:${index + 1} runs \`npm pack --json\` without \`--pack-destination\`. A bare pack writes into the shared dist dir, reintroducing the cross-project tarball race under --parallel=2. Pack to a per-spec mkdtemp dir instead.`,
+        ).toBe(true);
+      });
+    }
+  });
+
+  it('install-e2e serializes its e2e target (parallelism:false -> single live registry)', () => {
+    expect(
+      e2eTargetParallelism('angular-typechecker-install-e2e'),
+      'GUARD-01b: e2e/angular-typechecker-install-e2e must set `parallelism: false` on its `e2e` target. It is the sole Verdaccio publisher; running it alone keeps exactly ONE local registry live (no port/storage/htpasswd/authToken contention, and no cross-registry yarn metadata-cache poisoning -- yarn 4 keys that cache by host, not host:port).',
+    ).toBe(false);
+  });
+
+  it('cache-e2e serializes its e2e target (parallelism:false)', () => {
+    expect(
+      e2eTargetParallelism('angular-typechecker-cache-e2e'),
+      'GUARD-01b: e2e/angular-typechecker-cache-e2e must set `parallelism: false` on its `e2e` target so the cache-correctness gate (real workspace .nx SQLite db) never co-runs with a nested-nx sibling under --parallel=2.',
+    ).toBe(false);
+  });
+
+  it('no e2e spec or global-setup rebuilds dist (build runs once upstream)', () => {
+    const files = [
+      ...collectE2eFiles('.e2e.spec.ts'),
+      ...collectE2eFiles('global-setup.ts'),
+    ];
+
+    for (const filePath of files) {
+      const relativePath = relative(workspaceRoot, filePath)
+        .split(sep)
+        .join('/');
+      const lines = readFileSync(filePath, 'utf8').split('\n');
+
+      lines.forEach((line, index) => {
+        if (isTsComment(line)) {
+          return;
+        }
+
+        expect(
+          /nx build angular-typechecker/.test(line),
+          `GUARD-01b: ${relativePath}:${index + 1} rebuilds dist (\`nx build angular-typechecker\`). Under --parallel=2 concurrent dist writes corrupt every packer/publisher. dist is built ONCE upstream via the e2e target's dependsOn -- remove the in-spec/in-setup build.`,
+        ).toBe(false);
+      });
+    }
   });
 });
 

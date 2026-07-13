@@ -189,19 +189,26 @@ jobs:
       # asserts this line runs `run-many -t typecheck`; GUARD-01d asserts the
       # `type:e2e` tag set is exactly the e2e/* projects (no silent drift).
       - run: npx nx run-many -t typecheck -p tag:type:e2e
-      # Cross-project serialization (extends the intra-project D-21 serialization).
-      # `nx run-many -t e2e` runs the `e2e` target for every project that defines it
-      # -- exactly the three e2e projects (no -p list needed; GUARD-01 asserts no
-      # other project defines `e2e`). All three `npm pack` the SAME dist artifact
-      # (dist/packages/angular-typechecker/angular-typechecker-<ver>.tgz) in their
-      # beforeAll and `rmSync` it in afterAll. Vitest already serializes specs
-      # WITHIN each project (singleFork + fileParallelism:false), but `nx run-many`
-      # defaults to parallel, so the projects race on the shared tarball path: a
-      # sibling project's afterAll `rmSync` deletes the tarball mid-`pnpm add`
-      # (ENOENT). pnpm 11's supply-chain-policy verification widened the window so
-      # the latent race now trips deterministically. `--parallel=1` runs the three
-      # projects one at a time; GUARD-01b asserts this flag is present.
-      - run: npx nx run-many -t e2e --parallel=1
+      # Bounded cross-project parallelism (quick-260712-squ). `nx run-many -t e2e`
+      # runs the `e2e` target for every project that defines it -- exactly the four
+      # e2e projects (no -p list needed; GUARD-01 asserts no other project defines
+      # `e2e`). The four resources that once forced `--parallel=1` are isolated:
+      #   (1) dist is built ONCE upstream via the `e2e` targetDefault dependsOn and is
+      #       read-only during e2e (no spec/global-setup runs `nx build`);
+      #   (2) each packing spec writes its tarball to its own OS-temp
+      #       `--pack-destination` dir (no shared dist/*.tgz path -> no ENOENT race);
+      #   (3) install-e2e's `e2e` target is `parallelism: false`, so the sole
+      #       Verdaccio publisher runs ALONE -- only ONE registry (127.0.0.1:4873) is
+      #       ever live, so there is no port/storage/htpasswd/authToken contention and
+      #       no concurrent yarn metadata-cache poisoning (yarn 4 keys that cache by
+      #       host, not host:port); and
+      #   (4) cache-e2e's `e2e` target is `parallelism: false`, keeping the
+      #       cache-correctness gate off the shared `.nx` db while a sibling runs.
+      # So under `--parallel=2` install-e2e and cache-e2e each run alone while
+      # ng-cli-e2e and matrix-e2e may overlap -- shortening the tier's wall-clock.
+      # GUARD-01b asserts `--parallel=2` (and rejects `--parallel=1`) plus every
+      # isolation invariant above.
+      - run: npx nx run-many -t e2e --parallel=2
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
