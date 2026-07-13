@@ -10,6 +10,7 @@ export {
 export {
   expectSeededTypecheckTargetDefault,
   readTypecheckTargetDefault,
+  resetVerdaccioPublishState,
   writeVerdaccioNpmrc,
   type TypecheckTargetDefault,
 } from './lib/e2e-fixture';
