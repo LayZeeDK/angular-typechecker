@@ -4,7 +4,7 @@ milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
 last_updated: "2026-07-12T14:33:14.394Z"
-last_activity: 2026-07-13 -- Quick task 260712-squ: e2e tier now runs at --parallel=2 (build de-dup + per-spec pack isolation + single-registry serialization)
+last_activity: 2026-07-14 -- Quick task 260713-w87: measured e2e-install time across the npm/pnpm/yarn matrix + optimization findings report (no optimization applied -- Verdaccio warm-cache is the top follow-up lever)
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
 Plan: 6 of 6 (24-06 gap-closure complete)
 Status: Executing Phase 24
-Last activity: 2026-07-13 -- Completed quick task 260712-squ (e2e --parallel=2); Phase 24 at 6/6
+Last activity: 2026-07-14 -- Completed quick task 260713-w87 (e2e-install-time measurement + optimization report); Phase 24 at 6/6
 
 ## Accumulated Context
 
@@ -129,6 +129,7 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 | 260712-ft9 | Vanilla (Nx-free) Angular CLI schematic ng-add repro -- discriminated the yarn ng-add no-autowire as NX-SPECIFIC (not a general Angular CLI bug); upstream issue NOT warranted | 2026-07-12 | b513ac9 | Verified | [260712-ft9-create-vanilla-angular-cli-schematic-min](./quick/260712-ft9-create-vanilla-angular-cli-schematic-min/) |
 | 260712-n7z | Resolve e2e local-registry flakiness under `nx run-many -t e2e --parallel=1` (CI e2e gate, ci.yml:204) -- Option A: clear inherited NX_INVOCATION_ROOT_PID before startLocalRegistry in both registry-starting e2e globalSetups so each forked `nx run <root>:local-registry` keys the invocation tracker on its own pid | 2026-07-12 | a17ee57 | Verified | [260712-n7z-before-phase-completion-research-on-the-](./quick/260712-n7z-before-phase-completion-research-on-the-/) |
 | 260712-squ | Run the e2e tier at `nx run-many -t e2e --parallel=2` (from --parallel=1): build plugin once upstream (`e2e dependsOn angular-typechecker:build`, drop 4 in-spec builds), per-spec `--pack-destination` tarball isolation (6 specs), single 4873 registry with install-e2e + cache-e2e `parallelism:false` (corrected Fallback A -- the planned 2nd registry was reverted because yarn 4 keys its global metadata cache by host not host:port, so a 2nd registry port breaks CI); GUARD-01b rewritten to 5 fail-loud invariants | 2026-07-13 | 6db144d | Verified | [260712-squ-enable-e2e-parallel-2-or-3-de-dup-build-](./quick/260712-squ-enable-e2e-parallel-2-or-3-de-dup-build-/) |
+| 260713-w87 | Measure e2e-install time across the npm/pnpm/yarn matrix (opt-in `sh()` JSONL timing behind ATC_TIME_INSTALLS + committed `tools/e2e-timing` aggregator) + optimization findings report. Headline (Windows dev box, directional): npm ~594s/26 calls, yarn ~209s/11, pnpm ~85s/9; ~2.1x cold/warm delta. Top follow-up lever = persist the Verdaccio uplink cache (clearStorage wipes the proxied npmjs cache every run); honest irreducible-bytes ceiling. MEASURE+REPORT only -- NO optimization applied, no version mutation | 2026-07-14 | 1b88529 | Verified | [260713-w87-measure-e2e-install-time-across-the-matr](./quick/260713-w87-measure-e2e-install-time-across-the-matr/) |
 
 ## Deferred Items
 
