@@ -3,7 +3,12 @@ import { dirname, join } from 'node:path';
 
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
 import type { TestProject } from 'vitest/node';
-import { buildCleanEnv, findWorkspaceRoot, sh } from '@workspace/test-util';
+import {
+  buildCleanEnv,
+  findWorkspaceRoot,
+  resetVerdaccioPublishState,
+  sh,
+} from '@workspace/test-util';
 
 // Shared vitest globalSetup for the angular-typechecker-install-e2e project. It
 // stands up the first-party @nx/js Verdaccio local-registry, mints a REAL publish
@@ -82,10 +87,13 @@ export default async function ({ provide }: TestProject) {
 
   // startLocalRegistry forks `nx` (not an `npx` cmd shim) and resolves readiness
   // by scraping the "http://<listenAddress>:PORT" line out of stdout (log.level:
-  // http in config.yml keeps that line printing). clearStorage wipes the storage
-  // dir -- including the htpasswd under it -- so every run gets a deterministic
-  // fresh ci-user sign-up (no cross-run EPUBLISHCONFLICT / htpasswd idempotency
-  // ambiguity).
+  // http in config.yml keeps that line printing). clearStorage:false stops the
+  // @nx/js executor from wiping storage (it only rmSyncs when clear:true), so the
+  // npmjs uplink proxy cache PERSISTS across runs (Lever 1, quick-260714-1gr).
+  // resetVerdaccioPublishState (called below, before start) deletes ONLY
+  // storage/angular-typechecker + storage/.htpasswd each run, so our freshly built
+  // dist still republishes clean (no EPUBLISHCONFLICT) and the ci-user sign-up
+  // still mints a fresh token (a second sign-up over an existing htpasswd 409s).
   //
   // listenAddress '127.0.0.1' is LOAD-BEARING (fixes the nx-add-yarn ECONNREFUSED
   // flake): the local-registry target pins verdaccio's bind to the numeric IPv4
@@ -106,11 +114,17 @@ export default async function ({ provide }: TestProject) {
   // param, so we clear process.env before it forks.
   delete process.env.NX_INVOCATION_ROOT_PID;
 
+  // Lever 1: persist the npmjs uplink proxy cache across runs (clearStorage:false)
+  // but reset the two run-scoped essentials so the publish gate + token mint stay
+  // correct. MUST run before startLocalRegistry (Verdaccio reads htpasswd + package
+  // metadata at boot).
+  resetVerdaccioPublishState(root);
+
   const stop = await startLocalRegistry({
     localRegistryTarget: `${rootProjectName}:local-registry`,
     storage: './tmp/local-registry/storage',
     verbose: false,
-    clearStorage: true,
+    clearStorage: false,
     listenAddress: '127.0.0.1',
   });
 

@@ -36,10 +36,7 @@ describe('resetVerdaccioPublishState', () => {
 
     // The two run-scoped essentials the helper must remove.
     mkdirSync(join(storageDir, 'angular-typechecker'), { recursive: true });
-    writeFileSync(
-      join(storageDir, 'angular-typechecker', 'index.json'),
-      '{}',
-    );
+    writeFileSync(join(storageDir, 'angular-typechecker', 'index.json'), '{}');
     writeFileSync(join(storageDir, '.htpasswd'), 'ci:hashed\n');
 
     // The siblings the helper must PRESERVE: the persisted npmjs proxy cache
