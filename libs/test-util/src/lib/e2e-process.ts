@@ -1,5 +1,7 @@
 import { execSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { appendFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // The outer `nx run <e2e-project>:test` injects these cache-defeating / "inner
 // task" NX_* vars into the spec process. A naive `...process.env` would propagate
@@ -103,23 +105,78 @@ export function run(
   }
 }
 
+interface InstallTimingRecord {
+  ts: number;
+  cmd: string;
+  cwd: string;
+  ms: number;
+  ok: boolean;
+}
+
+/**
+ * OPT-IN install timing. Only ever called when `ATC_TIME_INSTALLS === '1'` (guarded
+ * at every call site in {@link sh}), so the default path stays byte-identical to a
+ * plain `execSync` wrapper. Appends ONE JSONL line -- the record and its trailing
+ * newline in a SINGLE `appendFileSync` call -- so concurrent `--parallel=2` e2e
+ * workers cannot interleave a half-written line into a neighbor's. Output path is
+ * `ATC_TIMING_OUT` (absolute wins) or an OS-tmpdir default; `tmp/` is gitignored, so
+ * the raw JSONL is never committed. Aggregated by tools/e2e-timing/.
+ */
+function recordInstallTiming(record: InstallTimingRecord): void {
+  const outPath =
+    process.env['ATC_TIMING_OUT'] ??
+    join(tmpdir(), 'atc-install-timings.jsonl');
+
+  appendFileSync(outPath, `${JSON.stringify(record)}\n`);
+}
+
 /**
  * `execSync` wrapper that, on failure, rethrows an Error carrying the command plus
  * its captured stdout + stderr -- so a failed `npm install` / `nx g` surfaces WHY
  * it failed instead of the bare "Command failed: <cmd>" default. Returns the
  * command's stdout on success.
+ *
+ * When `process.env.ATC_TIME_INSTALLS === '1'` it ALSO appends one timing JSONL line
+ * (both the success and failure paths) via {@link recordInstallTiming}. When the flag
+ * is unset this is a true no-op: no `performance.now()`, no write, and the returned
+ * stdout + thrown Error message are byte-identical to the un-instrumented wrapper.
  */
 export function sh(
   command: string,
   options: { cwd: string; env: NodeJS.ProcessEnv },
 ): string {
+  const timed = process.env['ATC_TIME_INSTALLS'] === '1';
+  const started = timed ? performance.now() : 0;
+
   try {
-    return execSync(command, {
+    const stdout = execSync(command, {
       cwd: options.cwd,
       env: options.env,
       encoding: 'utf8',
     });
+
+    if (timed) {
+      recordInstallTiming({
+        ts: Date.now(),
+        cmd: command,
+        cwd: options.cwd,
+        ms: Math.round(performance.now() - started),
+        ok: true,
+      });
+    }
+
+    return stdout;
   } catch (error) {
+    if (timed) {
+      recordInstallTiming({
+        ts: Date.now(),
+        cmd: command,
+        cwd: options.cwd,
+        ms: Math.round(performance.now() - started),
+        ok: false,
+      });
+    }
+
     const execError = error as { stdout?: string; stderr?: string };
 
     throw new Error(
