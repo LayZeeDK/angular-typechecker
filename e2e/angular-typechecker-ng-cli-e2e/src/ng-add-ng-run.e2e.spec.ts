@@ -199,7 +199,10 @@ describe('ACV-02: `ng add` auto-wires every project and `ng run <project>:typech
       // package-lock.json. NO --legacy-peer-deps: on-stack Angular 22 installs
       // clean (Pitfall D). sh throws on a non-zero exit, so a real ERESOLVE would
       // FAIL the test rather than be masked (T-24-07 honesty).
-      sh('npm install', { cwd: tmp, env: npmEnv });
+      sh('npm install --no-audit --no-fund --prefer-offline', {
+        cwd: tmp,
+        env: npmEnv,
+      });
 
       // The REAL Angular CLI flow: `ng add` resolves angular-typechecker@latest from
       // Verdaccio, installs it as a devDependency, and runs its ng-add schematic ->

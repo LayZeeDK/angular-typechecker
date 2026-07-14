@@ -111,10 +111,16 @@ describe("GE2E-03: nx add's init path seeds nx.json targetDefaults from absent",
       // the package under test; the fixture's Angular/Nx/TS deps still resolve from
       // the registry, like every existing install-e2e spec). NO peer-override flag
       // (B-03): a real ERESOLVE must surface, not be masked.
-      sh(`npm install ${JSON.stringify(tarballPath)}`, {
-        cwd: tmp,
-        env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-      });
+      sh(
+        `npm install ${JSON.stringify(tarballPath)} --no-audit --no-fund --prefer-offline`,
+        {
+          cwd: tmp,
+          env: {
+            ...env,
+            npm_config_userconfig: join(tmp, '.npmrc.nonexistent'),
+          },
+        },
+      );
 
       // Run the SAME init generator `nx add`'s runPluginInitGenerator constructs
       // (`g <plugin>:init`). This resolves the installed package's generators.json

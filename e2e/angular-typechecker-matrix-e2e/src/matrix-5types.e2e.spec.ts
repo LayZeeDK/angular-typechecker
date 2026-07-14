@@ -127,13 +127,16 @@ beforeAll(() => {
   // let the test FAIL surfacing it; do NOT auto-add the override (the remediation
   // is escalated per B-03). npm_config_userconfig -> a path that does not exist so
   // the user ~/.npmrc cannot reintroduce an override.
-  sh(`npm install ${JSON.stringify(tarballPath)}`, {
-    cwd: consumerWorkspace,
-    env: {
-      ...env,
-      npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+  sh(
+    `npm install ${JSON.stringify(tarballPath)} --no-audit --no-fund --prefer-offline`,
+    {
+      cwd: consumerWorkspace,
+      env: {
+        ...env,
+        npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+      },
     },
-  });
+  );
 
   // Sanity: the installed package's executor entry is resolvable from the tmp
   // consumer's node_modules -- proves the executor resolves FROM the install, not

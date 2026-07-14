@@ -139,7 +139,7 @@ describe('NX-ADD-PNPM: real `nx add` on a pnpm 11 workspace seeds the typecheck 
         // Provision the tree + the nx binary + a pnpm-lock.yaml (so
         // detectPackageManager -> pnpm). With allowBuilds satisfying the gate this
         // exits 0.
-        sh('pnpm install', { cwd: tmp, env: pnpmEnv });
+        sh('pnpm install --prefer-offline', { cwd: tmp, env: pnpmEnv });
 
         // Assert the EFFECTIVE pnpm the tmp workspace resolves to is pnpm 11 -- the
         // major whose build-script gate this spec exists to exercise. A host whose

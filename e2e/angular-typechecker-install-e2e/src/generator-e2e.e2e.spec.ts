@@ -134,10 +134,16 @@ describe('GE2E-01/02: configuration wires the walk target + init seeds the cache
       // Install the freshly-packed tarball with NO peer-resolution override flag.
       // A real ERESOLVE on the published peer ranges is a REAL FINDING -- let it
       // surface; do NOT auto-add the override (escalate per B-03).
-      sh(`npm install ${JSON.stringify(tarballPath)}`, {
-        cwd: tmp,
-        env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-      });
+      sh(
+        `npm install ${JSON.stringify(tarballPath)} --no-audit --no-fund --prefer-offline`,
+        {
+          cwd: tmp,
+          env: {
+            ...env,
+            npm_config_userconfig: join(tmp, '.npmrc.nonexistent'),
+          },
+        },
+      );
 
       // GE2E-01(b) seeded-from-ABSENT baseline: the tmp fixture nx.json must NOT
       // already carry an `angular-typechecker:typecheck` targetDefaults key BEFORE

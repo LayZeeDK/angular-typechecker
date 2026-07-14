@@ -94,7 +94,10 @@ function installComposition(
 
   // (1) Fixture's OWN deps first (no override, Storybook-free). Generates
   // package-lock.json so `nx add` detects npm and gives OUR install a clean tree.
-  sh('npm install', { cwd: tmp, env: npmEnv });
+  sh('npm install --no-audit --no-fund --prefer-offline', {
+    cwd: tmp,
+    env: npmEnv,
+  });
 
   // (2) The SHIPPED artifact with NO peer-resolution override (B-03): `nx add`
   // detects npm -> installs angular-typechecker@latest from Verdaccio -> runs the
@@ -105,10 +108,13 @@ function installComposition(
   // (3) Force-install Storybook LAST as a SEPARATE --legacy-peer-deps step (the SB10
   // peer cap on Angular 22 / TS 6 is real + documented). Installed after our package
   // so its foreign peer conflict is never conflated with a conflict on OUR peers.
-  sh(`npm install ${STORYBOOK_ANGULAR} --legacy-peer-deps`, {
-    cwd: tmp,
-    env: npmEnv,
-  });
+  sh(
+    `npm install ${STORYBOOK_ANGULAR} --legacy-peer-deps --no-audit --no-fund --prefer-offline`,
+    {
+      cwd: tmp,
+      env: npmEnv,
+    },
+  );
 }
 
 describe('SB-08 Composition: per-project typecheck + dependsOn:["^typecheck"] fan-out catch a broken composed story and a mistyped host refs entry', () => {

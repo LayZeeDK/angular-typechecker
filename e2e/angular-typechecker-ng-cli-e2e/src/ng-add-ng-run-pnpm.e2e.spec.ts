@@ -243,7 +243,7 @@ describe('CLI-PNPM: `ng add` on a pnpm-workspace name collision keeps the app bu
 
         // Provision the tree + the ng binary + a pnpm-lock.yaml (so ng detects pnpm).
         // With strictDepBuilds: false the build-script gate is disabled, so this exits 0.
-        sh('pnpm install', { cwd: tmp, env: pnpmEnv });
+        sh('pnpm install --prefer-offline', { cwd: tmp, env: pnpmEnv });
 
         // Assert the EFFECTIVE pnpm the tmp workspace resolves to is pnpm 11 -- the major
         // CI provisions (pnpm/action-setup) and the one this collision scenario is
