@@ -4,7 +4,7 @@ milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
 last_updated: "2026-07-12T14:33:14.394Z"
-last_activity: 2026-07-14 -- Quick task 260714-1gr: applied Lever 1 (Verdaccio uplink cache persisted via clearStorage:false + selective reset) + re-measured; ~52% structural win on the flagship yarn install vs w87 baseline; actions/cache deferred
+last_activity: 2026-07-14 -- Quick task 260714-fd4: researched Docker-based e2e optimization -> NO-GO (fixtures already committed so Docker only saves the install; pre-baking node_modules breaks fidelity; actions/cache wins for CI, Lever 1 already banks the local win); research recorded, nothing applied
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
 Plan: 6 of 6 (24-06 gap-closure complete)
 Status: Executing Phase 24
-Last activity: 2026-07-14 -- Completed quick task 260714-1gr (applied Lever 1 Verdaccio warm-cache + re-measured); Phase 24 at 6/6
+Last activity: 2026-07-14 -- Recorded quick task 260714-fd4 (Docker e2e optimization = NO-GO, research-only); Phase 24 at 6/6
 
 ## Accumulated Context
 
@@ -131,6 +131,7 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 | 260712-squ | Run the e2e tier at `nx run-many -t e2e --parallel=2` (from --parallel=1): build plugin once upstream (`e2e dependsOn angular-typechecker:build`, drop 4 in-spec builds), per-spec `--pack-destination` tarball isolation (6 specs), single 4873 registry with install-e2e + cache-e2e `parallelism:false` (corrected Fallback A -- the planned 2nd registry was reverted because yarn 4 keys its global metadata cache by host not host:port, so a 2nd registry port breaks CI); GUARD-01b rewritten to 5 fail-loud invariants | 2026-07-13 | 6db144d | Verified | [260712-squ-enable-e2e-parallel-2-or-3-de-dup-build-](./quick/260712-squ-enable-e2e-parallel-2-or-3-de-dup-build-/) |
 | 260713-w87 | Measure e2e-install time across the npm/pnpm/yarn matrix (opt-in `sh()` JSONL timing behind ATC_TIME_INSTALLS + committed `tools/e2e-timing` aggregator) + optimization findings report. Headline (Windows dev box, directional): npm ~594s/26 calls, yarn ~209s/11, pnpm ~85s/9; ~2.1x cold/warm delta. Top follow-up lever = persist the Verdaccio uplink cache (clearStorage wipes the proxied npmjs cache every run); honest irreducible-bytes ceiling. MEASURE+REPORT only -- NO optimization applied, no version mutation | 2026-07-14 | 1b88529 | Verified | [260713-w87-measure-e2e-install-time-across-the-matr](./quick/260713-w87-measure-e2e-install-time-across-the-matr/) |
 | 260714-1gr | Apply Lever 1 (persist Verdaccio uplink cache) + re-measure. Flipped `clearStorage:false` in both registry global-setups + shared `resetVerdaccioPublishState` helper (deletes ONLY storage/angular-typechecker + .htpasswd each run -> fresh token mint + no EPUBLISHCONFLICT, npmjs proxy cache persists). Honest finding: same-session cold-vs-warm delta ~null (clearStorage:false makes each run warm-within-itself -- win banked in-run); structural win vs w87 baseline = flagship ng-cli `corepack yarn install` 93.4s->53.5s->44.7s (~-52%). actions/cache DEFERRED (documented turnkey follow-up; the bigger cross-run win). Test-harness only, no version mutation | 2026-07-14 | 302f93c | Verified | [260714-1gr-apply-lever-1-persist-verdaccio-uplink-c](./quick/260714-1gr-apply-lever-1-persist-verdaccio-uplink-c/) |
+| 260714-fd4 | Research Docker-based e2e wall-clock optimization (pre-built image w/ pinned Nx/Angular CLI workspace) -- RESEARCH-ONLY, NO-GO. Fixtures are already committed (cpSync, zero runtime scaffold) so Docker would only save the install; a pre-baked node_modules trades extract for cpSync (a wash) AND breaks fidelity (yarn ng-add layout, pnpm-workspace .pnpm store, Storybook install-order/--legacy-peer-deps, B-03 peer-honesty ERESOLVE). actions/cache wins for CI (same fetch win, no packages: OIDC-scope regression, no 10GB ceiling); Lever 1 already banks the local win. Docker-locally low-value on Dev-Drive/ReFS + arm64!=CI-amd64. Nothing applied | 2026-07-14 | (research-only) | NO-GO | [260714-fd4-research-and-apply-docker-based-e2e-wall](./quick/260714-fd4-research-and-apply-docker-based-e2e-wall/) |
 
 ## Deferred Items
 
