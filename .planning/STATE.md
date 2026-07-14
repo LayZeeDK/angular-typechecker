@@ -4,7 +4,7 @@ milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
 last_updated: "2026-07-12T14:33:14.394Z"
-last_activity: 2026-07-14 -- Quick task 260714-nub (CI actions/cache): cache step authored + code-reviewed (APPROVE) but measurement BLOCKED + not applied -- the throwaway probe PR surfaced a RELEASE-PR-BLOCKING e2e-CI regression (dist not built on a fresh runner; squ's `e2e dependsOn build` does not fire without --skip-nx-cache). e2e regression deferred to its own priority task per user
+last_activity: 2026-07-14 -- Quick task 260714-sl6: FIXED the e2e-CI regression (deleted the inert executor-precedence-shadowed nx.json e2e targetDefault; added object-form angular-typechecker:build dependsOn to all 4 e2e project.json + GUARD-01e). act fresh-container run confirms build-first + install/matrix/cache e2e GREEN (dist ENOENT gone). ng-cli's act failure is act-only (container Node 24.14.1 < Angular CLI 24.15.0; real CI setup-node@24 is compliant). commit bd2d243
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
 Plan: 6 of 6 (24-06 gap-closure complete)
 Status: Executing Phase 24
-Last activity: 2026-07-14 -- Quick task 260714-nub (CI actions/cache) BLOCKED: probe PR surfaced a Release-PR-blocking e2e-CI regression (dist not built on fresh runner); deferred to its own task; Phase 24 at 6/6
+Last activity: 2026-07-14 -- Quick task 260714-sl6 FIXED the e2e-CI regression (dist now built before the e2e tier; act-verified install/matrix/cache green); Phase 24 at 6/6
 
 ## Accumulated Context
 
@@ -86,20 +86,23 @@ archives under `.planning/milestones/`.
 
 ### Blockers/Concerns
 
-- **RELEASE-PR BLOCKER (NEW 2026-07-14, discovered by quick task 260714-nub) -- e2e tier FAILS in CI.**
-  `nx run-many -t e2e --parallel=2` fails in CI: `install-e2e`, `matrix-e2e`, `ng-cli-e2e` all ENOENT on
-  `dist/packages/angular-typechecker/package.json` (their globalSetups read the built dist manifest for
-  the provenance-strip; the build did NOT run before the specs -- ENOENT ~2s in). Root cause: quick-260712-squ
-  removed the in-globalSetup `nx build` and relied on the `e2e` targetDefault `dependsOn:
-  ["angular-typechecker:build"]`, but on a FRESH CI runner that dependsOn does not produce dist before the
-  e2e tasks. Masked locally by (a) a pre-existing `dist/` and (b) every local run using `--skip-nx-cache`
-  (force-runs deps); CI uses no `--skip-nx-cache`. NEVER surfaced before because feature-branch pushes do
-  not trigger CI (`on: push: [main]` only) + no PR was open -- the 260714-nub throwaway probe PR was the
-  FIRST CI run of this branch's e2e work. **This WILL fail the v0.2.1 Release-PR's `ci` check.** Likely fix:
-  an explicit single `- run: npx nx build angular-typechecker` in the ci.yml e2e job before `nx run-many -t
-  e2e` (preserves squ's build-once/no-per-spec-build intent), OR repair the dependsOn to fire on a cold
-  cache. MUST be fixed (its own task) before the Release-PR. The cache-e2e project passes (source barrel,
-  never reads dist). The 260714-nub actions/cache work is PARKED behind this (measurement needs a green e2e).
+- **e2e-CI dist-build regression -- RESOLVED 2026-07-14 (quick task 260714-sl6, commit bd2d243).** Was: a
+  RELEASE-PR blocker -- `nx run-many -t e2e --parallel=2` failed in CI with `install-e2e`/`matrix-e2e`/`ng-cli-e2e`
+  ENOENT on `dist/packages/angular-typechecker/package.json` because the build never ran before the specs.
+  ROOT CAUSE (proven): the `e2e` targetDefault `dependsOn: ["angular-typechecker:build"]` in nx.json was
+  INERT -- nx 23.1's targetDefaults precedence returns the EXECUTOR-keyed default (`@nx/vitest:test`, which
+  all 4 e2e targets use) and short-circuits before reading the NAME-keyed `e2e` default, so it was discarded
+  (masked locally by a pre-existing dist/ + --skip-nx-cache; surfaced only on the nub probe PR since
+  feature-branch pushes don't trigger CI). FIX: deleted the inert nx.json `e2e` targetDefault + added
+  `dependsOn: [{ projects:["angular-typechecker"], target:"build" }]` to each e2e target's OWN project.json
+  (bypasses the precedence trap; one shared build before the parallel tier -- preserves squ's intent; fixes
+  CI AND local) + GUARD-01e (per-target dependsOn assertion, fail-loud) + a corrected ci.yml comment.
+  VERIFIED: task graph now schedules angular-typechecker:build; act fresh-container e2e run shows build-first
+  + install-e2e(37)/matrix-e2e(7)/cache-e2e(9) GREEN (no dist ENOENT). RESIDUAL (low risk): ng-cli-e2e has
+  never run in real GitHub CI (act can't run it -- act's container Node 24.14.1 < Angular CLI's 24.15.0 floor;
+  real CI setup-node@24 gives a compliant Node, and ng-cli passes locally on Node 24.18.0) -- the v0.2.1
+  Release-PR is its first real-CI run; a throwaway PR could confirm it earlier. The 260714-nub actions/cache
+  work is now UNPARKED (e2e tier is CI-green) -- resume when desired.
 
 - **RELEASE-FACING yarn `ng add` caveat -- RESOLVED 2026-07-12 (Plan 24-06).** The former concern
   (README `## Angular CLI` "auto-wire-all" was inaccurate for yarn because `ng add` installed but wired
@@ -148,7 +151,8 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 | 260714-1gr | Apply Lever 1 (persist Verdaccio uplink cache) + re-measure. Flipped `clearStorage:false` in both registry global-setups + shared `resetVerdaccioPublishState` helper (deletes ONLY storage/angular-typechecker + .htpasswd each run -> fresh token mint + no EPUBLISHCONFLICT, npmjs proxy cache persists). Honest finding: same-session cold-vs-warm delta ~null (clearStorage:false makes each run warm-within-itself -- win banked in-run); structural win vs w87 baseline = flagship ng-cli `corepack yarn install` 93.4s->53.5s->44.7s (~-52%). actions/cache DEFERRED (documented turnkey follow-up; the bigger cross-run win). Test-harness only, no version mutation | 2026-07-14 | 302f93c | Verified | [260714-1gr-apply-lever-1-persist-verdaccio-uplink-c](./quick/260714-1gr-apply-lever-1-persist-verdaccio-uplink-c/) |
 | 260714-fd4 | Research Docker-based e2e wall-clock optimization (pre-built image w/ pinned Nx/Angular CLI workspace) -- RESEARCH-ONLY, NO-GO. Fixtures are already committed (cpSync, zero runtime scaffold) so Docker would only save the install; a pre-baked node_modules trades extract for cpSync (a wash) AND breaks fidelity (yarn ng-add layout, pnpm-workspace .pnpm store, Storybook install-order/--legacy-peer-deps, B-03 peer-honesty ERESOLVE). actions/cache wins for CI (same fetch win, no packages: OIDC-scope regression, no 10GB ceiling); Lever 1 already banks the local win. Docker-locally low-value on Dev-Drive/ReFS + arm64!=CI-amd64. Nothing applied | 2026-07-14 | (research-only) | NO-GO | [260714-fd4-research-and-apply-docker-based-e2e-wall](./quick/260714-fd4-research-and-apply-docker-based-e2e-wall/) |
 | 260714-gja | Apply fidelity-safe LOCAL e2e install perf flags + measure. Appended `--no-audit --no-fund --prefer-offline` to the 11 direct npm-install sites + `--prefer-offline` to the 2 provisioning pnpm installs (nx add/ng add/yarn/pnpm-symlink/--legacy-peer-deps all untouched -> B-03 peer-honesty intact). REAL npm win (not within-noise): flagged npm rows -42.5% while flag-free nx-add/ng-add/yarn control rose ~+14% (clean drift-robust separation); Storybook install -72%, provision npm -44.6%; pnpm within-noise (no audit to skip). Driver = --no-audit skipping the audit round-trip via the Verdaccio uplink (helps CI too). e2e 4/4 green, no flake. Measure-only (Windows Defender temp-path exclusion; matrix file-parallelism; pnpm-symlink --prefer-offline) + rejected (local cache pin, pnpm-swap, yarn flags, ng-cli/install intra-project parallelism) documented. Test-harness only, no version mutation | 2026-07-14 | 6828d35 | Verified | [260714-gja-research-other-local-e2e-wall-clock-time](./quick/260714-gja-research-other-local-e2e-wall-clock-time/) |
-| 260714-nub | Add CI actions/cache (Verdaccio uplink storage) + measure via throwaway PR + apply if faster. Cache step AUTHORED (SHA-pinned actions/cache restore+save@v6.1.0, path tmp/local-registry/storage excl angular-typechecker/.htpasswd, keyed on manifests+ci.yml; additive over setup-node cache:npm -- warms the Verdaccio<->npmjs hop yarn/pnpm never get) + CODE-REVIEWED (APPROVE, 0 blockers). Measurement BLOCKED + cache NOT applied: throwaway probe PR #34 (base=feature) surfaced a Release-PR-blocking e2e-CI regression (below). PR closed + scratch branch deleted; cache YAML parked in RESEARCH.md, resume after CI e2e is green. No version mutation | 2026-07-14 | (blocked -- not applied) | Blocked | [260714-nub-add-the-ci-actions-cache-optimization-fo](./quick/260714-nub-add-the-ci-actions-cache-optimization-fo/) |
+| 260714-nub | Add CI actions/cache (Verdaccio uplink storage) + measure via throwaway PR + apply if faster. Cache step AUTHORED (SHA-pinned actions/cache restore+save@v6.1.0, path tmp/local-registry/storage excl angular-typechecker/.htpasswd, keyed on manifests+ci.yml; additive over setup-node cache:npm -- warms the Verdaccio<->npmjs hop yarn/pnpm never get) + CODE-REVIEWED (APPROVE, 0 blockers). Measurement BLOCKED + cache NOT applied: throwaway probe PR #34 (base=feature) surfaced a Release-PR-blocking e2e-CI regression (fixed in 260714-sl6). PR closed + scratch branch deleted; cache YAML parked in RESEARCH.md, UNPARKED now that e2e is CI-green -- resume when desired. No version mutation | 2026-07-14 | (blocked -- not applied) | Blocked | [260714-nub-add-the-ci-actions-cache-optimization-fo](./quick/260714-nub-add-the-ci-actions-cache-optimization-fo/) |
+| 260714-sl6 | FIX the e2e-CI regression nub surfaced. Root cause: the nx.json `e2e` targetDefault `dependsOn:[angular-typechecker:build]` was INERT -- nx 23.1 targetDefaults precedence returns the EXECUTOR-keyed default (`@nx/vitest:test`, used by all 4 e2e targets) and short-circuits before the NAME-keyed `e2e` default, discarding it (so dist was never built before the e2e tier on a fresh runner -> ENOENT; masked locally by pre-existing dist + --skip-nx-cache). FIX: deleted the inert nx.json e2e targetDefault + added object-form `dependsOn:[{projects:[angular-typechecker],target:build}]` to each of the 4 e2e project.json (bypasses the precedence trap; one shared build before the parallel tier; fixes CI AND local) + GUARD-01e (per-target dependsOn assertion) + corrected ci.yml comment (comment-only). Verified: task graph schedules the build; act fresh-container run GREEN for install(37)/matrix(7)/cache(9). ng-cli's act failure = act container Node 24.14.1 < Angular CLI 24.15.0 (act-only; real CI setup-node@24 compliant; passes locally). nx.json + 4 project.json + guard + ci.yml comment; no version mutation | 2026-07-14 | bd2d243 | Verified | [260714-sl6-fix-the-e2e-ci-regression-nx-run-many-t-](./quick/260714-sl6-fix-the-e2e-ci-regression-nx-run-many-t-/) |
 
 ## Deferred Items
 
