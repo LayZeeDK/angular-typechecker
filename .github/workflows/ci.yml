@@ -176,6 +176,22 @@ jobs:
         with:
           version: 11.9.0
       - run: npm ci
+      # Cross-run Verdaccio uplink cache (quick-260714-nub). Additive over the
+      # setup-node cache:npm above: that warms ~/.npm (npm<->Verdaccio); THIS warms
+      # Verdaccio<->npmjs (its storage), which yarn (fresh cacheFolder+enableMirror:false)
+      # and pnpm (uncached store) never get from ~/.npm. Correctness is independent of the
+      # cache: resetVerdaccioPublishState wipes storage/angular-typechecker + .htpasswd each
+      # run and uplinks.npmjs.maxage:60m revalidates -- the cache only changes SPEED.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: verdaccio-storage
+        with:
+          path: |
+            tmp/local-registry/storage
+            !tmp/local-registry/storage/angular-typechecker
+            !tmp/local-registry/storage/.htpasswd
+          key: verdaccio-storage-${{ runner.os }}-${{ hashFiles('e2e/**/fixtures/**/package.json', 'e2e/**/fixtures/**/package-lock.json', 'e2e/**/fixtures/**/pnpm-lock.yaml', 'packages/angular-typechecker/package.json', '.github/workflows/ci.yml') }}
+          restore-keys: |
+            verdaccio-storage-${{ runner.os }}-
       # Static type-check gate for the e2e SOURCES (was typecheck-e2e), run BEFORE
       # the multi-minute tarball install so a type error in an e2e spec fails fast
       # (~15s) instead of after an ~8-minute install. SCOPED to the e2e projects via
@@ -209,6 +225,17 @@ jobs:
       # GUARD-01b asserts `--parallel=2` (and rejects `--parallel=1`) plus every
       # isolation invariant above.
       - run: npx nx run-many -t e2e --parallel=2
+      # Save the warmed Verdaccio uplink storage on success + only on a miss (a HIT
+      # rerun keeps the baseline stable). Same path/excludes as the restore; keyed on
+      # the restore's primary key so a dep change busts it. quick-260714-nub.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: success() && steps.verdaccio-storage.outputs.cache-hit != 'true'
+        with:
+          path: |
+            tmp/local-registry/storage
+            !tmp/local-registry/storage/angular-typechecker
+            !tmp/local-registry/storage/.htpasswd
+          key: ${{ steps.verdaccio-storage.outputs.cache-primary-key }}
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
