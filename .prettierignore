@@ -27,3 +27,8 @@ yarn.lock
 #   - extended-batch-expression: Prettier reflow drops NG8114 (unparenthesizedNullishCoalescing)
 /fixtures/extended-batch-fn/error.component.html
 /fixtures/extended-batch-expression/error.component.html
+
+# Committed authentic `ng new` + `ng g library` output (the ng-cli-e2e fixture,
+# regenerated via its REGENERATE.md) -- NOT Prettier-owned. Reformatting it would
+# destroy Angular CLI output fidelity, so the whole fixture dir is ignored.
+/e2e/angular-typechecker-ng-cli-e2e/fixtures/ng-cli-workspace/

@@ -57,7 +57,12 @@ describe('resolveTsConfigOverride', () => {
 
   it('returns an absolute override verbatim without probing', () => {
     expect(
-      resolveTsConfigOverride('projects/lib', '/abs/x.json', 'lib', existsIn([])),
+      resolveTsConfigOverride(
+        'projects/lib',
+        '/abs/x.json',
+        'lib',
+        existsIn([]),
+      ),
     ).toBe('/abs/x.json');
   });
 
