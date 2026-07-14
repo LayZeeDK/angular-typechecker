@@ -61,12 +61,30 @@ the latest 24.x (>= 24.15.0), and ng-cli passes locally on Node 24.18.0. IMPORTA
 dist-read (its globalSetup succeeded -- dist present) and failed only downstream at `ng add` on the Node
 floor -- so the dist-build fix is confirmed for ng-cli too; only the act Node floor blocks it under act.
 
-## Residual note (low risk) + follow-ups
+## Real-CI verification (throwaway draft PR #35, 2026-07-14) -- CONFIRMED
 
-- ng-cli-e2e has NEVER run in real GitHub CI (nub #34 died at the dist ENOENT first; act can't run it
-  due to the Node floor). The v0.2.1 Release-PR will be its first real-CI run. High confidence it passes
-  (compliant Node via setup-node@24 + green locally), but the Release-PR's own CI is the final
-  confirmation. A throwaway PR could confirm it earlier if desired.
+Opened a throwaway DRAFT PR feature->main (closed after; feature branch NOT deleted) to run the real
+GitHub CI on the fix. Result: **`e2e` PASS 10m20s -- the FULL tier INCLUDING ng-cli-e2e** (its first-ever
+real-CI run; act could not run it due to the act image's Node 24.14.1 < Angular CLI 24.15.0, but real CI
+`setup-node@24` is compliant). Also GREEN: the 6-cell test matrix, act-compat, scoped-name-guard, CodeQL
+(Analyze actions + javascript-typescript), lint-workflows, changes. The dist-build regression is fully
+resolved end-to-end in real CI.
+
+## NEW Release-PR blockers surfaced by PR #35 (SEPARATE from this fix -- own tasks)
+
+The dress rehearsal also caught two OTHER failing jobs on the accumulated feature->main diff, both
+pre-existing and unrelated to the e2e fix (they WILL fail the v0.2.1 Release-PR):
+- **format-lint FAIL:** `nx format:check` flags the committed `ng-cli-workspace` e2e fixture (from `ng new`)
+  + `packages/angular-typechecker/src/core/angular-cli-wiring.spec.ts` as prettier-nonconforming (gja's
+  SUMMARY foresaw this). Fix: `nx format:write` the real source; `.prettierignore` the fixture (recommended)
+  or format it.
+- **fallow FAIL (new-only):** mostly the tsconfig-files-only / contract-mirroring FALSE-POSITIVE class
+  (dead-code on ng-cli global-setup.ts, src/index.drift.ts, configuration/init schematic.ts) + intentional
+  verbatim-sibling global-setup duplication + 2 unlisted deps + 1 test-only prod dep + 4 complexity
+  findings. Fix: declare .fallowrc.jsonc entry-points/ignores for the false positives + intentional
+  duplication; assess the unlisted-deps + complexity for real issues.
+
+Both are recorded as active Release-PR blockers in STATE.md Blockers/Concerns.
 - act-compat follow-up (optional): make act faithful for ng-cli by pinning an act image with Node
   >= 24.15.0 (or forcing setup-node to download it), so `act -j e2e` can run ng-cli locally.
 - The 260714-nub actions/cache work stays parked; it can resume now that the e2e tier passes in CI.

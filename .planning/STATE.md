@@ -4,7 +4,7 @@ milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
 last_updated: "2026-07-12T14:33:14.394Z"
-last_activity: 2026-07-14 -- Quick task 260714-sl6: FIXED the e2e-CI regression (deleted the inert executor-precedence-shadowed nx.json e2e targetDefault; added object-form angular-typechecker:build dependsOn to all 4 e2e project.json + GUARD-01e). act fresh-container run confirms build-first + install/matrix/cache e2e GREEN (dist ENOENT gone). ng-cli's act failure is act-only (container Node 24.14.1 < Angular CLI 24.15.0; real CI setup-node@24 is compliant). commit bd2d243
+last_activity: 2026-07-14 -- 260714-sl6 e2e-CI fix (bd2d243) REAL-CI-CONFIRMED via throwaway draft PR #35: e2e PASS 10m20s incl ng-cli-e2e (first real-CI run) + full test matrix green. Dress rehearsal also surfaced TWO NEW Release-PR blockers (fallow + format-lint FAIL on the accumulated feature diff -- pre-existing, need their own fix tasks before the release). PR #35 closed, feature branch intact
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
 Plan: 6 of 6 (24-06 gap-closure complete)
 Status: Executing Phase 24
-Last activity: 2026-07-14 -- Quick task 260714-sl6 FIXED the e2e-CI regression (dist now built before the e2e tier; act-verified install/matrix/cache green); Phase 24 at 6/6
+Last activity: 2026-07-14 -- 260714-sl6 e2e-CI fix REAL-CI-confirmed (PR #35: e2e PASS incl ng-cli); dress rehearsal found 2 new Release-PR blockers (fallow + format-lint); Phase 24 at 6/6
 
 ## Accumulated Context
 
@@ -97,12 +97,33 @@ archives under `.planning/milestones/`.
   `dependsOn: [{ projects:["angular-typechecker"], target:"build" }]` to each e2e target's OWN project.json
   (bypasses the precedence trap; one shared build before the parallel tier -- preserves squ's intent; fixes
   CI AND local) + GUARD-01e (per-target dependsOn assertion, fail-loud) + a corrected ci.yml comment.
-  VERIFIED: task graph now schedules angular-typechecker:build; act fresh-container e2e run shows build-first
-  + install-e2e(37)/matrix-e2e(7)/cache-e2e(9) GREEN (no dist ENOENT). RESIDUAL (low risk): ng-cli-e2e has
-  never run in real GitHub CI (act can't run it -- act's container Node 24.14.1 < Angular CLI's 24.15.0 floor;
-  real CI setup-node@24 gives a compliant Node, and ng-cli passes locally on Node 24.18.0) -- the v0.2.1
-  Release-PR is its first real-CI run; a throwaway PR could confirm it earlier. The 260714-nub actions/cache
-  work is now UNPARKED (e2e tier is CI-green) -- resume when desired.
+  VERIFIED IN REAL CI (throwaway draft PR #35, feature->main, 2026-07-14, closed after): the FULL e2e tier
+  PASSES on a fresh GitHub runner -- `e2e` GREEN 10m20s INCLUDING ng-cli-e2e (its first-ever real-CI run;
+  act could not run it due to the act image's Node 24.14.1 < Angular CLI 24.15.0, but real CI setup-node@24
+  is compliant), plus the 6-cell test matrix + act-compat + scoped-name-guard + CodeQL all green. The
+  dist-build regression is fully resolved. The 260714-nub actions/cache work is now UNPARKED (e2e tier is
+  CI-green) -- resume when desired.
+
+- **RELEASE-PR BLOCKERS (NEW 2026-07-14, surfaced by the 260714-sl6 dress-rehearsal PR #35) -- `fallow` +
+  `format-lint` FAIL on the accumulated feature->main diff.** These are SEPARATE from the (now-fixed) e2e
+  regression and PRE-EXISTING (accumulated across the milestone; latent because feature-branch pushes don't
+  trigger CI + local checks were scoped/dismissed -- gja's SUMMARY explicitly foresaw the format drift).
+  Both WILL fail the v0.2.1 Release-PR's `ci` check; each needs its own fix task before the release.
+  - **format-lint:** `nx format:check` flags prettier-nonconforming files: the committed `ng-cli-workspace`
+    e2e fixture (angular.json, package.json, my-lib.*, app.*, tsconfig.*, index.html, main.ts -- from `ng new`)
+    + `packages/angular-typechecker/src/core/angular-cli-wiring.spec.ts`. Fix: `nx format:write` the real
+    source (angular-cli-wiring.spec.ts), and DECIDE the fixture: `.prettierignore` it (preserve `ng new`
+    fidelity; it is a real-CLI-output fixture, not shipped) vs format it. Recommend .prettierignore.
+  - **fallow (new-only audit, 330 changed files):** dead-code 8 issues (5 unreachable files: e2e ng-cli
+    global-setup.ts [vitest globalSetup -- ref'd by config, not import], src/index.drift.ts [tsconfig-files
+    drift tripwire], schematics/configuration/schematic.ts + init/schematic.ts [convertNx re-exports ref'd
+    by collection.json] -- the exact tsconfig-files-only / contract-mirroring FALSE-POSITIVE class per
+    CLAUDE.md's fallow note; declare them as .fallowrc.jsonc entry-points/ignores) + 2 unlisted deps + 1
+    test-only prod dep + duplication (2 clone groups: the two VERBATIM-SIBLING global-setups install-e2e:34-231
+    / ng-cli-e2e:45-242 [intentional], and run-typecheck.ts:641-658 / walk-references.ts:250-287) + 4
+    complexity findings (ng-add/schematic.ts, configuration/generator.ts, run-typecheck.ts). Fix: add
+    entry-points/ignores for the false positives + intentional duplication; assess the unlisted-deps +
+    complexity items for real issues. maintainability 91.3 (good).
 
 - **RELEASE-FACING yarn `ng add` caveat -- RESOLVED 2026-07-12 (Plan 24-06).** The former concern
   (README `## Angular CLI` "auto-wire-all" was inaccurate for yarn because `ng add` installed but wired
