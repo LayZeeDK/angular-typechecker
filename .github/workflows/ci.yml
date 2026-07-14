@@ -193,8 +193,8 @@ jobs:
       # runs the `e2e` target for every project that defines it -- exactly the four
       # e2e projects (no -p list needed; GUARD-01 asserts no other project defines
       # `e2e`). The four resources that once forced `--parallel=1` are isolated:
-      #   (1) dist is built ONCE upstream via the `e2e` targetDefault dependsOn and is
-      #       read-only during e2e (no spec/global-setup runs `nx build`);
+      #   (1) dist is built ONCE upstream via each e2e project's own `e2e`-target dependsOn on
+      #       angular-typechecker:build and is read-only during e2e (no spec/global-setup runs `nx build`);
       #   (2) each packing spec writes its tarball to its own OS-temp
       #       `--pack-destination` dir (no shared dist/*.tgz path -> no ENOENT race);
       #   (3) install-e2e's `e2e` target is `parallelism: false`, so the sole

@@ -12,6 +12,7 @@
   "targets": {
     "e2e": {
       "executor": "@nx/vitest:test",
+      "dependsOn": [{ "projects": ["angular-typechecker"], "target": "build" }],
       "outputs": ["{options.reportsDirectory}"],
       "parallelism": false,
       "options": {

@@ -307,7 +307,7 @@ describe('GUARD-01b: the ci.yml e2e job runs --parallel=2 with the shared resour
 
         expect(
           /nx build angular-typechecker/.test(line),
-          `GUARD-01b: ${relativePath}:${index + 1} rebuilds dist (\`nx build angular-typechecker\`). Under --parallel=2 concurrent dist writes corrupt every packer/publisher. dist is built ONCE upstream via the e2e target's dependsOn -- remove the in-spec/in-setup build.`,
+          `GUARD-01b: ${relativePath}:${index + 1} rebuilds dist (\`nx build angular-typechecker\`). Under --parallel=2 concurrent dist writes corrupt every packer/publisher. dist is built ONCE upstream via each e2e project's own \`e2e\`-target dependsOn -- remove the in-spec/in-setup build.`,
         ).toBe(false);
       });
     }
@@ -404,5 +404,67 @@ describe('GUARD-01d: the `type:e2e` tag set is exactly the e2e/* projects', () =
         `GUARD-01d: ${relativePath} carries the \`type:e2e\` tag but is not an e2e/* project. \`-p tag:type:e2e\` would pull it into the e2e-scoped type-check. Remove the tag or move the project under e2e/.`,
       ).not.toContain('type:e2e');
     }
+  });
+});
+
+// GUARD-01e (per-project e2e-target build-dependsOn guard). On a fresh runner
+// `dist/packages/angular-typechecker` does not exist, so `nx run-many -t e2e` MUST
+// schedule `angular-typechecker:build` before the e2e tasks or every global-setup
+// ENOENTs on the built `package.json`. The build edge lives on each e2e project's
+// OWN `e2e`-target `dependsOn` -- NOT an nx.json name-keyed `e2e` targetDefault:
+// all four e2e targets use `@nx/vitest:test`, and nx's
+// readTargetDefaultsForTarget returns the EXECUTOR-keyed default and
+// short-circuits BEFORE the name-keyed `e2e` default, so a name-keyed default is
+// silently inert (config-present-but-inert was the exact failure mode). Because
+// the fix lives on the target's OWN config (the most-specific location, which
+// always applies), a pure-FS read of each e2e project.json is authoritative and
+// cheap. READ-ONLY, fail-loud + located, same enumerate convention as GUARD-01.
+describe('GUARD-01e: every e2e project builds angular-typechecker before its e2e target runs', () => {
+  it('every e2e/* project declares an `e2e`-target dependsOn that builds angular-typechecker', () => {
+    for (const project of enumerateE2eProjects(workspaceRoot)) {
+      const projectJson = JSON.parse(
+        readFileSync(
+          join(workspaceRoot, 'e2e', project, 'project.json'),
+          'utf8',
+        ),
+      ) as {
+        targets?: {
+          e2e?: {
+            dependsOn?: Array<
+              string | { projects?: string[]; target?: string }
+            >;
+          };
+        };
+      };
+
+      const dependsOn = projectJson.targets?.e2e?.dependsOn ?? [];
+
+      const buildsPlugin = dependsOn.some((entry) => {
+        if (typeof entry === 'string') {
+          return entry === 'angular-typechecker:build' || entry === '^build';
+        }
+
+        return (
+          entry.target === 'build' &&
+          (entry.projects ?? []).includes('angular-typechecker')
+        );
+      });
+
+      expect(
+        buildsPlugin,
+        `GUARD-01e: e2e/${project} \`e2e\` target has no dependsOn that builds angular-typechecker -- on a fresh runner dist is never built and every spec ENOENTs on dist/.../package.json.`,
+      ).toBe(true);
+    }
+  });
+
+  it('nx.json targetDefaults has no `e2e` key (the inert name-keyed default stays deleted)', () => {
+    const nxJson = JSON.parse(
+      readFileSync(join(workspaceRoot, 'nx.json'), 'utf8'),
+    ) as { targetDefaults?: Record<string, unknown> };
+
+    expect(
+      nxJson.targetDefaults?.['e2e'],
+      'GUARD-01e: nx.json `targetDefaults.e2e` must stay removed -- a name-keyed `e2e` default is inert for @nx/vitest:test-backed targets (readTargetDefaultsForTarget returns the executor-keyed default and never reads the name key), so re-adding it silently drops the build edge. Put the build dependsOn directly on each e2e target instead.',
+    ).toBeUndefined();
   });
 });

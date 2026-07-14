@@ -45,9 +45,6 @@
       "cache": true,
       "outputs": []
     },
-    "e2e": {
-      "dependsOn": ["angular-typechecker:build"]
-    },
     "angular-typechecker:typecheck": {
       "cache": true,
       "outputs": [],
