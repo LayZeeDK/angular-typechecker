@@ -101,6 +101,66 @@ export interface SkippedReference {
 }
 
 /**
+ * The mutable accumulator threaded through a per-leaf gather. Holds the four fields
+ * every surviving leaf/entry contributes to: the RAW pre-filter diagnostics union,
+ * the DECLARED rootName paths (the input-set membership basis), the declared-but-
+ * uncheckable files, and the summed rootNames count. `rootNamesCount` is a number, so
+ * it cannot be mutated through a separate binding -- carrying all four on ONE object
+ * lets `gatherLeafInto` mutate them together.
+ */
+export interface LeafAccumulator {
+  rawDiagnostics: ts.Diagnostic[];
+  rootNamePaths: string[];
+  notTypeCheckedDeclaredFiles: string[];
+  rootNamesCount: number;
+}
+
+/**
+ * The SHARED per-surviving-leaf gather block, used by BOTH `walkReferences` (a
+ * solution tsconfig's resolved leaves) and run-typecheck's `handleMultiTsConfig` (an
+ * explicit tsConfig array). It runs the SAME no-emit whole-program compilation the
+ * direct path uses -- `runNoEmitCompilation` (gather-diagnostics.ts) is the single
+ * source of truth for the ENTIRE invocation (rootNames + emit-neutralized options +
+ * emitFlags:0 + the all-getter), so a leaf, its referencing solution, and an array
+ * entry can never diverge argument-by-argument -- then accumulates into `acc`:
+ *   - MD-01 parity with the direct path (which prepends `[...parsed.errors]`): the
+ *     leaf's OWN config-parse diagnostics (e.g. a folded TS5012/TS5083 from a
+ *     missing/typo'd `extends` base that silently WEAKENS strict options) are
+ *     first-class counted diagnostics, NEVER dropped -- else the walk could report a
+ *     false PASS on a broken leaf that FAILS when pointed at directly (the exact
+ *     "type-checker that lies" class). The infra-500 case is handled by the CALLER
+ *     before this, so `parsed.errors` here carries only genuine folded diagnostics.
+ *   - D-02: the leaf's DECLARED rootName paths (the exact
+ *     `readConfiguration().rootNames` -- NEVER derived from a Program, so no
+ *     `.ngtypecheck.ts` shim enters the input set). Both callers invoke this ONLY in
+ *     the surviving-leaf tail, AFTER every skip/not-found/zero-root-names `continue`,
+ *     so a non-surviving leaf contributes nothing (T-17-06 / Pitfall 7).
+ *   - D-01 (Phase 18, T11): the leaf's declared-but-uncheckable files (`.mdx` always;
+ *     `.tsx` when `jsx` is unset / `None`). `entryPath` is the leaf/entry tsconfig path.
+ *
+ * PURE (no `console`/`process`); it lives here so run-typecheck can import it without a
+ * cycle (run-typecheck already imports `walkReferences`; walk-references imports
+ * nothing from run-typecheck).
+ */
+export function gatherLeafInto(
+  acc: LeafAccumulator,
+  ng: CompilerCli,
+  ts: typeof import('typescript'),
+  parsed: ParsedConfiguration,
+  entryPath: string,
+): void {
+  const result = runNoEmitCompilation(ng, parsed);
+
+  acc.rawDiagnostics.push(...parsed.errors);
+  acc.rawDiagnostics.push(...result.diagnostics);
+  acc.rootNamesCount += parsed.rootNames.length;
+  acc.rootNamePaths.push(...parsed.rootNames);
+  acc.notTypeCheckedDeclaredFiles.push(
+    ...detectUncheckedDeclaredFiles(ts, parsed, entryPath),
+  );
+}
+
+/**
  * Walks the solution tsconfig's direct references and returns the raw union +
  * summed rootNamesCount + the recorded skipped/reclassified references. See the
  * `WalkResult` doc for the full contract.
@@ -127,12 +187,18 @@ export async function walkReferences(
   const canonicalSolutionDir = canonicalize(solutionDir);
   const canonicalSolutionPath = canonicalize(solutionTsConfigPath);
 
-  const rawDiagnostics: ts.Diagnostic[] = [];
+  // The four gather fields live in ONE LeafAccumulator so the surviving-leaf gather
+  // block is the SHARED gatherLeafInto helper (also used by run-typecheck's
+  // handleMultiTsConfig). skippedReferences + seenCanonicalLeaves are walk-only, so
+  // they stay separate locals.
+  const acc: LeafAccumulator = {
+    rawDiagnostics: [],
+    rootNamePaths: [],
+    notTypeCheckedDeclaredFiles: [],
+    rootNamesCount: 0,
+  };
   const skippedReferences: SkippedReference[] = [];
-  const rootNamePaths: string[] = [];
-  const notTypeCheckedDeclaredFiles: string[] = [];
   const seenCanonicalLeaves = new Set<string>();
-  let rootNamesCount = 0;
 
   for (const reference of references) {
     // Resolve the reference path against the solution directory to an absolute
@@ -214,12 +280,14 @@ export async function walkReferences(
 
     if (configFailure !== undefined) {
       if (ts.sys.fileExists(leafPath)) {
-        rawDiagnostics.push(configFailure);
+        acc.rawDiagnostics.push(configFailure);
 
         continue;
       }
 
-      rawDiagnostics.push(synthesizeReferenceNotFoundDiagnostic(ts, leafPath));
+      acc.rawDiagnostics.push(
+        synthesizeReferenceNotFoundDiagnostic(ts, leafPath),
+      );
       skippedReferences.push({ referencePath: leafPath, reason: 'not-found' });
 
       continue;
@@ -253,52 +321,26 @@ export async function walkReferences(
       continue;
     }
 
-    // Surviving leaf: run the SAME no-emit whole-program compilation the direct
-    // path uses -- runNoEmitCompilation (gather-diagnostics.ts) is the single source
-    // of truth for the ENTIRE invocation (rootNames + emit-neutralized options +
-    // emitFlags:0 + the all-getter), so a leaf and its referencing solution can
-    // never diverge argument-by-argument.
-    const result = runNoEmitCompilation(ng, parsed);
-
-    // MD-01 parity with the direct path (run-typecheck.ts prepends
-    // `[...parsed.errors]`): a surviving leaf's OWN config-parse diagnostics (e.g.
-    // a folded TS5012/TS5083 from a missing/typo'd `extends` base that silently
-    // WEAKENS strict options) are first-class counted diagnostics, NEVER dropped.
-    // Without this the walk could report a false PASS on a broken leaf that FAILS
-    // when pointed at directly -- the exact "type-checker that lies" class. (The
-    // code-500 infra case was handled above, so parsed.errors here carries only
-    // genuine folded config diagnostics.)
-    rawDiagnostics.push(...parsed.errors);
-    rawDiagnostics.push(...result.diagnostics);
-    rootNamesCount += parsed.rootNames.length;
-    // D-02: surface this surviving leaf's DECLARED rootName paths (the exact
-    // `readConfiguration().rootNames` the loop already holds -- NEVER derived
-    // from a Program, so no `.ngtypecheck.ts` shim enters the input set). This
-    // push lives in the surviving-leaf tail AFTER every skip/not-found/
-    // zero-root-names `continue`, so an out-of-project or non-surviving leaf
-    // contributes nothing (T-17-06).
-    rootNamePaths.push(...parsed.rootNames);
-    // D-01 (Phase 18, T11): this surviving leaf's declared-but-uncheckable files
-    // (`.mdx` always; `.tsx` when `jsx` is unset / `None`). Aggregated HERE, in the
-    // surviving-leaf tail beside `rootNamePaths.push` and AFTER every skip
-    // `continue`, so an out-of-project / zero-root-names / not-found leaf
-    // contributes nothing (Pitfall 7). The loop already holds `parsed` + `leafPath`.
-    notTypeCheckedDeclaredFiles.push(
-      ...detectUncheckedDeclaredFiles(ts, parsed, leafPath),
-    );
+    // Surviving leaf: accumulate the RAW union via the SHARED gatherLeafInto helper
+    // (the identical per-surviving-leaf block run-typecheck's handleMultiTsConfig also
+    // uses -- runNoEmitCompilation + MD-01 parse-error parity + declared rootName
+    // paths + declared-but-uncheckable files). Called ONLY here, in the surviving-leaf
+    // tail AFTER every skip/not-found/zero-root-names `continue`, so a non-surviving
+    // leaf contributes nothing (T-17-06 / Pitfall 7).
+    gatherLeafInto(acc, ng, ts, parsed, leafPath);
   }
 
   return {
-    rawDiagnostics,
-    rootNamesCount,
+    rawDiagnostics: acc.rawDiagnostics,
+    rootNamesCount: acc.rootNamesCount,
     skippedReferences,
-    rootNamePaths,
+    rootNamePaths: acc.rootNamePaths,
     // IN-01: dedupe the cross-leaf union so an `.mdx`/`.tsx` declared by two
     // surviving leaves (overlapping `include` globs) is surfaced ONCE, not repeated
     // in the executor's advisory (which joins this set verbatim). The diagnostics
     // union stays raw -- `finalize` owns diagnostic dedupe -- this is the advisory
     // display set only.
-    notTypeCheckedDeclaredFiles: [...new Set(notTypeCheckedDeclaredFiles)],
+    notTypeCheckedDeclaredFiles: [...new Set(acc.notTypeCheckedDeclaredFiles)],
   };
 }
 

@@ -14,8 +14,8 @@ import {
 import { filterDiagnostics } from './filter-diagnostics';
 import { runNoEmitCompilation } from './gather-diagnostics';
 import { loadTypescript } from './load-typescript';
-import type { SkippedReference } from './walk-references';
-import { walkReferences } from './walk-references';
+import type { LeafAccumulator, SkippedReference } from './walk-references';
+import { gatherLeafInto, walkReferences } from './walk-references';
 
 export interface CoreOptions {
   // ENG-01 (D-06): a single ABSOLUTE tsconfig path (the unchanged direct path), OR a
@@ -263,6 +263,56 @@ function presentIfNonEmpty<K extends keyof CoreResult, T>(
 }
 
 /**
+ * Q3 (shared union-finalize tail): the finalize step shared by `handleSolutionWalk`'s
+ * >=1-in-project-leaf branch and `handleMultiTsConfig`. Runs ONE `finalize` over the
+ * combined raw union with `buildFinalizeFilter` keyed on the combined `rootNamePaths`
+ * (input-set membership, `ts.sys` case-fold -- no per-leaf Program survives either
+ * path), then attaches `skippedReferences` + `notTypeCheckedDeclaredFiles` via the
+ * `presentIfNonEmpty` presence idiom. The two callers differ ONLY in what they feed in
+ * (`handleSolutionWalk` prepends `configDiagnostics`; `handleMultiTsConfig`'s union is
+ * already complete) and in the representative `parsed`/`tsConfigPath` for the basePath
+ * fallback; BOTH pass an ALREADY-deduped notTypeChecked set. Module-private -- both
+ * callers live in this module, so `finalize`/`buildFinalizeFilter`/`presentIfNonEmpty`
+ * stay unexported.
+ */
+function finalizeUnion(
+  ts: typeof import('typescript'),
+  options: CoreOptions,
+  parsed: ParsedConfiguration,
+  tsConfigPath: string,
+  rootNamesCount: number,
+  rootNamePaths: readonly string[],
+  diagnostics: readonly ts.Diagnostic[],
+  start: number,
+  skippedReferences: readonly SkippedReference[],
+  notTypeCheckedDeclaredFiles: readonly string[],
+): CoreResult {
+  const result = finalize(
+    ts,
+    tsConfigPath,
+    rootNamesCount,
+    diagnostics,
+    start,
+    buildFinalizeFilter(
+      ts,
+      parsed,
+      options,
+      ts.sys.useCaseSensitiveFileNames,
+      rootNamePaths,
+    ),
+  );
+
+  return {
+    ...result,
+    ...presentIfNonEmpty('skippedReferences', skippedReferences),
+    ...presentIfNonEmpty(
+      'notTypeCheckedDeclaredFiles',
+      notTypeCheckedDeclaredFiles,
+    ),
+  };
+}
+
+/**
  * Runs the complete Angular whole-program type-check for a single tsconfig with
  * no emit, gathering all diagnostic phases unconditionally, and returns a
  * structured result. The config is parsed ONCE and spread into a FRESH `options`
@@ -501,39 +551,26 @@ async function handleSolutionWalk(
   );
 
   if (walk.rootNamesCount > 0) {
-    // >=1 in-project leaf walked: feed the RAW union into the SAME single
-    // `finalize` as the direct path (L-1). `includeDeps` applies ONCE here
-    // (Directive 5); `basePath` = the SOLUTION tsconfig's directory; the
-    // union is the pre-filter `diagnostics` arg so `detectTemplateCheckAborted`
-    // scans EVERY leaf's diagnostics (Directive 6). No per-leaf Program is
-    // available here (the walk owns and discards each leaf's Program), so the
-    // case-fold host reuses `ts.sys` -- the same filesystem host every leaf
-    // Program used -- matching the direct path's `realpath` fallback.
-    const result = finalize(
+    // >=1 in-project leaf walked: feed the RAW union into the SAME single `finalize`
+    // as the direct path (L-1) via the shared finalizeUnion tail. `includeDeps`
+    // applies ONCE (Directive 5); `basePath` = the SOLUTION tsconfig's directory (via
+    // the solution `parsed`); the union is the pre-filter `diagnostics` arg so
+    // `detectTemplateCheckAborted` scans EVERY leaf's diagnostics (Directive 6). No
+    // per-leaf Program survives the walk, so the case-fold host reuses `ts.sys` (in
+    // finalizeUnion) -- the same filesystem host every leaf Program used. The walk's
+    // aggregated declared-but-uncheckable files are already deduped (Pitfall 7).
+    return finalizeUnion(
       ts,
+      options,
+      parsed,
       tsConfigPath,
       walk.rootNamesCount,
+      walk.rootNamePaths,
       [...configDiagnostics, ...walk.rawDiagnostics],
       start,
-      buildFinalizeFilter(
-        ts,
-        parsed,
-        options,
-        ts.sys.useCaseSensitiveFileNames,
-        walk.rootNamePaths,
-      ),
-    );
-
-    // D-01 (Phase 18, T11): attach the walk's aggregated declared-but-uncheckable
-    // files via the SAME `presentIfNonEmpty` idiom as `skipped`. Sourced from the
-    // walk's surviving-leaf aggregation (Pitfall 7), so only surviving leaves
-    // contribute.
-    const notTypeChecked = presentIfNonEmpty(
-      'notTypeCheckedDeclaredFiles',
+      walk.skippedReferences,
       walk.notTypeCheckedDeclaredFiles,
     );
-
-    return { ...result, ...skipped, ...notTypeChecked };
   }
 
   // References present but 0 in-project leaves (every reference skipped /
@@ -607,11 +644,16 @@ async function handleMultiTsConfig(
     ? options.tsConfigPath
     : [options.tsConfigPath];
 
-  const rawDiagnostics: ts.Diagnostic[] = [];
-  const rootNamePaths: string[] = [];
-  const notTypeCheckedDeclaredFiles: string[] = [];
+  // The four gather fields live in ONE LeafAccumulator so the surviving-entry gather
+  // is the SHARED gatherLeafInto helper (also used by walkReferences). skippedReferences
+  // + the first-entry trackers stay separate locals.
+  const acc: LeafAccumulator = {
+    rawDiagnostics: [],
+    rootNamePaths: [],
+    notTypeCheckedDeclaredFiles: [],
+    rootNamesCount: 0,
+  };
   const skippedReferences: SkippedReference[] = [];
-  let rootNamesCount = 0;
   let firstParsed: ParsedConfiguration | undefined;
   let firstEntry: string | undefined;
 
@@ -644,19 +686,11 @@ async function handleMultiTsConfig(
       continue;
     }
 
-    // Surviving entry: run the SAME no-emit whole-program compilation the direct path
-    // and the walk use, and accumulate the RAW union. A surviving entry's OWN
-    // parse diagnostics (e.g. a folded TS5012 from a bad `extends`) are first-class
-    // counted diagnostics (MD-01 parity), never dropped.
-    const result = runNoEmitCompilation(ng, parsed);
-
-    rawDiagnostics.push(...parsed.errors);
-    rawDiagnostics.push(...result.diagnostics);
-    rootNamesCount += parsed.rootNames.length;
-    rootNamePaths.push(...parsed.rootNames);
-    notTypeCheckedDeclaredFiles.push(
-      ...detectUncheckedDeclaredFiles(ts, parsed, entry),
-    );
+    // Surviving entry: accumulate the RAW union via the SHARED gatherLeafInto helper
+    // (the identical per-surviving-leaf block walkReferences also uses --
+    // runNoEmitCompilation + MD-01 parse-error parity + declared rootName paths +
+    // declared-but-uncheckable files).
+    gatherLeafInto(acc, ng, ts, parsed, entry);
   }
 
   // Defensive (T-21-05): an empty array is a misconfiguration -- the executor schema's
@@ -673,34 +707,26 @@ async function handleMultiTsConfig(
   // D-06 parity: a per-entry UNKNOWN_ERROR_CODE (500) surfaced by a surviving entry's
   // performCompilation is infrastructure -- re-throw over the whole union exactly as
   // handleSolutionWalk does, so errorCount never counts a compiler crash.
-  throwIfInfrastructureFailure(ng, ts, rawDiagnostics);
+  throwIfInfrastructureFailure(ng, ts, acc.rawDiagnostics);
 
-  // ONE finalize over the union (NEVER per-entry): the boundary filter runs over the
-  // COMBINED declared input set (rootNamePaths) so neither leaf's in-project files are
-  // dropped as out of the other's set. The FIRST entry is the representative
-  // tsConfigPath (co-located limitation above); configDiagnostics is empty here.
-  const result = finalize(
+  // ONE finalize over the union (NEVER per-entry) via the shared finalizeUnion tail:
+  // the boundary filter runs over the COMBINED declared input set (rootNamePaths) so
+  // neither leaf's in-project files are dropped as out of the other's set. The FIRST
+  // entry is the representative tsConfigPath (co-located limitation above);
+  // configDiagnostics is empty here (each surviving entry's parse errors are already in
+  // the union). The notTypeChecked set is deduped before handing off.
+  return finalizeUnion(
     ts,
+    options,
+    firstParsed,
     firstEntry,
-    rootNamesCount,
-    rawDiagnostics,
+    acc.rootNamesCount,
+    acc.rootNamePaths,
+    acc.rawDiagnostics,
     start,
-    buildFinalizeFilter(
-      ts,
-      firstParsed,
-      options,
-      ts.sys.useCaseSensitiveFileNames,
-      rootNamePaths,
-    ),
+    skippedReferences,
+    [...new Set(acc.notTypeCheckedDeclaredFiles)],
   );
-
-  return {
-    ...result,
-    ...presentIfNonEmpty('skippedReferences', skippedReferences),
-    ...presentIfNonEmpty('notTypeCheckedDeclaredFiles', [
-      ...new Set(notTypeCheckedDeclaredFiles),
-    ]),
-  };
 }
 
 /**
