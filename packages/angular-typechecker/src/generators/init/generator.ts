@@ -6,6 +6,7 @@ import type {
 } from '@nx/devkit';
 
 import {
+  isAngularCliWorkspace,
   NO_CACHING_NOTICE,
   TYPECHECK_EXECUTOR_ID,
 } from '../../core/angular-cli-wiring';
@@ -80,7 +81,7 @@ export default async function initGenerator(
   // angular.json alone, and return BEFORE readNxJson/updateNxJson -- mirroring the
   // `configuration` write-fork -- so the CLI surface prints the shared no-caching
   // notice while the Nx surface seeds caching.
-  if (tree.exists('angular.json') && !tree.exists('nx.json')) {
+  if (isAngularCliWorkspace((path) => tree.exists(path))) {
     logger.info(NO_CACHING_NOTICE);
 
     return;

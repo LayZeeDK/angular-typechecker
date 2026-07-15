@@ -9,6 +9,7 @@ import {
 import type { ProjectConfiguration, Tree } from '@nx/devkit';
 
 import {
+  isAngularCliWorkspace,
   resolveTargetName,
   resolveTsConfigLeaves,
   resolveTsConfigOverride,
@@ -133,7 +134,7 @@ export default async function configurationGenerator(
   // pnpm-workspace name collision); `updateProjectConfiguration` cannot write angular.json
   // (Pitfall 2), so the target is edited straight in via `updateJson`. The Nx init
   // is skipped (D-04): there is no nx.json / targetDefaults analog off-Nx.
-  if (tree.exists('angular.json') && !tree.exists('nx.json')) {
+  if (isAngularCliWorkspace((path) => tree.exists(path))) {
     // Read `root`/`projectType` STRAIGHT from angular.json -- NOT via
     // readProjectConfiguration. On a workspace that is ALSO a pnpm workspace
     // (pnpm-workspace.yaml) whose root package.json `name` collides with the

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isAngularCliWorkspace,
   NO_ANGULAR_JSON_NOTICE,
   NO_CACHING_NOTICE,
   TYPECHECK_EXECUTOR_ID,
@@ -26,6 +27,22 @@ function existsIn(paths: string[]): (path: string) => boolean {
 }
 
 const existsAll = (): boolean => true;
+
+describe('isAngularCliWorkspace', () => {
+  it('is true for angular.json without nx.json', () => {
+    expect(isAngularCliWorkspace(existsIn(['angular.json']))).toBe(true);
+  });
+
+  it('is false for a hybrid workspace carrying both files (Nx is authoritative)', () => {
+    expect(isAngularCliWorkspace(existsIn(['angular.json', 'nx.json']))).toBe(
+      false,
+    );
+  });
+
+  it('is false for an Nx-only workspace (no angular.json)', () => {
+    expect(isAngularCliWorkspace(existsIn(['nx.json']))).toBe(false);
+  });
+});
 
 describe('resolveTargetName', () => {
   it('defaults a missing name to "typecheck"', () => {

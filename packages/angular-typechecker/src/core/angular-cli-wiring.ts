@@ -58,6 +58,21 @@ export interface AngularJsonWorkspace {
 }
 
 /**
+ * The Angular CLI workspace predicate shared by BOTH Nx-side generator forks (`init`
+ * + `configuration`): a genuine Angular CLI workspace has `angular.json` AND no
+ * `nx.json`. A hybrid workspace carrying BOTH files is a real Nx workspace (nx.json
+ * is authoritative -- its projects may be defined via project.json, not
+ * angular.json's `projects` map), so it takes the Nx path. Extracted here so the two
+ * forks can never drift on what counts as an Angular CLI workspace. `exists` is
+ * injected so the core stays Tree-agnostic.
+ */
+export function isAngularCliWorkspace(
+  exists: (path: string) => boolean,
+): boolean {
+  return exists('angular.json') && !exists('nx.json');
+}
+
+/**
  * GEN-04: the targetName default + empty/whitespace guard. `??` only substitutes
  * the default for a MISSING targetName, not an explicit empty string
  * (`'' ?? x === ''`); an empty / whitespace-only name would write an unrunnable
