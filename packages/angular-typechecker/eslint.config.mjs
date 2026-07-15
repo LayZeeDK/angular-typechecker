@@ -92,12 +92,14 @@ export default [
           // .planning/debug/cli-yarn-e2e-wrong-version.md. An `ng add` into a
           // non-Nx Angular CLI workspace may still materialize a `.nx/` cache
           // dir; the README `## Angular CLI` prose covers it (ACD-01).
-          // `@angular-devkit/schematics` is likewise ignored (24-06): the vanilla
-          // nx-free ng-add schematic TYPE-imports Rule/Tree/SchematicContext from
-          // it (erased at compile -- the compiled schematic.js requires only the
-          // pure core), and it is an Angular-CLI-provided peer, so without this
-          // ignore the rule would flag it MISSING and fail `nx lint` at
-          // maxWarnings:0.
+          // `@angular-devkit/schematics` is a DECLARED optional peer (^22.0.0) and
+          // is likewise ignored, for the SAME obsolete-vs-compiled-src reason as
+          // architect/rxjs: the vanilla nx-free ng-add schematic only TYPE-imports
+          // Rule/Tree/SchematicContext from it (erased at compile -- the compiled
+          // schematic.js requires only the pure core), so the plugin's own `src/`
+          // never `require()`s it at runtime. `peerDependenciesMeta.optional` does
+          // NOT exempt the obsolete check, so without this ignore the rule would
+          // flag it obsolete and fail `nx lint` at maxWarnings:0.
           ignoredDependencies: [
             'nx',
             '@angular-devkit/architect',

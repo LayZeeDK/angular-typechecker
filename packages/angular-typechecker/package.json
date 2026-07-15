@@ -55,10 +55,14 @@
     "@angular/compiler-cli": "^22.0.0",
     "typescript": ">=6.0.0 <6.1.0",
     "@angular-devkit/architect": ">=0.2200.0 <0.2300.0",
+    "@angular-devkit/schematics": "^22.0.0",
     "rxjs": "^6.5.3 || ^7.4.0"
   },
   "peerDependenciesMeta": {
     "@angular-devkit/architect": {
+      "optional": true
+    },
+    "@angular-devkit/schematics": {
       "optional": true
     },
     "rxjs": {

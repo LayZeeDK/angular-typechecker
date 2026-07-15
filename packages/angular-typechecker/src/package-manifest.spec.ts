@@ -188,6 +188,19 @@ describe('plugin manifest Angular CLI install contract (ACP-01 / NGADD-01 RF-01 
     expect(manifest.peerDependenciesMeta?.['rxjs']?.optional).toBe(true);
   });
 
+  it('declares @angular-devkit/schematics as an OPTIONAL peer at ^22.0.0 (ng-add schematic runtime peer; B6)', () => {
+    // The vanilla nx-free ng-add schematic TYPE-imports Rule/Tree/SchematicContext
+    // from @angular-devkit/schematics. `^22.0.0` is the all-of-Angular-22 spelling
+    // for a 22.x-scheme package (installed 22.0.6) -- NOT architect's 0.2200.x
+    // leading-zero scheme. Optional so it is never forced onto a pure-Nx consumer.
+    expect(manifest.peerDependencies?.['@angular-devkit/schematics']).toBe(
+      '^22.0.0',
+    );
+    expect(
+      manifest.peerDependenciesMeta?.['@angular-devkit/schematics']?.optional,
+    ).toBe(true);
+  });
+
   it('declares nx as a ^23.0.0 dependency; the optional peers do not move it into peerDependencies', () => {
     expect(manifest.dependencies?.['nx']).toBe('^23.0.0');
     expect(manifest.peerDependencies ?? {}).not.toHaveProperty('nx');
