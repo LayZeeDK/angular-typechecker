@@ -179,10 +179,12 @@ jobs:
   # parallelises across runners instead of running serially in a single job. The
   # matrix is DYNAMIC: `fromJSON(needs.discover.outputs.projects ...)` consumes the
   # `discover` job's `tools/ci/list-e2e-projects.mjs` output, so a NEW e2e project
-  # is auto-covered with no static list to drift (GUARD-01b asserts this wiring).
-  # The `|| '[...]'` fallback lists the four known projects ONLY for `act -n`: its
+  # is auto-covered (there is no authoritative static list to drift; GUARD-01b
+  # asserts this wiring). The `|| '[...]'` fallback is a non-authoritative
+  # single-element act-plan placeholder, NOT a coverage source: under `act -n` the
   # empty discover output would make bare `fromJSON('')` error and drop `ci/e2e`
-  # from the plan; real CI always uses the discover-job output.
+  # from the plan, so the fallback only needs one sentinel token to keep the job in
+  # the plan. Real CI always uses the discover-job output.
   #
   # Each cell (re)builds `angular-typechecker` via its own `e2e`-target
   # dependsOn:angular-typechecker:build (GUARD-01e) -- ~2-4s for this small
@@ -206,9 +208,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.discover.outputs.projects || '["angular-typechecker-cache-e2e","angular-typechecker-install-e2e","angular-typechecker-matrix-e2e","angular-typechecker-ng-cli-e2e"]') }}
+        project: ${{ fromJSON(needs.discover.outputs.projects || '["angular-typechecker-cache-e2e"]') }}
     env:
       NX_DAEMON: false
+      # The matrix project is passed to the run steps through this env var, never
+      # interpolated as ${{ matrix.project }} into a shell command. The value derives
+      # from a fork-PR-controlled e2e/*/project.json `name`, so an env var (set by the
+      # runner, not evaluated by the shell) keeps the top-of-file no-command-injection
+      # invariant true.
+      PROJECT: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -237,17 +245,21 @@ jobs:
       # Static type-check gate for THIS cell's e2e SOURCES, run BEFORE the
       # multi-minute tarball install so a type error in an e2e spec fails fast
       # (~15s) instead of after the install. SCOPED to this cell's single project
-      # via `-p ${{ matrix.project }}`: the `test` job already runs the FULL
+      # via `-p "$PROJECT"` -- the matrix value is passed through the `PROJECT` env
+      # var, never interpolated into the shell command (top-of-file
+      # no-command-injection invariant): the `test` job already runs the FULL
       # whole-repo `nx run-many -t typecheck` across the OS x Node matrix, so this
       # is only the pre-install fast-fail for the one project the cell installs.
       # GUARD-01c asserts this line runs `run-many -t typecheck`.
-      - run: npx nx run-many -t typecheck -p ${{ matrix.project }}
-      # Run the `e2e` target for THIS cell's project only (`-p ${{ matrix.project }}`).
+      - run: npx nx run-many -t typecheck -p "$PROJECT"
+      # Run the `e2e` target for THIS cell's project only (`-p "$PROJECT"` -- the
+      # matrix value passed through the `PROJECT` env var, never interpolated into
+      # the shell command, per the top-of-file no-command-injection invariant).
       # The plugin is (re)built for this cell via the e2e target's
       # dependsOn:angular-typechecker:build (GUARD-01e), ~2-4s -- there is NO
       # build-artifact handoff (a foreign `.nx/cache` restore is a no-op). GUARD-01/01b
       # assert this invocation and the dynamic matrix wiring.
-      - run: npx nx run-many -t e2e -p ${{ matrix.project }}
+      - run: npx nx run-many -t e2e -p "$PROJECT"
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
