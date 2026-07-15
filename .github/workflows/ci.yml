@@ -234,6 +234,29 @@ jobs:
         with:
           version: 11.9.0
       - run: npm ci
+      # Lever B (quick-260715-050): cross-run cache of Verdaccio's proxied npmjs
+      # uplink storage, keyed PER CELL (${{ matrix.project }}) because the split
+      # gives each cell its OWN cold Verdaccio (the in-job clearStorage:false reuse
+      # is gone). Additive over setup-node's ~/.npm (which yarn's fresh
+      # cacheFolder+enableMirror:false and pnpm's store never touch), so it warms
+      # the Verdaccio->npmjs hop that dominates the ng-cli/install floor. Fidelity-safe
+      # by construction: resetVerdaccioPublishState wipes storage/angular-typechecker
+      # + .htpasswd each run (both excluded below) and uplinks.npmjs.maxage:60m
+      # revalidates -- the cache changes SPEED only, never correctness. CREEP-safe:
+      # a pull_request (NOT pull_request_target) cache write lands in the isolated
+      # merge-ref scope main/tags cannot restore, and it holds only revalidated
+      # proxied-npmjs bytes (never our freshly-republished plugin) -- contents:read,
+      # auth via the runtime token, not the permissions block.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: verdaccio-storage
+        with:
+          path: |
+            tmp/local-registry/storage
+            !tmp/local-registry/storage/angular-typechecker
+            !tmp/local-registry/storage/.htpasswd
+          key: verdaccio-storage-${{ runner.os }}-${{ matrix.project }}-${{ hashFiles('e2e/**/fixtures/**/package.json', 'e2e/**/fixtures/**/package-lock.json', 'e2e/**/fixtures/**/pnpm-lock.yaml', 'packages/angular-typechecker/package.json', '.github/workflows/ci.yml') }}
+          restore-keys: |
+            verdaccio-storage-${{ runner.os }}-${{ matrix.project }}-
       # Static type-check gate for THIS cell's e2e SOURCES, run BEFORE the
       # multi-minute tarball install so a type error in an e2e spec fails fast
       # (~15s) instead of after the install. SCOPED to this cell's single project
@@ -248,6 +271,17 @@ jobs:
       # build-artifact handoff (a foreign `.nx/cache` restore is a no-op). GUARD-01/01b
       # assert this invocation and the dynamic matrix wiring.
       - run: npx nx run-many -t e2e -p ${{ matrix.project }}
+      # Save the warmed Verdaccio uplink storage on success, skipping an exact hit
+      # (still saves under a NEW primary key when only restore-keys matched, so
+      # newly proxied packages are captured). Re-uses the restore's primary key.
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: success() && steps.verdaccio-storage.outputs.cache-hit != 'true'
+        with:
+          path: |
+            tmp/local-registry/storage
+            !tmp/local-registry/storage/angular-typechecker
+            !tmp/local-registry/storage/.htpasswd
+          key: ${{ steps.verdaccio-storage.outputs.cache-primary-key }}
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
