@@ -252,6 +252,60 @@ describe('ng-add schematic (vanilla, Angular CLI auto-wire-all)', () => {
     expect(messages).not.toContain(NO_CACHING_NOTICE);
   });
 
+  it('bulk path skips-and-warns a non-resolvable project without aborting the workspace (B1)', async () => {
+    seedAngularJson({
+      'app-ok': { projectType: 'application', root: '' },
+      'app-bad': { projectType: 'application', root: 'projects/app-bad' },
+    });
+    // Only app-ok has leaves; app-bad's projects/app-bad/tsconfig.* are absent, so
+    // resolveTsConfigLeaves throws for it.
+    leaf('tsconfig.app.json');
+    leaf('tsconfig.spec.json');
+
+    await run();
+
+    // The resolvable project is wired; the non-resolvable one is skipped, not fatal.
+    expect(target('app-ok')).toEqual(APP_TARGET);
+    expect(target('app-bad')).toBeUndefined();
+    // angular.json was still overwritten (partial wiring landed).
+    expect(tree.exists('angular.json')).toBe(true);
+    // A warn names the skipped project and routes to the configuration generator.
+    const warned = messages.filter((m) => m.includes('app-bad'));
+    expect(warned.length).toBeGreaterThan(0);
+    expect(
+      warned.some((m) => m.includes('angular-typechecker:configuration')),
+    ).toBe(true);
+    // No message misleads with the guidance for a flag ng-add lacks.
+    expect(messages.some((m) => m.includes('Pass --tsConfig explicitly'))).toBe(
+      false,
+    );
+  });
+
+  it('throws an actionable, non-misleading error when --project cannot resolve leaves (B1)', async () => {
+    seedAngularJson({
+      'app-bad': { projectType: 'application', root: 'projects/app-bad' },
+    });
+    // No leaf files for app-bad, so resolveTsConfigLeaves throws.
+
+    let caught: unknown;
+
+    try {
+      await run({ project: 'app-bad' });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    // Points at the configuration command (which DOES accept --tsConfig)...
+    expect((caught as Error).message).toContain(
+      'angular-typechecker:configuration',
+    );
+    // ...and never names a flag ng-add lacks.
+    expect((caught as Error).message).not.toContain(
+      'Pass --tsConfig explicitly',
+    );
+  });
+
   it('auto-wires the ROOT app with the full [app, spec] array despite a pnpm-workspace name collision (collision-immune by construction)', async () => {
     seedAngularJson({
       'demo-app': { projectType: 'application', root: '' },

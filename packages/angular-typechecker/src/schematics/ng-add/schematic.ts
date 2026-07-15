@@ -77,19 +77,54 @@ export default function ngAdd(options: NgAddSchema): Rule {
       }
 
       if (
-        project.projectType === 'application' ||
-        project.projectType === 'library'
+        project.projectType !== 'application' &&
+        project.projectType !== 'library'
       ) {
-        const leaves = resolveTsConfigLeaves(
+        continue;
+      }
+
+      // Only LEAF RESOLUTION is caught here. A genuine target collision
+      // (wireTypecheckTarget throwing) is a clash, not a resolution failure, so it
+      // still aborts on BOTH paths (bulk + --project) -- left outside this try.
+      let leaves: string[];
+
+      try {
+        leaves = resolveTsConfigLeaves(
           project.root ?? '',
           project.projectType,
           undefined,
           name,
           (p) => tree.exists(p),
         );
-        wireTypecheckTarget(workspace, name, 'typecheck', leaves);
-        wired++;
+      } catch {
+        // ng-add has NO --tsConfig flag, so never surface the core "Pass --tsConfig
+        // explicitly" guidance here -- route the user to the configuration generator,
+        // which DOES accept --tsConfig.
+        const route =
+          `Wire it explicitly with: ng generate ` +
+          `angular-typechecker:configuration ${name} --tsConfig <path>`;
+
+        if (options.project) {
+          // An explicit --project that matched this app/library project but failed
+          // leaf resolution is a user error -- fail loudly (before the WR-03 guard).
+          throw new Error(
+            `angular-typechecker: could not resolve a tsconfig for project ` +
+              `"${name}". ${route}`,
+          );
+        }
+
+        // Bulk path: partial wiring beats aborting the whole workspace. Warn,
+        // skip this project (do NOT increment `wired`), and keep going.
+        context.logger.warn(
+          `angular-typechecker: skipping project "${name}" -- could not ` +
+            `resolve a tsconfig for it. ${route}`,
+        );
+
+        continue;
       }
+
+      wireTypecheckTarget(workspace, name, 'typecheck', leaves);
+      wired++;
     }
 
     // 4. WR-03: a `--project` that matched no application/library project (a typo, or
