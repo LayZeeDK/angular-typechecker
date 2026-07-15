@@ -7,7 +7,7 @@ import {
   wireTypecheckTarget,
 } from '../../core/angular-cli-wiring';
 import type { AngularJsonWorkspace } from '../../core/angular-cli-wiring';
-import type { NgAddGeneratorSchema } from '../../generators/ng-add/schema';
+import type { NgAddSchema } from './schema';
 
 // The UNSCOPED published package name -- the key `ng add` installs into package.json.
 const PACKAGE_NAME = 'angular-typechecker';
@@ -33,7 +33,7 @@ const PACKAGE_NAME = 'angular-typechecker';
  * runs `<pkg>:init` (resolved via `generators ?? schematics`), so the surface stays
  * unchanged (Pitfall 5); the surface-regression spec proves it.
  */
-export default function ngAdd(options: NgAddGeneratorSchema): Rule {
+export default function ngAdd(options: NgAddSchema): Rule {
   return (tree: Tree, context: SchematicContext): Tree => {
     // 1. RF-01 devDependency ensure: if `ng add` placed angular-typechecker in
     // dependencies, move it to devDependencies (a type-checker is dev tooling).

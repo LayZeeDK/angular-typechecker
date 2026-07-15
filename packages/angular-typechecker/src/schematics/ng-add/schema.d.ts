@@ -1,4 +1,4 @@
-export interface NgAddGeneratorSchema {
+export interface NgAddSchema {
   project?: string;
   skipFormat?: boolean;
 }

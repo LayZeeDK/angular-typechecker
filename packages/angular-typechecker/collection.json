@@ -3,7 +3,7 @@
   "schematics": {
     "ng-add": {
       "factory": "./src/schematics/ng-add/schematic",
-      "schema": "./src/generators/ng-add/schema.json",
+      "schema": "./src/schematics/ng-add/schema.json",
       "description": "Add angular-typechecker and wire a typecheck target into every application + library project."
     },
     "configuration": {

@@ -13,7 +13,7 @@ import {
   NO_ANGULAR_JSON_NOTICE,
   NO_CACHING_NOTICE,
 } from '../../core/angular-cli-wiring';
-import type { NgAddGeneratorSchema } from '../../generators/ng-add/schema';
+import type { NgAddSchema } from './schema';
 import ngAdd from './schematic';
 
 // NGADD-01 coverage for the VANILLA (nx-free) ng-add schematic (24-06). Migrated from
@@ -92,7 +92,7 @@ describe('ng-add schematic (vanilla, Angular CLI auto-wire-all)', () => {
 
   // The vanilla Rule is synchronous; invoke it directly with a logger-backed context.
   // `async` so a synchronous throw surfaces as a rejected promise for rejects.toThrow.
-  async function run(options: NgAddGeneratorSchema = {}): Promise<void> {
+  async function run(options: NgAddSchema = {}): Promise<void> {
     const context = { logger: runner.logger } as unknown as SchematicContext;
     ngAdd(options)(tree, context);
   }
