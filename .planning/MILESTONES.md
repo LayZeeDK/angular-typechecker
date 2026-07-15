@@ -4,6 +4,56 @@ A historical record of shipped versions. For current work see `.planning/ROADMAP
 
 ---
 
+## v0.2.1 -- Angular CLI workspace support
+
+**Closed:** 2026-07-16 (phases complete + milestone audit PASSED)
+**Phases:** 21-24 | **Plans:** 14 (3 original + 3 gap-closure in Phase 24) | **Commits:** 250 (since the `angular-typechecker@0.2.0` tag)
+**Timeline:** 2026-07-10 -> 2026-07-16 (6 days)
+**Package source:** ~4,413 LOC production TypeScript (`packages/angular-typechecker/src/`, non-test, 31 files); ~15,584 LOC incl. the test suite
+**Published:** `angular-typechecker@0.2.1` (npm, live, 2026-07-16, tokenless OIDC + SLSA v1 provenance) -- cut via the human-gated Release-PR flow (AGENTS.md): PR #38 merged, tag `angular-typechecker@0.2.1` on the release merge commit.
+
+### Delivered
+
+`angular-typechecker` now installs and runs in a plain Angular CLI (`angular.json`)
+workspace with no Nx: `ng add angular-typechecker` wires a `typecheck` target into every
+application and library at once, `ng generate angular-typechecker:configuration` wires a
+single project, and `ng run <project>:typecheck` runs the exact same complete Angular
+type-check (TypeScript + template + extended NG8xxx diagnostics, no emit) as the Nx target
+-- purely additive beside the existing Nx surface, proven against real OSS Angular 22
+workspaces from the shipped tarball.
+
+### Key Accomplishments
+
+1. **GATE A' spike -- GO (Phase 21, ACB-02)** -- the shipped CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` engine survives `convertNxExecutor` + a real `ng run` against a real cloned OSS Angular 22 workspace (`bluehalo/ngx-leaflet`), with no `ERR_REQUIRE_ESM`; a NO-GO would never have fallen back to a hand-written architect builder.
+2. **Multi-tsConfig engine widening (Phase 21, ENG-01)** -- `tsConfig` widened to `string | string[]` so a single target checks a project's complete leaf set (build + spec) in one pass; single-string path stays byte-unchanged.
+3. **The angular.json write-fork (Phase 22, ACS-01/02/04, COV-01)** -- the shared `configuration` generator gains an early `tree.exists('angular.json')` fork that wires ONE per-project `typecheck` target with `tsConfig: [buildLeaf, specLeaf]`, proven per-project-scoped with zero cross-project bleed; the Nx path is untouched.
+4. **Init parity + first-party ng-add + optional peers (Phase 23, ACS-03, NGADD-01, ACP-01)** -- `ng generate ...:init` seeds no caching / no stray `nx.json`; `ng-add` auto-wires every application + library project; `@angular-devkit/architect` + `rxjs` classified as optional peers.
+5. **Real-OSS + scaffolded e2e, additive-only audit, docs (Phase 24, ACV-01/02/03, ACP-02, ACD-01)** -- a committed CI-authoritative Angular CLI e2e (npm + yarn + pnpm) and a manual real-clone milestone-final gate; a git-diff audit proving additive-only vs `angular-typechecker@0.2.0` (no `v0.3.0` trigger); README `## Angular CLI` + curated CHANGELOG.
+6. **Root-cause yarn fixes (Phase 24 gap closure, 24-04/24-06)** -- discovered post-verification that yarn does not auto-install the `@nx/devkit` peer `nx` (fixed: `nx` declared as a direct `^23.0.0` dependency) and that Angular CLI's post-install `ng-add` probe crashes loading nx's `chalk` chain under yarn 4's hoist (fixed: `ng-add` rewritten as a vanilla nx-free `@angular-devkit/schematics` Rule sharing one framework-agnostic wiring core with the Nx generator) -- `ng add` now auto-wires on the FIRST run under npm, yarn (flat + workspace), and pnpm alike.
+
+### Audit
+
+PASSED (`.planning/milestones/v0.2.1-MILESTONE-AUDIT.md`): 16/16 requirements SATISFIED,
+4/4 phases verified `passed`/re-verified, cross-phase integration 8-of-8 seams WIRED,
+4/4 E2E flows proven, Nyquist COMPLIANT across all 4 phases, security threats_open 0.
+Additive-only vs `angular-typechecker@0.2.0` HOLDS -- the milestone stayed on the `0.2.x`
+line (no `v0.3.0` trigger).
+
+### Known deferred items at close
+
+- **Post-close (human-gated) -- DONE 2026-07-16:** the v0.2.1 npm release was cut + published via the AGENTS.md Release-PR flow -- PR #38 (`release/0.2.1`) merged, `angular-typechecker@0.2.1` tag created on the release merge commit, OIDC publish through the `npm-publish` environment (SLSA v1 provenance).
+- **Roadmap Phase 25 proposed then removed:** a GitHub-backed self-hosted Nx remote cache (workspace-wide CI cache optimization) was added to the roadmap mid-milestone and then removed as lower priority than the already-shipped e2e per-project matrix split (~41% faster CI). Tracked as a backlog item, not milestone debt.
+- The 19 post-Phase-24 quick tasks (260709-w96 through 260715-rze) were verified + shipped (CI hardening, dependency audits, review-finding triage, e2e wall-clock optimization); the close audit initially flagged them "missing" due to the recurring bare-`SUMMARY.md`-vs-`<id>-SUMMARY.md` scanner mismatch. One quick-task directory (260709-w96, `OBS-01` observability) was an empty, never-executed, untracked stub -- removed at close; `OBS-01` correctly remains a tracked deferred Future Requirement, not abandoned work.
+- The `24-VERIFICATION.md` frontmatter `status: human_needed` was cosmetically stale at audit time -- the underlying human item (re-run the ACV-01 real-clone tarball gate post-24-06) was already RESOLVED (quick task 260715-ig5) before this close.
+
+### Archives
+
+- `.planning/milestones/v0.2.1-ROADMAP.md` -- full phase detail
+- `.planning/milestones/v0.2.1-REQUIREMENTS.md` -- requirements with outcomes
+- `.planning/milestones/v0.2.1-MILESTONE-AUDIT.md` -- audit report
+
+---
+
 ## v0.2.0 -- Storybook story type-checking
 
 **Closed:** 2026-07-07 (phases complete + milestone audit PASSED)
