@@ -63,7 +63,9 @@ import {
 // (@workspace/test-util); this spec keeps only the pnpm-specific provisioning.
 //
 // Runs SEQUENTIALLY on the main tree under the serialized vitest.config.mts + the shared
-// globalSetup (build + publish ONCE); the CI e2e job stays --parallel=1 (GUARD-01b).
+// globalSetup (build + publish ONCE); CI runs the e2e tier as a per-project matrix (one
+// runner per e2e project), and the registry-starting project is serialized
+// (parallelism:false), so registry-publishers never race (GUARD-01b).
 // Skips cleanly where pnpm is unavailable, and ASSERTS the effective pnpm is 11 (the PM
 // major CI provisions), so a <11 host fails loudly rather than reproducing the collision
 // on a different PM major.

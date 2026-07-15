@@ -59,8 +59,9 @@ import {
 //
 // yarn 4 is delivered via corepack, pinned to one literal; the spec skips cleanly where
 // corepack yarn is unavailable. Runs SEQUENTIALLY on the main tree under the serialized
-// vitest.config.mts + the shared globalSetup (build + publish ONCE); the CI e2e job stays
-// --parallel=1 (GUARD-01b).
+// vitest.config.mts + the shared globalSetup (build + publish ONCE); CI runs the e2e tier
+// as a per-project matrix (one runner per e2e project), and the registry-starting project
+// is serialized (parallelism:false), so registry-publishers never race (GUARD-01b).
 
 const YARN_VERSION = '4.17.0';
 

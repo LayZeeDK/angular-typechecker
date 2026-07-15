@@ -34,10 +34,11 @@ import {
 // Runs SEQUENTIALLY on the main tree under the serialized vitest.config.mts + the
 // shared globalSetup (which builds dist + publishes to the local Verdaccio registry
 // ONCE); this spec CONSUMES that registry via inject() and installs the package
-// by-name with `ng add` (NOT by packing a shared `.tgz`). It still shares the single
-// `dist/` build + the one loopback registry with the sibling e2e projects, so the CI
-// e2e job MUST stay `--parallel=1` (GUARD-01b) -- concurrent runs would race the
-// shared dist rebuild + registry publish.
+// by-name with `ng add` (NOT by packing a shared `.tgz`). The specs in THIS project
+// share the single `dist/` build + the one loopback registry, so they must not run
+// concurrently -- the registry-starting project is serialized (parallelism:false), and
+// CI runs the e2e tier as a per-project matrix (one runner per e2e project), so no two
+// registry-publishers ever race the shared dist rebuild + publish (GUARD-01b).
 
 // Resolve the workspace root from this spec's location; findWorkspaceRoot() walks
 // up to nx.json so every path is cwd-independent (main tree).
