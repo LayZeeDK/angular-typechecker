@@ -61,10 +61,8 @@ describe('Nx generators ?? schematics surface regression (ACS-04)', () => {
     );
   });
 
-  it('declares the additive init schematic in collection.json (ng generate angular-typechecker:init parity, ACS-03)', () => {
-    expect(collectionManifest.schematics?.init?.factory).toBe(
-      './src/schematics/init/schematic',
-    );
+  it('exposes NO Angular CLI init schematic in collection.json -- init is the Nx post-install hook (nx add -> <pkg>:init); its Angular CLI counterpart is ng-add, so ng generate angular-typechecker:init is deliberately absent (ACS-04)', () => {
+    expect(collectionManifest.schematics?.init).toBeUndefined();
   });
 
   it('still declares the init generator factory in generators.json so nx add angular-typechecker -> <pkg>:init stays resolvable via generators (nx add UNCHANGED, Pitfall 5)', () => {
