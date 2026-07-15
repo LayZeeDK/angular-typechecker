@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative, sep } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -312,7 +312,7 @@ describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the
   it('install-e2e serializes its e2e target (parallelism:false -> single live registry)', () => {
     expect(
       e2eTargetParallelism('angular-typechecker-install-e2e'),
-      'GUARD-01b: e2e/angular-typechecker-install-e2e must set `parallelism: false` on its `e2e` target. It is the sole Verdaccio publisher; running it alone keeps exactly ONE local registry live (no port/storage/htpasswd/authToken contention, and no cross-registry yarn metadata-cache poisoning -- yarn 4 keys that cache by host, not host:port).',
+      'GUARD-01b: e2e/angular-typechecker-install-e2e must set `parallelism: false` on its `e2e` target. It is one of two Verdaccio publishers (with angular-typechecker-ng-cli-e2e), and both are serialized; running install-e2e alone keeps exactly ONE local registry live (no port/storage/htpasswd/authToken contention, and no cross-registry yarn metadata-cache poisoning -- yarn 4 keys that cache by host, not host:port).',
     ).toBe(false);
   });
 
@@ -321,6 +321,42 @@ describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the
       e2eTargetParallelism('angular-typechecker-cache-e2e'),
       'GUARD-01b: e2e/angular-typechecker-cache-e2e must set `parallelism: false` on its `e2e` target so the cache-correctness gate (real workspace .nx SQLite db) never co-runs with a nested-nx sibling under --parallel=2.',
     ).toBe(false);
+  });
+
+  // The REAL invariant behind the two dedicated its above: ANY e2e project whose
+  // global-setup boots a local Verdaccio registry (startLocalRegistry) MUST run
+  // solo under the LOCAL `nx run-many -t e2e --parallel=2` command. All
+  // registry-starters share ONE registry on 127.0.0.1:4873 (storage / htpasswd /
+  // authToken, plus yarn 4's host-keyed metadata cache), so two publishers
+  // co-running would contend on that shared state. This generalizes the dedicated
+  // its so a FUTURE registry-starting e2e project is caught too -- not just
+  // install-e2e and ng-cli-e2e.
+  it('every registry-starting e2e project serializes its e2e target (parallelism:false)', () => {
+    const registryStarters = collectE2eFiles('global-setup.ts')
+      .filter((setupPath) => {
+        const lines = readFileSync(setupPath, 'utf8').split('\n');
+
+        return lines.some(
+          (line) => !isTsComment(line) && line.includes('startLocalRegistry'),
+        );
+      })
+      // e2e/<project>/src/global-setup.ts -> project name is the parent of src/.
+      .map((setupPath) => basename(dirname(dirname(setupPath))));
+
+    // Anti-vacuous-green (this file's pattern): a rename that hides EVERY
+    // registry-starter would make the loop below assert nothing and pass
+    // silently. Require at least one so a drifted detection marker fails loud.
+    expect(
+      registryStarters.length,
+      'GUARD-01b: expected at least one e2e project whose global-setup calls startLocalRegistry, but found none -- the detection marker likely drifted (a rename?), which would make the serialization invariant pass vacuously.',
+    ).toBeGreaterThan(0);
+
+    for (const project of registryStarters) {
+      expect(
+        e2eTargetParallelism(project),
+        `GUARD-01b: e2e/${project} boots a local registry in its global-setup, so its \`e2e\` target MUST set \`parallelism: false\`. Two registry publishers co-running under \`nx run-many -t e2e --parallel=2\` contend on the shared 127.0.0.1:4873 registry (storage / htpasswd / authToken, plus yarn 4's host-keyed metadata cache).`,
+      ).toBe(false);
+    }
   });
 
   it('no e2e spec or global-setup rebuilds dist (build runs once upstream)', () => {

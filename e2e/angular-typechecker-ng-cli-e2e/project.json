@@ -10,6 +10,7 @@
       "executor": "@nx/vitest:test",
       "dependsOn": [{ "projects": ["angular-typechecker"], "target": "build" }],
       "outputs": ["{options.reportsDirectory}"],
+      "parallelism": false,
       "options": {
         "reportsDirectory": "coverage/e2e/angular-typechecker-ng-cli-e2e"
       }
