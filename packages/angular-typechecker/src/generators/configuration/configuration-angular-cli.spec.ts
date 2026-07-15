@@ -1,4 +1,5 @@
 import {
+  logger,
   readJson,
   readNxJson,
   readProjectConfiguration,
@@ -6,8 +7,9 @@ import {
 } from '@nx/devkit';
 import type { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { NO_CACHING_NOTICE } from '../../core/angular-cli-wiring';
 import configurationGenerator from './generator';
 
 // ACS-01 / ACS-02 / COV-01 coverage for the Angular CLI write-fork on a GENUINE
@@ -76,6 +78,22 @@ describe('configuration generator (Angular CLI write-fork)', () => {
       executor: 'angular-typechecker:typecheck',
       options: { tsConfig: ['tsconfig.app.json', 'tsconfig.spec.json'] },
     });
+  });
+
+  it('prints the shared no-caching notice on the CLI write-fork (D-06)', async () => {
+    seedNgxLeafletWorkspace(tree);
+    assertCliSubstrate(tree);
+    const infoSpy = vi
+      .spyOn(logger, 'info')
+      .mockImplementation(() => undefined);
+
+    await configurationGenerator(tree, { project: 'ngx-leaflet-demo' });
+
+    // Same no-caching state as `ng add` / the init fork -- the user must get the
+    // same explanation on this surface (W2).
+    expect(infoSpy).toHaveBeenCalledWith(NO_CACHING_NOTICE);
+
+    infoSpy.mockRestore();
   });
 
   it('writes the library typecheck target with the [lib, spec] leaf array (ACS-01)', async () => {

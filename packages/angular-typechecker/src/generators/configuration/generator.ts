@@ -1,6 +1,7 @@
 import {
   formatFiles,
   joinPathFragments,
+  logger,
   readJson,
   readProjectConfiguration,
   updateJson,
@@ -10,6 +11,7 @@ import type { ProjectConfiguration, Tree } from '@nx/devkit';
 
 import {
   isAngularCliWorkspace,
+  NO_CACHING_NOTICE,
   resolveTargetName,
   resolveTsConfigLeaves,
   resolveTsConfigOverride,
@@ -174,6 +176,13 @@ export default async function configurationGenerator(
     if (!schema.skipFormat) {
       await formatFiles(tree);
     }
+
+    // D-06: the CLI fork wired the target with no target caching (there is no
+    // nx.json / targetDefaults analog off-Nx). Print the shared no-caching notice
+    // ONCE -- matching the init fork (init/generator.ts) and the ng-add schematic,
+    // so a user reaching this no-caching state via `ng generate ...:configuration`
+    // gets the same explanation they would via `ng add` or `nx add`.
+    logger.info(NO_CACHING_NOTICE);
 
     return;
   }
