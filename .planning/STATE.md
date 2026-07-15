@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2.1
-milestone_name: Angular CLI workspace support
-status: complete
-last_updated: "2026-07-16T01:00:00.000Z"
-last_activity: 2026-07-16 -- MILESTONE CLOSED via /gsd-complete-milestone. Milestone audit PASSED 16/16 requirements, 4/4 phases, 8-of-8 cross-phase integration seams WIRED, 4/4 E2E flows, Nyquist compliant, 0 open threats. angular-typechecker@0.2.1 was already published live to npm (PR #38 merged, tag on the release merge commit) before this close -- this close is bookkeeping-only. Archived ROADMAP/REQUIREMENTS/audit to .planning/milestones/v0.2.1-*; ROADMAP.md collapsed to a SHIPPED one-liner; REQUIREMENTS.md removed (fresh for next milestone); PROJECT.md evolved (Validated section, Key Decisions, Next Milestone Goals placeholder); MILESTONES.md gained the v0.2.1 entry. Next: /gsd-new-milestone.
+milestone: v0.2.2
+milestone_name: Standalone CLI
+status: planning
+last_updated: "2026-07-15T23:38:54.963Z"
+last_activity: 2026-07-15
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 
 ## Current Position
 
-Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — COMPLETE (6/6 plans; post-execution gates refreshed to cover 24-06)
-Plan: 6 of 6 (24-06 gap-closure complete)
-Status: Phase 24 execute-phase workflow + all global-CLAUDE.md post-execute steps complete (verify/secure/validate/extract-learnings + global-learnings bridge). ONE human item outstanding (pre-release ACV-01 real-clone re-run -- see Operator Next Steps)
-Last activity: 2026-07-15 -- Quick task 260715-rze: audited + triaged ALL non-CI thermo-nuclear review findings for the v0.2.1 Angular CLI branch, then addressed the 8 that survived (7 fixed + B2 verify-only). B1 (ng-add) bulk skip-and-warn instead of whole-workspace abort + non-misleading `--project` error (collision-throw preserved); B3 (ci-tools) existsSync/falsy-name guard; B4 (core) Windows backslash normalize in `--tsConfig`; B6 (deps) `@angular-devkit/schematics` optional peer `^22.0.0`; B2 verify-only (discriminator writes no nx.json); Q2/Q1 test-util dedup (shared Verdaccio global-setup + ng-cli e2e harness); Q3 core dedup (`gatherLeafInto`+`finalizeUnion`, vetting semantics untouched). Authoritative cache-skipped gate: build ok, 380 unit + 107 integration + 9 test-util pass, lint(maxWarnings:0), format:check clean; Q3 LSP errors disproven vs disk + fresh tsc. No product/version change (0.2.0)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-15 — Milestone v0.2.2 started
 
 ## Accumulated Context
 
@@ -109,9 +109,11 @@ archives under `.planning/milestones/`.
   Was: two Release-PR blockers surfaced by the 260714-sl6 dress-rehearsal PR #35 (pre-existing, accumulated
   across the milestone; latent because feature-branch pushes don't trigger CI + local checks were
   scoped/dismissed). FIX (config + one Prettier pass; NO product-logic change; NO version mutation):
+
   - **format-lint:** `.prettierignore`'d the whole `ng-cli-workspace` e2e fixture dir (committed `ng new`
     output, regenerated via REGENERATE.md -- preserve fidelity, not Prettier-owned) + `nx format:write` on the
     one real source `angular-cli-wiring.spec.ts` (whitespace only).
+
   - **fallow:** all config, per the existing .fallowrc precedent + CLAUDE.md's fallow note -- `entry` +5 for
     the config-only-reachable false positives (ng-cli global-setup.ts, index.drift.ts, both schematic re-exports,
     the aggregate-install-timings.mjs CLI tool); `ignoreDependencies` +2 (@angular-devkit/core + /schematics,
@@ -218,15 +220,19 @@ committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative 
 lint maxWarnings:0, build ok; `nx format:check --base origin/main` exit 0). Then ran ALL global-CLAUDE.md
 post-execute steps IN ORDER, each reached by its DEDICATED agent, because the prior gates (2026-07-12
 10:xx) predated gap-closure plan 24-06 (SUMMARY 16:36) and were therefore stale:
+
 - **verify** (gsd-verifier): 24-VERIFICATION.md refreshed -> passed 6/6 truths at code level. ONE
   `human_needed`: re-run the ACV-01 manual real-clone tarball gate against post-24-06 HEAD before the
   v0.2.1 release (LOW risk -- 24-06 rewrote the exact ng-add path ACV-01 exercises + the last manual UAT
   was 2026-07-11, one day before 24-06; the CI-authoritative ACV-02 e2e covers the identical `ng add`->
   `ng run` flow on the new code, green 4/4). See Operator Next Steps.
+
 - **secure** (gsd-security-auditor): 24-SECURITY.md refreshed -> SECURED, threats_open 0 (15/15 closed;
   4 new 24-06 threats all closed), no code edited, public-repo hygiene clean.
+
 - **validate** (gsd-nyquist-auditor): 24-VALIDATION.md refreshed -> nyquist_compliant, 0 gaps, 0 tests
   generated (24-06 shipped angular-cli-wiring.spec 18 + ng-add.spec 13; YAGNI, added nothing).
+
 - **extract-learnings** (inline) + **global-learnings bridge** (features.global_learnings:true):
   24-LEARNINGS.md refreshed to 11 decisions / 12 lessons / 7 patterns / 7 surprises covering 24-06;
   bridged 37 items into the cross-project store (16 created, 21 deduped); temp .planning/LEARNINGS.md
