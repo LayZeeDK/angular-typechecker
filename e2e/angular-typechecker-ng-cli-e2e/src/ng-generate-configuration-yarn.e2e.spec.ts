@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
@@ -13,13 +12,21 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, inject, it } from 'vitest';
 import {
+  APP_COMPONENT_ANCHOR,
+  APP_COMPONENT_CODE,
+  APP_COMPONENT_INJECTION,
+  APP_PROJECT,
+  APP_SPEC_CODE,
+  APP_SPEC_INJECTION,
   buildCleanEnv,
   commandSucceeds,
+  createNgRun,
   findWorkspaceRoot,
+  plant,
   removeTmpDir,
   sh,
+  typecheckTarget,
   writeVerdaccioNpmrc,
-  type RunResult,
 } from '@workspace/test-util';
 
 // CLI-YARN e2e: the ARBITER for the yarn-4 `ng generate
@@ -57,6 +64,11 @@ import {
 // verbatim crash output as the gate for the conditional vanilla refactor. The cell
 // locks the correct long-term behavior, not the crash.
 //
+// The planted per-leaf codes/anchors, the angular.json target read, the `ng run` runner,
+// and the anchor-planting helper are the shared ng-cli-e2e helpers
+// (@workspace/test-util); this cell keeps only the yarn-specific provisioning + its
+// single-project (no library) assertions incl. the chalk.blue arbiter check.
+//
 // FLAT layout, APP project `ng-cli-workspace` only: the crash is schematic-factory-load
 // (layout-independent) and `configuration` is inherently single-project. yarn 4 is
 // corepack-delivered, pinned to one literal; the cell skips cleanly where corepack yarn
@@ -64,23 +76,6 @@ import {
 // vitest.config.mts + the shared globalSetup (build + publish ONCE via Verdaccio).
 
 const YARN_VERSION = '4.17.0';
-
-// Rendered diagnostic codes (full 'TSxxxx' token, not a bare 4-digit substring, so an
-// unrelated 4-digit occurrence in a hash/offset cannot false-PASS). DISTINCT per leaf.
-const APP_COMPONENT_CODE = 'TS2322'; // app build leaf (tsconfig.app.json)
-const APP_SPEC_CODE = 'TS2345'; // app spec leaf (tsconfig.spec.json)
-
-const APP_PROJECT = 'ng-cli-workspace';
-
-// Clean committed anchors + broken replacements (JSON.stringify keeps them ASCII-only).
-const APP_COMPONENT_ANCHOR =
-  "protected readonly title = signal('ng-cli-workspace');";
-const APP_COMPONENT_INJECTION = `${APP_COMPONENT_ANCHOR}\n  protected readonly appTypeError: string = ${JSON.stringify(
-  123,
-)};`;
-const APP_SPEC_INJECTION = `\n// planted app spec-leaf error (single-project wiring proof)\nMath.abs(${JSON.stringify(
-  'planted-app-spec-arg',
-)});\n`;
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -99,75 +94,16 @@ const fixtureDir = join(
 // .yarnrc.yml, so the strip does not affect yarn's Verdaccio targeting.
 const env = buildCleanEnv({ stripAllNpmConfig: true });
 
+// yarn uses the `corepack yarn ng run` prefix (yarn resolves node_modules/.bin/ng
+// under nodeLinker: node-modules).
+const ngRun = createNgRun('corepack yarn');
+
 // Availability guard: yarn 4 is corepack-delivered, so probe ACTUAL provisioning of the
 // pinned version (a host with corepack but no network to fetch it skips cleanly).
 const corepackAvailable = commandSucceeds(
   `corepack yarn@${YARN_VERSION} --version`,
   { cwd: workspaceRoot, env },
 );
-
-interface TypecheckArchitectTarget {
-  builder?: string;
-  options?: { tsConfig?: unknown };
-}
-
-function typecheckTarget(
-  cwd: string,
-  project: string,
-): TypecheckArchitectTarget | undefined {
-  const angularJson = JSON.parse(
-    readFileSync(join(cwd, 'angular.json'), 'utf8'),
-  ) as {
-    projects?: Record<
-      string,
-      { architect?: Record<string, TypecheckArchitectTarget> }
-    >;
-  };
-
-  return angularJson.projects?.[project]?.architect?.['typecheck'];
-}
-
-// `corepack yarn ng run <target>` (yarn resolves the local node_modules/.bin/ng under
-// nodeLinker: node-modules). execSync throws on non-zero exit, so the catch captures a
-// failing typecheck's combined output + code (NEVER pipe ng through head/rg -- the tail's
-// exit code would mask ng's).
-function ngRun(
-  cwd: string,
-  target: string,
-  runEnv: NodeJS.ProcessEnv,
-): RunResult {
-  try {
-    const stdout = execSync(`corepack yarn ng run ${target}`, {
-      cwd,
-      env: runEnv,
-      encoding: 'utf8',
-      maxBuffer: 20 * 1024 * 1024,
-    });
-
-    return { stdout, code: 0 };
-  } catch (error) {
-    const execError = error as {
-      stdout?: string;
-      stderr?: string;
-      status?: number;
-    };
-
-    return {
-      stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-      code: execError.status ?? 1,
-    };
-  }
-}
-
-// Apply an anchor -> replacement injection, asserting the anchor was found (a scaffold
-// move fails LOUDLY instead of silently planting nothing).
-function plant(path: string, anchor: string, replacement: string): void {
-  const original = readFileSync(path, 'utf8');
-  const injected = original.replace(anchor, replacement);
-
-  expect(injected, `anchor not found in ${path}: ${anchor}`).not.toBe(original);
-  writeFileSync(path, injected);
-}
 
 // Make the tmp copy a real yarn 4 workspace at local Verdaccio (FLAT layout only --
 // `configuration` is single-project, so no `workspaces` field is needed).

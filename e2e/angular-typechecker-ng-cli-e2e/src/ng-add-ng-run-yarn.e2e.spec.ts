@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
@@ -13,13 +12,17 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, inject, it } from 'vitest';
 import {
+  APP_PROJECT,
+  LIB_PROJECT,
+  assertPerProjectScoping,
   buildCleanEnv,
   commandSucceeds,
+  createNgRun,
   findWorkspaceRoot,
   removeTmpDir,
   sh,
+  typecheckTarget,
   writeVerdaccioNpmrc,
-  type RunResult,
 } from '@workspace/test-util';
 
 // CLI-YARN e2e: the Angular CLI `ng add <pkg>` (install + AUTO-WIRE) +
@@ -50,33 +53,16 @@ import {
 // no wire (npm/pnpm hoist nx's deps so the same probe succeeded). The nx-free execution path
 // removes that chain entirely, so `ng add` auto-wires the first run on every package manager.
 //
+// The planted per-leaf codes/anchors, the angular.json target read, the `ng run` runner,
+// and the per-project scoping assertions are the shared ng-cli-e2e helpers
+// (@workspace/test-util); this spec keeps only the yarn-specific provisioning.
+//
 // yarn 4 is delivered via corepack, pinned to one literal; the spec skips cleanly where
 // corepack yarn is unavailable. Runs SEQUENTIALLY on the main tree under the serialized
 // vitest.config.mts + the shared globalSetup (build + publish ONCE); the CI e2e job stays
 // --parallel=1 (GUARD-01b).
 
 const YARN_VERSION = '4.17.0';
-
-// Rendered diagnostic codes (full 'TSxxxx' token, not a bare 4-digit substring, so an
-// unrelated 4-digit occurrence in a hash/offset cannot false-PASS). DISTINCT per leaf.
-const APP_COMPONENT_CODE = 'TS2322'; // app build leaf (tsconfig.app.json)
-const APP_SPEC_CODE = 'TS2345'; // app spec leaf (tsconfig.spec.json)
-const LIB_COMPONENT_CODE = 'TS2554'; // lib build leaf (projects/my-lib/tsconfig.lib.json)
-
-const APP_PROJECT = 'ng-cli-workspace';
-const LIB_PROJECT = 'my-lib';
-
-// Clean committed anchors + broken replacements (JSON.stringify keeps them ASCII-only).
-const APP_COMPONENT_ANCHOR =
-  "protected readonly title = signal('ng-cli-workspace');";
-const APP_COMPONENT_INJECTION = `${APP_COMPONENT_ANCHOR}\n  protected readonly appTypeError: string = ${JSON.stringify(
-  123,
-)};`;
-const APP_SPEC_INJECTION = `\n// planted app spec-leaf error (per-project scoping proof)\nMath.abs(${JSON.stringify(
-  'planted-app-spec-arg',
-)});\n`;
-const LIB_COMPONENT_ANCHOR = 'export class MyLib {';
-const LIB_COMPONENT_INJECTION = `export class MyLib {\n  protected readonly libTypeError = parseInt();`;
 
 const workspaceRoot = findWorkspaceRoot(
   dirname(fileURLToPath(import.meta.url)),
@@ -95,75 +81,16 @@ const fixtureDir = join(
 // .yarnrc.yml, so the strip does not affect yarn's Verdaccio targeting.
 const env = buildCleanEnv({ stripAllNpmConfig: true });
 
+// yarn uses the `corepack yarn ng run` prefix (yarn resolves node_modules/.bin/ng
+// under nodeLinker: node-modules).
+const ngRun = createNgRun('corepack yarn');
+
 // Availability guard: yarn 4 is corepack-delivered, so probe ACTUAL provisioning of the
 // pinned version (a host with corepack but no network to fetch it skips cleanly).
 const corepackAvailable = commandSucceeds(
   `corepack yarn@${YARN_VERSION} --version`,
   { cwd: workspaceRoot, env },
 );
-
-interface TypecheckArchitectTarget {
-  builder?: string;
-  options?: { tsConfig?: unknown };
-}
-
-function typecheckTarget(
-  cwd: string,
-  project: string,
-): TypecheckArchitectTarget | undefined {
-  const angularJson = JSON.parse(
-    readFileSync(join(cwd, 'angular.json'), 'utf8'),
-  ) as {
-    projects?: Record<
-      string,
-      { architect?: Record<string, TypecheckArchitectTarget> }
-    >;
-  };
-
-  return angularJson.projects?.[project]?.architect?.['typecheck'];
-}
-
-// `corepack yarn ng run <target>` (yarn resolves the local node_modules/.bin/ng under
-// nodeLinker: node-modules). execSync throws on non-zero exit, so the catch captures a
-// failing typecheck's combined output + code (NEVER pipe ng through head/rg -- the tail's
-// exit code would mask ng's).
-function ngRun(
-  cwd: string,
-  target: string,
-  runEnv: NodeJS.ProcessEnv,
-): RunResult {
-  try {
-    const stdout = execSync(`corepack yarn ng run ${target}`, {
-      cwd,
-      env: runEnv,
-      encoding: 'utf8',
-      maxBuffer: 20 * 1024 * 1024,
-    });
-
-    return { stdout, code: 0 };
-  } catch (error) {
-    const execError = error as {
-      stdout?: string;
-      stderr?: string;
-      status?: number;
-    };
-
-    return {
-      stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-      code: execError.status ?? 1,
-    };
-  }
-}
-
-// Apply an anchor -> replacement injection, asserting the anchor was found (a scaffold
-// move fails LOUDLY instead of silently planting nothing).
-function plant(path: string, anchor: string, replacement: string): void {
-  const original = readFileSync(path, 'utf8');
-  const injected = original.replace(anchor, replacement);
-
-  expect(injected, `anchor not found in ${path}: ${anchor}`).not.toBe(original);
-  writeFileSync(path, injected);
-}
 
 // Make the tmp copy a real yarn 4 workspace at local Verdaccio. `layout: 'workspace'`
 // adds the root `workspaces: ['projects/*']` (the library becomes a workspace member).
@@ -300,42 +227,8 @@ describe('CLI-YARN: `ng add` + `ng run :typecheck` on a real yarn 4 workspace', 
         const libClean = ngRun(tmp, `${LIB_PROJECT}:typecheck`, npmEnv);
         expect(libClean.code, libClean.stdout).toBe(0);
 
-        // Plant DISTINCT per-leaf errors and prove per-project scoping under real yarn:
-        // the app target catches its own app-component (TS2322) + app-spec (TS2345)
-        // leaves and NOT the library's leaf; the library target catches only TS2554.
-        plant(
-          join(tmp, 'src', 'app', 'app.ts'),
-          APP_COMPONENT_ANCHOR,
-          APP_COMPONENT_INJECTION,
-        );
-        const appSpecPath = join(tmp, 'src', 'app', 'app.spec.ts');
-        writeFileSync(
-          appSpecPath,
-          `${readFileSync(appSpecPath, 'utf8')}${APP_SPEC_INJECTION}`,
-        );
-        plant(
-          join(tmp, 'projects', 'my-lib', 'src', 'lib', 'my-lib.ts'),
-          LIB_COMPONENT_ANCHOR,
-          LIB_COMPONENT_INJECTION,
-        );
-
-        const appBad = ngRun(tmp, `${APP_PROJECT}:typecheck`, npmEnv);
-        expect(appBad.code, appBad.stdout).not.toBe(0);
-        expect(appBad.stdout).toContain(APP_COMPONENT_CODE);
-        expect(appBad.stdout).toContain(APP_SPEC_CODE);
-        expect(appBad.stdout).not.toContain(LIB_COMPONENT_CODE);
-        // The CJS executor's dynamic import() of the ESM compiler-cli survived a real
-        // yarn install + `ng run`; the non-zero exit is a real diagnostic, not a crash.
-        expect(appBad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
-        expect(appBad.stdout).not.toContain('infrastructure error');
-
-        const libBad = ngRun(tmp, `${LIB_PROJECT}:typecheck`, npmEnv);
-        expect(libBad.code, libBad.stdout).not.toBe(0);
-        expect(libBad.stdout).toContain(LIB_COMPONENT_CODE);
-        expect(libBad.stdout).not.toContain(APP_COMPONENT_CODE);
-        expect(libBad.stdout).not.toContain(APP_SPEC_CODE);
-        expect(libBad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
-        expect(libBad.stdout).not.toContain('infrastructure error');
+        // Plant DISTINCT per-leaf errors and prove per-project scoping under real yarn.
+        assertPerProjectScoping({ tmp, ngRun, env: npmEnv });
       } finally {
         removeTmpDir(tmp);
       }
