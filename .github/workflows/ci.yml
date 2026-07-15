@@ -138,66 +138,58 @@ jobs:
       # unit regression fails first.
       - run: npx nx run-many -t integration
 
-  # Build-once job (Lever A, quick-260715-050). Builds angular-typechecker a
-  # SINGLE time and hands its output to every e2e matrix cell as an nx cache hit,
-  # so the split per-project e2e matrix never rebuilds the plugin per cell. The
-  # `discover` step emits the e2e project list from
-  # `nx show projects --with-target e2e --json` into the job output, feeding the
-  # e2e job's DYNAMIC matrix (a new e2e project is auto-covered -- no static list
-  # to drift). The uploaded artifact carries `dist` + `.nx/cache`;
-  # `include-hidden-files: true` is LOAD-BEARING because `.nx/cache` is a dot-dir
-  # that upload-artifact excludes by default. Path-gated (D-08), same NEGATIVE
-  # if: form as the heavy jobs so it stays in the `act -n` plan under the empty
-  # filter output. Read-only: inherits the top-level `contents: read` -- artifact
-  # upload authenticates via the runtime token, not a permissions block.
-  build:
+  # e2e project discovery (Lever A, quick-260715-050). Emits the e2e project list
+  # into `outputs.projects`, feeding the `e2e` job's DYNAMIC matrix so a NEW e2e
+  # project is auto-covered with NO static list to drift. Deliberately LEAN: a
+  # pure `node` fs-read of `e2e/*/project.json` (tools/ci/list-e2e-projects.mjs),
+  # NOT `npm ci` + `nx show projects` -- discovery needs no install or build, so
+  # this is a ~seconds checkout + node step in front of the matrix. The plugin is
+  # (re)built PER e2e cell via each e2e project's own `e2e`-target
+  # dependsOn:angular-typechecker:build (~2-4s -- a tiny @nx/js:tsc lib): a
+  # cross-runner build-artifact handoff was MEASURED to be a no-op (nx rejects a
+  # foreign `.nx/cache` as `unknown-local-cache`) and was dropped. Path-gated
+  # (D-08), same NEGATIVE if: form as the heavy jobs so it stays in the `act -n`
+  # plan under the empty filter output. Read-only: inherits `contents: read`.
+  discover:
     needs: changes
     if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
-    env:
-      NX_DAEMON: false
     outputs:
-      projects: ${{ steps.discover.outputs.projects }}
+      projects: ${{ steps.list.outputs.projects }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npx nx build angular-typechecker
-      - id: discover
-        run: echo "projects=$(npx nx show projects --with-target e2e --json)" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: angular-typechecker-build
-          # LOAD-BEARING: `.nx/cache` is a dot-dir excluded by default; without
-          # this the cache-hit handoff to the e2e cells silently breaks.
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            dist
-            .nx/cache
+      # Pure fs read via the runner's ambient node (no setup-node/npm ci needed --
+      # the script uses only node:fs/path/url). GUARD-01b asserts this CLI output
+      # equals GUARD-01's enumeration, so the matrix cannot drift from the real
+      # e2e projects. The command substitution is a SEPARATE assignment (NOT
+      # `echo "$(...)"`) so a script failure trips `set -e` and fails the job
+      # LOUD -- inside an `echo` argument a failed substitution writes an empty
+      # `projects=` and exits 0, which would silently engage the e2e job's
+      # hardcoded fallback list in real CI.
+      - id: list
+        run: |
+          projects=$(node tools/ci/list-e2e-projects.mjs)
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
 
   # Heavy tarball-install gate, split into a per-project matrix (Lever A,
   # quick-260715-050), Linux-only (RD-03), Node 24 (matching release.yml). One
   # matrix cell per nx e2e project, so the CPU-bound typecheck + install work
   # parallelises across runners instead of running serially in a single job. The
-  # matrix is DYNAMIC: `fromJSON(needs.build.outputs.projects ...)` consumes the
-  # `build` job's `nx show projects --with-target e2e --json` output, so a NEW
-  # e2e project is auto-covered with no static list to drift (GUARD-01b asserts
-  # this wiring). The `|| '[...]'` fallback lists the four known projects ONLY
-  # for `act -n`: its empty build output would make bare `fromJSON('')` error and
-  # drop `ci/e2e` from the plan; real CI always uses the build-job output.
+  # matrix is DYNAMIC: `fromJSON(needs.discover.outputs.projects ...)` consumes the
+  # `discover` job's `tools/ci/list-e2e-projects.mjs` output, so a NEW e2e project
+  # is auto-covered with no static list to drift (GUARD-01b asserts this wiring).
+  # The `|| '[...]'` fallback lists the four known projects ONLY for `act -n`: its
+  # empty discover output would make bare `fromJSON('')` error and drop `ci/e2e`
+  # from the plan; real CI always uses the discover-job output.
   #
-  # Each cell restores the `build` job's `dist` + `.nx/cache` artifact, so
-  # `angular-typechecker:build` replays as an nx CACHE HIT (no per-cell rebuild);
-  # cells therefore MUST NOT pass `--skip-nx-cache`. Each e2e project's own
-  # `e2e`-target dependsOn:angular-typechecker:build (GUARD-01e) is the
-  # correctness backstop -- on a cache miss it rebuilds rather than ENOENT.
+  # Each cell (re)builds `angular-typechecker` via its own `e2e`-target
+  # dependsOn:angular-typechecker:build (GUARD-01e) -- ~2-4s for this small
+  # @nx/js:tsc lib. A cross-runner build-artifact handoff was MEASURED to be a
+  # no-op (nx rejects a foreign `.nx/cache` as `unknown-local-cache`), so cells
+  # rebuild: cheap, and it keeps the LOCAL full-tier flow + GUARD-01e intact. On a
+  # fresh runner the dependsOn is what prevents an ENOENT on the built dist.
   #
   # install-e2e + cache-e2e stay `parallelism: false` and every packing spec
   # keeps its own `--pack-destination`. Those isolation invariants are no longer
@@ -208,13 +200,13 @@ jobs:
   # Path-gated (D-08), same NEGATIVE if: form as `test` -- skips a planning/docs-
   # only PR yet stays in the `act -n` plan under the empty filter output.
   e2e:
-    needs: [changes, build]
+    needs: [changes, discover]
     if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.build.outputs.projects || '["angular-typechecker-cache-e2e","angular-typechecker-install-e2e","angular-typechecker-matrix-e2e","angular-typechecker-ng-cli-e2e"]') }}
+        project: ${{ fromJSON(needs.discover.outputs.projects || '["angular-typechecker-cache-e2e","angular-typechecker-install-e2e","angular-typechecker-matrix-e2e","angular-typechecker-ng-cli-e2e"]') }}
     env:
       NX_DAEMON: false
     steps:
@@ -242,11 +234,6 @@ jobs:
         with:
           version: 11.9.0
       - run: npm ci
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          # No `path` -> restores `dist/` + `.nx/cache/` at the workspace root, so
-          # `angular-typechecker:build` replays as an nx cache HIT for this cell.
-          name: angular-typechecker-build
       # Static type-check gate for THIS cell's e2e SOURCES, run BEFORE the
       # multi-minute tarball install so a type error in an e2e spec fails fast
       # (~15s) instead of after the install. SCOPED to this cell's single project
@@ -256,11 +243,10 @@ jobs:
       # GUARD-01c asserts this line runs `run-many -t typecheck`.
       - run: npx nx run-many -t typecheck -p ${{ matrix.project }}
       # Run the `e2e` target for THIS cell's project only (`-p ${{ matrix.project }}`).
-      # The plugin build is a cache HIT off the restored `.nx/cache` + `dist`
-      # artifact, so cells MUST NOT pass `--skip-nx-cache`; each e2e project's own
-      # `e2e`-target dependsOn:angular-typechecker:build (GUARD-01e) rebuilds on a
-      # cache miss as the correctness backstop. GUARD-01/01b assert this invocation
-      # and the dynamic matrix wiring.
+      # The plugin is (re)built for this cell via the e2e target's
+      # dependsOn:angular-typechecker:build (GUARD-01e), ~2-4s -- there is NO
+      # build-artifact handoff (a foreign `.nx/cache` restore is a no-op). GUARD-01/01b
+      # assert this invocation and the dynamic matrix wiring.
       - run: npx nx run-many -t e2e -p ${{ matrix.project }}
 
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
@@ -418,7 +404,7 @@ jobs:
     needs:
       [
         changes,
-        build,
+        discover,
         test,
         e2e,
         fallow,

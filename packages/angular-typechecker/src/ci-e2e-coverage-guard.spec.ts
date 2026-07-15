@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
 // GUARD-01 (CI e2e-coverage self-audit). The CI `e2e` job runs as a per-project
-// matrix whose project list is discovered by the `build` job via
-// `nx show projects --with-target e2e` and consumed per cell as
+// matrix whose project list is discovered by the `discover` job via
+// `tools/ci/list-e2e-projects.mjs` and consumed per cell as
 // `run-many -t e2e -p ${{ matrix.project }}`. That makes `e2e` coverage depend on
 // TWO invariants that both fail SILENTLY:
 //   (1) every `e2e/*` project must define an `e2e` target -- a project that drops
@@ -227,17 +228,19 @@ function e2eTargetParallelism(project: string): boolean | undefined {
 }
 
 // GUARD-01b (e2e split-matrix wiring + local-run isolation guard). CI runs the
-// e2e tier as a per-project matrix (quick-260715-050): a separate `build` job
-// discovers the e2e projects via `nx show projects --with-target e2e --json` and
-// the `e2e` job derives its matrix from `fromJSON(needs.build.outputs.projects)`,
-// so one cell runs per e2e project and a NEW e2e project is auto-covered. This
-// guard asserts that dynamic wiring stays intact (a static list here would
-// silently drop a newly added tier) AND that the isolation invariants the LOCAL
-// full-tier run (`nx run-many -t e2e --parallel=2`) still relies on stay in place:
-// install-e2e + cache-e2e parallelism:false, per-spec --pack-destination, and no
-// in-spec rebuild of dist. Each assertion is fail-loud + located; all are cheap
-// READ-ONLY filesystem/text checks that NEVER edit a file. The ci.yml scans use
-// the YAML `#` comment marker; the TS-source scans use the `//`/`*` marker via
+// e2e tier as a per-project matrix (quick-260715-050): a separate `discover` job
+// enumerates the e2e projects via `tools/ci/list-e2e-projects.mjs` and the `e2e`
+// job derives its matrix from `fromJSON(needs.discover.outputs.projects)`, so one
+// cell runs per e2e project and a NEW e2e project is auto-covered. This guard
+// asserts that dynamic wiring stays intact (a static list here would silently
+// drop a newly added tier), that the discovery script's CLI output stays in sync
+// with GUARD-01's enumeration (so the matrix cannot drift from the real e2e
+// projects), AND that the isolation invariants the LOCAL full-tier run
+// (`nx run-many -t e2e --parallel=2`) still relies on stay in place: install-e2e +
+// cache-e2e parallelism:false, per-spec --pack-destination, and no in-spec rebuild
+// of dist. Each assertion is fail-loud + located; the text checks are cheap
+// READ-ONLY filesystem/text reads that NEVER edit a file. The ci.yml scans use the
+// YAML `#` comment marker; the TS-source scans use the `//`/`*` marker via
 // isTsComment.
 describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the local-run resources isolated', () => {
   const ci = readFileSync(
@@ -245,19 +248,21 @@ describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the
     'utf8',
   );
 
-  it('the e2e job uses a dynamic fromJSON matrix over nx show projects --with-target e2e', () => {
+  it('the e2e job uses a dynamic fromJSON matrix fed by the discover job', () => {
     const e2eBlock = extractE2eJobLines(ci).join('\n');
 
     expect(
       // Matrix line only (this block's comments also mention the wiring).
-      /^(?!\s*#).*fromJSON\(\s*needs\.build\.outputs\.projects/m.test(e2eBlock),
-      'GUARD-01b: the `e2e` job must derive its matrix from `fromJSON(needs.build.outputs.projects ...)`. This dynamic wiring is what auto-covers any NEW e2e project -- a static project list here would silently drop a newly added tier from CI.',
+      /^(?!\s*#).*fromJSON\(\s*needs\.discover\.outputs\.projects/m.test(
+        e2eBlock,
+      ),
+      'GUARD-01b: the `e2e` job must derive its matrix from `fromJSON(needs.discover.outputs.projects ...)`. This dynamic wiring is what auto-covers any NEW e2e project -- a static project list here would silently drop a newly added tier from CI.',
     ).toBe(true);
 
     expect(
-      // The `build` job's discovery command lives in the full ci string.
-      /^(?!\s*#).*nx show projects --with-target e2e/m.test(ci),
-      'GUARD-01b: the `build` job must discover e2e projects via `nx show projects --with-target e2e --json` (the source of needs.build.outputs.projects). Without it the dynamic matrix has no upstream and CI e2e coverage silently drops to the static fallback list.',
+      // The `discover` job's enumeration command lives in the full ci string.
+      /^(?!\s*#).*tools\/ci\/list-e2e-projects\.mjs/m.test(ci),
+      'GUARD-01b: the `discover` job must enumerate e2e projects via `node tools/ci/list-e2e-projects.mjs` (the source of needs.discover.outputs.projects). Without it the dynamic matrix has no upstream and CI e2e coverage silently drops to the static fallback list.',
     ).toBe(true);
 
     expect(
@@ -265,6 +270,23 @@ describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the
       /^(?!\s*#).*\brun-many\s+-t\s+e2e\b/m.test(e2eBlock),
       'GUARD-01b: each e2e matrix cell must still RUN `nx run-many -t e2e` -- a dropped invocation would silently disable the tarball-install tier (run-many with zero matching projects exits 0).',
     ).toBe(true);
+  });
+
+  it('the discover script enumerates EXACTLY the e2e/* projects (matrix cannot drift)', () => {
+    // Run the real CLI the `discover` job runs and assert its JSON output equals
+    // GUARD-01's independent enumeration. This catches a discovery script that is
+    // edited to hardcode/omit a project -- which would silently mis-cover the CI
+    // matrix even while the ci.yml wiring regex above still passes.
+    const cliOutput = execSync('node tools/ci/list-e2e-projects.mjs', {
+      cwd: workspaceRoot,
+      encoding: 'utf8',
+    });
+    const discovered = JSON.parse(cliOutput) as string[];
+
+    expect(
+      discovered,
+      'GUARD-01b: `tools/ci/list-e2e-projects.mjs` output must equal GUARD-01 enumerateE2eProjects() -- the CI matrix must cover exactly the e2e/* projects, no more, no less.',
+    ).toEqual(enumerateE2eProjects(workspaceRoot));
   });
 
   it('every e2e spec that packs uses --pack-destination (no shared dist tarball path)', () => {
@@ -376,8 +398,8 @@ describe('GUARD-01c: every e2e project defines typecheck and the ci.yml e2e job 
 
 // GUARD-01d (e2e tag-membership guard). `type:e2e` is the project-taxonomy marker
 // for the e2e tier. The CI `e2e` matrix no longer SELECTS by it (the split scopes
-// each cell with `-p ${{ matrix.project }}`, and the project list is discovered via
-// `nx show projects --with-target e2e`, not the tag). But the `type:e2e` tag set
+// each cell with `-p ${{ matrix.project }}`, and the project list is enumerated by
+// `tools/ci/list-e2e-projects.mjs`, not the tag). But the `type:e2e` tag set
 // must stay EXACTLY the e2e/* projects so the taxonomy remains a truthful single
 // source for any tag-based selection or tooling: (axis 1) a new e2e project that
 // forgets the tag drifts out of the e2e taxonomy, and (axis 2) a stray `type:e2e`
