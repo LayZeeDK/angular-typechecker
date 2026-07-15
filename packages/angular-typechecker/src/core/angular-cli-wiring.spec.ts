@@ -120,7 +120,7 @@ describe('resolveTsConfigLeaves', () => {
     ).toEqual(['projects/lib/tsconfig.lib.json']);
   });
 
-  it('throws a located error when no leaf exists', () => {
+  it('throws a located error when the build leaf is missing', () => {
     expect(() =>
       resolveTsConfigLeaves(
         'projects/x',
@@ -130,7 +130,24 @@ describe('resolveTsConfigLeaves', () => {
         existsIn([]),
       ),
     ).toThrow(
-      /Could not resolve a tsconfig for project "x": no ".*tsconfig.lib.json" and no ".*tsconfig.spec.json". Pass --tsConfig explicitly./,
+      /Could not resolve a build tsconfig for project "x": no ".*tsconfig.lib.json". Pass --tsConfig explicitly./,
+    );
+  });
+
+  it('throws (never wires spec-only) when the build leaf is missing but the spec leaf exists', () => {
+    // A build leaf at a non-conventional path plus a conventional tsconfig.spec.json
+    // must NOT resolve to a spec-only target that silently under-checks the app/lib
+    // program (charter: never wire spec-only, never silently drop the build leaf).
+    expect(() =>
+      resolveTsConfigLeaves(
+        'projects/lib',
+        'library',
+        undefined,
+        'lib',
+        existsIn(['projects/lib/tsconfig.spec.json']),
+      ),
+    ).toThrow(
+      /Could not resolve a build tsconfig for project "lib": no ".*tsconfig.lib.json". Pass --tsConfig explicitly./,
     );
   });
 

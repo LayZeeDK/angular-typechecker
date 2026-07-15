@@ -142,16 +142,24 @@ export function resolveTsConfigLeaves(
       : posix.join(root, 'tsconfig.lib.json');
   const specLeaf = posix.join(root, 'tsconfig.spec.json');
 
-  const leaves = [buildLeaf, specLeaf].filter((leaf) => exists(leaf));
-
-  if (leaves.length === 0) {
+  // The BUILD leaf (tsconfig.app.json / tsconfig.lib.json) declares the project's
+  // application/library program -- its components and templates (the NG8xxx extended
+  // diagnostics). It is REQUIRED: a target wired from ONLY the spec leaf would
+  // silently under-check that program and ship a green false PASS -- the exact
+  // "type-checker that lies" this tool exists to prevent (charter: NEVER wire
+  // spec-only, NEVER silently drop the build leaf). So a project whose conventional
+  // build leaf is absent fails LOUDLY here (routing to --tsConfig), EVEN WHEN a
+  // tsconfig.spec.json exists -- otherwise a build leaf at a non-conventional path
+  // plus a conventional spec leaf would resolve to a spec-only `[specLeaf]`. The spec
+  // leaf is optional and appended only when present.
+  if (!exists(buildLeaf)) {
     throw new Error(
-      `Could not resolve a tsconfig for project "${project}": no ` +
-        `"${buildLeaf}" and no "${specLeaf}". Pass --tsConfig explicitly.`,
+      `Could not resolve a build tsconfig for project "${project}": no ` +
+        `"${buildLeaf}". Pass --tsConfig explicitly.`,
     );
   }
 
-  return leaves;
+  return [buildLeaf, specLeaf].filter((leaf) => exists(leaf));
 }
 
 /**

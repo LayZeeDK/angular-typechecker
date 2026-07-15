@@ -248,7 +248,29 @@ describe('configuration generator (Angular CLI write-fork)', () => {
 
     await expect(
       configurationGenerator(tree, { project: 'empty-lib' }),
-    ).rejects.toThrow(/Could not resolve a tsconfig for project "empty-lib"/);
+    ).rejects.toThrow(
+      /Could not resolve a build tsconfig for project "empty-lib"/,
+    );
+  });
+
+  it('throws (never wires spec-only) when only the spec leaf exists (ACS-01)', async () => {
+    writeAngularJson(tree, {
+      'spec-only-lib': {
+        projectType: 'library',
+        root: 'projects/spec-only-lib',
+      },
+    });
+    // Only the spec leaf exists -- the build leaf (tsconfig.lib.json) is absent. The
+    // fork must fail loudly, never wire a spec-only target that silently under-checks
+    // the library program.
+    writeLeaf(tree, 'projects/spec-only-lib/tsconfig.spec.json');
+    assertCliSubstrate(tree);
+
+    await expect(
+      configurationGenerator(tree, { project: 'spec-only-lib' }),
+    ).rejects.toThrow(
+      /Could not resolve a build tsconfig for project "spec-only-lib": no ".*tsconfig.lib.json"/,
+    );
   });
 });
 
