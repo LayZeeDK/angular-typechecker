@@ -13,7 +13,7 @@
 // checkout + `node` read (vs ~30s for `npm ci` + `nx show projects`). GUARD-01b
 // asserts this CLI output equals GUARD-01's enumeration, so the CI matrix cannot
 // silently diverge from the actual e2e projects.
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,11 +30,19 @@ export function listE2eProjects(workspaceRoot) {
       continue;
     }
 
-    const projectJson = JSON.parse(
-      readFileSync(join(e2eRoot, entry.name, 'project.json'), 'utf8'),
-    );
+    const projectJsonPath = join(e2eRoot, entry.name, 'project.json');
 
-    if (projectJson.targets?.e2e) {
+    // A future non-project e2e/ subdir (a fixtures/scratch/tooling folder) has
+    // no project.json -- skip it so the CI discover job does not ENOENT-crash.
+    if (!existsSync(projectJsonPath)) {
+      continue;
+    }
+
+    const projectJson = JSON.parse(readFileSync(projectJsonPath, 'utf8'));
+
+    // Push only a TRUTHY name that also defines an `e2e` target. A missing/empty
+    // name would inject a null/undefined cell into the CI matrix.
+    if (projectJson.name && projectJson.targets?.e2e) {
       names.push(projectJson.name);
     }
   }

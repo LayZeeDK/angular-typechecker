@@ -1,5 +1,13 @@
-import { execSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { execFileSync, execSync } from 'node:child_process';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -537,5 +545,57 @@ describe('GUARD-01e: every e2e project builds angular-typechecker before its e2e
       nxJson.targetDefaults?.['e2e'],
       'GUARD-01e: nx.json `targetDefaults.e2e` must stay removed -- a name-keyed `e2e` default is inert for @nx/vitest:test-backed targets (readTargetDefaultsForTarget returns the executor-keyed default and never reads the name key), so re-adding it silently drops the build edge. Put the build dependsOn directly on each e2e target instead.',
     ).toBeUndefined();
+  });
+});
+
+// B3 (discovery robustness). `tools/ci/list-e2e-projects.mjs` feeds the CI
+// `discover` job. Two future edge cases must not break it: a stray e2e/ subdir
+// with NO project.json (a fixtures/scratch/tooling folder) must not ENOENT-crash
+// the discovery, and a project.json with a falsy `name` must not inject a
+// null/undefined cell into the dynamic matrix. This exercises the REAL module
+// against a synthetic temp workspace root so the two skips are proven directly
+// (GUARD-01b already proves the CLI output equals the enumeration on the real
+// tree).
+describe('listE2eProjects: tolerates a stray subdir + a falsy project name (B3)', () => {
+  it('skips a subdir without project.json and an entry with a falsy name, returning only the valid project', () => {
+    // Exercise the REAL discovery module through its CLI entry (the same path CI
+    // runs): the CLI calls `listE2eProjects(process.cwd())`, so running it with
+    // `cwd` = the synthetic temp root proves `listE2eProjects(tempRoot)` directly.
+    // (A `file://`/relative dynamic `import()` of the .mjs is not viable here --
+    // vitest's module runner cannot resolve a file:// URL outside this project's
+    // root, and @nx/enforce-module-boundaries bans a literal cross-project path.
+    // execFileSync mirrors GUARD-01b's existing CLI-invocation precedent.)
+    const script = join(workspaceRoot, 'tools', 'ci', 'list-e2e-projects.mjs');
+    const tempRoot = mkdtempSync(join(tmpdir(), 'list-e2e-projects-'));
+
+    try {
+      const e2eDir = join(tempRoot, 'e2e');
+
+      // (a) a valid e2e project: a project.json with a truthy name + an `e2e` target.
+      mkdirSync(join(e2eDir, 'valid-e2e'), { recursive: true });
+      writeFileSync(
+        join(e2eDir, 'valid-e2e', 'project.json'),
+        JSON.stringify({ name: 'valid-e2e', targets: { e2e: {} } }),
+      );
+
+      // (b) a stray dir with NO project.json (the ENOENT case).
+      mkdirSync(join(e2eDir, 'stray-no-project-json'), { recursive: true });
+
+      // (c) a project.json with no `name` and no `e2e` target (the falsy-name case).
+      mkdirSync(join(e2eDir, 'nameless'), { recursive: true });
+      writeFileSync(
+        join(e2eDir, 'nameless', 'project.json'),
+        JSON.stringify({ targets: {} }),
+      );
+
+      const output = execFileSync('node', [script], {
+        cwd: tempRoot,
+        encoding: 'utf8',
+      });
+
+      expect(JSON.parse(output) as string[]).toEqual(['valid-e2e']);
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
   });
 });
