@@ -127,7 +127,16 @@ function recordInstallTiming(record: InstallTimingRecord): void {
     process.env['ATC_TIMING_OUT'] ??
     join(tmpdir(), 'atc-install-timings.jsonl');
 
-  appendFileSync(outPath, `${JSON.stringify(record)}\n`);
+  try {
+    appendFileSync(outPath, `${JSON.stringify(record)}\n`);
+  } catch {
+    // Best-effort diagnostics. A failed timing write (e.g. ATC_TIMING_OUT points at a
+    // path whose parent directory does not exist -> ENOENT) must NEVER invert a
+    // SUCCEEDED command into a throw, nor replace a real failure's captured
+    // stdout/stderr with a bare fs error -- both would defeat the very reason sh()
+    // exists. Losing one opt-in timing line is acceptable; corrupting the command
+    // result is not. Swallow it (mirrors removeTmpDir's best-effort teardown).
+  }
 }
 
 /**

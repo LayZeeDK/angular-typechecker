@@ -75,4 +75,32 @@ describe('sh install timing (ATC_TIME_INSTALLS)', () => {
     expect(last.ok).toBe(false);
     expect(last.cmd).toBe(FAILING_COMMAND);
   });
+
+  it('returns stdout for a successful command even when the timing write fails', () => {
+    process.env['ATC_TIME_INSTALLS'] = '1';
+    // A path whose parent directory does not exist -> appendFileSync throws ENOENT.
+    // The best-effort write must swallow it, not invert the succeeded command.
+    process.env['ATC_TIMING_OUT'] = join(
+      workDir,
+      'missing-dir',
+      'timings.jsonl',
+    );
+
+    const stdout = sh(OK_COMMAND, { cwd: workDir, env: process.env });
+
+    expect(stdout).toContain('v');
+  });
+
+  it('still throws the informative command error (not a bare fs error) when the timing write fails on a failing command', () => {
+    process.env['ATC_TIME_INSTALLS'] = '1';
+    process.env['ATC_TIMING_OUT'] = join(
+      workDir,
+      'missing-dir',
+      'timings.jsonl',
+    );
+
+    expect(() =>
+      sh(FAILING_COMMAND, { cwd: workDir, env: process.env }),
+    ).toThrow(/node -e/);
+  });
 });
