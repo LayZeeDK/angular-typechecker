@@ -7,10 +7,14 @@ gate: manual (D-02)
 substrate: on-stack Angular 22 ONLY (off-stack Angular 21 DROPPED)
 created: 2026-07-11
 executed: 2026-07-11 (autonomous per HANDOFF)
+reverified: 2026-07-15 (post-24-06 HEAD; quick task 260715-ig5) -- BOTH gates PASS again on the
+  nx-free vanilla ng-add. See "## Re-run 2026-07-15 (post-24-06)" below + 260715-ig5-SUMMARY.md /
+  260715-ig5-VERIFICATION.md.
 outcome: gate #1 (ngx-leaflet) PASS; gate #2 (realworld-angular) initially FAILED -- found a
   real generator defect (silent app-build-leaf drop on Angular-CLI-that-is-also-a-pnpm-workspace);
   DEFECT FIXED + regression-tested + gate #2 RE-VERIFIED on the real clone with the fixed build:
   PASS. All three tests now pass. Full evidence + root cause + fix in 24-HUMAN-UAT.md.
+  RE-VERIFIED 2026-07-15 against post-24-06 HEAD (see re-run section).
 ---
 
 ## About this gate
@@ -51,9 +55,35 @@ NOT `D:/...` -- Git Bash mis-parses the `D:` drive letter as a remote host
 Distinct codes let each `ng run <project>:typecheck` prove it caught EXACTLY its own leaves and
 no other project's leaf leaked in.
 
+## Re-run 2026-07-15 (post-24-06)
+
+Re-executed against post-24-06 HEAD (the nx-free vanilla `ng-add`) as quick task **260715-ig5**,
+to close the LOW-risk pre-release confirmation the Phase-24 verifier flagged (24-06 rewrote the
+exact `ng add` code path AFTER the 2026-07-11 UAT). **Both gates PASS.**
+
+- **Fresh tarball:** `nx build` + `npm pack` of the built dist -> `angular-typechecker-0.2.0.tgz`;
+  the packed `src/schematics/ng-add/schematic.js` is nx-free (24-06 delta confirmed in the SHIPPED
+  artifact); compiled `.js` + `builders.json`/`collection.json`/`executors.json`/`generators.json`,
+  0 raw `.ts`.
+- **Gate #1 (ngx-leaflet @818e9ae, npm):** a SINGLE `ng add <tarball>` auto-wired BOTH projects
+  FIRST-RUN with 2-element `tsConfig` arrays, no nx.json; clean baseline both exit 0; per-project
+  scoping clean bidirectional (app=TS2322+TS2345, lib=TS2554, no cross-bleed); no `ERR_REQUIRE_ESM`.
+- **Gate #2 (realworld-angular @9e3528f, pnpm-workspace + name-collision):** `ng add <tarball>`
+  blocked at the pnpm install by `ERR_PNPM_ADDING_TO_ROOT` (Angular-CLI/pnpm mechanics, not an
+  angular-typechecker defect) -> used the documented pnpm-native `pnpm add -w -D` + `ng g` path
+  (force-fresh, guarding the stale 2026-07-11 nx-based install). The vanilla 24-06 ng-add wired the
+  FULL `[tsconfig.app.json, tsconfig.spec.json]` array (app build leaf NOT dropped under the
+  collision), no nx.json; clean baseline exit 0; planted TS2322 (build leaf) + TS2345 (spec leaf)
+  both surfaced, exit 1; no `ERR_REQUIRE_ESM`.
+
+Evidence: `.planning/quick/260715-ig5-re-run-the-acv-01-manual-real-clone-tarb/`
+(`260715-ig5-SUMMARY.md`, `260715-ig5-VERIFICATION.md`). Clones remain UNCOMMITTED scratch,
+restored to their pinned SHAs. No product/test/version change.
+
 ## Current Test
 
-[executed 2026-07-11 autonomously per HANDOFF -- see result fields + 24-HUMAN-UAT.md]
+[executed 2026-07-11 autonomously per HANDOFF -- see result fields + 24-HUMAN-UAT.md;
+re-verified 2026-07-15 post-24-06 -- see the re-run section above]
 
 ## Tests
 
