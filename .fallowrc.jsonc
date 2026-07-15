@@ -44,6 +44,13 @@
     "packages/angular-typechecker/src/schematics/configuration/schematic.ts",
     "packages/angular-typechecker/src/schematics/init/schematic.ts",
     "tools/e2e-timing/aggregate-install-timings.mjs",
+    // quick-260715-050: the CI e2e-project discovery script
+    // (tools/ci/list-e2e-projects.mjs) is run via `node <path>` by the `discover`
+    // job in ci.yml, never imported -- same config-only reachability as
+    // tools/e2e-timing above. Its exported `listE2eProjects` is invoked by the
+    // GUARD-01b consistency spec via `execSync` (not a static import), so the
+    // import graph does not reach the file either.
+    "tools/ci/list-e2e-projects.mjs",
   ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
