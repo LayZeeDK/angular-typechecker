@@ -1,8 +1,31 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { URL } from 'node:url';
 
 import { expect } from 'vitest';
+
+/**
+ * Lever 1 (quick-260714-1gr): before starting the local registry with
+ * clearStorage:false, delete ONLY the two things that MUST be fresh each run --
+ * the published angular-typechecker package dir (so the freshly built dist
+ * republishes with no EPUBLISHCONFLICT) and the .htpasswd (so the ci-user
+ * sign-up + real-token mint still works; Verdaccio 6 401s an unverifiable
+ * bearer, and a second sign-up over an existing .htpasswd 409s). Everything else
+ * under storage -- the npmjs uplink proxy cache -- is PRESERVED across runs, which
+ * is the whole point: re-run install network cost drops to ~0 once the uplink is
+ * warm. `force: true` makes the first run (storage absent) a no-op that never
+ * throws. This is the COMPLETE and ONLY storage reset once clearStorage:false
+ * stops the @nx/js executor from wiping storage.
+ */
+export function resetVerdaccioPublishState(root: string): void {
+  const storageDir = join(root, 'tmp', 'local-registry', 'storage');
+
+  rmSync(join(storageDir, 'angular-typechecker'), {
+    recursive: true,
+    force: true,
+  });
+  rmSync(join(storageDir, '.htpasswd'), { force: true });
+}
 
 /**
  * Write a Verdaccio-targeting `.npmrc` into `dir`: a `registry=<url>` line plus the

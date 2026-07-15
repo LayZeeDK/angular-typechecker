@@ -74,6 +74,38 @@ export default [
           // catches MISSING/OBSOLETE deps; only the version-mismatch autofix is
           // disabled. NEVER run `eslint --fix` blindly on the manifest.
           checkVersionMismatches: false,
+          // ACP-01 (D-07/D-08): @angular-devkit/architect + rxjs are the
+          // runtime peers of the converted `angular-typechecker:typecheck`
+          // builder. Their `require()`s live INSIDE @nx/devkit's
+          // convertNxExecutor bridge, so this plugin's own src/ never imports
+          // them -- without this ignore the rule would flag both declared
+          // (optional) peers as obsoleteDependency and fail `nx lint`
+          // (maxWarnings:0). `peerDependenciesMeta.optional` does NOT exempt a
+          // peer from the obsolete check; ignoredDependencies is the lever.
+          // `nx` is likewise ignored: v0.2.1 declares it as a DIRECT `^23.0.0`
+          // dependency (so yarn / any non-peer-auto-installing consumer gets it
+          // -- @nx/devkit's entrypoint require()s `nx/src/devkit-exports` at
+          // load), but this plugin's own `src/` never imports `nx` (it is a
+          // runtime-transitive requirement satisfied via @nx/devkit). Without
+          // this ignore @nx/dependency-checks would flag `nx` obsoleteDependency
+          // and fail `nx lint` at maxWarnings:0. See
+          // .planning/debug/cli-yarn-e2e-wrong-version.md. An `ng add` into a
+          // non-Nx Angular CLI workspace may still materialize a `.nx/` cache
+          // dir; the README `## Angular CLI` prose covers it (ACD-01).
+          // `@angular-devkit/schematics` is a DECLARED optional peer (^22.0.0) and
+          // is likewise ignored, for the SAME obsolete-vs-compiled-src reason as
+          // architect/rxjs: the vanilla nx-free ng-add schematic only TYPE-imports
+          // Rule/Tree/SchematicContext from it (erased at compile -- the compiled
+          // schematic.js requires only the pure core), so the plugin's own `src/`
+          // never `require()`s it at runtime. `peerDependenciesMeta.optional` does
+          // NOT exempt the obsolete check, so without this ignore the rule would
+          // flag it obsolete and fail `nx lint` at maxWarnings:0.
+          ignoredDependencies: [
+            'nx',
+            '@angular-devkit/architect',
+            '@angular-devkit/schematics',
+            'rxjs',
+          ],
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vitest.config.{js,ts,mjs,mts}',

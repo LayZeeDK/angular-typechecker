@@ -107,13 +107,16 @@ describe('REL-04: nx release publish -> install-by-name -> typecheck ships compi
 
       writeVerdaccioNpmrc(consumer, verdaccioUrl, verdaccioToken);
 
-      sh(`npm install --save-dev ${PACKAGE_NAME}`, {
-        cwd: consumer,
-        env: {
-          ...env,
-          npm_config_userconfig: join(consumer, '.npmrc.nonexistent'),
+      sh(
+        `npm install --save-dev ${PACKAGE_NAME} --no-audit --no-fund --prefer-offline`,
+        {
+          cwd: consumer,
+          env: {
+            ...env,
+            npm_config_userconfig: join(consumer, '.npmrc.nonexistent'),
+          },
         },
-      });
+      );
 
       const installedRoot = join(consumer, 'node_modules', PACKAGE_NAME);
 

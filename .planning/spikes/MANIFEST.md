@@ -174,3 +174,50 @@ module can be real -- the never-a-silent-false-pass charter). Candidates: docume
 | 010 | vite-query-detection-advisory | standard | a diagnostic-based detector (unresolved TS2307 + `?`-query specifier; NO Storybook/framework coupling) emits an advisory, never suppresses, no false positive on plain missing modules, self-gates silent once resolved | **VALIDATED** | storybook, vite, advisory, detection, no-false-pass, devex |
 
 _Build order: risk order (009 the make-or-break recipe first; 010 the UX advisory second)._
+
+---
+
+## Idea 4 -- v0.2.1 Angular CLI builder GATE A' (Phase 21, ACB-02)
+
+The milestone's headline GO/NO-GO: does the shipped
+CommonJS-executor-loads-ESM-`@angular/compiler-cli`-via-`await import()` bridge SURVIVE being
+re-exported as an Angular CLI builder via `@nx/devkit`'s `convertNxExecutor` and driven by a
+REAL `ng run <project>:typecheck` -- including the wrapper's eager, ESM-sensitive
+`retrieveProjectConfigurationsWithAngularProjects` project-graph prelude (nrwl/nx#19475) -- on
+the on-stack Angular 22 target, with NO `ERR_REQUIRE_ESM`? A NO-GO STOPS Phase 21 with a
+documented re-scope and NEVER falls back to a hand-written `@angular-devkit/architect` builder
+(D-04). Unlike spikes 001-010 (pure `.mjs` harnesses that copy the engine verbatim), spike 011
+is an ORCHESTRATOR that drives real tooling (`nx build` -> `npm pack` dist -> install the
+tarball into a real cloned Angular 22 `angular.json` workspace -> hand-wire `architect.typecheck`
+-> real `ng run`) against REAL plugin code, because only a real `ng run` triggers the eager
+prelude.
+
+### Requirements emerging from this idea
+
+- **GATE A' = GO (Spike 011):** the bridge SURVIVES `convertNxExecutor` + a real `ng run`
+  on-stack Angular 22 for an app AND a library, incl. the eager project-graph prelude, with NO
+  `ERR_REQUIRE_ESM` / `require() of ES Module` / `Cannot use import statement outside a module`.
+- **Diagnostics flow, not a vacuous pass (Spike 011):** a planted `TS2322` surfaces RED via
+  `ng run` (exit 1, real codeframe) and a clean control is GREEN (exit 0) -- the verdict maps
+  end-to-end (engine -> `convertNxExecutor` -> Architect `BuilderOutput` -> exit code).
+- **On-stack install is clean (Spike 011):** the built tarball installs into the Angular 22
+  clone with NO `--legacy-peer-deps` (it drags `nx` transitively via `@nx/devkit`'s peer --
+  expected, Pitfall 4).
+- **Substrate is record-only:** the external `bluehalo/ngx-leaflet` clone (@ `818e9ae`) + its
+  `node_modules` are NEVER committed; reproduction = repo URL + SHA + the harness.
+
+### Spikes (Idea 4)
+
+| # | Gate(s) | Type | Validates | Verdict | Tags |
+|---|---------|------|-----------|---------|------|
+| 011 | GATE-A' | standard | shipped CJS->ESM `await import()` bridge survives `convertNxExecutor` + a real `ng run <project>:typecheck` on an app AND a library in a real on-stack Angular 22 `angular.json` clone (incl. the eager project-graph prelude); no `ERR_REQUIRE_ESM`; planted `TS2322` RED, clean control GREEN; on-stack install needs no `--legacy-peer-deps` | **GO** | angular-cli, builder, convert-nx-executor, ng-run, esm-bridge, gate, gate-a-prime, engine |
+
+### Idea-4 GO/NO-GO verdict (Phase-21 GATE A')
+
+**GO -- the executor-as-Angular-CLI-builder bridge is real.** All 15 assertions passed against
+the real Angular 22 `bluehalo/ngx-leaflet` clone (`@angular/cli` 22.0.0 / `@angular/compiler-cli`
+22.0.0 / TypeScript 6.0.3): no ESM failure signature on the app or the library, the planted
+`TS2322` went RED and the clean control was GREEN, and the on-stack install was clean. The
+minimal builder (Plan 21-01) STAYS as the ACB-01 deliverable; Waves 2-3 (ENG-01 + the ACB
+in-repo guard suite) proceed after the human GO/NO-GO checkpoint. No fallback to a hand-written
+`@angular-devkit/architect` builder was needed (D-04).

@@ -1,18 +1,29 @@
-import { formatFiles, readNxJson, updateNxJson } from '@nx/devkit';
+import { formatFiles, logger, readNxJson, updateNxJson } from '@nx/devkit';
 import type {
   NxJsonConfiguration,
   TargetConfiguration,
   Tree,
 } from '@nx/devkit';
 
+import {
+  isAngularCliWorkspace,
+  NO_CACHING_NOTICE,
+  TYPECHECK_EXECUTOR_ID,
+} from '../../core/angular-cli-wiring';
 import type { InitGeneratorSchema } from './schema';
 
-// The UNSCOPED published executor id -- ALSO the key Nx uses for this executor's
-// `targetDefaults` entry. Exported so the `configuration` generator wires the
-// target with the SAME id (Landmine 3 / Pitfall 2: never a scoped dev-repo
-// executor id -- this repo aliases its own package under a scope it does not own
-// or publish).
-export const TYPECHECK_EXECUTOR_ID = 'angular-typechecker:typecheck';
+// TYPECHECK_EXECUTOR_ID + NO_CACHING_NOTICE MOVED to src/core/angular-cli-wiring.ts
+// (24-06): the shared wiring core is the single source now. Re-exported here so the
+// existing importers (configuration/generator.ts, the init specs,
+// core/nx-target-defaults.spec.ts) keep resolving them from `../init/generator`
+// unchanged. TYPECHECK_EXECUTOR_ID is the UNSCOPED published executor id -- ALSO the
+// key Nx uses for this executor's `targetDefaults` entry. NO_CACHING_NOTICE (D-06) is
+// the single shared "no target caching on Angular CLI" notice printed by the Angular
+// CLI init fork below (ACS-03) and the vanilla ng-add schematic.
+export {
+  NO_CACHING_NOTICE,
+  TYPECHECK_EXECUTOR_ID,
+} from '../../core/angular-cli-wiring';
 
 // D-04 / WALK-02: copied VERBATIM from the workspace `nx.json`
 // targetDefaults[TYPECHECK_EXECUTOR_ID] block (the UNSCOPED published executor id,
@@ -62,6 +73,20 @@ export default async function initGenerator(
   tree: Tree,
   schema: InitGeneratorSchema,
 ): Promise<void> {
+  // D-04 / ACS-03 additive fork: an Angular CLI workspace has angular.json AND no
+  // nx.json. nx.json is authoritative when present -- a hybrid/legacy workspace
+  // that carries BOTH files is a real Nx workspace (its projects may be defined via
+  // project.json, not angular.json's `projects` map), so it must take the Nx path
+  // below and seed targetDefaults. Gate the CLI fork on the FULL invariant, not
+  // angular.json alone, and return BEFORE readNxJson/updateNxJson -- mirroring the
+  // `configuration` write-fork -- so the CLI surface prints the shared no-caching
+  // notice while the Nx surface seeds caching.
+  if (isAngularCliWorkspace((path) => tree.exists(path))) {
+    logger.info(NO_CACHING_NOTICE);
+
+    return;
+  }
+
   // Pitfall 4: `readNxJson` is typed `NxJsonConfiguration | null` -- guard it.
   const nxJson: NxJsonConfiguration = readNxJson(tree) ?? {};
 

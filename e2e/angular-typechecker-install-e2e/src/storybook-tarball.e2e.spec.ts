@@ -120,7 +120,10 @@ function installStorybookAndTypechecker(
 
   // (1) Install the fixture's OWN deps first (no override, Storybook-free). Generates
   // package-lock.json so `nx add` detects npm, and gives OUR install a clean tree.
-  sh('npm install', { cwd: tmp, env: npmEnv });
+  sh('npm install --no-audit --no-fund --prefer-offline', {
+    cwd: tmp,
+    env: npmEnv,
+  });
 
   // (2) Install the SHIPPED artifact with NO peer-resolution override (B-03): `nx
   // add` detects npm -> `npm install -D angular-typechecker@latest` (resolved from
@@ -133,10 +136,13 @@ function installStorybookAndTypechecker(
   // (D-02a). This is the ONLY place the override is legitimate (the SB10 peer cap is
   // real + documented, D4). Installed after our package so its foreign peer conflict
   // is never conflated with -- nor able to mask -- a conflict on OUR peers.
-  sh(`npm install ${STORYBOOK_ANGULAR} --legacy-peer-deps`, {
-    cwd: tmp,
-    env: npmEnv,
-  });
+  sh(
+    `npm install ${STORYBOOK_ANGULAR} --legacy-peer-deps --no-audit --no-fund --prefer-offline`,
+    {
+      cwd: tmp,
+      env: npmEnv,
+    },
+  );
 
   // (4) Wire the ONE typecheck target on the project's solution tsconfig.json.
   // --skipFormat: the fixture installs no Prettier.

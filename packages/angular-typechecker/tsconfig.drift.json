@@ -11,6 +11,7 @@
   },
   "files": [
     "src/core/compiler-cli-types.drift.ts",
-    "src/core/extended-catalog.drift.ts"
+    "src/core/extended-catalog.drift.ts",
+    "src/index.drift.ts"
   ]
 }

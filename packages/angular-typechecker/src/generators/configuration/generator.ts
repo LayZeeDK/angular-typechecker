@@ -1,46 +1,25 @@
-import { isAbsolute } from 'node:path';
-
 import {
   formatFiles,
   joinPathFragments,
+  logger,
   readJson,
   readProjectConfiguration,
+  updateJson,
   updateProjectConfiguration,
 } from '@nx/devkit';
 import type { ProjectConfiguration, Tree } from '@nx/devkit';
 
+import {
+  isAngularCliWorkspace,
+  NO_CACHING_NOTICE,
+  resolveTargetName,
+  resolveTsConfigLeaves,
+  resolveTsConfigOverride,
+  wireTypecheckTarget,
+} from '../../core/angular-cli-wiring';
+import type { AngularJsonWorkspace } from '../../core/angular-cli-wiring';
 import initGenerator, { TYPECHECK_EXECUTOR_ID } from '../init/generator';
 import type { ConfigurationGeneratorSchema } from './schema';
-
-/**
- * OQ-1: resolves an explicit `--tsConfig` override. An ABSOLUTE path passes through
- * verbatim (it cannot be existence-probed against the workspace-relative tree); a
- * relative one is interpreted project-root-relative and existence-probed so a typo
- * fails HERE with a clear located error (matching the other resolution rungs)
- * rather than silently writing a broken target that only fails at execute time.
- */
-function resolveTsConfigOverride(
-  tree: Tree,
-  projectRoot: string,
-  tsConfig: string,
-  project: string,
-): string {
-  if (isAbsolute(tsConfig)) {
-    return tsConfig;
-  }
-
-  const overridePath = joinPathFragments(projectRoot, tsConfig);
-
-  if (!tree.exists(overridePath)) {
-    throw new Error(
-      `--tsConfig "${tsConfig}" for project "${project}" resolves to ` +
-        `"${overridePath}", which does not exist. Pass a path relative to the ` +
-        `project root (or an absolute path).`,
-    );
-  }
-
-  return overridePath;
-}
 
 /**
  * Resolves the WORKSPACE-root-relative tsconfig path the generated target points
@@ -75,10 +54,12 @@ function resolveTsConfig(
 ): string {
   const root = projectConfig.root;
 
-  // 1. explicit override wins (OQ-1) -- a cohesive sub-decision, so it lives in its
-  // own helper (absolute verbatim / relative probed-and-located).
+  // 1. explicit override wins (OQ-1) -- a cohesive sub-decision routed to the shared
+  // core helper (absolute verbatim / relative probed-and-located).
   if (schema.tsConfig) {
-    return resolveTsConfigOverride(tree, root, schema.tsConfig, schema.project);
+    return resolveTsConfigOverride(root, schema.tsConfig, schema.project, (p) =>
+      tree.exists(p),
+    );
   }
 
   // 2. solution tsconfig.json WITH a non-empty references[] -> point at it.
@@ -123,40 +104,94 @@ function resolveTsConfig(
 }
 
 /**
- * The `configuration` generator (GEN-01/02/03/04/08):
- * `nx g angular-typechecker:configuration <project>`.
+ * The `configuration` generator (GEN-01/02/03/04/08 + D-01 write-fork):
+ * `nx g angular-typechecker:configuration <project>` /
+ * `ng generate angular-typechecker:configuration <project>`.
  *
- * Config-edit only (no `generateFiles`, no file emission). It (1) awaits the
- * `init` generator FIRST with `skipFormat: true` so caching is seeded and we
- * format ONCE at the end (GEN-08 / D-10), (2) reads the project config, (3)
- * resolves the target's `tsConfig` (D-07), (4) collision-checks by EXECUTOR
- * (D-09), (5) writes ONE minimal `typecheck` target
- * `{ executor: 'angular-typechecker:typecheck', options: { tsConfig } }`, and
- * (6) formats once. A re-run for OUR target is idempotent (rewrite to the same
- * shape); a same-named NON-ours target throws a clear, located error.
+ * Config-edit only (no `generateFiles`, no file emission). The `targetName`
+ * default + empty-name guard are HOISTED so both branches share them. On an
+ * Angular CLI workspace (angular.json present) the D-01 fork writes the target
+ * straight into angular.json's `architect` map with the leaf ARRAY and skips the
+ * Nx init (D-04). Otherwise the byte-unchanged Nx path runs: init-first
+ * (GEN-08 / D-10), single-string solution `tsConfig` (D-07), collision-by-executor
+ * (D-09), one minimal `typecheck` target, format once. A re-run of OUR target is
+ * idempotent on both branches; a same-named NON-ours target throws a clear,
+ * located error.
  */
 export default async function configurationGenerator(
   tree: Tree,
   schema: ConfigurationGeneratorSchema,
 ): Promise<void> {
-  // GEN-08 / D-10: seed workspace caching FIRST via init. `skipFormat: true` so
-  // the nested init does not format -- we format ONCE at the end (first-party
-  // `@nx/eslint:lint-project` / `@nx/vitest:configuration` composition).
+  // Shared by BOTH branches. GEN-04 default + empty-name guard, routed to the shared
+  // core (same located error string).
+  const targetName = resolveTargetName(schema.targetName, schema.project);
+
+  // D-01 write-fork: an Angular CLI workspace has angular.json AND no nx.json.
+  // nx.json is authoritative when present (WR-01): a hybrid workspace carrying BOTH
+  // files is a real Nx workspace and MUST take the Nx path below -- its projects may
+  // be defined via project.json (not angular.json's `projects` map), where the
+  // `json.projects[schema.project]` lookup here would be `undefined` and throw. On a
+  // genuine CLI workspace the project's root + projectType are read STRAIGHT from
+  // angular.json (see the block below -- readProjectConfiguration is unreliable under a
+  // pnpm-workspace name collision); `updateProjectConfiguration` cannot write angular.json
+  // (Pitfall 2), so the target is edited straight in via `updateJson`. The Nx init
+  // is skipped (D-04): there is no nx.json / targetDefaults analog off-Nx.
+  if (isAngularCliWorkspace((path) => tree.exists(path))) {
+    // Read `root`/`projectType` STRAIGHT from angular.json -- NOT via
+    // readProjectConfiguration. On a workspace that is ALSO a pnpm workspace
+    // (pnpm-workspace.yaml) whose root package.json `name` collides with the
+    // angular.json project name, Nx infers a package.json project stub (root ".",
+    // projectType undefined) that SHADOWS the angular.json project; trusting it
+    // silently drops the app build leaf for a root app (spec-only under-checking)
+    // or throws for a subdir app. angular.json is authoritative on this branch.
+    // (ACV-01 real-clone finding, realworld-angular @ 9e3528f, 2026-07-11.)
+    const cliProject = readJson<AngularJsonWorkspace>(tree, 'angular.json')
+      .projects[schema.project];
+
+    if (!cliProject) {
+      throw new Error(
+        `Project "${schema.project}" was not found in angular.json.`,
+      );
+    }
+
+    // RF-01 (Approach A) leaf-array resolution, routed to the shared core. `root`/
+    // `projectType` come STRAIGHT from angular.json (read above) so a pnpm-workspace
+    // name collision cannot shadow them (ACV-01).
+    const tsConfig = resolveTsConfigLeaves(
+      cliProject.root ?? '',
+      cliProject.projectType,
+      schema.tsConfig,
+      schema.project,
+      (p) => tree.exists(p),
+    );
+
+    // D-05 collision-by-builder + idempotent [build, spec] merge, routed to the
+    // shared core (mutates the parsed workspace; updateJson persists it).
+    updateJson<AngularJsonWorkspace>(tree, 'angular.json', (json) => {
+      wireTypecheckTarget(json, schema.project, targetName, tsConfig);
+
+      return json;
+    });
+
+    if (!schema.skipFormat) {
+      await formatFiles(tree);
+    }
+
+    // D-06: the CLI fork wired the target with no target caching (there is no
+    // nx.json / targetDefaults analog off-Nx). Print the shared no-caching notice
+    // ONCE -- matching the init fork (init/generator.ts) and the ng-add schematic,
+    // so a user reaching this no-caching state via `ng generate ...:configuration`
+    // gets the same explanation they would via `ng add` or `nx add`.
+    logger.info(NO_CACHING_NOTICE);
+
+    return;
+  }
+
+  // ELSE -- the byte-unchanged Nx path (ACS-02). GEN-08 / D-10: seed workspace
+  // caching FIRST via init with `skipFormat: true` so we format ONCE at the end.
   await initGenerator(tree, { skipFormat: true });
 
   const projectConfig = readProjectConfiguration(tree, schema.project);
-  const targetName = schema.targetName ?? 'typecheck';
-
-  // GEN-04: `??` above only substitutes the default for a MISSING targetName, not
-  // an explicit empty string (`'' ?? x === ''`). An empty / whitespace-only name
-  // would write an unrunnable target keyed by `''`, so reject it with a located
-  // error rather than silently producing a broken target.
-  if (targetName.trim() === '') {
-    throw new Error(
-      `--targetName for project "${schema.project}" must be a non-empty target ` +
-        `name. Omit it to use the default "typecheck".`,
-    );
-  }
 
   const tsConfig = resolveTsConfig(tree, projectConfig, schema);
 

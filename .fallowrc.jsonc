@@ -26,6 +26,31 @@
     // it as the genuine test-runner entry point it is (same config-only
     // reachability as global-setup.ts above).
     "packages/angular-typechecker/vitest.integration.config.mts",
+    // FAL-07 (quick-260714-wr9, v0.2.1 Release-PR gate): four more config-only-reachable
+    // files -- same false-positive class as the drift tripwires + install-e2e global-setup
+    // above. Each is reached by a config/string reference, never the import graph, so fallow
+    // flags it `unused-files`:
+    //   - ng-cli-e2e/src/global-setup.ts: the ng-cli e2e vitest globalSetup (Verdaccio
+    //     bootstrap), reachable ONLY via vitest.config's `globalSetup: [...]` string.
+    //   - index.drift.ts: the ACP-02 barrel drift tripwire (24-01), reachable ONLY via
+    //     tsconfig.drift.json `files` (classic node10), never imported.
+    //   - schematics/configuration/schematic.ts: the convertNxGenerator re-export
+    //     referenced ONLY by collection.json (Nx resolves it by string path), never via the
+    //     import graph. (The sibling ng-add/schematic.ts is reached by its spec import, so
+    //     it needs no entry; the former init schematic was dropped in 24-06.)
+    //   - tools/e2e-timing/aggregate-install-timings.mjs: a dev-only CLI tool run via
+    //     `node <path>` (260713-w87), never imported.
+    "e2e/angular-typechecker-ng-cli-e2e/src/global-setup.ts",
+    "packages/angular-typechecker/src/index.drift.ts",
+    "packages/angular-typechecker/src/schematics/configuration/schematic.ts",
+    "tools/e2e-timing/aggregate-install-timings.mjs",
+    // quick-260715-050: the CI e2e-project discovery script
+    // (tools/ci/list-e2e-projects.mjs) is run via `node <path>` by the `discover`
+    // job in ci.yml, never imported -- same config-only reachability as
+    // tools/e2e-timing above. Its exported `listE2eProjects` is invoked by the
+    // GUARD-01b consistency spec via `execSync` (not a static import), so the
+    // import graph does not reach the file either.
+    "tools/ci/list-e2e-projects.mjs",
   ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
@@ -80,11 +105,21 @@
   // A per-glob override cannot reach a project-level finding (see FAL-01), so the
   // global ignore is the mechanism; @nx/dependency-checks independently gates the
   // published manifest.
+  // FAL-08 (quick-260714-wr9): the vanilla ng-add schematic (24-06) type-only imports
+  // Rule/Tree/SchematicContext from @angular-devkit/core + @angular-devkit/schematics.
+  // These are ANGULAR-CLI-PROVIDED (the consumer's CLI supplies them at ng-add time) and
+  // TYPE-ONLY, so they are erased at compile -- the shipped schematic.js requires neither.
+  // fallow reports the SAME package-level `unlisted-dependencies` false positive as
+  // @angular/core (a per-glob override cannot reach a project-level finding -- see FAL-01).
+  // @nx/dependency-checks already ignores @angular-devkit/schematics (24-06) and
+  // independently gates the published manifest's dependency hygiene.
   "ignoreDependencies": [
     "@angular/core",
     "@org/button",
     "@storybook/angular",
     "jsonc-eslint-parser",
+    "@angular-devkit/core",
+    "@angular-devkit/schematics",
   ],
 
   "rules": {
@@ -96,6 +131,17 @@
     // D-07: unused-dependencies stays at its default `error` -- catches a genuine
     // unused PROD dep. @angular/forms is RESOLVED by removal (see package.json),
     // not here.
+    // FAL-09 (quick-260714-wr9): @angular-devkit/architect is an INTENTIONAL OPTIONAL
+    // peerDependency (23-02, peerDependenciesMeta.optional) -- the runtime peer for the
+    // Architect `ng run` builder, imported by builder.integration.spec for testing.
+    // fallow's `test-only-dependencies` flags it because its only in-repo import is a
+    // spec, and suggests moving it to devDependencies -- WRONG: it is a runtime peer for
+    // consumers, not a dev tool. This repo's optional-peer pattern (architect + rxjs)
+    // structurally false-positives this rule; the published manifest's dep hygiene is
+    // owned by @nx/dependency-checks. Do NOT move architect out of optional peers.
+    // (If a future fallow ever ignores the rule toggle for this dep, the surgical
+    // fallback is to also add @angular-devkit/architect to ignoreDependencies.)
+    "test-only-dependencies": "off",
   },
 
   // FAL-02 (v0.1.0 milestone-integration gate): complexity analysis is scoped OFF
@@ -112,6 +158,19 @@
   // rung extracted to `resolveTsConfigOverride`), which cleared it outright. Product
   // engine complexity elsewhere in packages/angular-typechecker/src/**/*.ts (NOT
   // *.spec.ts) stays gated.
+  // FAL-10 (quick-260714-wr9): four more reviewed essential-complexity globs, same
+  // review-blessed class as core/walk-references.ts above -- established, tested functions
+  // whose complexity is irreducible domain logic, NOT refactored to satisfy an estimated
+  // threshold (CLAUDE.md fallow guidance: declare, do not refactor tested code):
+  //   - core/run-typecheck.ts: the whole-program type-check orchestration
+  //     (runTypecheck / handleMultiTsConfig / handleSolutionWalk / finalize) -- the N-case
+  //     no-lying dispatch mirrored with walk-references.ts.
+  //   - generators/configuration/generator.ts: the Angular CLI vs Nx write-fork
+  //     (configurationGenerator) -- 22-01 angular.json-vs-nx.json branching.
+  //   - schematics/ng-add/schematic.ts: the vanilla ng-add auto-wire-all composition
+  //     (24-06).
+  //   - tools/**: the dev-only e2e-timing CLI aggregator (deriveAction / derivePm) -- not
+  //     product code.
   "health": {
     "ignore": [
       "e2e/**",
@@ -119,6 +178,10 @@
       "**/*.spec.ts",
       "**/*.e2e.spec.ts",
       "packages/angular-typechecker/src/core/walk-references.ts",
+      "packages/angular-typechecker/src/core/run-typecheck.ts",
+      "packages/angular-typechecker/src/generators/configuration/generator.ts",
+      "packages/angular-typechecker/src/schematics/ng-add/schematic.ts",
+      "tools/**",
     ],
   },
 
@@ -190,6 +253,29 @@
       },
     },
   ],
+
+  // FAL-11 (quick-260714-wr9): suppress two INTENTIONAL clone groups by config, NOT by a
+  // risky core refactor (CLAUDE.md fallow guidance). `ignore` is ADDITIVE over fallow's
+  // built-in generated-framework ignores (enabled + ignoreDefaults stay at their defaults);
+  // both files of each clone group are listed so either instance is covered.
+  //   - Clone group 85d857bc (198 lines): install-e2e/src/global-setup.ts +
+  //     ng-cli-e2e/src/global-setup.ts are INTENTIONAL verbatim-sibling Verdaccio
+  //     bootstraps -- byte-identical test scaffolding by design (the 127.0.0.1 SAFETY
+  //     gate + publish-once flow), NOT extractable shared product code.
+  //   - Clone group c3bbefb1 (38 lines): core/run-typecheck.ts + core/walk-references.ts
+  //     are the DELIBERATELY-MIRRORED surviving-entry / surviving-leaf diagnostic-
+  //     accumulation tails of the two walk implementations. Parity is a design invariant
+  //     enforced by their own comments ("mirror walk-references" / "MD-01 parity") and is
+  //     spec-covered. Extraction would thread 4 mutable accumulators + ng/ts/parsed across
+  //     two hot core paths -- exactly the risky core refactor this config-only task forbids.
+  "duplicates": {
+    "ignore": [
+      "e2e/angular-typechecker-install-e2e/src/global-setup.ts",
+      "e2e/angular-typechecker-ng-cli-e2e/src/global-setup.ts",
+      "packages/angular-typechecker/src/core/run-typecheck.ts",
+      "packages/angular-typechecker/src/core/walk-references.ts",
+    ],
+  },
 
   "audit": {
     // D-02: pin the gate so the verdict is deterministic regardless of CLI flags.

@@ -2,6 +2,48 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.2.1
+
+**Angular CLI workspace support.** angular-typechecker now runs in a plain Angular
+CLI (`angular.json`) workspace, with no Nx. Run `ng add angular-typechecker` and it
+wires a `typecheck` target into every application and library in your workspace at
+once; then `ng run <project>:typecheck` runs the exact same complete Angular
+type-check as the Nx target -- TypeScript, template, and NG8xxx diagnostics, with no
+emit -- and its pass/fail exit code is identical. Nothing changes for existing Nx
+users; this is a new, additive surface.
+
+### Features
+
+- Angular CLI installer and generators. `ng add angular-typechecker` installs the
+  package as a dev dependency and wires a `typecheck` target into every
+  `application` and `library` project in your `angular.json`. It is idempotent, so
+  re-running it only fills in projects that are still missing a target. For a
+  project you add later, `ng generate angular-typechecker:configuration <project>`
+  wires just that one.
+- Per-project scoping through the `tsConfig` array. Each target lists the project's
+  build leaf and its spec leaf (an application resolves to
+  `["tsconfig.app.json", "tsconfig.spec.json"]`, a library to its `tsconfig.lib.json`
+  plus `tsconfig.spec.json`), so a single `typecheck` target checks the project's
+  complete set of files in one run.
+
+### Notes
+
+- No target caching on the Angular CLI path. Unlike the Nx target, the Angular CLI
+  `typecheck` target does not cache its result -- the Angular CLI has no task-result
+  cache to seed -- so every run does the full check. Because the builder reuses the
+  same engine as the Nx executor, installing the package also pulls in `nx` as a
+  transitive dependency, and a `.nx/` directory may appear even if you never use Nx
+  directly.
+- Angular versions before 22. The `@angular/compiler-cli` `^22.0.0` and TypeScript
+  `>=6.0.0 <6.1.0` peer ranges mean an older Angular workspace cannot satisfy them
+  cleanly; install with `--legacy-peer-deps` to try it there, though behavior on an
+  unsupported version is not verified.
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`,
+  Node `^22.22.3 || ^24.15.0 || ^26.0.0`. No new runtime dependency.
+
 ## 0.2.0 (2026-07-07)
 
 **Storybook story type-checking.** `nx typecheck` now type-checks your Storybook

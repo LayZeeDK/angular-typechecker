@@ -60,25 +60,34 @@ const env = buildCleanEnv({ stripAllNpmConfig: true });
 
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';
+// A per-spec OS-temp dir the tarball is packed INTO so dist stays read-only during
+// e2e and no sibling e2e project shares the tarball path.
+let packDest = '';
 
 beforeAll(() => {
-  // The project globalSetup already built dist ONCE (finding E1); pack that shared
-  // dist -- no redundant per-spec build. npm pack --json from the dist dir produces
-  // the EXACT artifact `nx release publish` ships and writes the .tgz on disk.
-  const packOutput = execSync('npm pack --json', {
-    cwd: distDir,
-    env,
-    encoding: 'utf8',
-  });
+  // dist is built ONCE upstream by the e2e target's dependsOn (read-only during
+  // e2e); pack it into a per-spec OS-temp dir so no sibling e2e project shares the
+  // tarball path. `npm pack --json --pack-destination <dir>` writes the .tgz into
+  // <dir> (the EXACT artifact `nx release publish` ships) and reports the bare
+  // filename; cwd stays distDir so pack reads the dist package.
+  packDest = mkdtempSync(join(tmpdir(), 'atc-pack-nxadd-'));
+  const packOutput = execSync(
+    `npm pack --json --pack-destination "${packDest}"`,
+    {
+      cwd: distDir,
+      env,
+      encoding: 'utf8',
+    },
+  );
   const packed = JSON.parse(packOutput) as Array<{ filename: string }>;
-  tarballPath = join(distDir, packed[0].filename);
+  tarballPath = join(packDest, packed[0].filename);
 }, 300000);
 
 afterAll(() => {
-  // Remove the packed .tgz so each run does not leak an artifact under dist
-  // (WR-02). force:true keeps teardown non-fatal if it is already gone.
-  if (tarballPath) {
-    rmSync(tarballPath, { force: true });
+  // Remove the per-spec pack dir (the .tgz lives under it) so each run leaks no
+  // artifact (WR-02). force:true keeps teardown non-fatal if it is already gone.
+  if (packDest) {
+    rmSync(packDest, { recursive: true, force: true });
   }
 });
 
@@ -102,10 +111,16 @@ describe("GE2E-03: nx add's init path seeds nx.json targetDefaults from absent",
       // the package under test; the fixture's Angular/Nx/TS deps still resolve from
       // the registry, like every existing install-e2e spec). NO peer-override flag
       // (B-03): a real ERESOLVE must surface, not be masked.
-      sh(`npm install ${JSON.stringify(tarballPath)}`, {
-        cwd: tmp,
-        env: { ...env, npm_config_userconfig: join(tmp, '.npmrc.nonexistent') },
-      });
+      sh(
+        `npm install ${JSON.stringify(tarballPath)} --no-audit --no-fund --prefer-offline`,
+        {
+          cwd: tmp,
+          env: {
+            ...env,
+            npm_config_userconfig: join(tmp, '.npmrc.nonexistent'),
+          },
+        },
+      );
 
       // Run the SAME init generator `nx add`'s runPluginInitGenerator constructs
       // (`g <plugin>:init`). This resolves the installed package's generators.json

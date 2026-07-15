@@ -64,6 +64,10 @@ const env = buildCleanEnv();
 // Absolute path to the freshly-packed tarball, captured in beforeAll.
 let tarballPath = '';
 
+// A per-spec OS-temp dir the tarball is packed INTO so dist stays read-only during
+// e2e and no sibling e2e project shares the tarball path.
+let packDest = '';
+
 // The ONE per-run consumer-workspace tmp copy the tarball is installed into. The
 // install is paid ONCE in beforeAll (D-07) and reused across all five it.each
 // rows; afterAll discards it.
@@ -79,24 +83,24 @@ let consumerWorkspace = '';
 // real run every time.
 
 beforeAll(() => {
-  // Build a FRESH dist so the packed tarball reflects current source (packing a
-  // stale dist would smoke-test a stale artifact -- Pitfall 6). --skip-nx-cache
-  // forces a real emit even when the outer run is cached.
-  execSync('npx nx build angular-typechecker --skip-nx-cache', {
-    cwd: workspaceRoot,
-    env,
-    encoding: 'utf8',
-  });
-
-  // npm pack --json from the dist dir produces the EXACT artifact `nx release
-  // publish` ships and writes the .tgz on disk. Capture its absolute path.
-  const packOutput = execSync('npm pack --json', {
-    cwd: distDir,
-    env,
-    encoding: 'utf8',
-  });
+  // dist is built ONCE upstream by the `e2e` target's dependsOn (nx.json
+  // targetDefaults) and is read-only during e2e -- no per-spec rebuild.
+  //
+  // Pack into a per-spec OS-temp dir so no sibling e2e project shares the tarball
+  // path. `npm pack --json --pack-destination <dir>` writes the .tgz into <dir> (the
+  // EXACT artifact `nx release publish` ships) and reports the bare filename; cwd
+  // stays distDir so pack reads the dist package.
+  packDest = mkdtempSync(join(tmpdir(), 'atc-pack-matrix-'));
+  const packOutput = execSync(
+    `npm pack --json --pack-destination "${packDest}"`,
+    {
+      cwd: distDir,
+      env,
+      encoding: 'utf8',
+    },
+  );
   const packed = JSON.parse(packOutput) as Array<{ filename: string }>;
-  tarballPath = join(distDir, packed[0].filename);
+  tarballPath = join(packDest, packed[0].filename);
 
   // Install the tarball ONCE into ONE tmp consumer-workspace (D-07). Copy the
   // committed multi-project fixture into the OS temp dir; do NOT copy this repo's
@@ -123,13 +127,16 @@ beforeAll(() => {
   // let the test FAIL surfacing it; do NOT auto-add the override (the remediation
   // is escalated per B-03). npm_config_userconfig -> a path that does not exist so
   // the user ~/.npmrc cannot reintroduce an override.
-  sh(`npm install ${JSON.stringify(tarballPath)}`, {
-    cwd: consumerWorkspace,
-    env: {
-      ...env,
-      npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+  sh(
+    `npm install ${JSON.stringify(tarballPath)} --no-audit --no-fund --prefer-offline`,
+    {
+      cwd: consumerWorkspace,
+      env: {
+        ...env,
+        npm_config_userconfig: join(consumerWorkspace, '.npmrc.nonexistent'),
+      },
     },
-  });
+  );
 
   // Sanity: the installed package's executor entry is resolvable from the tmp
   // consumer's node_modules -- proves the executor resolves FROM the install, not
@@ -147,11 +154,10 @@ beforeAll(() => {
 }, 300000);
 
 afterAll(() => {
-  // Remove the packed .tgz so each run does not leak an artifact under dist
-  // (WR-02), and discard the shared tmp consumer-workspace. force:true keeps
-  // teardown non-fatal if either is already gone.
-  if (tarballPath) {
-    rmSync(tarballPath, { force: true });
+  // Remove the per-spec pack dir (the .tgz lives under it) and discard the shared
+  // tmp consumer-workspace. force:true keeps teardown non-fatal if either is gone.
+  if (packDest) {
+    rmSync(packDest, { recursive: true, force: true });
   }
 
   if (consumerWorkspace) {

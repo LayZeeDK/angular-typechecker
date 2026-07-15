@@ -14,10 +14,15 @@ import { describe, expect, it } from 'vitest';
 //   - CMP-02: `engines.node` is the exact intersection range of Angular 22 + Nx 23.
 //   - CMP-01 (manifest portion): the runtime-version compatibility contract is
 //     DECLARED correctly -- `@nx/devkit` pinned EXACT as a `dependency` (registry
-//     listing requires devkit-as-dependency; D-14), and `nx` declared by NO ONE
-//     (devkit's own peer carries the consumer's nx transitively -- declaring it
-//     ourselves double-constrains). The peer ranges (`@angular/compiler-cli`,
-//     `typescript`) are the consumer-supplied compiler/TS versions.
+//     listing requires devkit-as-dependency; D-14), and `nx` declared as a direct
+//     `^23.0.0` runtime dependency. `@nx/devkit`'s entrypoint `require()`s
+//     `nx/src/devkit-exports` at load, and yarn does NOT auto-install the peer
+//     (npm/pnpm do), so a yarn Angular CLI consumer would crash with `Cannot find
+//     module 'nx/src/devkit-exports'` unless `nx` is present directly. Range
+//     `^23.0.0` (>=23.0.0 <24.0.0) pins Nx-23-only support and cannot pull nx
+//     22/24 (v0.2.1 correction; see .planning/debug/cli-yarn-e2e-wrong-version.md).
+//     The peer ranges (`@angular/compiler-cli`, `typescript`) are the
+//     consumer-supplied compiler/TS versions.
 //   - `type: "commonjs"`: the executor is loaded by Nx via `require()`; an ESM
 //     manifest here breaks the loader.
 //
@@ -32,8 +37,15 @@ const manifestPath = join(packageRoot, 'package.json');
 interface PluginManifest {
   type?: string;
   generators?: string;
+  builders?: string;
+  schematics?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+  // RF-01: how `ng add angular-typechecker` places the install.
+  'ng-add'?: {
+    save?: string;
+  };
   engines?: {
     node?: string;
   };
@@ -70,8 +82,8 @@ describe('plugin manifest compatibility contract (CMP-01 manifest / CMP-02 / D-1
     expect(manifest.dependencies?.['@nx/devkit']).toBe('23.0.1');
   });
 
-  it('does NOT declare nx in dependencies or peerDependencies (devkit peer carries the consumer nx; declaring it double-constrains)', () => {
-    expect(manifest.dependencies ?? {}).not.toHaveProperty('nx');
+  it('declares nx as a ^23.0.0 runtime dependency (yarn does not auto-install the @nx/devkit peer) and NOT a peer', () => {
+    expect(manifest.dependencies?.['nx']).toBe('^23.0.0');
     expect(manifest.peerDependencies ?? {}).not.toHaveProperty('nx');
   });
 
@@ -89,6 +101,8 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
       'src',
       'executors.json',
       'generators.json',
+      'builders.json',
+      'collection.json',
       'README.md',
       'LICENSE',
     ]);
@@ -96,6 +110,14 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
 
   it('registers the generators collection (D-02)', () => {
     expect(manifest.generators).toBe('./generators.json');
+  });
+
+  it('registers the Angular CLI builders collection (ACB-03; additive)', () => {
+    expect(manifest.builders).toBe('./builders.json');
+  });
+
+  it('registers the Angular CLI schematics collection (ACS-04; additive sibling of generators)', () => {
+    expect(manifest.schematics).toBe('./collection.json');
   });
 
   it('declares the minimal CJS exports map (D-02; barrel entry + package.json escape hatch)', () => {
@@ -134,5 +156,53 @@ describe('plugin manifest publishable contract (PKG-01 / D-01..D-04)', () => {
     // `access` to public" -- the unscoped-defaults-to-public rule does NOT
     // satisfy this, so `access: public` must be explicit (caught by the seed run).
     expect(manifest.publishConfig?.access).toBe('public');
+  });
+});
+
+describe('plugin manifest Angular CLI install contract (ACP-01 / NGADD-01 RF-01 / D-07)', () => {
+  it('sets ng-add.save to devDependencies so `ng add` installs a dev tool into devDependencies (RF-01)', () => {
+    // `@angular/cli` reads the package's own `ng-add.save` and installs with
+    // --save-dev when it is "devDependencies" (precedent @angular-eslint/schematics).
+    expect(manifest['ng-add']?.save).toBe('devDependencies');
+  });
+
+  it('declares the converted builder runtime peers with the D-07 ranges', () => {
+    // @angular-devkit/architect uses the 0.22xx.x scheme (NOT 22.x): 22.0 ->
+    // 0.2200, 22.1 -> 0.2201, ... The range spans ALL of Angular 22.x, symmetric
+    // with the `^22.0.0` compiler-cli peer -- a caret on the leading-zero-major
+    // (`^0.2200.0`) would lock to 22.0.x only.
+    expect(manifest.peerDependencies?.['@angular-devkit/architect']).toBe(
+      '>=0.2200.0 <0.2300.0',
+    );
+    // The @nx/devkit convertNxExecutor wrapper touches only the core Observable
+    // contract (`new Observable(subscriber => { subscriber.next/complete/error })`),
+    // identical across rxjs 6.5.3+ and all 7.x -- so mirror Angular 22's own rxjs
+    // range rather than pinning a narrower 7.8.0 the wrapper does not require.
+    expect(manifest.peerDependencies?.['rxjs']).toBe('^6.5.3 || ^7.4.0');
+  });
+
+  it('classifies both builder runtime peers as OPTIONAL (never forced onto a pure-Nx consumer)', () => {
+    expect(
+      manifest.peerDependenciesMeta?.['@angular-devkit/architect']?.optional,
+    ).toBe(true);
+    expect(manifest.peerDependenciesMeta?.['rxjs']?.optional).toBe(true);
+  });
+
+  it('declares @angular-devkit/schematics as an OPTIONAL peer at ^22.0.0 (ng-add schematic runtime peer; B6)', () => {
+    // The vanilla nx-free ng-add schematic TYPE-imports Rule/Tree/SchematicContext
+    // from @angular-devkit/schematics. `^22.0.0` is the all-of-Angular-22 spelling
+    // for a 22.x-scheme package (installed 22.0.6) -- NOT architect's 0.2200.x
+    // leading-zero scheme. Optional so it is never forced onto a pure-Nx consumer.
+    expect(manifest.peerDependencies?.['@angular-devkit/schematics']).toBe(
+      '^22.0.0',
+    );
+    expect(
+      manifest.peerDependenciesMeta?.['@angular-devkit/schematics']?.optional,
+    ).toBe(true);
+  });
+
+  it('declares nx as a ^23.0.0 dependency; the optional peers do not move it into peerDependencies', () => {
+    expect(manifest.dependencies?.['nx']).toBe('^23.0.0');
+    expect(manifest.peerDependencies ?? {}).not.toHaveProperty('nx');
   });
 });

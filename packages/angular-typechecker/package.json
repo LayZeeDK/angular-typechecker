@@ -28,6 +28,11 @@
   "types": "./src/index.d.ts",
   "executors": "./executors.json",
   "generators": "./generators.json",
+  "builders": "./builders.json",
+  "schematics": "./collection.json",
+  "ng-add": {
+    "save": "devDependencies"
+  },
   "exports": {
     ".": "./src/index.js",
     "./package.json": "./package.json"
@@ -36,16 +41,33 @@
     "src",
     "executors.json",
     "generators.json",
+    "builders.json",
+    "collection.json",
     "README.md",
     "LICENSE"
   ],
   "dependencies": {
     "@nx/devkit": "23.0.1",
+    "nx": "^23.0.0",
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
     "@angular/compiler-cli": "^22.0.0",
-    "typescript": ">=6.0.0 <6.1.0"
+    "typescript": ">=6.0.0 <6.1.0",
+    "@angular-devkit/architect": ">=0.2200.0 <0.2300.0",
+    "@angular-devkit/schematics": "^22.0.0",
+    "rxjs": "^6.5.3 || ^7.4.0"
+  },
+  "peerDependenciesMeta": {
+    "@angular-devkit/architect": {
+      "optional": true
+    },
+    "@angular-devkit/schematics": {
+      "optional": true
+    },
+    "rxjs": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.0.0"

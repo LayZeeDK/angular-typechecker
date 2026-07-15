@@ -1,50 +1,39 @@
 {
   "version": "1.0",
-  "timestamp": "2026-07-10T09:14:39.115Z",
-  "context": "quick",
-  "phase": "quick-260710-b9t",
-  "phase_name": "Dogfood angular-typechecker: unify typecheck/test/integration/e2e verbs + cover every non-broken file",
-  "phase_dir": ".planning/quick/260710-b9t-dogfood-angular-typechecker-add-typechec",
-  "plan": 1,
-  "task": 9,
-  "total_tasks": 9,
-  "status": "complete-pending-merge",
-  "branch": "dogfood-typecheck-all-files",
-  "pr": "https://github.com/LayZeeDK/angular-typechecker/pull/33",
-  "ci_status": "green (ci aggregate + e2e + 6 test cells + fallow + format-lint + act-compat + lint-workflows + scoped-name-guard + CodeQL all pass on 1606713)",
-  "completed_tasks": [
-    {"id": 1, "name": "nx.json name-keyed typecheck default + root run-many scripts", "status": "done", "commit": "efb9d50"},
-    {"id": 2, "name": "plugin unified typecheck (spec+drift+tools commands[]) + tsconfig.tools.json + fix first-time-checked specs", "status": "done", "commit": "086b247"},
-    {"id": 3, "name": "typecheck targets on gap projects (app, consumer-dep, test-util)", "status": "done", "commit": "086b247"},
-    {"id": 4, "name": "3-tier test split (reclassify 2 leakers, fast test + integration target)", "status": "done", "commit": "cbf5eb6"},
-    {"id": 5, "name": "e2e vocabulary (test->e2e, typecheck-e2e->typecheck) + rewrite coverage guard", "status": "done", "commit": "b684663"},
-    {"id": 6, "name": "clean-fixtures typecheck on root project (fixtures/tsconfig.clean.json)", "status": "done", "commit": "6bd4397"},
-    {"id": 7, "name": "simplify ci.yml onto unified verbs (security intact)", "status": "done", "commit": "e13ec75"},
-    {"id": 8, "name": "make green locally (+ .nxignore consumer-app exclusion, dep-checks ignore)", "status": "done", "commit": "469b655"},
-    {"id": 9, "name": "commits + PR #33 into main + clear fallow new-only false positives", "status": "done", "commit": "1c68811"},
-    {"id": 10, "name": "SCOPE ADDITION (user): rename e2e specs .int.spec.ts -> .e2e.spec.ts", "status": "done", "commit": "946e7ca"},
-    {"id": 11, "name": "docs: quick-task planning artifacts (CONTEXT/RESEARCH/PLAN/SUMMARY/VERIFICATION) + STATE.md", "status": "done", "commit": "9affd24"},
-    {"id": 12, "name": "POST-REVIEW (user): scope e2e-job typecheck so it stops duplicating the test job", "status": "done", "commit": "5f5c6a0"},
-    {"id": 13, "name": "POST-REVIEW (user): tag e2e projects type:e2e, select e2e typecheck by tag, add GUARD-01d", "status": "done", "commit": "1606713"}
+  "timestamp": "2026-07-12T12:33:26.742Z",
+  "context": "phase",
+  "phase": "24",
+  "phase_name": "real-oss-scaffolded-e2e-additive-only-audit-docs",
+  "phase_dir": ".planning/phases/24-real-oss-scaffolded-e2e-additive-only-audit-docs",
+  "plan": 6,
+  "task": 1,
+  "total_tasks": 3,
+  "status": "paused",
+  "chain_context": "v0.2.1 phase 24 was complete + verified (5/5) + secured + validated + learnings-extracted; gaps 24-04 (nx as a direct dependency) and 24-05 (yarn + pnpm CLI e2e) landed. Then a deep investigation pinned the yarn-4 `ng add` no-auto-wire root cause (nx's CJS log-symbols@4 resolving Angular schematics' ESM chalk@5 under yarn's hoist -> `chalk.blue is not a function`, swallowed by @angular/cli). Option D (lazy-require) was spiked + REFUTED; Option C (a vanilla nx-free ng-add) was spiked + CONFIRMED; exhaustive web research confirmed no cheaper alternative and that it is NOT an upstream angular-cli bug. User chose to fold Option C into v0.2.1 as phase-24 gap 24-06. 24-06-PLAN.md is committed (HEAD 3495ec6) and plan-check PASSED (no blockers, 3 low-severity advisories). THIS pause is BEFORE executing 24-06.",
+  "completed_this_session": [
+    {"name": "Executed gaps 24-04 (nx direct ^23.0.0 dependency) + 24-05 (yarn real ng add + pnpm name-collision e2e); all four CLI e2e specs green", "commit": "fd41260, dcfb0be, 76c6f35, c5c6912"},
+    {"name": "Pinned the yarn ng-add no-auto-wire root cause via an instrumented Verdaccio first-run repro; refined the committed artifacts", "commit": "6937871, 6fcd782"},
+    {"name": "Re-ran the phase-24 completion gates via dedicated agents (code-review clean, verify 5/5, secure threats_open 0, validate nyquist_compliant), extract-learnings + global bridge, phase re-complete", "commit": "724c570, 9d25925, 1b42eff, 44a7884, 3c86108, 6b47ba4, 815829b, 4ee9b0e"},
+    {"name": "Vanilla-repro quick task 260712-ft9: proved the yarn ng-add failure is NX-SPECIFIC (a Nx-free schematic wires under yarn), so no upstream angular-cli issue is warranted", "commit": "b513ac9, fca1e8d"},
+    {"name": "Spiked Option D (lazy-require) = REFUTED; spiked Option C (nx-free vanilla ng-add) = CONFIRMED (first-run ng add auto-wires under yarn 4); both reverted; exhaustive web research", "commit": "72b189a, 2da8022"},
+    {"name": "Planned + plan-checked phase-24 gap 24-06 (Option C landing); plan-check PASSED", "commit": "3495ec6"},
+    {"name": "Added a global CLAUDE.md rule: confirm via AskUserQuestion before creating an upstream/3rd-party GitHub issue or PR (edited ~/.claude/CLAUDE.md, a separate file -- not this repo)", "commit": "(outside repo)"}
   ],
   "remaining_tasks": [
-    {"id": 14, "name": "USER decides whether to merge PR #33 into main", "status": "not_started"},
-    {"id": 15, "name": "OPTIONAL (offered, undecided): add a one-line comment on the nx:run-commands typecheck targets citing the 'why not @nx/js:tsc noEmit' rationale", "status": "not_started"}
+    {"id": 1, "name": "Extract the framework-agnostic wiring core (src/core/angular-cli-wiring.ts: pure leaf-resolution + targetName guard + collision-by-builder + [build,spec] idempotent merge over plain data + an injected exists(path) callback, no Tree); route the Nx configuration generator's CLI-branch through it BYTE-IDENTICALLY; relocate the 2 shared constants (TYPECHECK_EXECUTOR_ID, NO_CACHING_NOTICE) out of init/generator.ts into the core and re-export them from init so existing importers are unchanged. All configuration + init specs stay green.", "status": "not_started"},
+    {"id": 2, "name": "Rewrite src/schematics/ng-add/schematic.ts as a VANILLA @angular-devkit/schematics Rule (ZERO @nx/devkit import/require in load OR execution) using the shared core: enumerate angular.json projects, wire app+library only, RF-01 devDep move, RF-02 no-angular.json notice, idempotency, collision error, no-caching notice; migrate the 14 ng-add.spec.ts tests to test the vanilla Rule via @angular-devkit/schematics/testing; DELETE the orphaned generators/ng-add/generator.ts + its spec (KEEP schema.json/schema.d.ts so collection.json is byte-unchanged); add @angular-devkit/schematics to eslint @nx/dependency-checks ignoredDependencies. Task-2 acceptance greps the compiled dist to prove NO @nx/devkit.", "status": "not_started"},
+    {"id": 3, "name": "Flip e2e/angular-typechecker-ng-cli-e2e/src/ng-add-ng-run-yarn.e2e.spec.ts: assert first-run `ng add angular-typechecker --skip-confirmation` AUTO-WIRES both layouts under yarn (DROP the `ng g` fallback + the no-wire quirk-lock + fix the docstring); npm + pnpm specs stay green. Resolve .planning/todos/pending/readme-yarn-ng-add-caveat.md (README already claims universal auto-wire -> now accurate; move todo to done/).", "status": "not_started"}
   ],
   "blockers": [],
   "human_actions_pending": [
-    {"action": "Decide whether to merge PR #33 into main", "context": "main is PR-only (empty-bypass ruleset); an agent self-merge needs EXPLICIT user OK per the release-mechanics memory. ci is green.", "blocking": true},
-    {"action": "Do NOT approve any deployment/environment gate", "context": "HARD RULE: environment approval is a human-only control. (There is no gate on the ci workflow anyway; release.yml's npm-publish gate is not involved here.)", "blocking": false}
+    {"action": "v0.2.1 Release-PR flow (nx release --skip-publish -> curate CHANGELOG -> PR into PR-only main -> tag angular-typechecker@0.2.1 on the merge commit -> OIDC publish, approve npm-publish env) + /gsd-complete-milestone", "context": "Irreversible + a deployment/environment approval; ALWAYS human-only. NOT part of executing 24-06.", "blocking": false}
   ],
   "decisions": [
-    {"decision": "D2 revised: use nx:run-commands + tsc --noEmit for non-Angular typecheck (NOT @nx/js:tsc)", "rationale": "Verified twice against @nx/js@23.0.1 source: @nx/js:tsc schema requires main+outputPath, forces outDir, sets noEmitOnError, calls program.emit() and treats emitSkipped as failure -> noEmit is a guaranteed CI-red. Nx's inferred typecheck uses tsc --build --emitDeclarationOnly (emits) and self-disables on noEmit. tsc --noEmit -p is the real no-emit primitive.", "phase": "quick-260710-b9t"},
-    {"decision": "Angular projects (app, consumer libs, clean fixtures) dogfood angular-typechecker:typecheck", "rationale": "It honors noEmit (performCompilation, not program.emit) and adds NG8xxx template diagnostics tsc can't.", "phase": "quick-260710-b9t"},
-    {"decision": "Exclude only intentionally-broken fixtures; clean fixtures get a solution-style typecheck on the root project", "rationale": "D1 (user). Broken fixtures are the test corpus asserted by the 16 integration specs; classified clean-vs-broken empirically by running.", "phase": "quick-260710-b9t"},
-    {"decision": "3-tier tests: test (fast unit) / integration (real-compiler) / e2e (tarball); suffix .e2e.spec.ts", "rationale": "D5 (user) + user scope addition. Measured integration ~4x unit wall-clock; .e2e.spec.ts removes .int/.integration ambiguity and mirrors the e2e target.", "phase": "quick-260710-b9t"},
-    {"decision": "Identify e2e projects with a type:e2e tag; ci e2e-job typecheck uses -p tag:type:e2e; GUARD-01d locks the tag set", "rationale": "User request. Auto-covers future e2e projects; the tag scopes the pre-install fast typecheck without duplicating the test job's full run.", "phase": "quick-260710-b9t"},
-    {"decision": "DEVIATION: added consumer-app fixture to .nxignore (brief said don't touch it)", "rationale": "The unified typecheck verb swept in an on-graph install-smoke fixture with a fixture-root-relative tsConfig (ENOENT). EXTENDS the repo's own documented exclusion pattern; does not undo any exclusion. Flagged to user; accepted.", "phase": "quick-260710-b9t"}
+    {"decision": "Fix the yarn-4 ng add no-auto-wire with Option C (vanilla nx-free @angular-devkit/schematics ng-add), landed as phase-24 gap 24-06 folded into v0.2.1", "rationale": "Spike-CONFIRMED (nx-free ng-add auto-wires first-run under yarn 4); Option D lazy-require REFUTED (process-wide chalk load); no nx version / clean yarn-config fix; not an upstream angular-cli bug. User chose Option 2.", "phase": "24"},
+    {"decision": "Single-source-of-truth via a shared framework-agnostic wiring core; configuration + init schematics STAY convertNx", "rationale": "Avoid a second wiring implementation; configuration/init run via `ng g` (no add-command listr2 stack) and work under yarn, so only ng-add needs to go nx-free.", "phase": "24"},
+    {"decision": "Lazy-requiring @nx/devkit does NOT fix the yarn ng add (Option D refuted)", "rationale": "Instrumented spike: the probe was fixed but executeSchematic still threw chalk.blue -- the chalk breakage is PROCESS-WIDE. Only a fully nx-free ng-add execution avoids it.", "phase": "24"}
   ],
   "uncommitted_files": [],
-  "next_action": "Confirm PR #33 ci is still green (it is: ci=pass on 1606713), then let the USER decide whether to merge. Do NOT self-merge without explicit user OK; do NOT approve any environment/deployment gate.",
-  "context_notes": "Ran as /gsd-quick --research --validate. Full pipeline done: research (RESEARCH.md), plan (PLAN.md, 9 tasks) + plan-check PASS, execute (gsd-executor, split across a usage-limit reset), independent orchestrator verification (local nx run-many -t typecheck GREEN across 10 projects + CI GREEN across the matrix; zero suppressions added; email hygiene clean). Two post-PR user refinements landed (e2e typecheck de-dup via tag; both CI-green). Everything is committed and pushed; working tree clean; 12 commits ahead of origin/main. The ONLY open item is the human merge decision on PR #33."
+  "next_action": "Run /gsd-execute-phase 24 --gaps-only . It executes the checker-PASSED plan 24-06 on the MAIN checkout (single-plan wave, NO worktree -- the yarn/npm/pnpm e2e needs real node_modules + Verdaccio + the shared tarball). Then run the post-execution gates via dedicated agents: re-run the ADDITIVE-ONLY audit (24-ADDITIVE-AUDIT.md, ACP-02) -> gsd-code-review -> gsd-verifier -> gsd-secure-phase -> gsd-validate-phase -> gsd-extract-learnings -> phase.complete + global-learnings bridge.",
+  "context_notes": "24-06 is a REAL refactor touching the generator core + the ng-add test suite -- not a trivial edit. Read the plan + the design doc first. The LOAD-BEARING invariant behind Option C: the COMPILED ng-add schematic.js must contain ZERO @nx/devkit (that is the entire fix). Do NOT try lazy-require (Option D refuted). Keep the Nx configuration generator BYTE-IDENTICAL (all 4 configuration specs are the gate: configuration.spec, configuration-angular-cli.spec, configuration-matrix.spec, schema-parity.spec). Windows arm64: corepack yarn; git grep/rg NEVER grep; ASCII only; Write tool not heredocs; stage files by name; committer email MUST be the public gmail. The yarn e2e verify is SLOW (Verdaccio build+publish + yarn/npm/pnpm installs, several minutes) -- use a generous Bash timeout / run_in_background. Full design + proof: .planning/debug/resolved/cli-yarn-e2e-wrong-version.md ('Option C spike' + 'Web research + consolidated fix ranking'); the plan: .planning/phases/24-real-oss-scaffolded-e2e-additive-only-audit-docs/24-06-PLAN.md."
 }

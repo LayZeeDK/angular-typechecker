@@ -12,14 +12,17 @@
 #
 # storage is overridden at runtime by the executor (--storage
 # tmp/local-registry/storage + VERDACCIO_STORAGE_PATH); keep a sane relative
-# default here. `clear: true` (the @nx/js:verdaccio executor default) wipes the
-# storage dir -- INCLUDING the .htpasswd placed under it -- each run, so every run
-# gets a deterministic fresh ci-user sign-up.
+# default here. The e2e global-setups now run the executor with `clear: false`
+# (Lever 1, quick-260714-1gr) so the executor NEVER wipes storage and the npmjs
+# uplink proxy cache PERSISTS across runs. Instead, resetVerdaccioPublishState
+# (in each global-setup, before startLocalRegistry) deletes ONLY the
+# angular-typechecker package dir + the .htpasswd each run.
 storage: ../tmp/local-registry/storage
 
 # htpasswd auth is REQUIRED for the ci-user sign-up that mints a real publish
 # token. The file path is relative to THIS config file (.verdaccio/); placing it
-# under the cleared storage dir means clear:true resets it each run.
+# under the storage dir means resetVerdaccioPublishState deletes it each run for a
+# fresh sign-up, while the rest of storage (the proxy cache) is preserved.
 auth:
   htpasswd:
     file: ../tmp/local-registry/storage/.htpasswd

@@ -85,7 +85,10 @@ describe('NX-ADD-NPM: real `nx add` on an npm workspace seeds the typecheck targ
         ...env,
         npm_config_userconfig: join(tmp, '.npmrc.nonexistent'),
       };
-      sh('npm install', { cwd: tmp, env: npmEnv });
+      sh('npm install --no-audit --no-fund --prefer-offline', {
+        cwd: tmp,
+        env: npmEnv,
+      });
 
       // The REAL command: nx add detects npm -> runs `npm install -D
       // angular-typechecker@latest` (resolved from Verdaccio; npm has no

@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -84,9 +85,13 @@ interface TarballManifest {
 // Captured in beforeAll, consumed by the it() gates.
 let tgz = '';
 let filePaths: string[] = [];
-// A tmp dir (created UNDER distDir as a RELATIVE path) into which the tarball is
+// A per-spec OS-temp dir the tarball is packed INTO (via `npm pack
+// --pack-destination`) so dist stays read-only during e2e and no sibling e2e
+// project shares the tarball path. afterAll removes it recursively.
+let packDest = '';
+// A tmp dir (created UNDER packDest as a RELATIVE path) into which the tarball is
 // extracted so the gates can read the REAL shipped package.json + .d.ts content
-// (not the source tree). It is created relative to distDir so the `tar` binary
+// (not the source tree). It is created relative to packDest so the `tar` binary
 // never sees a Windows drive-letter path -- GNU tar misreads `D:\...` as a
 // remote `host:path` rsh spec ("Cannot connect to D:"), and BSD tar (macOS CI)
 // lacks GNU's `--force-local` escape. A relative filename + relative `-C` under a
@@ -107,46 +112,49 @@ function collectDtsText(dir: string): string {
 }
 
 beforeAll(() => {
-  // The project globalSetup already built dist ONCE (finding E1); pack that shared
-  // dist -- no redundant per-spec build. NEVER pipe nx/npm through head/rg: the
-  // pipe tail's exit code masks the tool's (RESEARCH anti-pattern).
+  // dist is built ONCE upstream by the e2e target's dependsOn (read-only during
+  // e2e); pack it into a per-spec OS-temp dir so no sibling e2e project shares the
+  // tarball path. NEVER pipe nx/npm through head/rg: the pipe tail's exit code masks
+  // the tool's (RESEARCH anti-pattern).
   //
-  // Pack from the dist dir; `npm pack --json` writes the structured file list to
-  // stdout AND creates the `.tgz` on disk. files[].path is package-relative
-  // (no `package/` prefix). Keep the bare filename for the relative `tar` call.
-  const packOutput = execSync('npm pack --json', {
-    cwd: distDir,
-    encoding: 'utf8',
-  });
+  // `npm pack --json --pack-destination <dir>` writes the `.tgz` into <dir> and
+  // reports `filename` as the bare base name (angular-typechecker is unscoped, so
+  // the scoped-filename bug does not apply). cwd stays distDir so pack reads the dist
+  // package. files[].path is package-relative (no `package/` prefix). Keep the bare
+  // filename for the relative `tar` call.
+  packDest = mkdtempSync(join(tmpdir(), 'atc-pack-audit-'));
+  const packOutput = execSync(
+    `npm pack --json --pack-destination "${packDest}"`,
+    {
+      cwd: distDir,
+      encoding: 'utf8',
+    },
+  );
   const parsed = JSON.parse(packOutput) as PackResult[];
   const packResult = parsed[0];
   const tgzFilename = packResult.filename;
 
-  tgz = join(distDir, tgzFilename);
+  tgz = join(packDest, tgzFilename);
   filePaths = packResult.files.map((file) => file.path);
 
-  // Extract the tarball into an isolated dir UNDER distDir so the no-install-
+  // Extract the tarball into an isolated dir UNDER packDest so the no-install-
   // scripts + @fixtures-leak gates read the REAL packed content (the npm tarball
-  // nests everything under a top-level `package/` dir). Run `tar` with cwd=distDir
+  // nests everything under a top-level `package/` dir). Run `tar` with cwd=packDest
   // and RELATIVE paths only (bare tgz filename + relative -C) so neither a Windows
   // drive letter nor a GNU-vs-BSD flag divergence trips it.
-  extractDir = mkdtempSync(join(distDir, 'atc-audit-'));
-  const extractRel = extractDir.slice(distDir.length + 1);
+  extractDir = mkdtempSync(join(packDest, 'atc-audit-'));
+  const extractRel = extractDir.slice(packDest.length + 1);
   execSync(`tar -xzf "${tgzFilename}" -C "${extractRel}"`, {
-    cwd: distDir,
+    cwd: packDest,
     encoding: 'utf8',
   });
 });
 
 afterAll(() => {
-  // Remove the packed `.tgz` (WR-02 cleanup discipline) + the extraction dir so
-  // no audit artifact leaks between runs. force:true keeps teardown non-fatal.
-  if (tgz) {
-    rmSync(tgz, { force: true });
-  }
-
-  if (extractDir) {
-    rmSync(extractDir, { recursive: true, force: true });
+  // Remove the per-spec pack dir (tarball + extraction dir live under it) so no
+  // audit artifact leaks between runs. force:true keeps teardown non-fatal.
+  if (packDest) {
+    rmSync(packDest, { recursive: true, force: true });
   }
 });
 

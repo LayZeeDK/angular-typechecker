@@ -14,12 +14,23 @@ import { describe, expect, it } from 'vitest';
 
 const schemaPath = join(dirname(fileURLToPath(import.meta.url)), 'schema.json');
 
+interface SchemaProperty {
+  type?: string;
+  default?: unknown;
+  // ENG-01: tsConfig widens from a bare `type: string` to a `oneOf` string|array.
+  oneOf?: readonly {
+    type?: string;
+    items?: { type?: string };
+    minItems?: number;
+  }[];
+}
+
 interface ExecutorSchema {
   version?: number;
   cli?: string;
   additionalProperties?: boolean;
   required?: readonly string[];
-  properties: Record<string, { type?: string; default?: unknown }>;
+  properties: Record<string, SchemaProperty>;
 }
 
 const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as ExecutorSchema;
@@ -59,5 +70,19 @@ describe('schema.json <-> schema.d.ts parity (D-06)', () => {
 
   it('defaults strict to false (D-19-01: opt-in; absent => current behavior)', () => {
     expect(schema.properties.strict.default).toBe(false);
+  });
+
+  it('ENG-01: widens tsConfig to a oneOf accepting a string OR a non-empty array of strings', () => {
+    const branches = schema.properties.tsConfig.oneOf ?? [];
+
+    expect(Array.isArray(schema.properties.tsConfig.oneOf)).toBe(true);
+
+    const stringBranch = branches.find((branch) => branch.type === 'string');
+    const arrayBranch = branches.find((branch) => branch.type === 'array');
+
+    expect(stringBranch).toBeDefined();
+    expect(arrayBranch).toBeDefined();
+    expect(arrayBranch?.items?.type).toBe('string');
+    expect(arrayBranch?.minItems).toBe(1);
   });
 });

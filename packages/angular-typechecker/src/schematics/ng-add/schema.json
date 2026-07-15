@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "NgAddSchema",
+  "title": "angular-typechecker ng-add",
+  "description": "Add angular-typechecker and wire a typecheck target into every application + library project.",
+  "cli": "nx",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Scope wiring to a single project; default all app + library projects."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false,
+      "description": "Skip formatting files with Prettier after wiring."
+    }
+  },
+  "additionalProperties": false
+}
