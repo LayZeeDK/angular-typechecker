@@ -5,7 +5,7 @@ status: verified
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-11
-updated: 2026-07-12
+updated: 2026-07-15
 ---
 
 # Phase 24 — Validation Strategy
@@ -239,6 +239,71 @@ implementation file was touched; no assertion was weakened. The prior verdict st
 
 ---
 
+## Delta: 24-06 re-audit — nx-free vanilla ng-add + shared wiring core (2026-07-15, Nyquist auditor)
+
+Re-validation after **Plan 24-06** landed on the already-validated phase (commits `43a5815`,
+`73ba76c`, `1df91b6`, `b5dfcfd`, `1b05e19`). 24-06 REPLACED the Nx-based `convertNxGenerator`
+ng-add with a **vanilla `@angular-devkit/schematics` ng-add schematic**
+(`src/schematics/ng-add/schematic.ts`) that loads ZERO `@nx/devkit`, and EXTRACTED the shared
+wiring core (`src/core/angular-cli-wiring.ts`) consumed by BOTH the vanilla ng-add AND the Nx
+`configuration` generator (whose observable behavior stays byte-identical). Focus of this
+re-audit: does the coverage adequately SAMPLE the 24-06 behavior (the refactor's new surfaces
+and the closed NGADD-01 yarn first-run gap), not merely "the tasks ran"? Each requirement was
+re-classified against the actual shipped tests at HEAD, then the fast tier was executed THIS
+session and its green result observed directly — prior inline classifications not trusted.
+
+### Per-requirement coverage at HEAD (24-01..24-06 integrated)
+
+| Requirement | Sample point(s) at HEAD | Type | Status |
+|-------------|-------------------------|------|--------|
+| **NGADD-01** (yarn first-run auto-wire — the gap 24-06 closed) | `src/schematics/ng-add/ng-add.spec.ts` (13) drives the vanilla Rule directly (auto-wire-all, `--project` scoping, idempotency, re-assert-ours-preserve-user-keys, collision throw, skip e2e, dev-dep move, notice-once, WR-03 ×2, IN-01, RF-02 no-`angular.json` guard, pnpm-collision-immune-by-construction) + e2e `ng-add-ng-run-yarn.e2e.spec.ts` (real yarn 4 `ng add` FIRST-RUN auto-wire, `.each(['flat','workspace'])`, per-leaf scoping) | unit + e2e | green |
+| **ACV-03** (unit+integration of CLI-vs-Nx differences) | `src/core/angular-cli-wiring.spec.ts` (18) — the new authoritative fast unit tier for the shared leaf-resolution / targetName-guard / override / collision-by-builder / idempotent-`[build,spec]`-merge decision logic; `ng-add.spec.ts` (13) for the `angular.json` write-fork on a schematics tree; `builder.integration.spec.ts` (4) for the builder over `BuilderContext`; `configuration-angular-cli.spec.ts` (15) for the array shape | unit + integration | green |
+| **ACP-02** (additive-only, no breaking change) | Core extraction touches no public barrel/schema/executor id: `src/index.drift.ts` drift tripwire (`nx typecheck`), `nx-surface-regression` (3), `nx-generators-surface-regression` (7), `schema-parity` ×4 (7+8+3+4), `package-manifest.spec.ts` (20). Nx observable behavior byte-identical after the extraction: `configuration.spec.ts` (15) + `configuration-matrix.spec.ts` (19) green | unit + static | green |
+| **ACV-02** (automated scaffolded CI e2e) | `ng-add-ng-run.e2e.spec.ts` (npm) + `ng-add-ng-run-yarn.e2e.spec.ts` (yarn flat+workspace) + `ng-add-ng-run-pnpm.e2e.spec.ts` (pnpm root-collision) + `ci-e2e-coverage-guard.spec.ts` (set/tag membership) | e2e + unit | green |
+| **ACD-01** (README `## Angular CLI` + CHANGELOG) | `src/angular-cli-docs.spec.ts` (9). 24-06 made NO README change — the yarn `ng add` caveat became obsolete (product-fixed by the nx-free schematic), so the todo was retired to `done/`; the docs tripwire is unchanged and green | unit | green |
+| **ACV-01** (real-clone tarball FINAL gate) | Manual-only BY DESIGN (uncommitted clones — see Manual-Only above). 24-06 does not change its status | manual UAT | manual (by design) |
+
+### Is the "vanilla nx-free" mechanism guarded against regression?
+
+24-06's load-bearing property is that the compiled ng-add loads zero `@nx/devkit` (else the
+`ora -> log-symbols -> chalk` `chalk.blue is not a function` throw under yarn 4's hoist returns).
+It is guarded on TWO standing axes — no gap:
+
+- **Structural (fast, lint-time):** the D-11 `@typescript-eslint/no-restricted-imports` block in
+  `eslint.config.mjs` scoped to `**/src/core/**/*.ts` bans `nx`, `@nx/devkit`, `@nx/*`,
+  `@angular-devkit/architect`, and `yargs` — INCLUDING type-only imports (`allowTypeImports`
+  omitted) — enforced at `maxWarnings:0`, keeping the shared core framework-agnostic.
+- **Behavioral (CI-authoritative):** `ng-add-ng-run-yarn.e2e.spec.ts` proves the real
+  `ng add angular-typechecker` auto-wires on the FIRST run under yarn 4 — which is impossible if
+  the schematic reintroduced the nx transitive chalk chain. A regression fails this leg loudly.
+
+A fast dist-grep tripwire over `schematic.js` would be pure defense-in-depth; the requirement is
+already sampled behaviorally AND the mechanism is lint-guarded, so adding one is redundant (YAGNI)
+— NOT generated.
+
+### Commands executed this session (observed directly)
+
+| Command | Result |
+|---------|--------|
+| `NX_DAEMON=false npx nx test angular-typechecker --skip-nx-cache` | **39 files / 373 tests PASS** (6.08s), incl. `angular-cli-wiring.spec.ts` (18 — the new shared core, ACV-03), `ng-add.spec.ts` (13 — vanilla nx-free Rule, NGADD-01), `configuration.spec.ts` (15) + `configuration-angular-cli.spec.ts` (15) + `configuration-matrix.spec.ts` (19) + `schema-parity` ×4 (Nx byte-identity gate holds after the core extraction), `nx-generators-surface-regression.spec.ts` (7) + `package-manifest.spec.ts` (20) (ACP-02) |
+
+*The e2e tier (`ng-add-ng-run-yarn.e2e.spec.ts` etc.) was NOT re-run this session — it was
+verified green standalone during 24-06 execution (yarn flat 89.8s + yarn workspace 70.9s
+first-run auto-wire, per 24-06-SUMMARY) and runs as the CI-authoritative per-project e2e matrix.
+The fast unit + static tier re-run here re-samples every automatable 24-06 surface.*
+
+### Verdict
+
+**`nyquist_compliant: true` holds; `wave_0_complete: true` holds.** All Phase-24 automatable
+requirements (NGADD-01 yarn first-run, ACV-02, ACV-03, ACP-02, ACD-01) have adequate, executed,
+green Nyquist sample points covering the 24-06 delta: the shared wiring core, the vanilla nx-free
+ng-add Rule, the Nx byte-identity gate, and the additive-only guards. Coverage already existed —
+**0 tests generated** (no redundant tests added), **0 gaps filled**, **0 escalated**. No
+implementation file was touched; no test file was created or modified; no assertion was weakened.
+ACV-01 remains manual-only by design. The prior verdict stands.
+
+---
+
 ## Validation Sign-Off
 
 - [x] All tasks have `<automated>` verify or Wave 0 dependencies (ACV-01 excepted — manual by design)
@@ -248,4 +313,4 @@ implementation file was touched; no assertion was weakened. The prior verdict st
 - [x] Feedback latency < 60s (unit/integration/drift tier)
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** verified 2026-07-11; re-audited 2026-07-12 after gap closure (24-04 nx-dep + 24-05 yarn/pnpm CLI e2e) — Nyquist auditor: ACP-02 + ACV-02 adequately sampled and re-run green (349 unit + drift typecheck + 4 CLI e2e); 0 tests generated (coverage pre-existing), 0 gaps, 0 escalations; ACV-01 manual-only by design. `nyquist_compliant: true` holds.
+**Approval:** verified 2026-07-11; re-audited 2026-07-12 after gap closure (24-04 nx-dep + 24-05 yarn/pnpm CLI e2e) — ACP-02 + ACV-02 adequately sampled and re-run green (349 unit + drift typecheck + 4 CLI e2e); re-audited 2026-07-15 after 24-06 (nx-free vanilla ng-add + shared `angular-cli-wiring` core) — Nyquist auditor: NGADD-01 (yarn first-run), ACV-03, ACP-02, ACV-02, ACD-01 adequately sampled and re-run green (**39 files / 373 tests**; Nx byte-identity gate holds after the core extraction; core "no @nx/devkit" mechanism doubly guarded by D-11 lint boundary + yarn e2e); 0 tests generated (coverage pre-existing), 0 gaps, 0 escalations; ACV-01 manual-only by design. `nyquist_compliant: true` holds.

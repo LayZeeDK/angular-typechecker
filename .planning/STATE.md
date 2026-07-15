@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
 status: executing
-last_updated: "2026-07-12T14:33:14.394Z"
-last_activity: 2026-07-15 -- quick task 260715-050 COMPLETE (commit c7eabb4): split the e2e CI tier into a per-project matrix (620s -> ~366s, ~41% faster; verified on real CI via throwaway PR #36, closed). Lever B (Verdaccio uplink cache) measured miss/hit + discarded (within CI noise); GitHub-backed Nx remote cache deferred to ROADMAP Phase 25 (added). No version mutation
+last_updated: "2026-07-15T10:39:24.000Z"
+last_activity: 2026-07-15 -- Phase 24 execute-phase CLOSE-OUT: re-ran the four post-execution gates via their DEDICATED agents to cover gap-closure plan 24-06 (the earlier gates were dated 2026-07-12 10:xx, BEFORE 24-06's 16:36 SUMMARY, so they were stale). verify=6/6 truths (ONE human_needed: re-run the ACV-01 manual real-clone gate pre-release, LOW risk -- ACV-02 automated e2e covers the same flow green 4/4), secure=SECURED (0/15 threats open), validate=nyquist_compliant (0 gaps, 0 tests added -- 24-06 shipped its own specs), extract-learnings refreshed (11/12/7/7) + global-learnings re-bridged (16 new/21 dedup). Authoritative post-merge gate GREEN (39 files/373 tests, lint maxWarnings:0, build, format:check). No product/version change (stays 0.2.0)
 progress:
   total_phases: 3
   completed_phases: 3
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angul
 
 ## Current Position
 
-Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — EXECUTING
+Phase: 24 (real-oss-scaffolded-e2e-additive-only-audit-docs) — COMPLETE (6/6 plans; post-execution gates refreshed to cover 24-06)
 Plan: 6 of 6 (24-06 gap-closure complete)
-Status: Executing Phase 24
-Last activity: 2026-07-15 -- quick task 260715-050 COMPLETE (commit c7eabb4): split the e2e CI tier into a per-project matrix (620s -> ~366s, ~41% faster; verified on real CI via throwaway PR #36). Verdaccio uplink cache (Lever B) measured + discarded (within CI noise); GitHub-backed Nx remote cache deferred to ROADMAP Phase 25. Phase 24 at 6/6
+Status: Phase 24 execute-phase workflow + all global-CLAUDE.md post-execute steps complete (verify/secure/validate/extract-learnings + global-learnings bridge). ONE human item outstanding (pre-release ACV-01 real-clone re-run -- see Operator Next Steps)
+Last activity: 2026-07-15 -- Phase 24 close-out: post-execution gates re-run via dedicated agents covering 24-06 (verify 6/6, secure SECURED 0-open, validate nyquist_compliant); learnings refreshed + re-bridged; post-merge gate GREEN (373 tests). No version change (0.2.0)
 
 ## Accumulated Context
 
@@ -196,7 +196,30 @@ Tracked as Future Requirements (out of scope, not debt):
 
 ## Session Continuity
 
-Last session: 2026-07-12T14:33:14.385Z
+Last session: 2026-07-15T10:39:24.000Z
+Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
+committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative post-merge gate GREEN
+(`nx run-many -t build test lint --projects=angular-typechecker --skip-nx-cache` => 39 files/373 tests,
+lint maxWarnings:0, build ok; `nx format:check --base origin/main` exit 0). Then ran ALL global-CLAUDE.md
+post-execute steps IN ORDER, each reached by its DEDICATED agent, because the prior gates (2026-07-12
+10:xx) predated gap-closure plan 24-06 (SUMMARY 16:36) and were therefore stale:
+- **verify** (gsd-verifier): 24-VERIFICATION.md refreshed -> passed 6/6 truths at code level. ONE
+  `human_needed`: re-run the ACV-01 manual real-clone tarball gate against post-24-06 HEAD before the
+  v0.2.1 release (LOW risk -- 24-06 rewrote the exact ng-add path ACV-01 exercises + the last manual UAT
+  was 2026-07-11, one day before 24-06; the CI-authoritative ACV-02 e2e covers the identical `ng add`->
+  `ng run` flow on the new code, green 4/4). See Operator Next Steps.
+- **secure** (gsd-security-auditor): 24-SECURITY.md refreshed -> SECURED, threats_open 0 (15/15 closed;
+  4 new 24-06 threats all closed), no code edited, public-repo hygiene clean.
+- **validate** (gsd-nyquist-auditor): 24-VALIDATION.md refreshed -> nyquist_compliant, 0 gaps, 0 tests
+  generated (24-06 shipped angular-cli-wiring.spec 18 + ng-add.spec 13; YAGNI, added nothing).
+- **extract-learnings** (inline) + **global-learnings bridge** (features.global_learnings:true):
+  24-LEARNINGS.md refreshed to 11 decisions / 12 lessons / 7 patterns / 7 surprises covering 24-06;
+  bridged 37 items into the cross-project store (16 created, 21 deduped); temp .planning/LEARNINGS.md
+  removed, never staged.
+Committed the 4 refreshed gate artifacts + this STATE. NO product/test/version change (stays 0.2.0);
+NO release cut (human-gated). HANDOFF.json / .continue-here.md are now superseded (24-06 executed + gated).
+
+Prior session: 2026-07-12T14:33:14.385Z
 (nx-free vanilla ng-add, Option C -- plan-checked PASSED, 0/3 tasks). Proceeding to
 `/gsd-execute-phase 24 --gaps-only` on the main checkout (single-plan wave, no worktree). HANDOFF.json
 retained until 24-06 execution completes.
@@ -239,6 +262,17 @@ test(349)/lint/typecheck/build/format all green.
 D:/projects/github/{bluehalo/ngx-leaflet, realworld-angular/realworld-angular} are UNCOMMITTED scratch.
 
 ## Operator Next Steps
+
+- **HUMAN ITEM from Phase 24 verification (pre-release, LOW risk):** re-run the ACV-01 manual real-clone
+  tarball gate against post-24-06 HEAD before cutting v0.2.1 -- ngx-leaflet @818e9ae (app+lib) then
+  realworld-angular @9e3528f (app-only), each by URL+SHA: pack the local dist -> `ng add` (or pnpm-native
+  install + `ng g :ng-add`) -> plant a type error -> `ng run <project>:typecheck` asserts RED -> clean
+  control asserts GREEN. Rationale: 24-06 rewrote the exact ng-add code path ACV-01 exercises and the last
+  manual UAT ran 2026-07-11 (one day before 24-06 landed). Risk is LOW: the CI-authoritative ACV-02 e2e
+  exercises the identical `ng add`->`ng run` flow on the NEW 24-06 code (green 4/4) and the new schematic
+  reads angular.json directly. This is a confirmation, not a suspected regression -- but a manual gate whose
+  exercised code changed after its last run should be re-confirmed before release. Clones are uncommitted
+  scratch, so this can only be done interactively.
 
 - (optional) `/gsd-complete-milestone v0.2.1` if not already done this session -- archive Phase 21-24
   dirs + collapse ROADMAP + evolve PROJECT.md.

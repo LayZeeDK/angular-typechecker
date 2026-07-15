@@ -2,12 +2,12 @@
 phase: 24
 phase_name: "real-oss-scaffolded-e2e-additive-only-audit-docs"
 project: "angular-typechecker"
-generated: "2026-07-12"
+generated: "2026-07-15"
 counts:
-  decisions: 8
-  lessons: 10
-  patterns: 6
-  surprises: 6
+  decisions: 11
+  lessons: 12
+  patterns: 7
+  surprises: 7
 missing_artifacts: []
 ---
 
@@ -19,11 +19,12 @@ missing_artifacts: []
 The Angular CLI `configuration` generator's write-fork now reads the project's `root`/`projectType`
 straight from `angular.json` (`readJson(...).projects[project]`); `resolveTsConfigLeaves` takes
 `(tree, root, projectType, schema)`. The Nx else-branch is byte-unchanged (project.json authoritative).
+24-06 preserved this behavior verbatim when the logic moved into the shared `src/core/angular-cli-wiring.ts`.
 
 **Rationale:** `readProjectConfiguration` returns a package-inference STUB (projectType undefined,
 root ".") on an Angular CLI workspace that is ALSO a pnpm workspace with a name-colliding root
 package.json; angular.json is the authoritative source on that branch.
-**Source:** 24-HUMAN-UAT.md, commit 1837b25, 24-REVIEW-ACV01FIX.md
+**Source:** 24-HUMAN-UAT.md, commit 1837b25, 24-REVIEW-ACV01FIX.md, 24-06-SUMMARY.md
 
 ### Real-clone ACV-01 gate: pnpm-native install, decouple tarball from schematic
 For the real-clone gate on a pnpm workspace, install the LOCAL dist tarball via `pnpm add -w -D <tgz>`
@@ -42,16 +43,21 @@ Gate #1 ngx-leaflet @818e9ae (npm, app+lib), gate #2 realworld-angular @9e3528f 
 
 ### The gap-fix stays additive-only (v0.2.1, not v0.3.0)
 **Rationale:** the fix is inside the UNRELEASED Angular CLI generator (v0.2.0, the last published version,
-has no Angular CLI generator at all); no schema/executor-id/builder-id/collection/barrel changed.
-**Source:** 24-ADDITIVE-AUDIT.md section 5
+has no Angular CLI generator at all); no schema/executor-id/builder-id/collection/barrel changed. 24-06's
+vanilla-ng-add rewrite is likewise an unreleased-surface implementation change: `index.ts` byte-unchanged
+vs the 0.2.0 tag, version stays 0.2.0.
+**Source:** 24-ADDITIVE-AUDIT.md section 5, 24-VERIFICATION.md (2026-07-15), 24-06-SUMMARY.md
 
 ### Re-run the four post-execution gates via their DEDICATED agents after a gap-fix
 code-review (gsd-code-reviewer) + verify (gsd-verifier) + secure (gsd-security-auditor) + validate
 (gsd-nyquist-auditor), never self-certified inline.
+
 **Rationale:** a code change after the pre-fix audits invalidates them; independent re-audit caught a
 vacuous-test defect (MAJOR-01) and a coverage gap (ng-add path) the orchestrator had missed. Re-affirmed
-by the 24-04/24-05 gap closure: the same 4-gate re-audit caught 3 residual CLAUDE.md contradictions
-(WR-02) and a missing lib clean-baseline (WR-01).
+by the 24-04/24-05 gap closure (3 residual CLAUDE.md contradictions, missing lib clean-baseline) AND by
+the 24-06 close-out: because 24-06 landed AFTER the 2026-07-12 gates, verify/secure/validate were re-run
+against post-24-06 HEAD and the timestamped gates re-issued — the stale-gate trap (gates dated before the
+last plan's SUMMARY) is real and only a re-audit catches it.
 **Source:** 24-REVIEW-ACV01FIX.md, 24-REVIEW-GAP-2404-2405.md, 24-VERIFICATION.md, 24-SECURITY.md, 24-VALIDATION.md
 
 ### nx is a DIRECT `^23.0.0` dependency (deliberately overriding the "never declare nx" rule)
@@ -67,12 +73,16 @@ auto-install the `@nx/devkit` peer (npm/pnpm do), so a yarn Angular CLI consumer
 consumer -- false for a yarn Angular CLI consumer.
 **Source:** 24-04-PLAN.md, 24-04-SUMMARY.md, .planning/debug/resolved/cli-yarn-e2e-wrong-version.md
 
-### yarn CLI e2e wires via `ng g` after a real `ng add` (authorized ng-add-misbehaves fallback)
-The yarn spec keeps the REAL `ng add angular-typechecker` (install), asserts the no-wire state to lock
-the quirk, then wires with `ng g angular-typechecker:ng-add`.
-**Rationale:** under yarn, `ng add` installs but does not auto-wire (see Lessons); the plan already
-authorized `ng add`-misbehaves -> `ng g` as the fallback (it wrote exactly that escape hatch for pnpm).
-**Source:** 24-05-PLAN.md, 24-05-SUMMARY.md
+### yarn CLI e2e asserts first-run `ng add` auto-wire (24-06 SUPERSEDED the 24-05 `ng g` fallback)
+24-05 kept the REAL `ng add` install but wired via `ng g angular-typechecker:ng-add` and asserted the
+yarn no-wire quirk. 24-06's Option C fix (nx-free vanilla ng-add) made `ng add` auto-wire on the FIRST
+run under yarn 4, so the yarn e2e was FLIPPED to assert first-run auto-wire and the `ng g` fallback +
+no-wire quirk-lock were removed (`enableMirror:false` retained).
+
+**Rationale:** the 24-05 fallback was the authorized `ng-add`-misbehaves escape hatch; once 24-06 fixed
+the root cause (the yarn-4 `chalk.blue` throw in nx's log-symbols chain), the fallback was no longer
+needed and the e2e should assert the true, product-fixed behavior.
+**Source:** 24-05-SUMMARY.md (superseded), 24-06-SUMMARY.md, 24-06-PLAN.md
 
 ### pnpm e2e gates build scripts with `strictDepBuilds:false`, not `allowBuilds:{nx:true}`
 **Rationale:** the full Angular CLI fixture pulls 5-6 native build-script packages (`@parcel/watcher`,
@@ -81,6 +91,43 @@ authorized `ng add`-misbehaves -> `ng g` as the fallback (it wrote exactly that 
 SAFER than allowBuilds (which would RUN nx's postinstall) and hermetic on Windows arm64. Security
 re-audit confirmed the disposition is MORE restrictive than the planned mitigation (T-24-10).
 **Source:** 24-05-SUMMARY.md, 24-SECURITY.md (T-24-10)
+
+### Option C: a VANILLA nx-free `@angular-devkit/schematics` ng-add (24-06)
+The `ng-add` schematic is a plain synchronous Angular schematics `Rule`; its `@angular-devkit/schematics`
+imports are TYPE-ONLY (erased at compile), so the compiled `schematic.js` `require()`s ONLY the pure
+first-party core -- ZERO `@nx/devkit` in the load OR execution path. This makes `ng add angular-typechecker`
+auto-wire every application + library project on the FIRST run under yarn 4 (npm + pnpm already worked).
+The dead `src/generators/ng-add/generator.ts` was deleted (schema.json/schema.d.ts kept); ng-add stays
+absent from `generators.json`; `collection.json` byte-unchanged.
+
+**Rationale:** the Angular CLI post-install `createSchematic('ng-add')` probe pulled in nx's
+`ora -> log-symbols -> chalk` chain, which throws `chalk.blue is not a function` under yarn 4's
+last-in-wins hoist; the CLI's bare `catch {}` swallowed it and reported "no ng add actions". Option D
+(lazy-require @nx/devkit) was REFUTED because the chalk breakage is process-wide and still threw at
+`executeSchematic`. Removing nx from the load path entirely is the only fix.
+**Source:** 24-06-PLAN.md, 24-06-SUMMARY.md, .planning/debug/resolved/cli-yarn-e2e-wrong-version.md
+
+### Extract-not-duplicate: one shared framework-agnostic wiring core (24-06)
+`src/core/angular-cli-wiring.ts` is the single source of truth for leaf resolution + `targetName` guard
++ collision-by-builder-id + `[build, spec]` idempotent merge. BOTH the vanilla ng-add schematic AND the
+Nx `configuration` generator import it; the Nx `configuration` observable behavior is byte-identical (all
+4 configuration specs + the init specs stay green) and every moved error string is byte-preserved.
+
+**Rationale:** the ng-add path had to go nx-free WITHOUT drifting from the collision-fixed wiring the Nx
+generator already shipped; extracting a shared pure core (rather than rewriting either side) keeps one
+behavior and one test surface (the `rewrite-not-extract` blocking anti-pattern).
+**Source:** 24-06-SUMMARY.md, 24-06-PLAN.md, .continue-here.md (blocking constraints)
+
+### `posix.join` + injected `exists()` callback keep the core Tree/devkit-agnostic (24-06)
+The shared core uses `node:path` `posix.join` in place of devkit `joinPathFragments` and an injected
+`exists()` callback in place of `tree.exists`, so it depends on neither `@angular-devkit` nor `@nx/*` and
+passes the D-11 `core/**` `no-restricted-imports` lint boundary (which bans framework/nx imports,
+type-only included, at `maxWarnings:0`).
+
+**Rationale:** a pure core is the mechanism that lets the SAME wiring code be consumed by a vanilla
+Angular schematic and an Nx generator; the lint boundary makes framework-agnosticism enforceable, not just
+aspirational.
+**Source:** 24-06-SUMMARY.md, eslint.config.mjs (core/** boundary)
 
 ## Lessons
 
@@ -110,14 +157,15 @@ name, so no stub formed. Using `packages: ['.']` made them reproduce the stub.
 then GREEN on the fix.
 **Source:** 24-REVIEW-ACV01FIX.md (MAJOR-01), commit 49974f1
 
-### The real entry point (`ng add` -> ngAddGenerator) is a distinct coverage surface
+### The real entry point (`ng add` -> ng-add schematic) is a distinct coverage surface
 Testing `configurationGenerator` directly did not exercise the ng-add composition path (which filters
-projects on `projectType` via `getProjects`). A separate standing guard was added there.
+projects on `projectType`). A separate standing guard was added there. 24-06 relocated this to a vanilla
+`ng-add.spec.ts` (13 tests) that drives the schematic Rule directly.
 
-**Context:** empirically, `getProjects` returned projectType='application' at the ng-add filter under the
-collision, so the app WAS enumerated and reached the (broken) leaf resolution — the fix was the fix, but
-the ng-add path now has its own guard.
-**Source:** 24-VALIDATION.md, commit cf90407
+**Context:** empirically, project enumeration returned projectType='application' at the ng-add filter under
+the collision, so the app WAS enumerated and reached the (broken) leaf resolution — the fix was the fix,
+but the ng-add path now has its own guard.
+**Source:** 24-VALIDATION.md, commit cf90407, 24-06-SUMMARY.md
 
 ### pnpm caches a local tarball by version; force fresh content with a unique filename
 Re-`pnpm add`-ing a re-packed same-version tarball can reuse stale content. A uniquely-named copy
@@ -137,17 +185,18 @@ auto-peer-install / pnpm's `auto-install-peers`.
 until `nx` became a direct dependency (24-04).
 **Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md, 24-04-SUMMARY.md
 
-### yarn `ng add` installs but does NOT auto-wire -- pinned to the createSchematic probe (Gate 3)
+### yarn `ng add` installs but does NOT auto-wire -- pinned to the createSchematic probe (RESOLVED by 24-06)
 An instrumented first-run `ng add` against Verdaccio (@angular/cli 22.0.6 gates logged) pinned it:
 Gate 1 (registry metadata) is TRUE (`yarn npm info` returns `schematics`); the post-install
 `createSchematic('ng-add')` PROBE (Gate 3) THROWS while loading this package's `convertNxGenerator`/
 `@nx/devkit`->`nx` factory (observed `TypeError: chalk.blue is not a function` from nx's nested
 `log-symbols`/`ora` under yarn 4's hoist); @angular/cli's bare `catch {}` swallows it ->
 `hasSchematics=false` -> "does not provide any ng add actions" -> no wire. npm/pnpm hoist nx's deps so
-the SAME probe succeeds and they wire the identical dist.
+the SAME probe succeeds and they wire the identical dist. **24-06 removed `@nx/devkit`/`nx` from the
+ng-add load path entirely, so the probe no longer throws and yarn auto-wires on the first run.**
 **Context:** NOT an angular-typechecker defect, NOT candidate A (metadata stripping), and NOT the fixed
 angular/angular-cli #33060 (that on-disk fallback IS present in 22.0.6).
-**Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md ("Post-24-05 root-cause pin")
+**Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md ("Post-24-05 root-cause pin"), 24-06-SUMMARY.md
 
 ### Candidate-A (yarn npm info strips custom `schematics`) is refuted; #33060 is a distinct cousin
 `yarn npm info <pkg> --json --fields ...schematics...` DOES return the custom field (verified against
@@ -162,6 +211,24 @@ The failure is a yarn-4 RUNTIME/interop resolution quirk inside the FULL `ng add
 passed -- a false negative. Only the faithful in-process first-run reproduces it.
 **Context:** cost two wrong intermediate conclusions before the faithful repro settled it.
 **Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md, yarn-probe experiment
+
+### tsc preserves JSDoc comments into the dist, so a literal `@nx/devkit` in a comment trips the dist-grep
+24-06's blocking constraint greps the COMPILED `schematic.js` for `@nx/devkit`. A JSDoc line "it NEVER
+loads @nx/devkit" made the grep match the forbidden literal even though there was no real import; the
+comment had to be reworded ("the Nx devkit / nx runtime") to pass.
+
+**Context:** a blocking-constraint acceptance grep that scans compiled output must account for comments
+surviving compilation, not just import statements.
+**Source:** 24-06-SUMMARY.md (Deviation 3)
+
+### Type-only `@angular-devkit/schematics` imports are erased at compile
+Importing `Rule`/`Tree`/`SchematicContext` as `import type` means the compiled `schematic.js` carries no
+runtime `require('@angular-devkit/schematics')` — the module loads only its value-imported pure core. This
+is the mechanism that makes the ng-add schematic genuinely framework-runtime-free (the Option C fix).
+
+**Context:** the difference between a value import and a type-only import is load-bearing for a schematic
+that must not pull a heavy runtime through the CLI's fragile post-install probe.
+**Source:** 24-06-SUMMARY.md, dist grep evidence
 
 ## Patterns
 
@@ -205,10 +272,23 @@ the exact thrown error + the deciding gate under a specific package manager.
 ### Gate an upstream-bug attribution on a dependency-free repro
 When a failure surfaces entirely through a specific transitive chain (here `@nx/devkit`/
 `convertNxGenerator` -> `nx`), do NOT attribute it to the outer tool (Angular CLI) until a VANILLA
-(dependency-free) case reproduces the same failure. Scope the claim to what is proven.
+(dependency-free) case reproduces the same failure. Scope the claim to what is proven. (Applied: quick
+task 260712-ft9 confirmed the yarn failure is NX-SPECIFIC, so no upstream issue was warranted.)
 **When to use:** before filing an upstream issue whose repro currently only exists through your own
 dependency stack.
-**Source:** .planning/todos/pending/readme-yarn-ng-add-caveat.md (user directive 2026-07-12)
+**Source:** quick task 260712-ft9, .planning/todos/done/readme-yarn-ng-add-caveat.md
+
+### Vanilla schematic testing: invoke the synchronous Rule directly with a logger-backed context
+For a synchronous `@angular-devkit/schematics` Rule that emits `context.logger` notices, drive the spec by
+calling `ngAdd(options)(tree, context)` directly with a context backed by `runner.logger`, and subscribe to
+`runner.logger`. Do NOT use `SchematicTestRunner.callRule`: in `@angular-devkit/schematics@22.0.6` it
+builds its context via `engine.createContext({}, parentContext)`, which yields a `NullLogger` when no
+parent is passed (notices swallowed) and CRASHES on `schematic.description.name` when a parent logger IS
+passed — so it fundamentally cannot capture the Rule's notices.
+
+**When to use:** unit-testing a vanilla Angular schematic Rule whose observable behavior includes logger
+output, when `callRule` cannot capture the logger.
+**Source:** 24-06-SUMMARY.md (Deviation 1), src/schematics/ng-add/ng-add.spec.ts
 
 ## Surprises
 
@@ -233,10 +313,10 @@ finding the lighter verification pass had reported as "substantive".
 ### 24-04 fixed the FIRST yarn probe error but a SECOND one remained (same symptom)
 Making `nx` a direct dep removed the `Cannot find module 'nx/src/devkit-exports'` probe crash, but the
 probe then threw a DIFFERENT error (`chalk.blue` from nx's nested `log-symbols`) under yarn 4 -- same net
-outcome (no auto-wire), same `ng g` / double-`ng add` workaround.
-**Impact:** the layered failure meant the fix looked incomplete until the mechanism was pinned; the e2e's
-no-wire assertion holds for either sub-error.
-**Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md
+outcome (no auto-wire). 24-06 finally removed the whole nx load path, resolving both layers.
+**Impact:** the layered failure meant 24-04 looked incomplete until the mechanism was pinned; it took a
+second gap-closure plan (24-06) to fully close NGADD-01 under yarn.
+**Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md, 24-06-SUMMARY.md
 
 ### The 24-04 doc-flip left 3 CLAUDE.md spots still stating the old "never declare nx" rule
 The code review (WR-02) found the Installation snippet deps line + `NO nx` comment, a second
@@ -246,10 +326,20 @@ direct-dependency rule.
 all three were corrected.
 **Source:** 24-REVIEW-GAP-2404-2405.md (WR-02), 24-REVIEW-GAP-2404-2405-FIX.md
 
-### The double-`ng add` workaround works via the CLI's already-installed short-circuit
-A SECOND `ng add angular-typechecker` wires correctly under yarn: `cli.js:167-176` detects the installed
-package and calls `executeSchematic` directly, bypassing the failing `createSchematic` gate probe (the
-same path `ng g` uses).
-**Impact:** gives yarn users a second working workaround beyond `ng g`, and explains why the pre-fix
-"run ng add twice" folklore worked.
-**Source:** .planning/debug/resolved/cli-yarn-e2e-wrong-version.md, verdaccio first-run repro
+### Option D (lazy-require @nx/devkit) was REFUTED even though it "fixed" the probe
+Deferring the `@nx/devkit` import out of the ng-add module top-level made the CLI's createSchematic probe
+pass, but `executeSchematic` STILL threw `chalk.blue` — because the chalk breakage is process-wide (nx's
+CJS log-symbols@4 resolving Angular's ESM chalk@5), not tied to the probe.
+**Impact:** killed the cheaper fix and forced the full vanilla (Option C) rewrite; the blocking anti-pattern
+`lazy-require-the-fix` was recorded to stop a future agent from re-attempting it.
+**Source:** .continue-here.md (blocking constraints), .planning/debug/resolved/cli-yarn-e2e-wrong-version.md
+
+### `nx run-many -t e2e --parallel=1` failed only on ng-cli-e2e via an Nx local-registry re-invocation
+24-06's authoritative post-merge check found the ng-cli-e2e task aborting at globalSetup with an Nx
+local-registry task RE-INVOCATION error ("already invoked by a parent Nx process in this chain"),
+Nx-flagged flaky — NOT a 24-06 regression (the project passed 4/4 standalone; the other 3 e2e projects
+passed within the same run-many).
+**Impact:** flagged an orchestration limitation of running multiple shared-Verdaccio e2e projects in one
+run-many chain; CI's fresh per-job `npm ci` avoids it. Later addressed structurally by quick tasks
+260712-n7z (clear inherited NX_INVOCATION_ROOT_PID) and 260715-050 (per-project e2e CI matrix).
+**Source:** 24-06-SUMMARY.md (Issues Encountered)
