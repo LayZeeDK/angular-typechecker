@@ -39,6 +39,17 @@ export function listE2eProjects(workspaceRoot) {
     }
   }
 
+  // Fail loud on empty discovery. An empty array would expand the CI `e2e` matrix
+  // to zero cells; GitHub then reports the `e2e` job as `skipped`, and the `ci`
+  // aggregate excludes `skipped` from its fail set -- so the whole tarball-install
+  // tier would silently drop while `ci` still reports green. Throwing here turns
+  // that silent coverage loss into a loud, non-zero-exit `discover`-job failure.
+  if (names.length === 0) {
+    throw new Error(
+      'list-e2e-projects: no e2e projects discovered under e2e/ (expected at least one project.json with an `e2e` target)',
+    );
+  }
+
   return names.sort();
 }
 
