@@ -16,10 +16,9 @@ import {
 import type { NgAddSchema } from './schema';
 import ngAdd from './schematic';
 
-// NGADD-01 coverage for the VANILLA (nx-free) ng-add schematic (24-06). Migrated from
-// the deleted generators/ng-add/ng-add.spec.ts: the schematic is now a pure
-// @angular-devkit/schematics Rule (no convertNxGenerator, no @nx/devkit), so it is
-// exercised over a UnitTestTree(new HostTree()) seeded with angular.json +
+// NGADD-01 coverage for the VANILLA (nx-free) ng-add schematic (24-06): the schematic
+// is now a pure @angular-devkit/schematics Rule (no convertNxGenerator, no @nx/devkit),
+// so it is exercised over a UnitTestTree(new HostTree()) seeded with angular.json +
 // package.json + leaf tsconfigs. The Rule reads angular.json DIRECTLY, so assertions
 // parse the on-disk `architect` map (with `builder`, not the Nx `executor` alias).
 //

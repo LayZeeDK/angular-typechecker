@@ -24,8 +24,7 @@ export const NO_CACHING_NOTICE =
   'the typecheck target(s) were wired without caching. On an Nx workspace, target ' +
   'caching is configured automatically.';
 
-// End-user guidance for the RF-02 non-Angular-CLI edge (MOVED from
-// generators/ng-add/generator.ts).
+// End-user guidance for the RF-02 non-Angular-CLI edge.
 export const NO_ANGULAR_JSON_NOTICE =
   'angular-typechecker: no angular.json found, so no typecheck targets were ' +
   'wired. angular-typechecker was ensured as a devDependency. Run `ng add ' +
