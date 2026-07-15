@@ -84,8 +84,9 @@ export function resolveTargetName(
  * verbatim (it cannot be existence-probed against the workspace-relative tree); a
  * relative one is interpreted project-root-relative and existence-probed so a typo
  * fails HERE with a clear located error rather than silently writing a broken
- * target that only fails at execute time. Existence is checked via the injected
- * `exists` callback so the core stays Tree-agnostic.
+ * target that only fails at execute time. A relative override written with Windows
+ * backslashes is normalized to forward slashes before probing. Existence is checked
+ * via the injected `exists` callback so the core stays Tree-agnostic.
  */
 export function resolveTsConfigOverride(
   root: string,
@@ -97,7 +98,11 @@ export function resolveTsConfigOverride(
     return tsConfig;
   }
 
-  const overridePath = posix.join(root, tsConfig);
+  // A relative override may arrive with Windows backslashes (e.g.
+  // `custom\tsconfig.app.json`); normalize to forward slashes before the posix.join
+  // so it probes the correct path. `root` already arrives forward-slash from
+  // angular.json / Nx, so only the override itself needs normalizing.
+  const overridePath = posix.join(root, tsConfig.replace(/\\/g, '/'));
 
   if (!exists(overridePath)) {
     throw new Error(

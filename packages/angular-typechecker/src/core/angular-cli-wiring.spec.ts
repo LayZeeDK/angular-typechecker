@@ -55,6 +55,17 @@ describe('resolveTsConfigOverride', () => {
     ).toBe('projects/lib/tsconfig.custom.json');
   });
 
+  it('normalizes a backslash relative override to a forward-slash path', () => {
+    expect(
+      resolveTsConfigOverride(
+        'projects/lib',
+        'custom\\tsconfig.app.json',
+        'lib',
+        existsIn(['projects/lib/custom/tsconfig.app.json']),
+      ),
+    ).toBe('projects/lib/custom/tsconfig.app.json');
+  });
+
   it('returns an absolute override verbatim without probing', () => {
     expect(
       resolveTsConfigOverride(
@@ -133,6 +144,18 @@ describe('resolveTsConfigLeaves', () => {
         existsIn(['projects/lib/tsconfig.custom.json']),
       ),
     ).toEqual(['projects/lib/tsconfig.custom.json']);
+  });
+
+  it('normalizes a backslash relative --tsConfig override to a forward-slash path', () => {
+    expect(
+      resolveTsConfigLeaves(
+        'projects/lib',
+        'library',
+        'custom\\tsconfig.app.json',
+        'lib',
+        existsIn(['projects/lib/custom/tsconfig.app.json']),
+      ),
+    ).toEqual(['projects/lib/custom/tsconfig.app.json']);
   });
 
   it('passes an absolute --tsConfig override through verbatim', () => {
