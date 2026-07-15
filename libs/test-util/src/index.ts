@@ -14,3 +14,7 @@ export {
   writeVerdaccioNpmrc,
   type TypecheckTargetDefault,
 } from './lib/e2e-fixture';
+export {
+  createVerdaccioGlobalSetup,
+  type VerdaccioGlobalSetupOptions,
+} from './lib/verdaccio-global-setup';

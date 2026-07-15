@@ -332,20 +332,24 @@ describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the
   });
 
   // The REAL invariant behind the two dedicated its above: ANY e2e project whose
-  // global-setup boots a local Verdaccio registry (startLocalRegistry) MUST run
-  // solo under the LOCAL `nx run-many -t e2e --parallel=2` command. All
-  // registry-starters share ONE registry on 127.0.0.1:4873 (storage / htpasswd /
-  // authToken, plus yarn 4's host-keyed metadata cache), so two publishers
-  // co-running would contend on that shared state. This generalizes the dedicated
-  // its so a FUTURE registry-starting e2e project is caught too -- not just
-  // install-e2e and ng-cli-e2e.
+  // global-setup boots a local Verdaccio registry MUST run solo under the LOCAL
+  // `nx run-many -t e2e --parallel=2` command. All registry-starters share ONE
+  // registry on 127.0.0.1:4873 (storage / htpasswd / authToken, plus yarn 4's
+  // host-keyed metadata cache), so two publishers co-running would contend on that
+  // shared state. This generalizes the dedicated its so a FUTURE registry-starting
+  // e2e project is caught too -- not just install-e2e and ng-cli-e2e. The setup boots
+  // a registry either by calling `startLocalRegistry` directly OR by delegating to the
+  // shared `createVerdaccioGlobalSetup` factory (Q2 extraction) -- match both markers.
   it('every registry-starting e2e project serializes its e2e target (parallelism:false)', () => {
     const registryStarters = collectE2eFiles('global-setup.ts')
       .filter((setupPath) => {
         const lines = readFileSync(setupPath, 'utf8').split('\n');
 
         return lines.some(
-          (line) => !isTsComment(line) && line.includes('startLocalRegistry'),
+          (line) =>
+            !isTsComment(line) &&
+            (line.includes('startLocalRegistry') ||
+              line.includes('createVerdaccioGlobalSetup')),
         );
       })
       // e2e/<project>/src/global-setup.ts -> project name is the parent of src/.
