@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.1
 milestone_name: Angular CLI workspace support
-status: executing
-last_updated: "2026-07-15T10:39:24.000Z"
-last_activity: 2026-07-15 -- quick task 260715-ig5 COMPLETE: re-ran the ACV-01 manual real-clone tarball gate against post-24-06 HEAD (closing the pre-release human item from the Phase-24 re-verification). BOTH gates PASS on the nx-free vanilla ng-add: gate #1 ngx-leaflet@818e9ae (npm, app+lib) first-run ng add auto-wire-all + clean per-project scoping; gate #2 realworld-angular@9e3528f (pnpm-workspace + name-collision) wired the FULL [tsconfig.app.json, tsconfig.spec.json] array (build leaf not dropped) via the documented pnpm-native install + ng g; both clean GREEN / planted RED / no ERR_REQUIRE_ESM. Freshly packed tarball's ng-add schematic.js confirmed nx-free. Clones are uncommitted scratch, restored pristine. No product/version change (0.2.0). [Prior: Phase 24 execute-phase CLOSE-OUT -- four post-execution gates re-run via dedicated agents covering 24-06; verify 6/6, secure SECURED 0-open, validate nyquist_compliant; learnings refreshed + re-bridged; post-merge gate GREEN 373 tests]
+status: complete
+last_updated: "2026-07-16T01:00:00.000Z"
+last_activity: 2026-07-16 -- MILESTONE CLOSED via /gsd-complete-milestone. Milestone audit PASSED 16/16 requirements, 4/4 phases, 8-of-8 cross-phase integration seams WIRED, 4/4 E2E flows, Nyquist compliant, 0 open threats. angular-typechecker@0.2.1 was already published live to npm (PR #38 merged, tag on the release merge commit) before this close -- this close is bookkeeping-only. Archived ROADMAP/REQUIREMENTS/audit to .planning/milestones/v0.2.1-*; ROADMAP.md collapsed to a SHIPPED one-liner; REQUIREMENTS.md removed (fresh for next milestone); PROJECT.md evolved (Validated section, Key Decisions, Next Milestone Goals placeholder); MILESTONES.md gained the v0.2.1 entry. Next: /gsd-new-milestone.
 progress:
-  total_phases: 3
-  completed_phases: 3
+  total_phases: 4
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
-  percent: 75
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -191,13 +191,23 @@ Tracked as Future Requirements (out of scope, not debt):
 |----------|------|--------|-------------|
 | Storybook (v0.2.0 stretch) | SB-08: Layout C beyond the guard; `.mdx`/`.tsx` type-check; opt-in strict mode failing on `suppressedInGraph>0` | Deferred (stretch; deferrable Phase 19) | v0.2.0 requirements definition |
 | FsTree testing | FSTREE-01: bespoke real-disk `createFsTree`/`flushFsTreeChanges` helpers | Deferred (board Option A) | v0.0.4 requirements definition |
-| Generator surface | GEN-FUT-01 (Angular CLI `angular.json`) / GEN-FUT-02 (`ng add` Angular CLI schematic) | Deferred (later milestone) | v0.0.4 requirements definition |
+| Generator surface | GEN-FUT-01 (Angular CLI `angular.json`) / GEN-FUT-02 (`ng add` Angular CLI schematic) | SHIPPED v0.2.1 (Phases 22-24) -- no longer deferred | v0.0.4 requirements definition |
 | Engine / performance | WALK-FUT-01 (`createNodesV2` per-leaf targets) / WALK-FUT-02 (`NgtscProgram` incremental) | Deferred (additive) | v0.0.4 re-scope |
 | Resilience | REP-RES-02b: faithful per-file template recovery after a TCB Fatal | Deferred (needs `NgtscProgram`) | v0.0.3 RES-02 reframe |
 | Observability | OBS-01: `totalFilesCount` on `CoreResult` | Deferred pending charter-fit | v0.0.3 requirements definition |
 | Surfaces | Standalone CLI (owns literal OS exit code `2`) | Deferred | v0.0.3 (COR-04) |
 | Reporters | Machine-readable JSON/SARIF | Deferred | v0.0.1 close |
 | Feature families | INF / SUR / REP / SUP carried from v0.0.1 | Deferred | v0.0.1 close |
+| CI infra | GitHub-backed self-hosted Nx remote cache (was roadmap Phase 25, removed) | Deferred (backlog, lower priority than the shipped e2e per-project split) | v0.2.1 roadmap evolution |
+
+### Acknowledged at v0.2.1 milestone close (2026-07-16)
+
+The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false positives or already-resolved after investigation, per the recurring known scanner bug (see below) -- none represent open work:
+
+- **19 quick tasks flagged "missing"**: the scanner checks for a bare `<dir>/SUMMARY.md` but this repo's convention is `<id>-SUMMARY.md` (see the Quick Tasks Completed table above -- all 19 are `Verified`, each with a real `<id>-SUMMARY.md`). This is the same recurring scanner mismatch noted at every prior milestone close (v0.0.3, v0.1.0, v0.2.0).
+- **1 of those 19 (`260709-w96-obs-01-add-totalfilescount-observability`) was a genuine anomaly, not the scanner bug**: the directory existed but was completely empty and untracked by git (no `PLAN.md`/`SUMMARY.md`, never staged) -- an abandoned stub from 2026-07-09 that was never executed. Removed at this close. `OBS-01` (`totalFilesCount` observability) correctly remains tracked as a deferred Future Requirement above -- nothing was lost.
+- **`24-ACV-01-UAT.md` (`executed-fail`) and `24-HUMAN-UAT.md`**: both refer to the ORIGINAL pre-24-06 ACV-01 execution, superseded by the 2026-07-15 re-run (quick task 260715-ig5, commit 895ee43) which PASSED against post-24-06 HEAD on both real-clone gates. The stale UAT file status is cosmetic.
+- **`24-VERIFICATION.md` (`human_needed`)**: the single flagged human item (re-run the ACV-01 real-clone gate post-24-06) was RESOLVED by the same 260715-ig5 re-run, one session before this close. The frontmatter `status: human_needed` was never re-flipped -- a cosmetic bookkeeping gap, not open work. Already recorded as a `bookkeeping` (non-blocking) item in `v0.2.1-MILESTONE-AUDIT.md`.
 
 ## Session Continuity
 
