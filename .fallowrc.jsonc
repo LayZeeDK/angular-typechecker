@@ -26,7 +26,7 @@
     // it as the genuine test-runner entry point it is (same config-only
     // reachability as global-setup.ts above).
     "packages/angular-typechecker/vitest.integration.config.mts",
-    // FAL-07 (quick-260714-wr9, v0.2.1 Release-PR gate): five more config-only-reachable
+    // FAL-07 (quick-260714-wr9, v0.2.1 Release-PR gate): four more config-only-reachable
     // files -- same false-positive class as the drift tripwires + install-e2e global-setup
     // above. Each is reached by a config/string reference, never the import graph, so fallow
     // flags it `unused-files`:
@@ -34,15 +34,15 @@
     //     bootstrap), reachable ONLY via vitest.config's `globalSetup: [...]` string.
     //   - index.drift.ts: the ACP-02 barrel drift tripwire (24-01), reachable ONLY via
     //     tsconfig.drift.json `files` (classic node10), never imported.
-    //   - schematics/configuration/schematic.ts + schematics/init/schematic.ts: the
-    //     convertNxGenerator re-exports, referenced ONLY by collection.json (Nx resolves
-    //     them by string path), never via the import graph.
+    //   - schematics/configuration/schematic.ts: the convertNxGenerator re-export
+    //     referenced ONLY by collection.json (Nx resolves it by string path), never via the
+    //     import graph. (The sibling ng-add/schematic.ts is reached by its spec import, so
+    //     it needs no entry; the former init schematic was dropped in 24-06.)
     //   - tools/e2e-timing/aggregate-install-timings.mjs: a dev-only CLI tool run via
     //     `node <path>` (260713-w87), never imported.
     "e2e/angular-typechecker-ng-cli-e2e/src/global-setup.ts",
     "packages/angular-typechecker/src/index.drift.ts",
     "packages/angular-typechecker/src/schematics/configuration/schematic.ts",
-    "packages/angular-typechecker/src/schematics/init/schematic.ts",
     "tools/e2e-timing/aggregate-install-timings.mjs",
     // quick-260715-050: the CI e2e-project discovery script
     // (tools/ci/list-e2e-projects.mjs) is run via `node <path>` by the `discover`
