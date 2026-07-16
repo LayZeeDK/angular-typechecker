@@ -64,6 +64,68 @@ export default [
     },
   },
   {
+    // D-09: keep the standalone CLI adapter nx-free at lint time. src/cli/**
+    // (bin.ts + the pure run() core it wraps) must never import the Nx/Angular
+    // CLI families, an executor/builder/generator/schematic adapter, or the
+    // public barrel -- reaching @nx/devkit drags the chalk chain that crashes a
+    // non-Nx consumer under yarn's hoist (the 24-06 crash class). Mirrors the
+    // core/** block's no-restricted-imports, but INTENTIONALLY omits no-console
+    // and the process.exit ban: bin.ts LEGITIMATELY writes streams and sets the
+    // exit code (import-ban ONLY). Placed after core/** and before the JSON
+    // blocks so it does not disturb @nx/dependency-checks / @nx/nx-plugin-checks.
+    files: ['**/src/cli/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'nx',
+              message: 'cli/ must be nx-free (D-09).',
+            },
+            {
+              name: '@nx/devkit',
+              message: 'cli/ must not import @nx/devkit (D-09).',
+            },
+            {
+              name: '@angular-devkit/architect',
+              message:
+                'cli/ must not import the Angular CLI architect (D-09).',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@nx/*'],
+              message: 'cli/ must not import any @nx/* package (D-09).',
+            },
+            {
+              group: ['@angular-devkit/*'],
+              message:
+                'cli/ must not import any @angular-devkit/* package (D-09).',
+            },
+            {
+              group: [
+                '**/executors/**',
+                '**/builders/**',
+                '**/generators/**',
+                '**/schematics/**',
+              ],
+              message:
+                'cli/ is a thin adapter over core/**, not over another adapter (D-09).',
+            },
+            {
+              group: ['../index', '../index.js'],
+              message:
+                'cli/ imports core modules directly, not the public barrel (D-09).',
+            },
+          ],
+        },
+      ],
+      // NO no-console, NO no-restricted-properties process.exit -- bin.ts writes
+      // streams + sets the exit code (D-09 difference from the core/** block).
+    },
+  },
+  {
     files: ['**/*.json'],
     rules: {
       '@nx/dependency-checks': [
