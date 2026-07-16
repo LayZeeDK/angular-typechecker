@@ -80,7 +80,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 <details open>
 <summary>[CURRENT] v0.2.2 -- Standalone CLI (Phases 25-29)</summary>
 
-- [ ] Phase 25: Extract the advisory-notice seam (CLI-04)
+- [x] Phase 25: Extract the advisory-notice seam (CLI-04) (1/1 plans) -- completed 2026-07-16
 - [ ] Phase 26: Pure CLI core + exit-code wiring (CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02)
 - [ ] Phase 27: Bin shell + cross-platform packaging (CLI-01, PKG-01/02, VER-03, ADD-01)
 - [ ] Phase 28: Shipped-tarball e2e + real-clone UAT (VER-04, VER-05)
