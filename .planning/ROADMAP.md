@@ -154,7 +154,10 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   1. A README `## Standalone CLI` section documents installation, the full flag set, and the exit-code contract table (`0` clean / `1` verdict-fail / `2` infra-or-usage).
   2. The canonical uninstalled invocation documented is `npx angular-typechecker`; `atc` appears ONLY as a post-install PATH shorthand -- docs never instruct `npx atc` (supply-chain hazard: `atc@0.0.6` is an unrelated published package).
   3. A curated public CHANGELOG entry is written in end-user language with no internal ids/scopes (per the repo's changelog-hygiene rule).
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 29-01-PLAN.md -- README `## Standalone CLI` section + ToC anchor, curated `## 0.2.2` CHANGELOG entry, and a doc-tripwire spec (drift-lock + supply-chain guard)
 
 ## Progress
 
