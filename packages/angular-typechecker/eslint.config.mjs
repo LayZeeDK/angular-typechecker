@@ -89,8 +89,7 @@ export default [
             },
             {
               name: '@angular-devkit/architect',
-              message:
-                'cli/ must not import the Angular CLI architect (D-09).',
+              message: 'cli/ must not import the Angular CLI architect (D-09).',
             },
           ],
           patterns: [
