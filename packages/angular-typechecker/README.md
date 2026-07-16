@@ -39,6 +39,7 @@ run everywhere the editor is not.
 - [Programmatic API](#programmatic-api)
 - [How it compares](#how-it-compares)
 - [Angular CLI](#angular-cli)
+- [Standalone CLI](#standalone-cli)
 - [Storybook](#storybook)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
@@ -470,6 +471,109 @@ angular-typechecker there anyway, install with `--legacy-peer-deps`, which relax
 peer resolution for the whole install; behavior on an unsupported Angular version
 is not verified.
 
+## Standalone CLI
+
+You can run angular-typechecker as a standalone command in any repository, with no
+Nx and no Angular CLI. It is the third thin adapter over the same `runTypecheck`
+core -- the Nx executor and the Angular CLI builder are the other two -- so it runs
+the identical complete Angular type-check (TypeScript, template, and NG8xxx
+diagnostics, with no emit) and just adds a plain command-line entry point on top.
+
+### Install and run
+
+The zero-install way to run it in any repository is `npx`:
+
+```sh
+npx angular-typechecker -c <tsconfig>
+```
+
+That fetches and runs the published package without adding it to your
+`package.json`. To install it as a dev dependency instead:
+
+```sh
+npm install --save-dev angular-typechecker
+```
+
+In a pnpm workspace, add it to the workspace root:
+
+```sh
+pnpm add -Dw angular-typechecker
+```
+
+After a local install, the `angular-typechecker` command is on your project's
+`PATH`, and a short `atc` alias resolves to the same command:
+
+```sh
+angular-typechecker -c tsconfig.json
+atc -c tsconfig.json
+```
+
+The `atc` name is a post-install `PATH` shorthand only -- never run it through
+`npx`. Doing so, in a repository where the package is not installed, fetches an
+unrelated published package (`atc@0.0.6`, a 2013 "Manage fleet spawns" package),
+not this tool -- a supply-chain hazard. The only uninstalled invocation is
+`npx angular-typechecker`.
+
+### Options
+
+The command mirrors the executor's behavior through these flags, the same list
+`angular-typechecker --help` prints:
+
+| Flag                    | Description                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `-c, --tsConfig <path>` | Path to a tsconfig to check (repeatable; required). A single solution tsconfig is reference-walked; two or more are union-checked. |
+| `--max-warnings <n>`    | Fail the run if the warning count exceeds n (a non-negative integer; 0 fails on any warning).                                      |
+| `--fail-fast`           | Report only the first failing file.                                                                                                |
+| `--include-deps`        | Include out-of-project / node_modules diagnostics.                                                                                 |
+| `--strict`              | Fail on dropped in-graph warnings (verdict only).                                                                                  |
+| `-h, --help`            | Print this help and exit.                                                                                                          |
+| `--version`             | Print the version and exit.                                                                                                        |
+
+`-c` / `--tsConfig` is the only required flag, and it is repeatable: pass it once
+to reference-walk a single solution `tsconfig.json`, or several times
+(`-c a/tsconfig.json -c b/tsconfig.json`) to union-check multiple tsconfigs in one
+run. There is deliberately no `-p` / `--project` flag -- it would collide with the
+Nx and Angular CLI notion of a workspace project -- so passing one is an unknown
+flag and exits `2` (see below).
+
+### Exit codes
+
+Unlike the Nx executor and the Angular CLI builder, which return a `{ success }`
+result and let the host (Nx or the Angular CLI) collapse every failure into a
+single non-zero code, the standalone CLI is the first adapter that owns the OS exit
+code directly, so it splits a type-check verdict from an infrastructure or usage
+failure:
+
+| Code | Meaning                 | When                                                                                                                                                                                             |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `0`  | clean                   | The run completed with no error-category diagnostics, the warning count within `--max-warnings`, and complete coverage.                                                                          |
+| `1`  | verdict-fail            | Type / template / NG8xxx errors, or the warning count exceeded `--max-warnings`, or coverage was incomplete (a first-party file the check could not fully cover).                                |
+| `2`  | infrastructure-or-usage | The compiler failed to run (a missing or unreadable tsconfig, a config-resolution failure), or a usage error (an unknown flag, a missing required `--tsConfig`, a non-integer `--max-warnings`). |
+
+This is the same pass/fail verdict the [Exit codes](#exit-codes) section describes
+for the Nx and Angular CLI adapters -- `0` for a clean run, non-zero otherwise --
+with the non-zero case split into `1` (the type-check found a problem) and `2` (the
+type-check could not run). Everything under [Output](#output) applies to the CLI's
+report unchanged.
+
+### Example
+
+Run it against a single tsconfig. A planted type error is reported and the command
+exits `1`:
+
+```sh
+npx angular-typechecker -c tsconfig.json
+```
+
+```
+apps/my-app/src/app/app.component.ts:8:38 - error TS2322: Type 'number' is not assignable to type 'string'.
+
+8   protected readonly label: string = 0;
+                                       ~
+```
+
+A clean run prints nothing and exits `0`.
+
 ## Storybook
 
 `nx typecheck` type-checks your Storybook stories with no extra setup. Storybook's
@@ -583,8 +687,7 @@ whether that fails the run depends on the case (see [Partial coverage](#partial-
 - Some first-party files can't be fully covered when a project is checked in
   isolation; see [Partial coverage](#partial-coverage) for the cases and how to
   control them.
-- Machine-readable reporters (JSON, SARIF) and a standalone CLI are non-goals in
-  v0.x.
+- Machine-readable reporters (JSON, SARIF) are non-goals in v0.x.
 
 ## Contributing
 
