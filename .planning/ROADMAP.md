@@ -129,7 +129,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. A `bin-static.spec.ts` (`test` tier, `dependsOn: build`, modeled on `gate-a-static.spec.ts`) asserts the BUILT `bin.js` starts with a `\r`-free `#!/usr/bin/env node` shebang and that its `require` graph never reaches `@nx/devkit`/`nx`; a `src/cli/**` ESLint import-ban enforces the nx-free boundary.
   4. A git-diff / barrel-drift audit proves the milestone is additive-only vs `angular-typechecker@0.2.1` -- no breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API, the Angular CLI builder, or the generator schemas (the `executor.ts` logger swap is internal + observably identical; the `bin` field and `src/cli/**` are net-new) -- and the `v0.3.0` escape hatch stays untriggered.
 **Plans**: 3 plans
-- [ ] 27-01-PLAN.md -- bin.ts flush-safe shell + two-name bin field + newLine:lf/.gitattributes LF guards + src/cli/** nx-free ESLint import-ban (CLI-01, PKG-01, PKG-02, VER-03)
+- [x] 27-01-PLAN.md -- bin.ts flush-safe shell + two-name bin field + newLine:lf/.gitattributes LF guards + src/cli/** nx-free ESLint import-ban (CLI-01, PKG-01, PKG-02, VER-03)
 - [ ] 27-02-PLAN.md -- bin-static.spec.ts (built bin.js shebang + nx-free require walk) + tarball-audit.e2e.spec.ts publint bin audit (VER-03, PKG-01, CLI-01)
 - [ ] 27-03-PLAN.md -- additive-only audit vs angular-typechecker@0.2.1 (barrel drift + git-diff) -> 27-ADDITIVE-AUDIT.md (ADD-01)
 
@@ -188,7 +188,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
 | 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
-| 27. Bin shell + cross-platform packaging | v0.2.2 | 0/3 | Planned | - |
+| 27. Bin shell + cross-platform packaging | v0.2.2 | 1/3 | In Progress|  |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 0/0 | Not started | - |
 | 29. Docs | v0.2.2 | 0/0 | Not started | - |
 

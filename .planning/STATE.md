@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
 status: executing
-last_updated: "2026-07-16T14:46:04.024Z"
-last_activity: 2026-07-16 -- Phase 27 planning complete
+last_updated: "2026-07-16T15:04:20.952Z"
+last_activity: 2026-07-16
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
   percent: 40
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 27 — bin shell + cross platform packaging
+**Current focus:** Phase 27 — bin-shell-cross-platform-packaging
 
 ## Current Position
 
-Phase: 27
-Plan: Not started
+Phase: 27 (bin-shell-cross-platform-packaging) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-16 -- Phase 27 planning complete
+Last activity: 2026-07-16
 
 ## Accumulated Context
 
@@ -81,6 +81,9 @@ archives under `.planning/milestones/`.
 - [Phase 25]: 25-01: extracted the five executor advisory helpers + skippedReferenceVerdictNote VERBATIM into a pure core/emit-advisory-notices.ts behind a homegrown structural core/logger.ts Logger seam (info/warn/error, imports nothing -> src/core D-11 boundary clean); the Nx executor now emits every advisory through ONE emitAdvisoryNotices(result, logger) call, injecting its @nx/devkit logger with ZERO adapter (structural assignability, D-02). Byte-identical vs 0.2.1: existing executor+builder specs stay green with NO assertion edits (D-10); new emit-advisory-notices.spec.ts anchors each notice with EXACT full-string toHaveBeenCalledWith + stream routing (info=node_modules count, warn=all else, error=never) + clean-result silence (D-09). Locked emission order preserved (templateCheckAborted -> skippedReferences per-ref -> suppressed info-then-warn -> notTypeChecked -> bundlerQueryImports). Infra TypecheckInfrastructureError catch/logger.error stays in the executor (D-08). Additive/internal only (CLI-04, ADD-01): no barrel/public-API/verdict change, zero new dependency. Enables the Phase-26 CLI to drive advisories without importing executor.ts (@nx/devkit/chalk 24-06 crash class). build/test(400)/integration(107)/lint(maxWarnings:0)/typecheck/format:check green.
 - [Phase 26]: 26-01: built the nx-free CLI foundation the load-bearing run() (26-02) consumes. NEW src/cli/ dir (sibling of executors/, builders/; @nx/js:tsc already globs src/**/*.ts). parse-args.ts = util.parseArgs (strict, no positionals, tsConfig short 'c'+multiple, help short 'h') mapped to a discriminated ParseResult (options | help | version | usageError): short flag is 'c' NEVER 'p' (a p/project flag surfaces as an unknown-flag usageError, ARGS-02/D-12); parseArgs wrapped in try/catch -> usageError (D-14) with missing-required-tsConfig + non-negative-integer max-warnings checks (D-08, 0 stays valid); help text says 'npx angular-typechecker' never 'npx atc' (D-11) + the 0/1/2 exit-code line; version reads the real package.json manifest via require two dirs up (D-10, drift-locked + confirmed working under Vitest). tsConfig kept as the RAW string[] here -- the single-vs-array collapse (ARGS-03) is run()'s job in 26-02. console-logger.ts = BufferingLogger implements the pure core/logger.ts Logger via a type-only import; info/warn/error all push onto ONE array; a text getter joins by newline (empty string when unused, D-04); NO stream/console writes (bin.ts is Phase 27). parse-args.spec.ts = 19 pure direct-call assertions (no vi.mock) for ARGS-01/02/04 + the max-warnings matrix + help/version guarantees + the version drift-lock. nx-free by construction (D-15): both source files import only node:util + the manifest + a type-only Logger; boundary grep clean. Deviations (both Rule 3, pre-commit gate fixes): dropped an unused eslint-disable that failed report-unused-disable-directives at maxWarnings:0 (no-require-imports is not enabled -- require is lint-clean); reworded the D-15 doc-comments to drop the literal @nx/devkit token so the acceptance grep returns nothing. Requirements ARGS-01/02/04+CLI-03+VER-01 left Pending (each also spans 26-02/26-03; closed at phase verification). build/test(413)/lint(maxWarnings:0)/format:check green.
 - [Phase 26]: 26-02: built the load-bearing run(argv, env): Promise<{ exitCode: 0|1|2; stdout; stderr }> in src/cli/main.ts -- the THIRD thin adapter mirroring executor.ts's compose order VERBATIM (parse via Wave-1 parseCliArgs -> resolve+normalize --tsConfig -> runTypecheck -> emitAdvisoryNotices BEFORE the report -> renderReport -> evaluateResult), swapping the Nx devkit logger for the Wave-1 BufferingLogger, joinPathFragments for nx-free node:path resolve + a try/catch-guarded realpathSync.native (ENOENT falls through to the .replace'd resolved path so a bad tsconfig returns exit 2 via the core, not an uncaught throw -- RESEARCH Open Question 1), and the Nx { success } return for the literal exit code via the two-step compose (D-01): usage -> 2 DIRECTLY; caught TypecheckInfrastructureError -> toExitCode(error)=2 (its FIRST live consumer, and the ONLY toExitCode call site); completed -> evaluateResult(...).success ? 0 : 1, so a coverage-incomplete/warnings-exceeded run (errorCount===0, success===false) correctly returns 1 (the anti-false-pass). Single --tsConfig collapses to a STRING, 2+ stay string[] (ARGS-03/D-13). Color from env NO_COLOR>FORCE_COLOR>isTTY (D-09). Pure (D-02/EXIT-02): no process.exit/stream write; stdout=renderReport only, stderr=BufferingLogger.text (D-03). nx-free by construction (D-15; acceptance grep clean, toExitCode only in the infra catch). main.spec.ts = 20 stubbed-core assertions (vi.hoisted+vi.mock(importOriginal) one level up; real TypecheckInfrastructureError/emitAdvisoryNotices/toExitCode/BufferingLogger) locking the EXIT-01 matrix incl. errorCount===0/success===false->1, CLI-03 routing, EXIT-02 purity, ARGS-03/05, VER-01 drift-lock, plus the D-04 BufferingLogger contract. Deviations (both Rule 3, pre-commit gate): dropped the literal Nx-devkit token from a doc-comment so the acceptance grep returns nothing; prettier --write whitespace. Requirements CLI-02/03+ARGS-03/05+EXIT-01/02+PKG-03+VER-01 left Pending (span 26-03/phase verification). build/test(433)/lint(maxWarnings:0)/format:check green.
+- [Phase 27]: 27-01: shipped src/cli/bin.ts -- the third thin-adapter OS shell over run(); flush-safe (process.exitCode + natural drain, NEVER process.exit, D-02), .then/.catch (top-level await illegal under type:commonjs), unknown throw -> exit 2 (D-03), imports only ./main (nx-free)
+- [Phase 27]: 27-01: two-name bin (angular-typechecker + atc) -> one ./src/cli/bin.js (version stays 0.2.1, files unchanged); newLine:lf pins deterministic LF shebang emit + narrow .gitattributes *.ts eol=lf; no separate bin tsconfig so the await import() ESM bridge is not downleveled (PKG-02, gate-a-static green); src/cli/** nx-free ESLint import-ban (import-ban only, no no-console/process.exit)
+- [Phase 27]: 27-01: DEFERRED pre-existing Phase-26 typecheck defect -- tsconfig.spec.json tsc fails on main.spec.ts(89) TS2532/TS2493 (renderReport mock call-args tuple); NOT a 27-01 regression (main.spec.ts last touched by 26-02; spec tsconfig extends tsconfig.json not the edited tsconfig.lib.json); drift+tools typecheck green; logged in deferred-items.md, owner = a Phase-26 gap-close
 
 ### Roadmap Evolution
 
@@ -216,7 +219,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-Last session: 2026-07-16T14:11:09.635Z
+Last session: 2026-07-16T15:00:57.933Z
 Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
 committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative post-merge gate GREEN
 (`nx run-many -t build test lint --projects=angular-typechecker --skip-nx-cache` => 39 files/373 tests,
