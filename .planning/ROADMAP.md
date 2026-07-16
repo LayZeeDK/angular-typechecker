@@ -180,7 +180,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 22. Configuration schematic -- the angular.json write-fork | v0.2.1 | 2/2 | Complete | 2026-07-11 |
 | 23. Init schematic parity + first-party ng-add | v0.2.1 | 3/3 | Complete | 2026-07-12 |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
-| 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete   | 2026-07-16 |
+| 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 0/0 | Not started | - |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 0/0 | Not started | - |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 0/0 | Not started | - |

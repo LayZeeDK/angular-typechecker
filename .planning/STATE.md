@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
-status: verifying
-last_updated: "2026-07-16T01:49:00.813Z"
+status: ready_to_plan
+last_updated: 2026-07-16T02:03:26.098Z
 last_activity: 2026-07-16
 progress:
   total_phases: 5
@@ -11,6 +11,7 @@ progress:
   total_plans: 1
   completed_plans: 1
   percent: 20
+stopped_at: Phase 25 complete (1/1) — ready to discuss Phase 26
 ---
 
 # Project State
@@ -20,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 25 — extract-the-advisory-notice-seam
+**Current focus:** Phase 26 — pure cli core + exit code wiring
 
 ## Current Position
 
-Phase: 25 (extract-the-advisory-notice-seam) — EXECUTING
-Plan: 1 of 1
-Status: Phase complete — ready for verification
+Phase: 26
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-07-16
 
 ## Accumulated Context
