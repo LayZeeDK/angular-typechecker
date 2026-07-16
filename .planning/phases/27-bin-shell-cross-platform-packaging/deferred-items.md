@@ -4,8 +4,15 @@ Logged by the 27-01 executor per the GSD SCOPE BOUNDARY rule (only fix issues
 directly caused by the current task's changes; log pre-existing failures in
 unrelated files, do not fix).
 
-## D1 - Pre-existing `nx typecheck` failure in `src/cli/main.spec.ts` (Phase 26 escaped defect)
+## D1 - Pre-existing `nx typecheck` failure in `src/cli/main.spec.ts` (Phase 26 escaped defect) -- RESOLVED
 
+- **RESOLVED 2026-07-16** in commit `c25119b` (`test(26-02): ...`) by the phase-27 orchestrator:
+  the `renderReport` mock's inline zero-arg impl was replaced with a bare `vi.fn()` (matching its
+  `runTypecheck` sibling) so its `.mock.calls` args tuple is `any[]`; `beforeEach` already sets
+  `mockResolvedValue(SENTINEL_REPORT)`. `nx run angular-typechecker:typecheck --skip-nx-cache`
+  now exits 0 (all three tsc commands green) and `nx test` stays green (433 tests). Fixed here
+  (not deferred to a separate quick task) because it blocked Phase 27's authoritative `nx typecheck`
+  CI gate and is a trivial, root-caused test-only change with correct `26-02` attribution.
 - **Discovered during:** 27-01 self-check (`nx run angular-typechecker:typecheck`).
 - **Symptom:** `tsc --noEmit -p packages/angular-typechecker/tsconfig.spec.json`
   fails with:
