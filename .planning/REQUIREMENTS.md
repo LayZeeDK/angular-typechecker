@@ -10,28 +10,28 @@
 ### CLI (binary + thin-adapter surface)
 
 - [ ] **CLI-01**: A user can run the complete Angular type-check from a standalone binary with NO Nx or Angular CLI workspace present -- shipped as two `bin` names (`angular-typechecker` primary + `atc` alias) that resolve to one compiled `src/cli/bin.js` (`npx angular-typechecker ...`; installed `atc ...`).
-- [ ] **CLI-02**: The CLI produces the SAME verdict and diagnostics as the Nx executor and Angular CLI builder -- the complete set (TS + template + extended NG8xxx, no emit), single-tsconfig AND solution reference-walking, same boundary filtering -- by composing the same `runTypecheck` core, never a re-implementation.
-- [ ] **CLI-03**: The CLI entrypoint imports ONLY pure-core modules (never `@nx/devkit`/`nx` at runtime), enforced by a `src/cli/**` ESLint import-ban plus a module-graph probe; a console logger routes the report to stdout and advisory notices / errors to stderr.
+- [x] **CLI-02**: The CLI produces the SAME verdict and diagnostics as the Nx executor and Angular CLI builder -- the complete set (TS + template + extended NG8xxx, no emit), single-tsconfig AND solution reference-walking, same boundary filtering -- by composing the same `runTypecheck` core, never a re-implementation.
+- [x] **CLI-03**: The CLI entrypoint imports ONLY pure-core modules (never `@nx/devkit`/`nx` at runtime), enforced by a `src/cli/**` ESLint import-ban plus a module-graph probe; a console logger routes the report to stdout and advisory notices / errors to stderr.
 - [x] **CLI-04**: The five advisory `warn*` helpers are extracted to a pure `core/emit-advisory-notices.ts` behind an injected structural `Logger`; the Nx executor injects its logger with byte-identical observable behavior (additive/internal, no public-API change).
 
 ### ARGS (argument parsing)
 
-- [ ] **ARGS-01**: Arguments are parsed with the Node stdlib `util.parseArgs` -- zero new runtime or dev dependencies.
-- [ ] **ARGS-02**: Input is by tsconfig PATH via `--tsConfig` (short `-c`), repeatable and required; deliberately NOT `-p` / `--project` (which would collide with Angular CLI/Nx workspace *project* selection). `--max-warnings <n>`, `--fail-fast`, `--include-deps`, and `--strict` each map to an existing `CoreOptions` / adapter knob -- no new engine behavior.
-- [ ] **ARGS-03**: A single `--tsConfig` uses the string (direct / solution-walk) path; two or more use the `string[]` union path -- a single input is never passed as a one-element array (which would skip solution-tsconfig walking).
-- [ ] **ARGS-04**: `--help` / `-h` and `--version` print and exit `0`; an unknown flag, a missing required `--tsConfig`, or a non-integer `--max-warnings` is a usage error -> exit `2` with a clear message.
-- [ ] **ARGS-05**: Color is auto-detected honoring `NO_COLOR` / `FORCE_COLOR` / TTY, feeding the existing report formatter.
+- [x] **ARGS-01**: Arguments are parsed with the Node stdlib `util.parseArgs` -- zero new runtime or dev dependencies.
+- [x] **ARGS-02**: Input is by tsconfig PATH via `--tsConfig` (short `-c`), repeatable and required; deliberately NOT `-p` / `--project` (which would collide with Angular CLI/Nx workspace *project* selection). `--max-warnings <n>`, `--fail-fast`, `--include-deps`, and `--strict` each map to an existing `CoreOptions` / adapter knob -- no new engine behavior.
+- [x] **ARGS-03**: A single `--tsConfig` uses the string (direct / solution-walk) path; two or more use the `string[]` union path -- a single input is never passed as a one-element array (which would skip solution-tsconfig walking).
+- [x] **ARGS-04**: `--help` / `-h` and `--version` print and exit `0`; an unknown flag, a missing required `--tsConfig`, or a non-integer `--max-warnings` is a usage error -> exit `2` with a clear message.
+- [x] **ARGS-05**: Color is auto-detected honoring `NO_COLOR` / `FORCE_COLOR` / TTY, feeding the existing report formatter.
 
 ### EXIT (exit-code contract)
 
-- [ ] **EXIT-01**: The binary returns literal OS exit codes -- `0` clean, `1` completed-run verdict failure (type error / warnings-exceeded / coverage-incomplete), `2` infrastructure or usage error. `TypecheckInfrastructureError` maps to `2` via `toExitCode` (its first live consumer, reserved since v0.0.3 COR-04); the `0`-vs-`1` split derives from `evaluateResult(...).success`, NEVER from `toExitCode` over raw counts (a coverage-incomplete / warnings-exceeded run has `errorCount === 0` -- naive wiring would be a silent false pass).
-- [ ] **EXIT-02**: A pure `run(argv, env): Promise<{ exitCode, stdout, stderr }>` holds all decision logic and never calls `process.exit` or writes streams; the thin `bin.ts` shell is the only `process.exit` / stream-write site and is flush-safe on large buffered output.
+- [x] **EXIT-01**: The binary returns literal OS exit codes -- `0` clean, `1` completed-run verdict failure (type error / warnings-exceeded / coverage-incomplete), `2` infrastructure or usage error. `TypecheckInfrastructureError` maps to `2` via `toExitCode` (its first live consumer, reserved since v0.0.3 COR-04); the `0`-vs-`1` split derives from `evaluateResult(...).success`, NEVER from `toExitCode` over raw counts (a coverage-incomplete / warnings-exceeded run has `errorCount === 0` -- naive wiring would be a silent false pass).
+- [x] **EXIT-02**: A pure `run(argv, env): Promise<{ exitCode, stdout, stderr }>` holds all decision logic and never calls `process.exit` or writes streams; the thin `bin.ts` shell is the only `process.exit` / stream-write site and is flush-safe on large buffered output.
 
 ### PKG (packaging + cross-platform)
 
 - [ ] **PKG-01**: The source shebang (`#!/usr/bin/env node`, LF) survives `@nx/js:tsc` into the built AND published `bin.js`; `newLine: lf` + a `.gitattributes` rule guard against CRLF corruption; the tarball audit (`publint`) validates the bin.
 - [ ] **PKG-02**: The bin compiles under the same `module: nodenext` config so the CJS->ESM `await import('@angular/compiler-cli')` bridge is never downleveled to `require()` (no `ERR_REQUIRE_ESM` at first real type-check).
-- [ ] **PKG-03**: tsconfig paths are resolved from an arbitrary CWD using nx-free `node:path` and `realpathSync.native`-normalization (Windows drive-letter case / 8.3 names) before reaching the boundary filter.
+- [x] **PKG-03**: tsconfig paths are resolved from an arbitrary CWD using nx-free `node:path` and `realpathSync.native`-normalization (Windows drive-letter case / 8.3 names) before reaching the boundary filter.
 
 ### VER (verification -- follows the repo's Vitest pyramid + CI matrix)
 
@@ -86,21 +86,21 @@ Populated during roadmap creation. Each requirement maps to exactly one phase.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CLI-01 | Phase 27 | Pending |
-| CLI-02 | Phase 26 | Pending |
-| CLI-03 | Phase 26 | Pending |
+| CLI-02 | Phase 26 | Complete |
+| CLI-03 | Phase 26 | Complete |
 | CLI-04 | Phase 25 | Complete |
-| ARGS-01 | Phase 26 | Pending |
-| ARGS-02 | Phase 26 | Pending |
-| ARGS-03 | Phase 26 | Pending |
-| ARGS-04 | Phase 26 | Pending |
-| ARGS-05 | Phase 26 | Pending |
-| EXIT-01 | Phase 26 | Pending |
-| EXIT-02 | Phase 26 | Pending |
+| ARGS-01 | Phase 26 | Complete |
+| ARGS-02 | Phase 26 | Complete |
+| ARGS-03 | Phase 26 | Complete |
+| ARGS-04 | Phase 26 | Complete |
+| ARGS-05 | Phase 26 | Complete |
+| EXIT-01 | Phase 26 | Complete |
+| EXIT-02 | Phase 26 | Complete |
 | PKG-01 | Phase 27 | Pending |
 | PKG-02 | Phase 27 | Pending |
-| PKG-03 | Phase 26 | Pending |
-| VER-01 | Phase 26 | Pending |
-| VER-02 | Phase 26 | Pending |
+| PKG-03 | Phase 26 | Complete |
+| VER-01 | Phase 26 | Complete |
+| VER-02 | Phase 26 | Complete |
 | VER-03 | Phase 27 | Pending |
 | VER-04 | Phase 28 | Pending |
 | VER-05 | Phase 28 | Pending |
