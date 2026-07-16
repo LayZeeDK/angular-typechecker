@@ -99,7 +99,8 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   1. A new pure `core/emit-advisory-notices.ts` renders every advisory (coverage-incomplete, TCB-abort, not-type-checked, bundler-query-imports, and the remaining `warn*` helper) through an injected structural `Logger` (`info`/`warn`/`error`), importing no `nx`/`@nx/devkit`, no `console`, no `process` -- enforced by the existing `core/**` lint boundary.
   2. The Nx executor injects its own logger via `emitAdvisoryNotices(result, logger)` and its notice output is byte-identical to `angular-typechecker@0.2.1` -- all existing executor and builder tests stay green with no behavioral diff.
   3. A unit spec drives `emit-advisory-notices` against a mock `Logger` and asserts each notice's message text and stream routing (advisories/errors via `warn`/`error`).
-**Plans**: TBD
+**Plans**:
+- [ ] 25-01-PLAN.md -- Extract the advisory-notice seam: new core/logger.ts Logger interface + pure core/emit-advisory-notices.ts (five helpers moved verbatim) + executor swap to one emitAdvisoryNotices(result, logger) call + byte-exact unit spec (CLI-04)
 
 ### Phase 26: Pure CLI core + exit-code wiring
 
