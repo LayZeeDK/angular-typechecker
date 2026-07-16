@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
 status: executing
-last_updated: "2026-07-16T15:04:20.952Z"
+last_updated: "2026-07-16T15:23:29.000Z"
 last_activity: 2026-07-16
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 40
 ---
 
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Stand
 ## Current Position
 
 Phase: 27 (bin-shell-cross-platform-packaging) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
+Plan: 3 of 3
+Status: Ready to execute (27-02 complete; 27-03 additive-only audit next)
 Last activity: 2026-07-16
 
 ## Accumulated Context
@@ -83,7 +83,8 @@ archives under `.planning/milestones/`.
 - [Phase 26]: 26-02: built the load-bearing run(argv, env): Promise<{ exitCode: 0|1|2; stdout; stderr }> in src/cli/main.ts -- the THIRD thin adapter mirroring executor.ts's compose order VERBATIM (parse via Wave-1 parseCliArgs -> resolve+normalize --tsConfig -> runTypecheck -> emitAdvisoryNotices BEFORE the report -> renderReport -> evaluateResult), swapping the Nx devkit logger for the Wave-1 BufferingLogger, joinPathFragments for nx-free node:path resolve + a try/catch-guarded realpathSync.native (ENOENT falls through to the .replace'd resolved path so a bad tsconfig returns exit 2 via the core, not an uncaught throw -- RESEARCH Open Question 1), and the Nx { success } return for the literal exit code via the two-step compose (D-01): usage -> 2 DIRECTLY; caught TypecheckInfrastructureError -> toExitCode(error)=2 (its FIRST live consumer, and the ONLY toExitCode call site); completed -> evaluateResult(...).success ? 0 : 1, so a coverage-incomplete/warnings-exceeded run (errorCount===0, success===false) correctly returns 1 (the anti-false-pass). Single --tsConfig collapses to a STRING, 2+ stay string[] (ARGS-03/D-13). Color from env NO_COLOR>FORCE_COLOR>isTTY (D-09). Pure (D-02/EXIT-02): no process.exit/stream write; stdout=renderReport only, stderr=BufferingLogger.text (D-03). nx-free by construction (D-15; acceptance grep clean, toExitCode only in the infra catch). main.spec.ts = 20 stubbed-core assertions (vi.hoisted+vi.mock(importOriginal) one level up; real TypecheckInfrastructureError/emitAdvisoryNotices/toExitCode/BufferingLogger) locking the EXIT-01 matrix incl. errorCount===0/success===false->1, CLI-03 routing, EXIT-02 purity, ARGS-03/05, VER-01 drift-lock, plus the D-04 BufferingLogger contract. Deviations (both Rule 3, pre-commit gate): dropped the literal Nx-devkit token from a doc-comment so the acceptance grep returns nothing; prettier --write whitespace. Requirements CLI-02/03+ARGS-03/05+EXIT-01/02+PKG-03+VER-01 left Pending (span 26-03/phase verification). build/test(433)/lint(maxWarnings:0)/format:check green.
 - [Phase 27]: 27-01: shipped src/cli/bin.ts -- the third thin-adapter OS shell over run(); flush-safe (process.exitCode + natural drain, NEVER process.exit, D-02), .then/.catch (top-level await illegal under type:commonjs), unknown throw -> exit 2 (D-03), imports only ./main (nx-free)
 - [Phase 27]: 27-01: two-name bin (angular-typechecker + atc) -> one ./src/cli/bin.js (version stays 0.2.1, files unchanged); newLine:lf pins deterministic LF shebang emit + narrow .gitattributes *.ts eol=lf; no separate bin tsconfig so the await import() ESM bridge is not downleveled (PKG-02, gate-a-static green); src/cli/** nx-free ESLint import-ban (import-ban only, no no-console/process.exit)
-- [Phase 27]: 27-01: DEFERRED pre-existing Phase-26 typecheck defect -- tsconfig.spec.json tsc fails on main.spec.ts(89) TS2532/TS2493 (renderReport mock call-args tuple); NOT a 27-01 regression (main.spec.ts last touched by 26-02; spec tsconfig extends tsconfig.json not the edited tsconfig.lib.json); drift+tools typecheck green; logged in deferred-items.md, owner = a Phase-26 gap-close
+- [Phase 27]: 27-01: DEFERRED pre-existing Phase-26 typecheck defect -- tsconfig.spec.json tsc fails on main.spec.ts(89) TS2532/TS2493 (renderReport mock call-args tuple); NOT a 27-01 regression (main.spec.ts last touched by 26-02; spec tsconfig extends tsconfig.json not the edited tsconfig.lib.json); drift+tools typecheck green; logged in deferred-items.md, owner = a Phase-26 gap-close [RESOLVED 2026-07-16 in c25119b: main.spec.ts renderReport mock args typed; nx typecheck now fully green]
+- [Phase 27]: 27-02: shipped the two standing packaging guards (no production code, two spec files). bin-static.spec.ts (test tier, dependsOn:build) reads the BUILT dist bin.js (distRoot from project.json outputPath, packageRoot walks UP 2 from src/cli) and asserts (a) first line === '#!/usr/bin/env node' + .not.toContain('\r') and (b) a static transitive require-graph walk from bin.js (matchAll specifiers per stripped file, follow only relative + '.js', existsSync-guarded) never reaches /^(@nx\/|nx\/|nx$)/ -- VER-03. tarball-audit.e2e.spec.ts EXTENDED (no new file/dep/project): added 'src/cli/bin.js' to REQUIRED_FILES, TarballManifest gained bin?:Record, and a NEW 'CLI-01/PKG-01' describe asserts the packed manifest maps BOTH angular-typechecker AND atc -> ./src/cli/bin.js, that bin.js ships, and its first line is a \r-free shebang; existing publint --strict already covers the bin rule -- PKG-01/CLI-01 published halves. nx test(435, bin-static green)/typecheck(3 tsc green)/lint(maxWarnings:0) green; FULL nx e2e install-e2e GREEN on Windows too (11 files/40 tests, tarball-audit 9 tests, Verdaccio bound this run). No deviations.
 
 ### Roadmap Evolution
 
