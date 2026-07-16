@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
 status: executing
-last_updated: "2026-07-16T18:29:37.431Z"
-last_activity: 2026-07-16 -- Phase 28 planning complete
+last_updated: "2026-07-16T19:39:42.591Z"
+last_activity: 2026-07-16
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 11
-  completed_plans: 7
+  completed_plans: 8
   percent: 60
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 28 — shipped tarball e2e + real clone uat
+**Current focus:** Phase 28 — shipped-tarball-e2e-real-clone-uat
 
 ## Current Position
 
-Phase: 28
-Plan: Not started
+Phase: 28 (shipped-tarball-e2e-real-clone-uat) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-07-16 -- Phase 28 planning complete
+Last activity: 2026-07-16
 
 ## Accumulated Context
 
@@ -85,6 +85,7 @@ archives under `.planning/milestones/`.
 - [Phase 27]: 27-01: two-name bin (angular-typechecker + atc) -> one ./src/cli/bin.js (version stays 0.2.1, files unchanged); newLine:lf pins deterministic LF shebang emit + narrow .gitattributes *.ts eol=lf; no separate bin tsconfig so the await import() ESM bridge is not downleveled (PKG-02, gate-a-static green); src/cli/** nx-free ESLint import-ban (import-ban only, no no-console/process.exit)
 - [Phase 27]: 27-01: DEFERRED pre-existing Phase-26 typecheck defect -- tsconfig.spec.json tsc fails on main.spec.ts(89) TS2532/TS2493 (renderReport mock call-args tuple); NOT a 27-01 regression (main.spec.ts last touched by 26-02; spec tsconfig extends tsconfig.json not the edited tsconfig.lib.json); drift+tools typecheck green; logged in deferred-items.md, owner = a Phase-26 gap-close [RESOLVED 2026-07-16 in c25119b: main.spec.ts renderReport mock args typed; nx typecheck now fully green]
 - [Phase 27]: 27-02: shipped the two standing packaging guards (no production code, two spec files). bin-static.spec.ts (test tier, dependsOn:build) reads the BUILT dist bin.js (distRoot from project.json outputPath, packageRoot walks UP 2 from src/cli) and asserts (a) first line === '#!/usr/bin/env node' + .not.toContain('\r') and (b) a static transitive require-graph walk from bin.js (matchAll specifiers per stripped file, follow only relative + '.js', existsSync-guarded) never reaches /^(@nx\/|nx\/|nx$)/ -- VER-03. tarball-audit.e2e.spec.ts EXTENDED (no new file/dep/project): added 'src/cli/bin.js' to REQUIRED_FILES, TarballManifest gained bin?:Record, and a NEW 'CLI-01/PKG-01' describe asserts the packed manifest maps BOTH angular-typechecker AND atc -> ./src/cli/bin.js, that bin.js ships, and its first line is a \r-free shebang; existing publint --strict already covers the bin rule -- PKG-01/CLI-01 published halves. nx test(435, bin-static green)/typecheck(3 tsc green)/lint(maxWarnings:0) green; FULL nx e2e install-e2e GREEN on Windows too (11 files/40 tests, tarball-audit 9 tests, Verdaccio bound this run). No deviations.
+- [Phase ?]: 28-01: shipped-tarball CLI e2e harness -- NEW angular-typechecker-cli-e2e project auto-discovers into the CI Linux matrix (GUARD-01/01b/01c/01d/01e green) + runShim helper (spawnSync over the .bin shim; .cmd+shell:true on Windows, maxBuffer 20MB) + bounded ECONNREFUSED/ECONNRESET retry in the shared mintCiToken (D-06). npm baseline proves both bins (angular-typechecker + atc) + npx angular-typechecker return literal 0/1/2 (install BY NAME from Verdaccio, not pack-a-tgz); nx-free cli-consumer fixture (no nx.json/project.json, committed lockfile). Full e2e GREEN locally. VER-04 stays OPEN (yarn/pnpm/Windows-CI/runtime-probe are plans 28-02/03/04).
 
 ### Roadmap Evolution
 
@@ -220,7 +221,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-Last session: 2026-07-16T17:44:52.866Z
+Last session: 2026-07-16T19:39:10.380Z
 Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
 committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative post-merge gate GREEN
 (`nx run-many -t build test lint --projects=angular-typechecker --skip-nx-cache` => 39 files/373 tests,
