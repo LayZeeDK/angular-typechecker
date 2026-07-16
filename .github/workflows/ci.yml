@@ -261,6 +261,63 @@ jobs:
       # assert this invocation and the dynamic matrix wiring.
       - run: npx nx run-many -t e2e -p "$PROJECT"
 
+  # Windows leg for the standalone-CLI tarball e2e ONLY (VER-04 SC-2, D-04). The
+  # .cmd/.ps1 bin shim is the one genuinely Windows-divergent CLI surface, so this
+  # single project -- NOT the whole e2e tier -- gets a Windows runner. This is a
+  # deliberate, plan-surfaced departure from the repo's Linux-only heavy-e2e default.
+  #
+  # It is a SEPARATE dedicated job (option b), NOT an `os` dimension added to the
+  # `e2e` dynamic matrix (option a). An `include: { os: windows-latest, project:
+  # angular-typechecker-cli-e2e }` would MERGE into the existing `{project: cli-e2e}`
+  # combination (same project value, `os` additive) rather than adding a cell -- so
+  # the Linux `cli-e2e` leg would SILENTLY disappear. A dedicated job leaves the
+  # verified-live Linux dynamic matrix + `discover` contract + GUARD-01b's four
+  # assertions completely untouched. angular-typechecker-cli-e2e still runs on Linux
+  # via the auto-discovered dynamic matrix (it has an `e2e` target) AND on Windows
+  # here -- satisfying D-04's "BOTH Linux AND Windows." GUARD-01f locks this OS-axis
+  # wiring against silent drift, the same way GUARD-01b guards the Linux matrix.
+  #
+  # NODE COUPLING (same note as the `e2e` job): `corepack enable` requires corepack,
+  # which ships in Node 24 (this job's node-version pin) but is REMOVED in Node 25+.
+  # If this job's node bumps to >=25, `corepack enable` will not exist -- provision
+  # yarn via a pinned setup step (mirroring pnpm/action-setup) or gate the step on
+  # the Node major. The Windows leg benefits from the bounded Verdaccio
+  # ECONNREFUSED/ECONNRESET retry landed in Plan 01 (D-06).
+  #
+  # The project name reaches the run steps through the `PROJECT` env var (a hardcoded
+  # value), NEVER interpolated as ${{ matrix.project }} into a shell command -- the
+  # top-of-file no-command-injection invariant. `shell: bash` is pinned on the run
+  # steps so the `-p "$PROJECT"` quoting is byte-identical to the Linux `e2e` job
+  # (windows-latest defaults to pwsh otherwise). Path-gated (D-08), same NEGATIVE if:
+  # form as the other heavy jobs so it stays in the `act -n` plan under the empty
+  # filter output.
+  e2e-windows:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
+    runs-on: windows-latest
+    env:
+      NX_DAEMON: false
+      PROJECT: angular-typechecker-cli-e2e
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: corepack enable
+        shell: bash
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+        with:
+          version: 11.9.0
+      - run: npm ci
+        shell: bash
+      - run: npx nx run-many -t typecheck -p "$PROJECT"
+        shell: bash
+      - run: npx nx run-many -t e2e -p "$PROJECT"
+        shell: bash
+
   # Code-quality gate (QUAL-01): fallow audit in new-only mode -- a PR fails only
   # for dead code / duplication / over-complexity it INTRODUCES. Config-pinned
   # gate (.fallowrc.jsonc `audit.gate: new-only`); --format human renders a readable
@@ -419,6 +476,7 @@ jobs:
         discover,
         test,
         e2e,
+        e2e-windows,
         fallow,
         format-lint,
         act-compat,
