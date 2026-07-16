@@ -189,7 +189,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
-| 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 2/4 | In Progress|  |
+| 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 3/4 | In Progress|  |
 | 29. Docs | v0.2.2 | 0/0 | Not started | - |
 
 ## Backlog
