@@ -44,7 +44,13 @@ export function runShim(
     isWin ? `${binName}.cmd` : binName,
   );
 
-  const result = spawnSync(shim, args, {
+  // On Windows `shell: true` passes the command through cmd.exe, which splits the
+  // command line on spaces -- an absolute shim path under a temp dir containing a
+  // space would break unless quoted (WR-01). The fixed `args` are relative tsconfig
+  // paths + flags (never spaces), so only the shim path itself needs quoting.
+  const command = isWin ? `"${shim}"` : shim;
+
+  const result = spawnSync(command, args, {
     cwd: consumerDir,
     env,
     encoding: 'utf8',

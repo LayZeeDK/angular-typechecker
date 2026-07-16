@@ -158,6 +158,20 @@ describe('VER-04 (npm): the shipped angular-typechecker / atc bins return litera
       expect(atcClean.code, atcClean.stdout).toBe(0);
       expect(runNpx(['-c', 'tsconfig.json'], tmp, npmEnv).code).toBe(0);
 
+      // exit 0 -- multi-tsConfig UNION: two or more `-c` inputs take run()'s
+      // string[] union path (a single `-c` takes the string / solution-walk path).
+      // This exercises the fixture's clean SECOND leaf (tsconfig.spec.json ->
+      // app.component.spec.ts) through the SHIPPED shim -- the union path is
+      // otherwise only covered in-process (VER-01/VER-02, Phase 26), never
+      // end-to-end through the real `.bin` shim.
+      const atUnion = runShim(
+        tmp,
+        'angular-typechecker',
+        ['-c', 'tsconfig.json', '-c', 'tsconfig.spec.json'],
+        npmEnv,
+      );
+      expect(atUnion.code, atUnion.stdout).toBe(0);
+
       // exit 2 -- infrastructure (a nonexistent tsconfig), BOTH bin names. This
       // literal exit 2 is the headline net-new surface (the Nx/ng {success} harness
       // only ever proves 0/1).
