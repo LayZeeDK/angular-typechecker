@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Stand
 
 Phase: 28 (shipped-tarball-e2e-real-clone-uat) — EXECUTING
 Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-07-16
+Status: Autonomous work done + CI green + VER-05 UAT PASS — ready for phase-close gates (verify/secure/validate/extract)
+Last activity: 2026-07-17
 
 ## Accumulated Context
 
@@ -224,7 +224,28 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-Last session: 2026-07-16T20:26:40.659Z
+Last session: 2026-07-17 (resume-work). Resumed Phase 28 from HANDOFF.json (paused at the UAT gate).
+Completed the two teed-up autonomous tasks:
+- **Fixed PR #41 CI blockers** (fallow + format-lint). fallow: declared the new cli-e2e globalSetup an
+  `entry` (config-only-reachable) + added `libs/**` to `health.ignore` (mintCiToken tripped complexity
+  after the 28-01 D-06 cold-runner retry -- reviewed essential resilience, declare-not-refactor). format:
+  `nx format:write` on cli-exit-codes.e2e.spec.ts. Committed `ci(28)` b15a01f; pushed; PR #41 then went
+  FULLY GREEN (all e2e incl. cli-e2e + e2e-windows + full OS/Node matrix + fallow + format-lint + CodeQL).
+- **Ran VER-05 real-clone UAT autonomously** (user-authorized per HANDOFF) = PASS (commit 26e7e58,
+  28-04-UAT.md status executed-autonomous-pass). Built+packed the local 0.2.1 dist tarball (bin.js + both
+  bin names, 0 raw .ts, \r-free shebang) and installed it into 4 on-stack Angular 22 OSS clones of BOTH
+  kinds: ngx-leaflet @818e9ae (CLI app+lib) FULL PASS; realworld-angular @9e3528f (CLI app-only, pnpm)
+  FULL PASS; radix-ng/primitives @4a7390a2 (Nx, fresh SHA) PASS (GREEN via schematics leaf; NG8xxx template
+  checks fired on the walk); analogjs/analog @5b0b8b66 (Nx alt, fresh SHA) PASS-breadth (RED+BAD-PATH+no-infra;
+  exit-0 GREEN blocked ONLY by analog's own unbuilt-monorepo TS2882, not a tool defect). NO ERR_REQUIRE_ESM /
+  infrastructure error on ANY run. Recorded as an AGENT run, NOT a human sign-off (a literal human sign-off
+  remains available). Clones are uncommitted scratch, restored pristine.
+NEXT (task 3, teed up): close Phase 28 -- verify_phase_goal (gsd-verifier) -> /gsd-secure-phase 28 ->
+/gsd-validate-phase 28 -> /gsd-extract-learnings 28 (+ global-learnings bridge). Then Phase 29 (Docs).
+HANDOFF.json + .continue-here.md are now superseded (both autonomous tasks done). Do NOT merge draft PR #41
+(CI-verification only; real merge is the human-gated Release-PR flow after Phase 29). Stays 0.2.1; no release cut.
+
+Prior session: 2026-07-16T20:26:40.659Z
 Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
 committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative post-merge gate GREEN
 (`nx run-many -t build test lint --projects=angular-typechecker --skip-nx-cache` => 39 files/373 tests,
