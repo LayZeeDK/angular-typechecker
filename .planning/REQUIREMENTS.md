@@ -12,7 +12,7 @@
 - [ ] **CLI-01**: A user can run the complete Angular type-check from a standalone binary with NO Nx or Angular CLI workspace present -- shipped as two `bin` names (`angular-typechecker` primary + `atc` alias) that resolve to one compiled `src/cli/bin.js` (`npx angular-typechecker ...`; installed `atc ...`).
 - [ ] **CLI-02**: The CLI produces the SAME verdict and diagnostics as the Nx executor and Angular CLI builder -- the complete set (TS + template + extended NG8xxx, no emit), single-tsconfig AND solution reference-walking, same boundary filtering -- by composing the same `runTypecheck` core, never a re-implementation.
 - [ ] **CLI-03**: The CLI entrypoint imports ONLY pure-core modules (never `@nx/devkit`/`nx` at runtime), enforced by a `src/cli/**` ESLint import-ban plus a module-graph probe; a console logger routes the report to stdout and advisory notices / errors to stderr.
-- [ ] **CLI-04**: The five advisory `warn*` helpers are extracted to a pure `core/emit-advisory-notices.ts` behind an injected structural `Logger`; the Nx executor injects its logger with byte-identical observable behavior (additive/internal, no public-API change).
+- [x] **CLI-04**: The five advisory `warn*` helpers are extracted to a pure `core/emit-advisory-notices.ts` behind an injected structural `Logger`; the Nx executor injects its logger with byte-identical observable behavior (additive/internal, no public-API change).
 
 ### ARGS (argument parsing)
 
@@ -88,7 +88,7 @@ Populated during roadmap creation. Each requirement maps to exactly one phase.
 | CLI-01 | Phase 27 | Pending |
 | CLI-02 | Phase 26 | Pending |
 | CLI-03 | Phase 26 | Pending |
-| CLI-04 | Phase 25 | Pending |
+| CLI-04 | Phase 25 | Complete |
 | ARGS-01 | Phase 26 | Pending |
 | ARGS-02 | Phase 26 | Pending |
 | ARGS-03 | Phase 26 | Pending |

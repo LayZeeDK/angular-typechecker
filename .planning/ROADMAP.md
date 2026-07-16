@@ -100,7 +100,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   2. The Nx executor injects its own logger via `emitAdvisoryNotices(result, logger)` and its notice output is byte-identical to `angular-typechecker@0.2.1` -- all existing executor and builder tests stay green with no behavioral diff.
   3. A unit spec drives `emit-advisory-notices` against a mock `Logger` and asserts each notice's message text and stream routing (advisories/errors via `warn`/`error`).
 **Plans**:
-- [ ] 25-01-PLAN.md -- Extract the advisory-notice seam: new core/logger.ts Logger interface + pure core/emit-advisory-notices.ts (five helpers moved verbatim) + executor swap to one emitAdvisoryNotices(result, logger) call + byte-exact unit spec (CLI-04)
+- [x] 25-01-PLAN.md -- Extract the advisory-notice seam: new core/logger.ts Logger interface + pure core/emit-advisory-notices.ts (five helpers moved verbatim) + executor swap to one emitAdvisoryNotices(result, logger) call + byte-exact unit spec (CLI-04)
 
 ### Phase 26: Pure CLI core + exit-code wiring
 
@@ -180,7 +180,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 22. Configuration schematic -- the angular.json write-fork | v0.2.1 | 2/2 | Complete | 2026-07-11 |
 | 23. Init schematic parity + first-party ng-add | v0.2.1 | 3/3 | Complete | 2026-07-12 |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
-| 25. Extract the advisory-notice seam | v0.2.2 | 0/0 | Not started | - |
+| 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete   | 2026-07-16 |
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 0/0 | Not started | - |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 0/0 | Not started | - |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 0/0 | Not started | - |

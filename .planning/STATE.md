@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
-status: executing
-last_updated: "2026-07-16T01:31:27.141Z"
-last_activity: 2026-07-16 -- Phase 25 planning complete
+status: verifying
+last_updated: "2026-07-16T01:49:00.813Z"
+last_activity: 2026-07-16
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 25 — extract-advisory-notice-seam (v0.2.2 Standalone CLI)
+**Current focus:** Phase 25 — extract-the-advisory-notice-seam
 
 ## Current Position
 
-Phase: 25 — Extract the advisory-notice seam (next)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-07-16 -- Phase 25 planning complete
+Phase: 25 (extract-the-advisory-notice-seam) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-07-16
 
 ## Accumulated Context
 
@@ -78,6 +78,7 @@ archives under `.planning/milestones/`.
 - [Phase 24]: 24-04 (gap closure): ACP-02 root-cause product fix -- declared `nx` as a DIRECT `^23.0.0` dependency in the plugin manifest (NOT a peer). `@nx/devkit`'s entrypoint `require()`s `nx/src/devkit-exports` at load and yarn does not auto-install peers (npm/pnpm do), so a yarn Angular CLI consumer crashed on `ng add`/`ng run` with `Cannot find module 'nx/src/devkit-exports'`; declaring `nx` directly fixes it for every PM. Range `^23.0.0` is a strict subset of `@nx/devkit@23.0.1`'s `nx` peer -> no double-constraint, cannot pull nx 22/24. Inverted BOTH `package-manifest.spec.ts` nx-absent guards (now assert `dependencies.nx === '^23.0.0'`, still not a peer) + restated header comment/it-titles; added `'nx'` to `@nx/dependency-checks` `ignoredDependencies` (unimported runtime-transitive dep) so `nx lint` stays green at maxWarnings:0. Flipped the identical operative Dependencies constraint in PROJECT.md + CLAUDE.md and date-annotated (not rewrote) the CLAUDE.md STACK-research rows + the "What NOT to Use" nx row with `[v0.2.1 CORRECTION (2026-07-12): ...]`; AGENTS.md byte-unchanged. nx test(349)/lint/build green; dist manifest carries `nx: ^23.0.0`.
 
 - [Phase 24]: 24-06 (gap closure): NGADD-01 yarn first-run auto-wire (Option C, spike-CONFIRMED). Made the ng-add schematic a VANILLA @angular-devkit/schematics Rule -- Rule/Tree/SchematicContext type-only imports (erased at compile), so the compiled schematic.js requires ONLY the pure first-party core (ZERO @nx/devkit). The Angular CLI post-install createSchematic('ng-add') probe no longer loads nx's ora/log-symbols/chalk chain (the `chalk.blue is not a function` throw under yarn 4's last-in-wins hoist), so `ng add angular-typechecker` AUTO-WIRES every application + library project on the FIRST run under yarn 4 (npm+pnpm already worked). Reading angular.json directly is also collision-immune (ACV-01). EXTRACTED (not duplicated) the leaf-array resolution + targetName default/empty-guard + collision-by-builder + [build,spec] idempotent merge into src/core/angular-cli-wiring.ts -- pure (node:path posix.join replaces devkit joinPathFragments; an injected exists() callback replaces tree.exists; every error string byte-preserved), enforced framework-agnostic by the D-11 core/** lint boundary. BOTH the vanilla ng-add AND the Nx configuration generator import it; the Nx configuration observable behavior is byte-identical (configuration.spec + configuration-angular-cli.spec + configuration-matrix.spec + schema-parity.spec + all init specs green). Deleted the dead generators/ng-add/generator.ts (schema.json/schema.d.ts kept; collection.json byte-unchanged; ng-add still absent from generators.json). Flipped the CI-authoritative yarn CLI e2e to assert first-run `ng add` auto-wire (dropped the `ng g` fallback + the no-wire quirk-lock; enableMirror:false retained); retired the README yarn-caveat todo (product-fixed -> pending/->done/, README needs no edit). Additive-only vs 0.2.0 holds (unreleased-surface implementation change). Deviations (Rule 3): the migrated ng-add spec invokes the synchronous Rule directly with a runner.logger-backed context (SchematicTestRunner.callRule builds a NullLogger context and crashes on a passed parent logger, so it cannot capture context.logger notices); removed a non-null assertion (read angular.json once, null => absent) for maxWarnings:0. nx test(366)/build/lint/typecheck green; standalone nx e2e angular-typechecker-ng-cli-e2e green 4/4 (npm + yarn flat + yarn workspace first-run auto-wire + pnpm collision). KNOWN INFRA (not 24-06): `nx run-many -t e2e --parallel=1` fails only on ng-cli-e2e via an Nx local-registry task re-invocation ("already invoked by a parent Nx process in this chain"), Nx-flagged flaky; install(37)/matrix(7)/cache(9) pass under run-many and ng-cli-e2e passes standalone -- CI runs each e2e as a fresh per-job `npm ci` (not run-many), so the conflict does not occur in CI.
+- [Phase 25]: 25-01: extracted the five executor advisory helpers + skippedReferenceVerdictNote VERBATIM into a pure core/emit-advisory-notices.ts behind a homegrown structural core/logger.ts Logger seam (info/warn/error, imports nothing -> src/core D-11 boundary clean); the Nx executor now emits every advisory through ONE emitAdvisoryNotices(result, logger) call, injecting its @nx/devkit logger with ZERO adapter (structural assignability, D-02). Byte-identical vs 0.2.1: existing executor+builder specs stay green with NO assertion edits (D-10); new emit-advisory-notices.spec.ts anchors each notice with EXACT full-string toHaveBeenCalledWith + stream routing (info=node_modules count, warn=all else, error=never) + clean-result silence (D-09). Locked emission order preserved (templateCheckAborted -> skippedReferences per-ref -> suppressed info-then-warn -> notTypeChecked -> bundlerQueryImports). Infra TypecheckInfrastructureError catch/logger.error stays in the executor (D-08). Additive/internal only (CLI-04, ADD-01): no barrel/public-API/verdict change, zero new dependency. Enables the Phase-26 CLI to drive advisories without importing executor.ts (@nx/devkit/chalk 24-06 crash class). build/test(400)/integration(107)/lint(maxWarnings:0)/typecheck/format:check green.
 
 ### Roadmap Evolution
 
@@ -213,7 +214,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-Last session: 2026-07-16T01:02:01.505Z
+Last session: 2026-07-16T01:46:04.537Z
 Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
 committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative post-merge gate GREEN
 (`nx run-many -t build test lint --projects=angular-typechecker --skip-nx-cache` => 39 files/373 tests,
