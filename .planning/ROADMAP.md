@@ -157,7 +157,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 **Plans**: 1 plan
 
 Plans:
-- [ ] 29-01-PLAN.md -- README `## Standalone CLI` section + ToC anchor, curated `## 0.2.2` CHANGELOG entry, and a doc-tripwire spec (drift-lock + supply-chain guard)
+- [x] 29-01-PLAN.md -- README `## Standalone CLI` section + ToC anchor, curated `## 0.2.2` CHANGELOG entry, and a doc-tripwire spec (drift-lock + supply-chain guard)
 
 ## Progress
 
@@ -193,7 +193,7 @@ Plans:
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete   | 2026-07-16 |
-| 29. Docs | v0.2.2 | 0/0 | Not started | - |
+| 29. Docs | v0.2.2 | 1/1 | Complete   | 2026-07-16 |
 
 ## Backlog
 

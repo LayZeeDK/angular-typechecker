@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
-status: executing
-last_updated: "2026-07-16T23:36:08.282Z"
-last_activity: 2026-07-16 -- Phase 29 planning complete
+status: verifying
+last_updated: "2026-07-16T23:46:49.441Z"
+last_activity: 2026-07-16
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 11
-  percent: 80
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 28 COMPLETE — next is Phase 29 (Docs), the final v0.2.2 phase
+**Current focus:** Phase 29 — docs
 
 ## Current Position
 
-Phase: 28 (shipped-tarball-e2e-real-clone-uat) — COMPLETE (all post-execution gates passed)
-Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-07-16 -- Phase 29 planning complete
+Phase: 29 (docs) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-07-16
 
 ## Accumulated Context
 
@@ -89,6 +89,7 @@ archives under `.planning/milestones/`.
 - [Phase 28]: 28-02: completed the VER-04 PM matrix -- yarn (flat+workspace via corepack, .yarnrc.yml node-modules linker + enableMirror:false + npmMinimalAgeGate:0) and pnpm (strictDepBuilds:false via pnpm-workspace.yaml, NOT the consumer .npmrc the plan text named -- pnpm 11 reads the build-gate there, avoiding ERR_PNPM_IGNORED_BUILDS on the transitive nx postinstall) both install angular-typechecker BY NAME from Verdaccio and return literal 0/1/2 through the real .bin shim for both bins (angular-typechecker + atc). Added the D-07 runtime nx-free probe: node -r exit-hook.cjs installed-bin.js runs a real type-check and its process-exit hook dumps require.cache filtered by the node_modules @nx / nx path pattern -> toEqual([]) + output ERR_REQUIRE_ESM-free (the runtime half Phase 27 D-10 deferred, complementing the bin-static.spec.ts static walk). All specs green locally (4 files, 5 tests). VER-04 stays OPEN: Windows CI e2e-windows leg (SC-2) is plan 28-03, real-clone UAT (VER-05) is plan 28-04; VER-04 closes at phase verification.
 - [Phase 28]: 28-03: dedicated e2e-windows CI job (windows-latest, Node 24) runs ONLY angular-typechecker-cli-e2e (option b, NOT matrix.include which would silently drop the Linux cli-e2e leg); wired into the required ci needs; Linux e2e/discover byte-unchanged; every uses: SHA-pinned; PROJECT env (no command injection); shell:bash for byte-identical -p quoting; GUARD-01f locks the four OS-axis wiring facts via a generalized extractJobLines slicer
 - [Phase 28]: 28-04: VER-05 real-clone UAT is HUMAN-RUN -- 28-04-UAT.md (status pending-human-run) authored by the --auto pipeline; both workspace kinds on-stack Angular 22 (Angular CLI ngx-leaflet @818e9ae + realworld-angular @9e3528f; Nx radix-ng/primitives + analogjs/analog with FRESH human-pinned SHAs), atc -c <tsconfig> RED/GREEN/BAD-PATH; VER-05 stays OPEN until a human runs it and records results (blocking checkpoint, not auto-advanced)
+- [Phase 29]: 29-01: documented the shipped standalone CLI -- README ## Standalone CLI section (npx angular-typechecker canonical; atc post-install PATH alias only + atc@0.0.6 supply-chain warning, never the literal 'npx atc'; 7-flag table mirroring HELP_TEXT; 0/1/2 exit-code table framed as first adapter owning literal 2, reconciled with the pass/fail-only ## Exit codes section) + curated undated ## 0.2.2 CHANGELOG entry (end-user language, no internal ids) + standalone-cli-docs.spec.ts tripwire (supply-chain guard + HELP_TEXT/README drift-lock via exported parseCliArgs(['--help']) + CHANGELOG hygiene). Rule 1: removed stale 'standalone CLI is a non-goal' Limitations line. Docs-only, release NOT cut. nx test(447)/format:check/lint/typecheck green.
 
 ### Roadmap Evolution
 
@@ -224,7 +225,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-Last session: 2026-07-16T23:10:04.514Z
+Last session: 2026-07-16T23:45:33.088Z
 Completed the two teed-up autonomous tasks:
 
 - **Fixed PR #41 CI blockers** (fallow + format-lint). fallow: declared the new cli-e2e globalSetup an

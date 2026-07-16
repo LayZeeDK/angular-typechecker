@@ -49,7 +49,7 @@ Test tiers mirror the existing strategy (ci.yml + `packages/angular-typechecker/
 
 ### DOC (docs)
 
-- [ ] **DOC-01**: A README `## Standalone CLI` section documents installation, the flag set, and the exit-code contract table (`0` clean / `1` verdict-fail / `2` infra-or-usage); the canonical uninstalled invocation is `npx angular-typechecker` (docs NEVER instruct `npx atc` -- `atc@0.0.6` is an unrelated published package; `atc` is documented only as an installed PATH shorthand). A curated public CHANGELOG entry is written in end-user language (no internal ids).
+- [x] **DOC-01**: A README `## Standalone CLI` section documents installation, the flag set, and the exit-code contract table (`0` clean / `1` verdict-fail / `2` infra-or-usage); the canonical uninstalled invocation is `npx angular-typechecker` (docs NEVER instruct `npx atc` -- `atc@0.0.6` is an unrelated published package; `atc` is documented only as an installed PATH shorthand). A curated public CHANGELOG entry is written in end-user language (no internal ids).
 
 ## Future Requirements
 
@@ -105,7 +105,7 @@ Populated during roadmap creation. Each requirement maps to exactly one phase.
 | VER-04 | Phase 28 | Pending |
 | VER-05 | Phase 28 | Pending |
 | ADD-01 | Phase 27 | Complete |
-| DOC-01 | Phase 29 | Pending |
+| DOC-01 | Phase 29 | Complete |
 
 **Coverage:**
 - Milestone requirements: 21 total
