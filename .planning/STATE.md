@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
-status: verifying
-last_updated: "2026-07-16T20:27:01.008Z"
-last_activity: 2026-07-16
+status: phase-complete
+last_updated: "2026-07-17T00:00:00.000Z"
+last_activity: 2026-07-17
 progress:
   total_phases: 5
   completed_phases: 4
@@ -20,13 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 28 — shipped-tarball-e2e-real-clone-uat
+**Current focus:** Phase 28 COMPLETE — next is Phase 29 (Docs), the final v0.2.2 phase
 
 ## Current Position
 
-Phase: 28 (shipped-tarball-e2e-real-clone-uat) — EXECUTING
+Phase: 28 (shipped-tarball-e2e-real-clone-uat) — COMPLETE (all post-execution gates passed)
 Plan: 4 of 4
-Status: Autonomous work done + CI green + VER-05 UAT PASS — ready for phase-close gates (verify/secure/validate/extract)
+Status: Phase 28 CLOSED. CI green (PR #41, 23/23, closed unmerged); VER-05 UAT PASS; verify 4/4 (one human_needed = literal VER-05 human sign-off, surfaced to user); secure SECURED 6/6; validate nyquist_compliant 4/4; learnings extracted + 18 bridged. Next: Phase 29 (Docs).
 Last activity: 2026-07-17
 
 ## Accumulated Context
@@ -240,10 +240,30 @@ Completed the two teed-up autonomous tasks:
   exit-0 GREEN blocked ONLY by analog's own unbuilt-monorepo TS2882, not a tool defect). NO ERR_REQUIRE_ESM /
   infrastructure error on ANY run. Recorded as an AGENT run, NOT a human sign-off (a literal human sign-off
   remains available). Clones are uncommitted scratch, restored pristine.
-NEXT (task 3, teed up): close Phase 28 -- verify_phase_goal (gsd-verifier) -> /gsd-secure-phase 28 ->
-/gsd-validate-phase 28 -> /gsd-extract-learnings 28 (+ global-learnings bridge). Then Phase 29 (Docs).
-HANDOFF.json + .continue-here.md are now superseded (both autonomous tasks done). Do NOT merge draft PR #41
-(CI-verification only; real merge is the human-gated Release-PR flow after Phase 29). Stays 0.2.1; no release cut.
+Then closed PR #41 (CI-verification only, all 23 checks GREEN incl. e2e-windows + cli-e2e; NOT merged) and ran
+ALL Phase-28 post-execution gates IN ORDER, each reached by its DEDICATED agent:
+- **verify** (gsd-verifier): 28-VERIFICATION.md -> 4/4 success criteria VERIFIED (SC-1/2/3 proven on real CI
+  Linux+Windows via PR #41; SC-4 assertions ran+passed). ONE human_needed surfaced: VER-05 was designed as a
+  literal HUMAN-run gate but executed as an AUTHORIZED AUTONOMOUS agent run -- whether a literal human signature
+  is additionally required is a USER decision (presented; not silently passed). Also fixed a dup `status:` key in
+  28-04-UAT.md.
+- **secure** (gsd-security-auditor): 28-SECURITY.md -> SECURED, 6/6 threats closed, 0 open, no file edited,
+  public-repo hygiene clean (T-28-01 CI cmd-injection via PROJECT env; T-28-02 127.0.0.1 Verdaccio gate; T-28-03
+  no `npx atc`; T-28-05 SHA-pinned uses; T-28-06 stripAllNpmConfig/strictDepBuilds).
+- **validate** (gsd-nyquist-auditor): 28-VALIDATION.md -> nyquist_compliant, 4/4 COVERED, 0 tests generated
+  (coverage already complete; guard tier 20/20 local + PR #41 real-CI proof).
+- **extract-learnings** (inline) + **global bridge**: 28-LEARNINGS.md (6 decisions/4 lessons/4 patterns/4 surprises);
+  bridged 18 items into the cross-project store (18 created, 0 skipped); temp .planning/LEARNINGS.md removed, never staged.
+Committed each gate artifact atomically + checked the ROADMAP Phase-28 `<details>` box (phase.complete leaves it
+unchecked) + this STATE. NO product/test/version change (stays 0.2.1); NO release cut (human-gated).
+OPEN (user decision): the VER-05 literal human sign-off (optional; VER-04 already CI-proves the identical contract).
+HANDOFF.json + .continue-here.md are superseded -- safe to delete. Next: Phase 29 (Docs), the final v0.2.2 phase.
+
+Prior this-session note: resumed Phase 28 from HANDOFF.json (paused at the UAT gate). Completed the two teed-up
+autonomous tasks first: fixed PR #41 CI blockers (fallow + format-lint, commit b15a01f -> PR went fully green) and
+ran the VER-05 real-clone UAT autonomously (commit 26e7e58, PASS across 4 on-stack Angular 22 OSS clones of both
+kinds; analog's only non-green cell is its own unbuilt-monorepo TS2882, not a tool defect; NO ERR_REQUIRE_ESM /
+infra error on any run). Clones are uncommitted scratch, restored pristine.
 
 Prior session: 2026-07-16T20:26:40.659Z
 Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
