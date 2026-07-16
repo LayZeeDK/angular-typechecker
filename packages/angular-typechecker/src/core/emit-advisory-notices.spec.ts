@@ -189,4 +189,67 @@ describe('emitAdvisoryNotices (D-09 byte-exact anchor)', () => {
     expect(logger.warn).not.toHaveBeenCalled();
     expect(logger.error).not.toHaveBeenCalled();
   });
+
+  // IN-01 (code-review Info): the D-05 CROSS-advisory emission order is a locked
+  // correctness property (part of the byte-identical CLI-04 bar) but was guarded
+  // ONLY by source ordering -- every other test exercises one advisory in
+  // isolation, so a reorder inside emitAdvisoryNotices would emit correct strings
+  // and pass all of them while silently changing output order. This drives a
+  // CoreResult that fires ALL FIVE advisories at once and reconstructs the actual
+  // cross-stream timeline via .mock.invocationCallOrder to pin the locked sequence:
+  // templateCheckAborted -> skippedReferences -> suppressed(info node_modules THEN
+  // warn coverage) -> notTypeChecked -> bundlerQueryImports.
+  it('emits the five advisories in the locked D-05 order across the info and warn streams', () => {
+    const logger = mockLogger();
+
+    emitAdvisoryNotices(
+      {
+        ...coreResult(1),
+        templateCheckAborted: {
+          code: -993004,
+          fileName: '/ws/libs/x/poison.component.ts',
+        },
+        skippedReferences: [
+          {
+            referencePath: '/ws/fixtures/solution-style-oop/tsconfig.app.json',
+            reason: 'out-of-project',
+          },
+        ],
+        suppressedThirdParty: 1,
+        suppressedInGraphErrorCount: 1,
+        suppressedInGraphWarningCount: 0,
+        suppressedInGraphFiles: ['/ws/libs/dep/src/broken.ts'],
+        notTypeCheckedDeclaredFiles: ['/ws/libs/x/docs.mdx'],
+        bundlerQueryImports: ['./x?raw'],
+      },
+      logger,
+    );
+
+    // Rebuild the true cross-stream emission timeline: pair each call with its
+    // global invocation order (info + warn share one monotonic counter), sort by
+    // it, then read the messages back in the order they actually fired.
+    const timeline = [
+      ...logger.warn.mock.calls.map((call, index) => ({
+        order: logger.warn.mock.invocationCallOrder[index],
+        message: call[0],
+      })),
+      ...logger.info.mock.calls.map((call, index) => ({
+        order: logger.info.mock.invocationCallOrder[index],
+        message: call[0],
+      })),
+    ]
+      .sort((a, b) => a.order - b.order)
+      .map((entry) => entry.message);
+
+    // Six notices fire (five advisories; suppressed emits two -- info then warn),
+    // each identified by a stable substring, in the exact D-05 order.
+    expect(timeline).toHaveLength(6);
+    expect(timeline[0]).toContain('aborted Angular template type-check-block');
+    expect(timeline[1]).toContain('was skipped or reclassified');
+    expect(timeline[2]).toContain('node_modules diagnostic(s) suppressed');
+    expect(timeline[3]).toContain(`this run's coverage is INCOMPLETE`);
+    expect(timeline[4]).toContain('may not be fully type-checked');
+    expect(timeline[5]).toContain('unresolved import(s) use a bundler');
+    expect(logger.error).not.toHaveBeenCalled();
+  });
 });
