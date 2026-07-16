@@ -29,7 +29,11 @@ const SENTINEL_REPORT = 'STUBBED RENDERED REPORT';
 const mocks = vi.hoisted(() => {
   return {
     runTypecheck: vi.fn(),
-    renderReport: vi.fn(async () => SENTINEL_REPORT),
+    // Bare vi.fn() (like runTypecheck above) so its `.mock.calls` args tuple is
+    // `any[]` -- the lastColor() helper reads call-arg index [1] (the options),
+    // which a zero-arg inline impl would type as an empty tuple (TS2493/TS2532).
+    // beforeEach sets mockResolvedValue(SENTINEL_REPORT), so no inline impl is needed.
+    renderReport: vi.fn(),
     evaluateResult: vi.fn(),
   };
 });
