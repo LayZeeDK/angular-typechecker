@@ -81,7 +81,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 <summary>[CURRENT] v0.2.2 -- Standalone CLI (Phases 25-29)</summary>
 
 - [x] Phase 25: Extract the advisory-notice seam (CLI-04) (1/1 plans) -- completed 2026-07-16
-- [ ] Phase 26: Pure CLI core + exit-code wiring (CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02)
+- [ ] Phase 26: Pure CLI core + exit-code wiring (3 plans) (CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02)
 - [ ] Phase 27: Bin shell + cross-platform packaging (CLI-01, PKG-01/02, VER-03, ADD-01)
 - [ ] Phase 28: Shipped-tarball e2e + real-clone UAT (VER-04, VER-05)
 - [ ] Phase 29: Docs (DOC-01)
@@ -113,7 +113,10 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. `--help`/`-h` and `--version` print and return `0`; a single `--tsConfig` takes the string (direct / solution-walk) path while two or more take the `string[]` union path -- a single input is never passed as a one-element array.
   4. The CLI entrypoint imports ONLY pure-core modules (never `@nx/devkit`/`nx` at runtime); `run()` never calls `process.exit` and never writes a stream; a console logger routes the report to stdout and advisory notices/errors to stderr, color auto-detects honoring `NO_COLOR`/`FORCE_COLOR`/TTY, and tsconfig paths resolve from an arbitrary CWD via nx-free `node:path` + `realpathSync.native`-normalization before the boundary filter.
   5. In-process `*.spec.ts` on the 6-cell OS x Node matrix cover the pure logic against a STUBBED core (VER-01: parse mapping, exit-code composition incl. the `errorCount === 0` / `success === false` cases, console logger, `emit-advisory-notices`) AND exercise `run(argv)` end-to-end against committed real-cold-compiler fixtures (VER-02: clean->0, planted TS/template/NG8xxx->1, real coverage-incomplete->1, `--max-warnings 0` and `--strict`->1, multi- and single-`--tsConfig` paths, malformed/nonexistent tsconfig->2), exercising the CJS->ESM `await import()` bridge and Windows path normalization.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 26-01-PLAN.md -- parse-args.ts (util.parseArgs wrapper + validation + help/version) + console-logger.ts (BufferingLogger) + parse-args unit spec (ARGS-01/02/04, CLI-03, VER-01)
+- [ ] 26-02-PLAN.md -- main.ts run() compose + two-step exit-code + nx-free path resolution + color, with the stubbed-core unit spec (CLI-02/03, ARGS-03/05, EXIT-01/02, PKG-03, VER-01)
+- [ ] 26-03-PLAN.md -- main.integration.spec.ts end-to-end run(argv) against real fixtures (CLI-02, EXIT-01, PKG-03, VER-02)
 
 ### Phase 27: Bin shell + cross-platform packaging
 
@@ -181,7 +184,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 23. Init schematic parity + first-party ng-add | v0.2.1 | 3/3 | Complete | 2026-07-12 |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
 | 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
-| 26. Pure CLI core + exit-code wiring | v0.2.2 | 0/0 | Not started | - |
+| 26. Pure CLI core + exit-code wiring | v0.2.2 | 0/3 | Planned | - |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 0/0 | Not started | - |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 0/0 | Not started | - |
 | 29. Docs | v0.2.2 | 0/0 | Not started | - |
