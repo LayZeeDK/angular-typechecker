@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
-status: phase-complete
-last_updated: "2026-07-17T00:00:00.000Z"
+status: verifying
+last_updated: "2026-07-16T23:10:04.523Z"
 last_activity: 2026-07-17
 progress:
   total_phases: 5
@@ -224,13 +224,15 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-Last session: 2026-07-17 (resume-work). Resumed Phase 28 from HANDOFF.json (paused at the UAT gate).
+Last session: 2026-07-16T23:10:04.514Z
 Completed the two teed-up autonomous tasks:
+
 - **Fixed PR #41 CI blockers** (fallow + format-lint). fallow: declared the new cli-e2e globalSetup an
   `entry` (config-only-reachable) + added `libs/**` to `health.ignore` (mintCiToken tripped complexity
   after the 28-01 D-06 cold-runner retry -- reviewed essential resilience, declare-not-refactor). format:
   `nx format:write` on cli-exit-codes.e2e.spec.ts. Committed `ci(28)` b15a01f; pushed; PR #41 then went
   FULLY GREEN (all e2e incl. cli-e2e + e2e-windows + full OS/Node matrix + fallow + format-lint + CodeQL).
+
 - **Ran VER-05 real-clone UAT autonomously** (user-authorized per HANDOFF) = PASS (commit 26e7e58,
   28-04-UAT.md status executed-autonomous-pass). Built+packed the local 0.2.1 dist tarball (bin.js + both
   bin names, 0 raw .ts, \r-free shebang) and installed it into 4 on-stack Angular 22 OSS clones of BOTH
@@ -242,16 +244,20 @@ Completed the two teed-up autonomous tasks:
   remains available). Clones are uncommitted scratch, restored pristine.
 Then closed PR #41 (CI-verification only, all 23 checks GREEN incl. e2e-windows + cli-e2e; NOT merged) and ran
 ALL Phase-28 post-execution gates IN ORDER, each reached by its DEDICATED agent:
+
 - **verify** (gsd-verifier): 28-VERIFICATION.md -> 4/4 success criteria VERIFIED (SC-1/2/3 proven on real CI
   Linux+Windows via PR #41; SC-4 assertions ran+passed). ONE human_needed surfaced: VER-05 was designed as a
   literal HUMAN-run gate but executed as an AUTHORIZED AUTONOMOUS agent run -- whether a literal human signature
   is additionally required is a USER decision (presented; not silently passed). Also fixed a dup `status:` key in
   28-04-UAT.md.
+
 - **secure** (gsd-security-auditor): 28-SECURITY.md -> SECURED, 6/6 threats closed, 0 open, no file edited,
   public-repo hygiene clean (T-28-01 CI cmd-injection via PROJECT env; T-28-02 127.0.0.1 Verdaccio gate; T-28-03
   no `npx atc`; T-28-05 SHA-pinned uses; T-28-06 stripAllNpmConfig/strictDepBuilds).
+
 - **validate** (gsd-nyquist-auditor): 28-VALIDATION.md -> nyquist_compliant, 4/4 COVERED, 0 tests generated
   (coverage already complete; guard tier 20/20 local + PR #41 real-CI proof).
+
 - **extract-learnings** (inline) + **global bridge**: 28-LEARNINGS.md (6 decisions/4 lessons/4 patterns/4 surprises);
   bridged 18 items into the cross-project store (18 created, 0 skipped); temp .planning/LEARNINGS.md removed, never staged.
 Committed each gate artifact atomically + checked the ROADMAP Phase-28 `<details>` box (phase.complete leaves it
