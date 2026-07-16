@@ -1,39 +1,43 @@
 {
   "version": "1.0",
-  "timestamp": "2026-07-12T12:33:26.742Z",
+  "timestamp": "2026-07-16T21:01:33.504Z",
   "context": "phase",
-  "phase": "24",
-  "phase_name": "real-oss-scaffolded-e2e-additive-only-audit-docs",
-  "phase_dir": ".planning/phases/24-real-oss-scaffolded-e2e-additive-only-audit-docs",
-  "plan": 6,
-  "task": 1,
-  "total_tasks": 3,
+  "phase": "28",
+  "phase_name": "shipped-tarball-e2e-real-clone-uat",
+  "phase_dir": ".planning/phases/28-shipped-tarball-e2e-real-clone-uat",
+  "plan": 4,
+  "task": 4,
+  "total_tasks": 4,
   "status": "paused",
-  "chain_context": "v0.2.1 phase 24 was complete + verified (5/5) + secured + validated + learnings-extracted; gaps 24-04 (nx as a direct dependency) and 24-05 (yarn + pnpm CLI e2e) landed. Then a deep investigation pinned the yarn-4 `ng add` no-auto-wire root cause (nx's CJS log-symbols@4 resolving Angular schematics' ESM chalk@5 under yarn's hoist -> `chalk.blue is not a function`, swallowed by @angular/cli). Option D (lazy-require) was spiked + REFUTED; Option C (a vanilla nx-free ng-add) was spiked + CONFIRMED; exhaustive web research confirmed no cheaper alternative and that it is NOT an upstream angular-cli bug. User chose to fold Option C into v0.2.1 as phase-24 gap 24-06. 24-06-PLAN.md is committed (HEAD 3495ec6) and plan-check PASSED (no blockers, 3 low-severity advisories). THIS pause is BEFORE executing 24-06.",
+  "chain_context": "v0.2.2 final verification phase. The --auto --chain pipeline (discuss -> plan -> execute -> code-review) completed all autonomous work on branch gsd/v0.2.2-standalone-cli (pushed; 87 ahead of main). 28-01/02/03 (VER-04) done + GREEN locally; 28-04 (VER-05) UAT procedure authored (pending-human-run). Code review: 0 blockers, WR-01/WR-02 fixed + re-verified (3d6c4a3). Draft PR #41 opened to verify CI, esp. the new Windows e2e leg. Two things remain, both teed up: (1) run VER-05 UAT autonomously, (2) watch PR #41 CI.",
   "completed_this_session": [
-    {"name": "Executed gaps 24-04 (nx direct ^23.0.0 dependency) + 24-05 (yarn real ng add + pnpm name-collision e2e); all four CLI e2e specs green", "commit": "fd41260, dcfb0be, 76c6f35, c5c6912"},
-    {"name": "Pinned the yarn ng-add no-auto-wire root cause via an instrumented Verdaccio first-run repro; refined the committed artifacts", "commit": "6937871, 6fcd782"},
-    {"name": "Re-ran the phase-24 completion gates via dedicated agents (code-review clean, verify 5/5, secure threats_open 0, validate nyquist_compliant), extract-learnings + global bridge, phase re-complete", "commit": "724c570, 9d25925, 1b42eff, 44a7884, 3c86108, 6b47ba4, 815829b, 4ee9b0e"},
-    {"name": "Vanilla-repro quick task 260712-ft9: proved the yarn ng-add failure is NX-SPECIFIC (a Nx-free schematic wires under yarn), so no upstream angular-cli issue is warranted", "commit": "b513ac9, fca1e8d"},
-    {"name": "Spiked Option D (lazy-require) = REFUTED; spiked Option C (nx-free vanilla ng-add) = CONFIRMED (first-run ng add auto-wires under yarn 4); both reverted; exhaustive web research", "commit": "72b189a, 2da8022"},
-    {"name": "Planned + plan-checked phase-24 gap 24-06 (Option C landing); plan-check PASSED", "commit": "3495ec6"},
-    {"name": "Added a global CLAUDE.md rule: confirm via AskUserQuestion before creating an upstream/3rd-party GitHub issue or PR (edited ~/.claude/CLAUDE.md, a separate file -- not this repo)", "commit": "(outside repo)"}
+    {"name": "Discuss (28-CONTEXT.md, 9 decisions) + Research + Patterns + Validation", "commit": "34b4ab7, 69b0b61, 1544f8b, 9696564"},
+    {"name": "Plans 28-01..04 (plan-checker 0 blockers; coverage 2/2 reqs, 9/9 decisions)", "commit": "bddc805"},
+    {"name": "28-01 cli-e2e project + runShim + ECONNREFUSED retry + npm exit-code spec (VER-04); full e2e GREEN locally", "commit": "a9fae45"},
+    {"name": "28-02 yarn + pnpm exit-code specs + runtime nx-free/ESM probe (VER-04); GREEN", "commit": "ea7621c"},
+    {"name": "28-03 dedicated e2e-windows CI job (option b) + GUARD-01f; nx test GREEN (439)", "commit": "0f66536"},
+    {"name": "28-04 VER-05 real-clone UAT procedure authored (status pending-human-run; NOT self-approved)", "commit": "f4c4146"},
+    {"name": "Code review (deep, 0 blockers) + fixed WR-01 (Windows shim quoting) + WR-02 (multi-tsConfig union cell), re-verified GREEN", "commit": "13e2afb, 3d6c4a3"},
+    {"name": "Pushed branch to origin + opened draft PR #41 for CI verification", "commit": "(remote)"}
   ],
   "remaining_tasks": [
-    {"id": 1, "name": "Extract the framework-agnostic wiring core (src/core/angular-cli-wiring.ts: pure leaf-resolution + targetName guard + collision-by-builder + [build,spec] idempotent merge over plain data + an injected exists(path) callback, no Tree); route the Nx configuration generator's CLI-branch through it BYTE-IDENTICALLY; relocate the 2 shared constants (TYPECHECK_EXECUTOR_ID, NO_CACHING_NOTICE) out of init/generator.ts into the core and re-export them from init so existing importers are unchanged. All configuration + init specs stay green.", "status": "not_started"},
-    {"id": 2, "name": "Rewrite src/schematics/ng-add/schematic.ts as a VANILLA @angular-devkit/schematics Rule (ZERO @nx/devkit import/require in load OR execution) using the shared core: enumerate angular.json projects, wire app+library only, RF-01 devDep move, RF-02 no-angular.json notice, idempotency, collision error, no-caching notice; migrate the 14 ng-add.spec.ts tests to test the vanilla Rule via @angular-devkit/schematics/testing; DELETE the orphaned generators/ng-add/generator.ts + its spec (KEEP schema.json/schema.d.ts so collection.json is byte-unchanged); add @angular-devkit/schematics to eslint @nx/dependency-checks ignoredDependencies. Task-2 acceptance greps the compiled dist to prove NO @nx/devkit.", "status": "not_started"},
-    {"id": 3, "name": "Flip e2e/angular-typechecker-ng-cli-e2e/src/ng-add-ng-run-yarn.e2e.spec.ts: assert first-run `ng add angular-typechecker --skip-confirmation` AUTO-WIRES both layouts under yarn (DROP the `ng g` fallback + the no-wire quirk-lock + fix the docstring); npm + pnpm specs stay green. Resolve .planning/todos/pending/readme-yarn-ng-add-caveat.md (README already claims universal auto-wire -> now accurate; move todo to done/).", "status": "not_started"}
+    {"id": 1, "name": "Run VER-05 real-clone UAT autonomously per 28-04-UAT.md (build+pack local dist; clone+checkout the 4 OSS repos -- pin FRESH Angular-22 SHAs for radix-ng/primitives + analogjs/analog; install tarball; run atc -c at real tsconfigs: clean->0, planted->1, bad-path->2); record REAL results + sign-off; flip frontmatter status/outcome. No fabrication.", "status": "not_started"},
+    {"id": 2, "name": "Monitor draft PR #41 CI (gh pr checks 41): the gating e2e (angular-typechecker-cli-e2e) Linux leg + the new e2e-windows job must go green. A Windows Verdaccio ECONNREFUSED beyond the mintCiToken retry is a real gap to fix, not to wave through.", "status": "not_started"},
+    {"id": 3, "name": "Close phase ONLY after tasks 1+2 green: verify_phase_goal (gsd-verifier) -> /gsd-secure-phase 28 -> /gsd-validate-phase 28 -> /gsd-extract-learnings 28. Then Phase 29 (Docs).", "status": "not_started"}
   ],
-  "blockers": [],
+  "blockers": [
+    {"description": "VER-05 UAT not yet executed", "type": "external", "workaround": "run 28-04-UAT.md autonomously in the next session"},
+    {"description": "Windows e2e leg proves only on GitHub windows-latest", "type": "external", "workaround": "draft PR #41 runs the e2e-windows job"}
+  ],
   "human_actions_pending": [
-    {"action": "v0.2.1 Release-PR flow (nx release --skip-publish -> curate CHANGELOG -> PR into PR-only main -> tag angular-typechecker@0.2.1 on the merge commit -> OIDC publish, approve npm-publish env) + /gsd-complete-milestone", "context": "Irreversible + a deployment/environment approval; ALWAYS human-only. NOT part of executing 24-06.", "blocking": false}
+    {"action": "Do NOT merge draft PR #41; the real merge is the human-gated Release-PR flow (AGENTS.md) after Phase 29 + a clean milestone. The npm-publish environment approval is human-only and only at the real release.", "context": "PR #41 is CI-verification only; milestone incomplete (Phase 29 docs pending; VER-05 unverified).", "blocking": false}
   ],
   "decisions": [
-    {"decision": "Fix the yarn-4 ng add no-auto-wire with Option C (vanilla nx-free @angular-devkit/schematics ng-add), landed as phase-24 gap 24-06 folded into v0.2.1", "rationale": "Spike-CONFIRMED (nx-free ng-add auto-wires first-run under yarn 4); Option D lazy-require REFUTED (process-wide chalk load); no nx version / clean yarn-config fix; not an upstream angular-cli bug. User chose Option 2.", "phase": "24"},
-    {"decision": "Single-source-of-truth via a shared framework-agnostic wiring core; configuration + init schematics STAY convertNx", "rationale": "Avoid a second wiring implementation; configuration/init run via `ng g` (no add-command listr2 stack) and work under yarn, so only ng-add needs to go nx-free.", "phase": "24"},
-    {"decision": "Lazy-requiring @nx/devkit does NOT fix the yarn ng add (Option D refuted)", "rationale": "Instrumented spike: the probe was fixed but executeSchematic still threw chalk.blue -- the chalk breakage is PROCESS-WIDE. Only a fully nx-free ng-add execution avoids it.", "phase": "24"}
+    {"decision": "Execute sequential-on-main, not worktrees, for this milestone", "rationale": "worktree.baseRef unset + v0.2.2 not on origin/main (worktrees would branch from origin/HEAD, missing src/cli) + single-port Verdaccio e2e needs real node_modules", "phase": "28"},
+    {"decision": "Windows CI = a separate e2e-windows job (research option b), not matrix.include", "rationale": "matrix.include would silently merge the Windows cell into the Linux combination and disturb GUARD-01b; option b keeps the Linux dynamic matrix untouched. Locked by GUARD-01f.", "phase": "28"},
+    {"decision": "Run VER-05 UAT autonomously next session (was authored human-run)", "rationale": "user requested an autonomous UAT run; the agent can clone + run; still record REAL results, no fabrication", "phase": "28"}
   ],
   "uncommitted_files": [],
-  "next_action": "Run /gsd-execute-phase 24 --gaps-only . It executes the checker-PASSED plan 24-06 on the MAIN checkout (single-plan wave, NO worktree -- the yarn/npm/pnpm e2e needs real node_modules + Verdaccio + the shared tarball). Then run the post-execution gates via dedicated agents: re-run the ADDITIVE-ONLY audit (24-ADDITIVE-AUDIT.md, ACP-02) -> gsd-code-review -> gsd-verifier -> gsd-secure-phase -> gsd-validate-phase -> gsd-extract-learnings -> phase.complete + global-learnings bridge.",
-  "context_notes": "24-06 is a REAL refactor touching the generator core + the ng-add test suite -- not a trivial edit. Read the plan + the design doc first. The LOAD-BEARING invariant behind Option C: the COMPILED ng-add schematic.js must contain ZERO @nx/devkit (that is the entire fix). Do NOT try lazy-require (Option D refuted). Keep the Nx configuration generator BYTE-IDENTICAL (all 4 configuration specs are the gate: configuration.spec, configuration-angular-cli.spec, configuration-matrix.spec, schema-parity.spec). Windows arm64: corepack yarn; git grep/rg NEVER grep; ASCII only; Write tool not heredocs; stage files by name; committer email MUST be the public gmail. The yarn e2e verify is SLOW (Verdaccio build+publish + yarn/npm/pnpm installs, several minutes) -- use a generous Bash timeout / run_in_background. Full design + proof: .planning/debug/resolved/cli-yarn-e2e-wrong-version.md ('Option C spike' + 'Web research + consolidated fix ranking'); the plan: .planning/phases/24-real-oss-scaffolded-e2e-additive-only-audit-docs/24-06-PLAN.md."
+  "next_action": "Read 28-04-UAT.md; run `gh pr checks 41`. Kick off the autonomous UAT (nx build angular-typechecker --skip-nx-cache + npm pack from dist, MSYS /d/ path) while PR CI runs. Record UAT results honestly in 28-04-UAT.md. Close the phase only when the UAT AND PR #41's e2e (angular-typechecker-cli-e2e) + e2e-windows are green.",
+  "context_notes": "Final verification phase of v0.2.2. All autonomous work done + locally green; branch pushed (87 ahead of main); draft PR #41 open. Do NOT merge the draft. Windows arm64: sequential-on-main NOT worktrees; git grep/rg NEVER grep; ASCII only; Write tool not heredocs; stage files by name; committer email MUST stay the public gmail; MSYS /d/ paths for tar/pack; never `npx atc` (fetches unrelated atc@0.0.6) -- use .bin/atc by path or `npx angular-typechecker`. e2e is slow (Verdaccio build+publish+installs) -- generous Bash timeout / run_in_background. pr_url: https://github.com/LayZeeDK/angular-typechecker/pull/41"
 }
