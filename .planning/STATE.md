@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
-status: ready_to_plan
-last_updated: 2026-07-16T02:03:26.098Z
+status: planning
+last_updated: "2026-07-16T02:15:30.935Z"
 last_activity: 2026-07-16
 progress:
   total_phases: 5
@@ -11,7 +11,6 @@ progress:
   total_plans: 1
   completed_plans: 1
   percent: 20
-stopped_at: Phase 25 complete (1/1) — ready to discuss Phase 26
 ---
 
 # Project State
