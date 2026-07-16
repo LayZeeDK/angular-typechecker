@@ -472,16 +472,16 @@ The Nx-kind SHAs are NOT recorded in the planning tree -- pin FRESH at UAT time 
 | A4 | `radix-ng/primitives` / `analogjs/analog` remain on-stack Angular 22 + MIT at fresh-pinned SHAs at UAT time. | Real-Clone UAT | If a repo moved off-stack, pick another on-stack Angular 22 Nx workspace; the UAT step re-verifies stack before pinning. |
 | A5 | `spawnSync` of a `.cmd` on `windows-latest` requires `shell: true` (Node CVE-2024-27980 behavior) under the runner's Node 24. | Common Pitfalls P2 | If a future Node relaxes this, `shell:true` is still harmless with fixed args; no downside. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Which invocation exercises the Windows `.ps1` shim specifically (vs `.cmd`)?**
    - What we know: npm generates `<name>`, `<name>.cmd`, `<name>.ps1` per bin on Windows. `spawnSync` with `shell: true` on `windows-latest` (default cmd via the shell) hits `.cmd`; PowerShell would hit `.ps1`.
    - What's unclear: whether the plan should assert BOTH `.cmd` (cmd/bash shell) and `.ps1` (pwsh) explicitly, or accept `.cmd` as the representative Windows shim.
-   - Recommendation: assert the `.cmd` path (the dominant runner default) as the mandatory Windows shim leg; treat a `.ps1` cell as optional breadth. D-03 requires "the Windows `.cmd`/`.ps1` shim leg" -- one shim proven on Windows satisfies the divergent-surface intent.
+   - RESOLVED: assert the `.cmd` path (the dominant runner default) as the mandatory Windows shim leg; treat a `.ps1` cell as optional breadth. D-03 requires "the Windows `.cmd`/`.ps1` shim leg" -- one shim proven on Windows satisfies the divergent-surface intent. Adopted by plan 03 (`runShim` uses `${binName}.cmd`).
 
 2. **Does the runtime require-cache probe need to go through the shim, or is `node -r hook bin.js` acceptable?**
    - What we know: D-07 requires the RUNTIME graph proof on the INSTALLED bin; the shim path is separately proven by the exit-code cells.
-   - Recommendation: run the probe via `node -r hook <installed bin.js>` (captures the runtime graph after `await import` completes); keep the `.bin` shim for the exit-code + `/ERR_REQUIRE_ESM/` cells. CONTEXT D-07 discretion allows this.
+   - RESOLVED: run the probe via `node -r hook <installed bin.js>` (captures the runtime graph after `await import` completes); keep the `.bin` shim for the exit-code + `/ERR_REQUIRE_ESM/` cells. CONTEXT D-07 discretion allows this. Adopted by plan 02 Task 3 (`nx-free-runtime`).
 
 ## Environment Availability
 
