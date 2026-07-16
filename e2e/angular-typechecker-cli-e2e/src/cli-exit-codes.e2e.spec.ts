@@ -130,10 +130,13 @@ describe('VER-04 (npm): the shipped angular-typechecker / atc bins return litera
         cwd: tmp,
         env: npmEnv,
       });
-      sh('npm install angular-typechecker --no-audit --no-fund --prefer-offline', {
-        cwd: tmp,
-        env: npmEnv,
-      });
+      sh(
+        'npm install angular-typechecker --no-audit --no-fund --prefer-offline',
+        {
+          cwd: tmp,
+          env: npmEnv,
+        },
+      );
 
       // Shim-resolution assertion (D-03): the PM linked BOTH bin names into .bin.
       const shimSuffix = isWin ? '.cmd' : '';
