@@ -30,6 +30,10 @@
   "generators": "./generators.json",
   "builders": "./builders.json",
   "schematics": "./collection.json",
+  "bin": {
+    "angular-typechecker": "./src/cli/bin.js",
+    "atc": "./src/cli/bin.js"
+  },
   "ng-add": {
     "save": "devDependencies"
   },
