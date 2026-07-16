@@ -116,7 +116,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 **Plans**: 3 plans
 - [x] 26-01-PLAN.md -- parse-args.ts (util.parseArgs wrapper + validation + help/version) + console-logger.ts (BufferingLogger) + parse-args unit spec (ARGS-01/02/04, CLI-03, VER-01)
 - [x] 26-02-PLAN.md -- main.ts run() compose + two-step exit-code + nx-free path resolution + color, with the stubbed-core unit spec (CLI-02/03, ARGS-03/05, EXIT-01/02, PKG-03, VER-01)
-- [ ] 26-03-PLAN.md -- main.integration.spec.ts end-to-end run(argv) against real fixtures (CLI-02, EXIT-01, PKG-03, VER-02)
+- [x] 26-03-PLAN.md -- main.integration.spec.ts end-to-end run(argv) against real fixtures (CLI-02, EXIT-01, PKG-03, VER-02)
 
 ### Phase 27: Bin shell + cross-platform packaging
 
@@ -184,7 +184,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 23. Init schematic parity + first-party ng-add | v0.2.1 | 3/3 | Complete | 2026-07-12 |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
 | 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
-| 26. Pure CLI core + exit-code wiring | v0.2.2 | 2/3 | In Progress|  |
+| 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete   | 2026-07-16 |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 0/0 | Not started | - |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 0/0 | Not started | - |
 | 29. Docs | v0.2.2 | 0/0 | Not started | - |
