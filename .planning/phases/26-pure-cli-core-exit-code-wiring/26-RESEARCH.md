@@ -376,15 +376,17 @@ Nothing changed since the milestone research (2026-07-16, same day). `util.parse
 
 **All three are low-to-medium risk and each has a test that catches it.** No compliance/security/retention assumptions.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`realpathSync.native` failure handling on a nonexistent/malformed `--tsConfig` (the one genuine planning decision the locked decisions do not pin).**
    - What we know: D-06 mandates `realpathSync.native`; VER-02 mandates a nonexistent/malformed tsconfig returns `{ exitCode: 2 }` from `run()` (NOT a throw); the core throws `TypecheckInfrastructureError` at its config-resolution stage for such a path (VERIFIED: `throwIfInfrastructureFailure` applied at config parse, `run-typecheck.ts:173-185`).
    - What's unclear: `realpathSync.native` runs BEFORE the core and throws a plain `ENOENT Error` (not `TypecheckInfrastructureError`) on a nonexistent path -- so an unguarded call would bypass the core's canonical error path.
    - Recommendation: wrap the per-path normalization in try/catch; on failure use the plain `resolve(cwd, p).replace(/\\/g,'/')` result and let the core throw the canonical `TypecheckInfrastructureError` -> caught -> `toExitCode(error)` = 2. This mirrors the core's own RES-02 realpath try/catch discipline and keeps the exit-2 message consistent. The planner should make this an explicit task step with a VER-02 fixture (`fixtures/config-broken/tsconfig.does-not-exist.json` OR the malformed `fixtures/config-broken/tsconfig.malformed.json`, both present).
+   - RESOLVED: implemented in 26-02 Task 1 (the try/catch-guarded `realpathSync.native` fall-through) and proven end-to-end in 26-03 Task 1 (the nonexistent-tsconfig -> exit 2 case).
 
 2. **Whether `console-logger.spec.ts` is a separate file or folded into `main.spec.ts`.**
    - The `BufferingLogger` contract is tiny (append + join). Claude's discretion (D-04 allows internal naming/structure). Recommendation: fold its assertions into `main.spec.ts` unless the class grows -- YAGNI on a separate spec file.
+   - RESOLVED: 26-02 Task 2 folds the `BufferingLogger` assertions into `main.spec.ts` (no separate `console-logger.spec.ts`).
 
 ## Environment Availability
 

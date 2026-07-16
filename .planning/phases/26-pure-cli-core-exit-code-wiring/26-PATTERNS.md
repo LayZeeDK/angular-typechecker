@@ -184,8 +184,8 @@ vi.mock('../../core/run-typecheck', async (importOriginal) => {
 vi.mock('../../core/render-report', () => ({ renderReport: mocks.renderReport }));
 vi.mock('../../core/evaluate-result', () => ({ evaluateResult: mocks.evaluateResult }));
 ```
-CLI adjustments: paths are `../../core/...` from `src/cli/` (same depth as the executor from
-`src/executors/typecheck/`). Do NOT `vi.mock('@nx/devkit')` (`executor.spec.ts:56-65`) -- the
+CLI adjustments: paths are `../core/...` from `src/cli/` (ONE level up -- NOT the executor
+two-level `../../core/...` from `src/executors/typecheck/`, matching the depth stated above). Do NOT `vi.mock('@nx/devkit')` (`executor.spec.ts:56-65`) -- the
 CLI has no `@nx/devkit` import; inject a real `BufferingLogger` and assert on its `.text`
 instead. `evaluateResult` MUST return `{ success, outcome }` (see `evaluate-result.ts:119`),
 so stubs return e.g. `{ success: false, outcome: 'coverage-incomplete' }`.
