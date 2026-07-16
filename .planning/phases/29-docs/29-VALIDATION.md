@@ -38,10 +38,16 @@ created: 2026-07-17
 
 ## Per-Task Verification Map
 
+> Single plan `29-01` with 3 tasks (T1 README section, T2 CHANGELOG entry, T3 doc-tripwire
+> spec). The `standalone-cli-docs.spec.ts` tripwire is delivered as T3 (ordered LAST so it ends
+> GREEN — content-first, then lock), not a separate Wave 0 plan; it asserts both the README and
+> the CHANGELOG content produced by T1/T2.
+
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 29-01-01 | 01 | 0 | DOC-01 | T-29-01 | Section presents `npx angular-typechecker` only; never `npx atc` (typosquat `atc@0.0.6` avoidance) | unit (doc tripwire) | `nx test angular-typechecker` | ❌ W0 | ⬜ pending |
-| 29-02-01 | 02 | 1 | DOC-01 | — | N/A | unit (doc tripwire) | `nx test angular-typechecker` | via 29-01-01 | ⬜ pending |
+| 29-01-01 (README `## Standalone CLI` + ToC) | 01 | 1 | DOC-01 | T-29-01 | Section presents `npx angular-typechecker` only; never `npx atc` (typosquat `atc@0.0.6` avoidance) | doc content | asserted by T3 spec | ❌ new | ⬜ pending |
+| 29-01-02 (curated `## 0.2.2` CHANGELOG) | 01 | 1 | DOC-01 | T-29-02 | No internal id/scope leak in the public changelog | doc content | asserted by T3 spec | ❌ new | ⬜ pending |
+| 29-01-03 (`standalone-cli-docs.spec.ts` tripwire) | 01 | 1 | DOC-01 | T-29-01 | HELP_TEXT drift-lock + `not.toContain('npx atc')` | unit (doc tripwire) | `nx test angular-typechecker` | ❌ new | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

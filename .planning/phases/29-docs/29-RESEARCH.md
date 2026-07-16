@@ -227,15 +227,15 @@ Both names resolve to the same compiled `src/cli/bin.js` (the OS shell that writ
 
 **All claims in this research were verified or cited -- no user confirmation needed.** The docs decisions themselves are already locked in CONTEXT.md (D-01..D-10).
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the CHANGELOG entry be date-stamped now or left undated until the Release PR?**
    - What we know: `## 0.2.1` is undated; `## 0.2.0` is dated. The date is normally stamped at the release cut (AGENTS.md: version cut in a separate Release PR).
-   - Recommendation: leave `## 0.2.2` UNDATED now (matches 0.2.1 and the "cut later" flow). Low-impact; the release cut can add the date.
+   - RESOLVED: leave `## 0.2.2` UNDATED now (matches 0.2.1 and the "cut later" flow); the release cut can add the date. Adopted by plan Task 2.
 
 2. **Should the doc test also cover the repo-root CHANGELOG?**
    - What we know: the existing doc-tripwires (`angular-cli-docs.spec.ts`, `storybook-docs.spec.ts`) cover README only; no CHANGELOG test precedent.
-   - Recommendation: keep the README tripwire as the required Wave 0 test; add a lightweight CHANGELOG "no internal-id leak" assertion only as discretionary hygiene (it can read `../../../CHANGELOG.md`). See Validation.
+   - RESOLVED: keep the README tripwire as the required Wave 0 test; add a lightweight CHANGELOG "no internal-id leak" assertion as hygiene (it reads `../../../CHANGELOG.md`). Adopted by plan Task 3.
 
 ## Validation Architecture
 
