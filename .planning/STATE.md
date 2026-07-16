@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v0.2.2
 milestone_name: Standalone CLI
 status: planning
-last_updated: "2026-07-15T23:38:54.963Z"
-last_activity: 2026-07-15
+last_updated: "2026-07-16T00:00:00.000Z"
+last_activity: 2026-07-16
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-10 -- v0.2.1 milestone started: Angular CLI workspace support)
+See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 24 — real-oss-scaffolded-e2e-additive-only-audit-docs
+**Current focus:** Phase 25 — extract-advisory-notice-seam (v0.2.2 Standalone CLI)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 25 — Extract the advisory-notice seam (next)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-15 — Milestone v0.2.2 started
+Status: Planning (roadmap created; no plans yet)
+Last activity: 2026-07-16 — v0.2.2 roadmap created (5 phases, 25-29; 21/21 requirements mapped, 0 orphans)
 
 ## Accumulated Context
 

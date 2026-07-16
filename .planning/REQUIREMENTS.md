@@ -85,33 +85,33 @@ Populated during roadmap creation. Each requirement maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | TBD | Pending |
-| CLI-02 | TBD | Pending |
-| CLI-03 | TBD | Pending |
-| CLI-04 | TBD | Pending |
-| ARGS-01 | TBD | Pending |
-| ARGS-02 | TBD | Pending |
-| ARGS-03 | TBD | Pending |
-| ARGS-04 | TBD | Pending |
-| ARGS-05 | TBD | Pending |
-| EXIT-01 | TBD | Pending |
-| EXIT-02 | TBD | Pending |
-| PKG-01 | TBD | Pending |
-| PKG-02 | TBD | Pending |
-| PKG-03 | TBD | Pending |
-| VER-01 | TBD | Pending |
-| VER-02 | TBD | Pending |
-| VER-03 | TBD | Pending |
-| VER-04 | TBD | Pending |
-| VER-05 | TBD | Pending |
-| ADD-01 | TBD | Pending |
-| DOC-01 | TBD | Pending |
+| CLI-01 | Phase 27 | Pending |
+| CLI-02 | Phase 26 | Pending |
+| CLI-03 | Phase 26 | Pending |
+| CLI-04 | Phase 25 | Pending |
+| ARGS-01 | Phase 26 | Pending |
+| ARGS-02 | Phase 26 | Pending |
+| ARGS-03 | Phase 26 | Pending |
+| ARGS-04 | Phase 26 | Pending |
+| ARGS-05 | Phase 26 | Pending |
+| EXIT-01 | Phase 26 | Pending |
+| EXIT-02 | Phase 26 | Pending |
+| PKG-01 | Phase 27 | Pending |
+| PKG-02 | Phase 27 | Pending |
+| PKG-03 | Phase 26 | Pending |
+| VER-01 | Phase 26 | Pending |
+| VER-02 | Phase 26 | Pending |
+| VER-03 | Phase 27 | Pending |
+| VER-04 | Phase 28 | Pending |
+| VER-05 | Phase 28 | Pending |
+| ADD-01 | Phase 27 | Pending |
+| DOC-01 | Phase 29 | Pending |
 
 **Coverage:**
 - Milestone requirements: 21 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 21 (roadmap pending)
+- Mapped to phases: 21 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-16*
-*Last updated: 2026-07-16 after initial definition (milestone v0.2.2 Standalone CLI)*
+*Last updated: 2026-07-16 after roadmap creation (milestone v0.2.2 Standalone CLI, phases 25-29)*
