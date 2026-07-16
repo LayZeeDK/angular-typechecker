@@ -2,6 +2,43 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.2.2
+
+**Standalone command-line interface.** angular-typechecker now ships a standalone
+`angular-typechecker` command you can run in any repository with
+`npx angular-typechecker`, with no Nx and no Angular CLI. It runs the same complete
+Angular type-check as the Nx target and the Angular CLI builder -- TypeScript,
+template, and NG8xxx diagnostics, with no emit. Nothing changes for existing Nx or
+Angular CLI users; this is a new, additive surface.
+
+### Features
+
+- A standalone command. Run `npx angular-typechecker -c <tsconfig>` in any
+  repository, or install the package and run the `angular-typechecker` command
+  directly. A short alias, `atc`, is available on your `PATH` after a local install.
+- A command-line flag set. Point the check at one or more tsconfigs with `-c` /
+  `--tsConfig` (required, and repeatable to union-check several at once), and
+  control the run with `--max-warnings`, `--fail-fast`, `--include-deps`,
+  `--strict`, `--help`, and `--version`.
+- Distinct exit codes. The command is the first entry point to return a specific
+  process exit code, so a script can tell outcomes apart: `0` for a clean run, `1`
+  when the type-check reports a problem (errors, too many warnings, or incomplete
+  coverage), and `2` when it could not run at all (a missing or unreadable
+  tsconfig, or a usage error such as an unknown flag). The Nx target and the
+  Angular CLI builder only surfaced pass or fail.
+
+### Notes
+
+- The only uninstalled invocation is `npx angular-typechecker`. The `atc` name is a
+  convenience alias that resolves to the command after a local install; do not run
+  it through `npx`, because that fetches an unrelated published package
+  (`atc@0.0.6`) rather than this tool.
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`,
+  Node `^22.22.3 || ^24.15.0 || ^26.0.0`. No new runtime dependency.
+
 ## 0.2.1
 
 **Angular CLI workspace support.** angular-typechecker now runs in a plain Angular
