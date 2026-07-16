@@ -82,7 +82,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 - [x] Phase 25: Extract the advisory-notice seam (CLI-04) (1/1 plans) -- completed 2026-07-16
 - [x] Phase 26: Pure CLI core + exit-code wiring (3/3 plans) (CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02) -- completed 2026-07-16
-- [ ] Phase 27: Bin shell + cross-platform packaging (CLI-01, PKG-01/02, VER-03, ADD-01)
+- [x] Phase 27: Bin shell + cross-platform packaging (3/3 plans) (CLI-01, PKG-01/02, VER-03, ADD-01) -- completed 2026-07-16
 - [ ] Phase 28: Shipped-tarball e2e + real-clone UAT (VER-04, VER-05)
 - [ ] Phase 29: Docs (DOC-01)
 
@@ -188,7 +188,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
 | 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
-| 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete   | 2026-07-16 |
+| 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 0/0 | Not started | - |
 | 29. Docs | v0.2.2 | 0/0 | Not started | - |
 

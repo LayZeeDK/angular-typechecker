@@ -9,7 +9,7 @@
 
 ### CLI (binary + thin-adapter surface)
 
-- [ ] **CLI-01**: A user can run the complete Angular type-check from a standalone binary with NO Nx or Angular CLI workspace present -- shipped as two `bin` names (`angular-typechecker` primary + `atc` alias) that resolve to one compiled `src/cli/bin.js` (`npx angular-typechecker ...`; installed `atc ...`).
+- [x] **CLI-01**: A user can run the complete Angular type-check from a standalone binary with NO Nx or Angular CLI workspace present -- shipped as two `bin` names (`angular-typechecker` primary + `atc` alias) that resolve to one compiled `src/cli/bin.js` (`npx angular-typechecker ...`; installed `atc ...`).
 - [x] **CLI-02**: The CLI produces the SAME verdict and diagnostics as the Nx executor and Angular CLI builder -- the complete set (TS + template + extended NG8xxx, no emit), single-tsconfig AND solution reference-walking, same boundary filtering -- by composing the same `runTypecheck` core, never a re-implementation.
 - [x] **CLI-03**: The CLI entrypoint imports ONLY pure-core modules (never `@nx/devkit`/`nx` at runtime), enforced by a `src/cli/**` ESLint import-ban plus a module-graph probe; a console logger routes the report to stdout and advisory notices / errors to stderr.
 - [x] **CLI-04**: The five advisory `warn*` helpers are extracted to a pure `core/emit-advisory-notices.ts` behind an injected structural `Logger`; the Nx executor injects its logger with byte-identical observable behavior (additive/internal, no public-API change).
@@ -29,8 +29,8 @@
 
 ### PKG (packaging + cross-platform)
 
-- [ ] **PKG-01**: The source shebang (`#!/usr/bin/env node`, LF) survives `@nx/js:tsc` into the built AND published `bin.js`; `newLine: lf` + a `.gitattributes` rule guard against CRLF corruption; the tarball audit (`publint`) validates the bin.
-- [ ] **PKG-02**: The bin compiles under the same `module: nodenext` config so the CJS->ESM `await import('@angular/compiler-cli')` bridge is never downleveled to `require()` (no `ERR_REQUIRE_ESM` at first real type-check).
+- [x] **PKG-01**: The source shebang (`#!/usr/bin/env node`, LF) survives `@nx/js:tsc` into the built AND published `bin.js`; `newLine: lf` + a `.gitattributes` rule guard against CRLF corruption; the tarball audit (`publint`) validates the bin.
+- [x] **PKG-02**: The bin compiles under the same `module: nodenext` config so the CJS->ESM `await import('@angular/compiler-cli')` bridge is never downleveled to `require()` (no `ERR_REQUIRE_ESM` at first real type-check).
 - [x] **PKG-03**: tsconfig paths are resolved from an arbitrary CWD using nx-free `node:path` and `realpathSync.native`-normalization (Windows drive-letter case / 8.3 names) before reaching the boundary filter.
 
 ### VER (verification -- follows the repo's Vitest pyramid + CI matrix)
@@ -45,7 +45,7 @@ Test tiers mirror the existing strategy (ci.yml + `packages/angular-typechecker/
 
 ### ADD (additive-only charter)
 
-- [ ] **ADD-01**: The milestone is additive-only vs `angular-typechecker@0.2.1` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck` / `CoreResult` / `CoreOptions` public API, the Angular CLI builder, or the generator schemas -- enforced (barrel / drift tripwire) and audited by git-diff before release (the `executor.ts` logger swap is internal + observably identical; the `bin` field and `src/cli/**` are net-new). The `v0.3.0` breaking-change escape hatch triggers only if a breaking change proves unavoidable.
+- [x] **ADD-01**: The milestone is additive-only vs `angular-typechecker@0.2.1` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck` / `CoreResult` / `CoreOptions` public API, the Angular CLI builder, or the generator schemas -- enforced (barrel / drift tripwire) and audited by git-diff before release (the `executor.ts` logger swap is internal + observably identical; the `bin` field and `src/cli/**` are net-new). The `v0.3.0` breaking-change escape hatch triggers only if a breaking change proves unavoidable.
 
 ### DOC (docs)
 
@@ -85,7 +85,7 @@ Populated during roadmap creation. Each requirement maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | Phase 27 | Pending |
+| CLI-01 | Phase 27 | Complete |
 | CLI-02 | Phase 26 | Complete |
 | CLI-03 | Phase 26 | Complete |
 | CLI-04 | Phase 25 | Complete |
@@ -96,15 +96,15 @@ Populated during roadmap creation. Each requirement maps to exactly one phase.
 | ARGS-05 | Phase 26 | Complete |
 | EXIT-01 | Phase 26 | Complete |
 | EXIT-02 | Phase 26 | Complete |
-| PKG-01 | Phase 27 | Pending |
-| PKG-02 | Phase 27 | Pending |
+| PKG-01 | Phase 27 | Complete |
+| PKG-02 | Phase 27 | Complete |
 | PKG-03 | Phase 26 | Complete |
 | VER-01 | Phase 26 | Complete |
 | VER-02 | Phase 26 | Complete |
-| VER-03 | Phase 27 | Pending |
+| VER-03 | Phase 27 | Complete |
 | VER-04 | Phase 28 | Pending |
 | VER-05 | Phase 28 | Pending |
-| ADD-01 | Phase 27 | Pending |
+| ADD-01 | Phase 27 | Complete |
 | DOC-01 | Phase 29 | Pending |
 
 **Coverage:**
