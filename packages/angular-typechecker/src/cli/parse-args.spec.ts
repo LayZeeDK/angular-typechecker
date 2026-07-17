@@ -233,7 +233,7 @@ describe('parseCliArgs (ARGS-01..04 flag mapping + usage errors)', () => {
     it('returns a version result equal to the real package.json version (drift-lock)', () => {
       const version = expectKind(parseCliArgs(['--version']), 'version');
 
-      expect(version.text).toBe(manifestVersion);
+      expect(version.text).toBe(manifestVersion + '\n');
     });
   });
 });

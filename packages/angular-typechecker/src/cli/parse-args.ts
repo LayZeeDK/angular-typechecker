@@ -126,7 +126,7 @@ export function parseCliArgs(argv: string[]): ParseResult {
     }
 
     if (values.version === true) {
-      return { kind: 'version', text: packageManifest.version };
+      return { kind: 'version', text: packageManifest.version + '\n' };
     }
 
     const tsConfig = values.tsConfig;

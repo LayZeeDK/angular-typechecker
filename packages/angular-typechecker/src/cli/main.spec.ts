@@ -207,7 +207,7 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
       const result = await run(['--version']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBe(manifestVersion);
+      expect(result.stdout).toBe(manifestVersion + '\n');
       expect(result.stderr).toBe('');
       expect(mocks.runTypecheck).not.toHaveBeenCalled();
     });
