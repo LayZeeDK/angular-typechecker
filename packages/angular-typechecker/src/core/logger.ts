@@ -12,12 +12,12 @@
  * anonymous const anyway).
  *
  * `error` is part of the contract even though the five advisories use only
- * `info`/`warn` -- it is reserved for the CLI infrastructure path (Phase 26), and
- * freezing the full seam shape here once means every adapter inherits the same
- * contract (D-03).
+ * `info`/`warn` -- it is used by the CLI/executor infrastructure path
+ * (`main.ts` / `executor.ts`), and freezing the full seam shape here once means
+ * every adapter inherits the same contract (D-03).
  */
 export interface Logger {
   info(message: string): void;
   warn(message: string): void;
-  error(message: string): void; // D-03: reserved for the CLI infra path (Phase 26); no advisory uses it
+  error(message: string): void; // D-03: used by the CLI/executor infra path (main.ts / executor.ts); no advisory uses it
 }

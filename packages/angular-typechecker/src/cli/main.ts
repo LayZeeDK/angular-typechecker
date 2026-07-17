@@ -33,7 +33,8 @@ import { parseCliArgs } from './parse-args';
  * modules by RELATIVE path (one level up, `../core/*`) + the two Wave-1 CLI seams
  * (`./parse-args`, `./console-logger`). It NEVER touches the Nx devkit / the `nx`
  * runtime, an executor/builder module, or the barrel one dir up. The enforcing
- * ESLint `src/cli/**` import-ban + the static module-graph guard land in Phase 27.
+ * ESLint `src/cli/**` import-ban and the static module-graph guard
+ * (`bin-static.spec.ts`) hold this boundary.
  *
  * PURITY (EXIT-02): `run()` NEVER calls `process.exit` and NEVER writes a stream.
  * It returns `{ exitCode, stdout, stderr }`; `bin.ts` (Phase 27) is the ONLY tier

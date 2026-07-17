@@ -7,8 +7,8 @@ import { parseArgs } from 'node:util';
  *
  * It imports ONLY `node:util` + the package.json manifest (for `--version`) --
  * never the Nx devkit, never the `nx` runtime, never the barrel one dir up, and
- * never an executor/builder module (D-15, the nx-free CLI boundary; enforced by
- * lint in Phase 27, respected here by construction). See 26-CONTEXT.md
+ * never an executor/builder module (D-15, the nx-free CLI boundary; enforced by the
+ * `src/cli/**` ESLint import-ban, respected here by construction). See 26-CONTEXT.md
  * D-08/D-10/D-11/D-12/D-14.
  */
 
@@ -60,7 +60,7 @@ export type ParseResult =
 // `npx angular-typechecker` and MUST NEVER say `npx atc` (atc@0.0.6 is an
 // unrelated published package -- a supply-chain hazard; `atc` is only a local
 // post-install PATH shorthand). Minimal here (flag list + the 0/1/2 exit-code
-// line); the full prose README is Phase 29 (DOC-01).
+// line); the full prose lives in the package README (DOC-01).
 const HELP_TEXT = `Usage: npx angular-typechecker -c <tsconfig> [options]
 
 Run the complete Angular type-check (TypeScript + template type-check + extended
