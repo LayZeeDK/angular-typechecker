@@ -93,6 +93,16 @@ function lastColor(): boolean | undefined {
   return mocks.renderReport.mock.calls.at(-1)?.[1].color;
 }
 
+// The `includeDeps` option run() actually handed the stubbed runTypecheck.
+function lastIncludeDeps(): boolean | undefined {
+  return mocks.runTypecheck.mock.calls.at(-1)?.[0].includeDeps;
+}
+
+// The `failFast` option run() actually handed the stubbed renderReport.
+function lastFailFast(): boolean | undefined {
+  return mocks.renderReport.mock.calls.at(-1)?.[1].failFast;
+}
+
 describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -312,6 +322,35 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
       await run(['-c', 'tsconfig.app.json'], {});
 
       expect(lastColor()).toBe(process.stdout.isTTY === true);
+    });
+  });
+
+  // Wiring-only guard: --include-deps -> CoreOptions.includeDeps (runTypecheck) and
+  // --fail-fast -> renderReport({ failFast }). Without these, a dropped/swapped
+  // wiring would pass every other test silently.
+  describe('wiring: --include-deps and --fail-fast reach the core', () => {
+    it('threads --include-deps into the runTypecheck CoreOptions', async () => {
+      await run(['-c', 'tsconfig.app.json', '--include-deps']);
+
+      expect(lastIncludeDeps()).toBe(true);
+    });
+
+    it('defaults includeDeps to false without the flag', async () => {
+      await run(['-c', 'tsconfig.app.json']);
+
+      expect(lastIncludeDeps()).toBe(false);
+    });
+
+    it('threads --fail-fast into the renderReport options', async () => {
+      await run(['-c', 'tsconfig.app.json', '--fail-fast']);
+
+      expect(lastFailFast()).toBe(true);
+    });
+
+    it('defaults failFast to false without the flag', async () => {
+      await run(['-c', 'tsconfig.app.json']);
+
+      expect(lastFailFast()).toBe(false);
     });
   });
 });
