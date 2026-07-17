@@ -24,9 +24,10 @@ import { parseCliArgs } from './parse-args';
  *   lines become the returned `stderr`, D-03/D-04);
  * - `joinPathFragments(context.root, ...)` -> nx-free `node:path` resolution against
  *   `process.cwd()` + a guarded `realpathSync.native` normalization (D-05/D-06);
- * - the Nx `{ success }` return -> a literal `exitCode` via the TWO-STEP compose
- *   (D-01): infra -> `toExitCode(error)` = 2; usage -> 2 directly; a completed run
- *   -> `evaluateResult(...).success ? 0 : 1`.
+ * - the Nx `{ success }` return -> a literal `exitCode`. The D-01 "two-step compose"
+ *   names its TWO exit-code policies -- `toExitCode` (infra = 2) and `evaluateResult`
+ *   (the 0/1 verdict) -- applied across three branches: infra -> `toExitCode(error)`
+ *   = 2; usage -> 2 directly; a completed run -> `evaluateResult(...).success ? 0 : 1`.
  *
  * nx-free by construction (D-15): the ONLY imports are Node stdlib + pure-core
  * modules by RELATIVE path (one level up, `../core/*`) + the two Wave-1 CLI seams
@@ -45,7 +46,9 @@ export interface RunResult {
 }
 
 /**
- * D-09 / ARGS-05 color precedence, computed from the passed `env` (never a global):
+ * D-09 / ARGS-05 color precedence. The NO_COLOR/FORCE_COLOR inputs are read from the
+ * passed `env` (never a module global); only the final fallback reads the
+ * `process.stdout.isTTY` global:
  *   1. `NO_COLOR` present with ANY value (including empty) -> OFF (it WINS -- a user
  *      sets NO_COLOR to GUARANTEE no color, per the NO_COLOR informal standard);
  *   2. else `FORCE_COLOR` present and not `"0"`/`"false"` -> ON;
@@ -101,12 +104,13 @@ function toAbsoluteTsConfigPath(rawPath: string): string {
  * Runs the complete standalone-CLI type-check in-process and returns the literal
  * exit code plus the report (`stdout`) and buffered notices/errors (`stderr`).
  * Pure (D-02): NO `process.exit`, NO stream writes. `env` defaults to `process.env`
- * but is injectable for deterministic color testing (ARGS-05).
+ * but is injectable so the NO_COLOR/FORCE_COLOR color precedence is deterministic in
+ * tests (ARGS-05); the isTTY fallback still reads the `process.stdout` global.
  *
  * Flow (mirrors the executor): parse -> (help/version/usage short-circuits) ->
  * resolve+normalize `--tsConfig` -> build `CoreOptions` -> `runTypecheck` ->
  * `emitAdvisoryNotices` (BEFORE the report, so notices are not lost below a
- * codeframe dump) -> `renderReport` -> `evaluateResult` -> two-step exit code.
+ * codeframe dump) -> `renderReport` -> `evaluateResult` -> the D-01 exit code.
  */
 export async function run(
   argv: string[],
@@ -115,7 +119,7 @@ export async function run(
   const logger = new BufferingLogger();
   const parsed = parseCliArgs(argv);
 
-  // Usage error -> exit 2 DIRECTLY (D-01 step 2), before the core ever runs.
+  // Usage error -> exit 2 DIRECTLY (D-01 branch 2), before the core ever runs.
   // NEVER via toExitCode -- it only knows infra vs counts.
   if (parsed.kind === 'usageError') {
     logger.error(parsed.message);
@@ -157,7 +161,7 @@ export async function run(
       failFast: parsed.failFast,
     });
 
-    // D-01 step 3: the 0-vs-1 split comes from evaluateResult(...).success ONLY --
+    // D-01 branch 3: the 0-vs-1 split comes from evaluateResult(...).success ONLY --
     // NEVER toExitCode / raw counts. A coverage-incomplete or warnings-exceeded run
     // has errorCount === 0 but success === false; reading counts here would be a
     // SILENT FALSE PASS that violates the charter.
@@ -168,7 +172,7 @@ export async function run(
 
     return { exitCode: success ? 0 : 1, stdout: report, stderr: logger.text };
   } catch (error) {
-    // D-01 step 1: a TypecheckInfrastructureError (the compiler failed to RUN, not a
+    // D-01 branch 1: a TypecheckInfrastructureError (the compiler failed to RUN, not a
     // type error) is toExitCode's FIRST live consumer -> exit 2. toExitCode appears
     // ONLY here, and is passed ONLY the caught error, never a completed result.
     if (error instanceof TypecheckInfrastructureError) {
