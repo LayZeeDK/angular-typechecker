@@ -12,12 +12,11 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, inject, it } from 'vitest';
 import {
+  assertShippedBinExitCodes,
   buildCleanEnv,
   commandSucceeds,
   findWorkspaceRoot,
-  plant,
   removeTmpDir,
-  runShim,
   sh,
   writeVerdaccioNpmrc,
 } from '@workspace/test-util';
@@ -67,24 +66,12 @@ const fixtureDir = join(
 // (which pnpm would otherwise honor over the fixture .npmrc) plus the NX_* runner vars.
 const env = buildCleanEnv({ stripAllNpmConfig: true });
 
-const isWin = process.platform === 'win32';
-
 // Availability guard: probe pnpm reachability so a host without pnpm skips cleanly
 // (CI provisions pnpm 11.9.0 on PATH via pnpm/action-setup).
 const pnpmAvailable = commandSucceeds('pnpm --version', {
   cwd: workspaceRoot,
   env,
 });
-
-// The clean committed anchor in the fixture component + the broken replacement: a
-// `number` field assigned a string literal -> TS2322. Built with JSON.stringify
-// (ASCII-only, no quote/apostrophe escaping hazard). Mirrors the npm baseline.
-const COMPONENT_ANCHOR =
-  "readonly label: string = 'angular-typechecker cli-consumer';";
-const COMPONENT_INJECTION = `readonly broken: number = ${JSON.stringify(
-  'str',
-)};\n  ${COMPONENT_ANCHOR}`;
-const PLANTED_CODE = 'TS2322';
 
 describe('VER-04 (pnpm): the shipped angular-typechecker / atc bins return literal 0/1/2 through the .bin shim', () => {
   it.skipIf(!pnpmAvailable)(
@@ -150,88 +137,10 @@ describe('VER-04 (pnpm): the shipped angular-typechecker / atc bins return liter
           env: pnpmEnv,
         });
 
-        // Shim-resolution assertion (D-03): the pnpm symlinked layout linked BOTH bin
-        // names into .bin.
-        const shimSuffix = isWin ? '.cmd' : '';
-        expect(
-          existsSync(
-            join(
-              tmp,
-              'node_modules',
-              '.bin',
-              `angular-typechecker${shimSuffix}`,
-            ),
-          ),
-        ).toBe(true);
-        expect(
-          existsSync(join(tmp, 'node_modules', '.bin', `atc${shimSuffix}`)),
-        ).toBe(true);
-
-        // exit 0 -- clean fixture, BOTH bin names.
-        const atClean = runShim(
-          tmp,
-          'angular-typechecker',
-          ['-c', 'tsconfig.json'],
-          pnpmEnv,
-        );
-        expect(atClean.code, atClean.stdout).toBe(0);
-        const atcClean = runShim(tmp, 'atc', ['-c', 'tsconfig.json'], pnpmEnv);
-        expect(atcClean.code, atcClean.stdout).toBe(0);
-
-        // exit 2 -- infrastructure (a nonexistent tsconfig), BOTH bin names. This literal
-        // exit 2 is the headline net-new surface (the Nx/ng {success} harness only ever
-        // proves 0/1).
-        const atInfra = runShim(
-          tmp,
-          'angular-typechecker',
-          ['-c', 'does-not-exist.json'],
-          pnpmEnv,
-        );
-        expect(atInfra.code, atInfra.stdout).toBe(2);
-        const atcInfra = runShim(
-          tmp,
-          'atc',
-          ['-c', 'does-not-exist.json'],
-          pnpmEnv,
-        );
-        expect(atcInfra.code, atcInfra.stdout).toBe(2);
-
-        // exit 2 -- usage: an unknown flag (`-p`/`--project` is deliberately unregistered,
-        // so `--nonsense` is an unknown-flag usage error) AND a missing required `-c`.
-        const atcUnknownFlag = runShim(tmp, 'atc', ['--nonsense'], pnpmEnv);
-        expect(atcUnknownFlag.code, atcUnknownFlag.stdout).toBe(2);
-        const atcMissingC = runShim(tmp, 'atc', [], pnpmEnv);
-        expect(atcMissingC.code, atcMissingC.stdout).toBe(2);
-
-        // exit 1 -- a planted diagnostic CODE (TS2322). Assert the CODE, never message
-        // text; every RED run also proves the CJS->ESM compiler-cli bridge survived
-        // install (no ERR_REQUIRE_ESM) and the non-zero exit is a real diagnostic (no
-        // 'infrastructure error'). Restore the committed-clean source in finally.
-        const componentPath = join(tmp, 'src', 'app.component.ts');
-        const original = readFileSync(componentPath, 'utf8');
-
-        try {
-          plant(componentPath, COMPONENT_ANCHOR, COMPONENT_INJECTION);
-
-          const atRed = runShim(
-            tmp,
-            'angular-typechecker',
-            ['-c', 'tsconfig.json'],
-            pnpmEnv,
-          );
-          expect(atRed.code, atRed.stdout).toBe(1);
-          expect(atRed.stdout).toContain(PLANTED_CODE);
-          expect(atRed.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
-          expect(atRed.stdout).not.toContain('infrastructure error');
-
-          const atcRed = runShim(tmp, 'atc', ['-c', 'tsconfig.json'], pnpmEnv);
-          expect(atcRed.code, atcRed.stdout).toBe(1);
-          expect(atcRed.stdout).toContain(PLANTED_CODE);
-          expect(atcRed.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
-          expect(atcRed.stdout).not.toContain('infrastructure error');
-        } finally {
-          writeFileSync(componentPath, original);
-        }
+        // Prove the shared shim exit-code contract (0 clean / 2 infra+usage / 1 planted
+        // TS2322) for BOTH bin names through the pnpm symlinked .bin layout. The helper
+        // restores the committed-clean fixture in its finally.
+        assertShippedBinExitCodes(tmp, pnpmEnv);
       } finally {
         removeTmpDir(tmp);
       }
