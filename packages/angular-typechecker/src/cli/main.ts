@@ -3,7 +3,6 @@ import { isAbsolute, resolve } from 'node:path';
 
 import { emitAdvisoryNotices } from '../core/emit-advisory-notices';
 import { evaluateResult } from '../core/evaluate-result';
-import { toExitCode } from '../core/exit-codes';
 import { logInfrastructureError } from '../core/log-infrastructure-error';
 import { renderReport } from '../core/render-report';
 import type { CoreOptions } from '../core/run-typecheck';
@@ -25,10 +24,9 @@ import { parseCliArgs } from './parse-args';
  *   lines become the returned `stderr`, D-03/D-04);
  * - `joinPathFragments(context.root, ...)` -> nx-free `node:path` resolution against
  *   `process.cwd()` + a guarded `realpathSync.native` normalization (D-05/D-06);
- * - the Nx `{ success }` return -> a literal `exitCode`. The D-01 "two-step compose"
- *   names its TWO exit-code policies -- `toExitCode` (infra = 2) and `evaluateResult`
- *   (the 0/1 verdict) -- applied across three branches: infra -> `toExitCode(error)`
- *   = 2; usage -> 2 directly; a completed run -> `evaluateResult(...).success ? 0 : 1`.
+ * - the Nx `{ success }` return -> a literal `exitCode`, across three branches:
+ *   an infra error -> 2; a usage error -> 2 directly; a completed run ->
+ *   `evaluateResult(...).success ? 0 : 1` (the sole owner of the 0/1 verdict).
  *
  * nx-free by construction (D-15): the ONLY imports are Node stdlib + pure-core
  * modules by RELATIVE path (one level up, `../core/*`) + the two Wave-1 CLI seams
@@ -88,7 +86,7 @@ function colorFromEnv(env: NodeJS.ProcessEnv): boolean {
  * malformed tsconfig must RETURN exit 2 (via the core's `TypecheckInfrastructureError`),
  * NOT throw uncaught out of `run()`. So on ANY realpath failure we fall through to the
  * plain `.replace`d resolved absolute path and let `runTypecheck`'s config-resolution
- * stage raise its canonical error -> caught below -> `toExitCode(error)` = 2.
+ * stage raise its canonical error -> caught below -> exit 2.
  */
 function toAbsoluteTsConfigPath(rawPath: string): string {
   const resolved = (
@@ -122,7 +120,6 @@ export async function run(
   const parsed = parseCliArgs(argv);
 
   // Usage error -> exit 2 DIRECTLY (D-01 branch 2), before the core ever runs.
-  // NEVER via toExitCode -- it only knows infra vs counts.
   if (parsed.kind === 'usageError') {
     logger.error(parsed.message);
 
@@ -164,7 +161,7 @@ export async function run(
     });
 
     // D-01 branch 3: the 0-vs-1 split comes from evaluateResult(...).success ONLY --
-    // NEVER toExitCode / raw counts. A coverage-incomplete or warnings-exceeded run
+    // NEVER raw counts. A coverage-incomplete or warnings-exceeded run
     // has errorCount === 0 but success === false; reading counts here would be a
     // SILENT FALSE PASS that violates the charter.
     const { success } = evaluateResult(result, {
@@ -175,12 +172,11 @@ export async function run(
     return { exitCode: success ? 0 : 1, stdout: report, stderr: logger.text };
   } catch (error) {
     // D-01 branch 1: a TypecheckInfrastructureError (the compiler failed to RUN, not a
-    // type error) is toExitCode's FIRST live consumer -> exit 2. toExitCode appears
-    // ONLY here, and is passed ONLY the caught error, never a completed result.
+    // type error) is always exit 2 -- the compiler produced no verdict to grade.
     if (error instanceof TypecheckInfrastructureError) {
       logInfrastructureError(logger, error);
 
-      return { exitCode: toExitCode(error), stdout: '', stderr: logger.text };
+      return { exitCode: 2, stdout: '', stderr: logger.text };
     }
 
     // Any OTHER error is RE-THROWN: bin.ts (Phase 27) maps an unknown failure to 2.
