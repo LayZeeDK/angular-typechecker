@@ -84,7 +84,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 - [x] Phase 26: Pure CLI core + exit-code wiring (3/3 plans) (CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02) -- completed 2026-07-16
 - [x] Phase 27: Bin shell + cross-platform packaging (3/3 plans) (CLI-01, PKG-01/02, VER-03, ADD-01) -- completed 2026-07-16
 - [x] Phase 28: Shipped-tarball e2e + real-clone UAT (4/4 plans) (VER-04, VER-05) -- completed 2026-07-17
-- [ ] Phase 29: Docs (DOC-01)
+- [x] Phase 29: Docs (1/1 plans) (DOC-01) -- completed 2026-07-17
 
 </details>
 
@@ -193,7 +193,7 @@ Plans:
 | 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete   | 2026-07-16 |
-| 29. Docs | v0.2.2 | 1/1 | Complete   | 2026-07-16 |
+| 29. Docs | v0.2.2 | 1/1 | Complete    | 2026-07-17 |
 
 ## Backlog
 
