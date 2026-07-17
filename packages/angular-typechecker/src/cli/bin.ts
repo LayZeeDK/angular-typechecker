@@ -15,7 +15,10 @@ run(process.argv.slice(2))
     }
 
     if (stderr) {
-      process.stderr.write(stderr);
+      // Terminate with a newline so a usage/infra message never glues the shell
+      // prompt to it (BufferingLogger.text joins lines with no trailing
+      // terminator); matches the .catch path below.
+      process.stderr.write(stderr.endsWith('\n') ? stderr : stderr + '\n');
     }
 
     // D-02: set the code and RETURN. The event loop drains the writes above, then
@@ -26,9 +29,12 @@ run(process.argv.slice(2))
   })
   .catch((error: unknown) => {
     // D-03: run() re-throws any non-TypecheckInfrastructureError; an unknown crash
-    // is infrastructure-class for a type-checker -> exit 2, never 0/1.
+    // is infrastructure-class for a type-checker -> exit 2, never 0/1. Prefer a
+    // stack, then a message (a thrown plain object with only `message` would
+    // otherwise stringify to "[object Object]"), then the value itself.
+    const thrown = error as { stack?: string; message?: string };
     process.stderr.write(
-      String((error as { stack?: string })?.stack ?? error) + '\n',
+      String(thrown?.stack ?? thrown?.message ?? error) + '\n',
     );
     process.exitCode = 2;
   });
