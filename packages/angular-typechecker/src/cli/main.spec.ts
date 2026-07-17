@@ -24,8 +24,8 @@ const SENTINEL_REPORT = 'STUBBED RENDERED REPORT';
 
 // Hoisted handles so each test drives the composed core deterministically without a
 // real compiler load. runTypecheck / renderReport / evaluateResult are stubbed;
-// emitAdvisoryNotices and toExitCode stay REAL (the notice routing and the literal
-// 2 must be exercised end-to-end), and parse-args / console-logger stay REAL.
+// emitAdvisoryNotices and the inline exit-2 literal stay REAL (the notice routing and
+// the literal 2 must be exercised end-to-end), and parse-args / console-logger stay REAL.
 const mocks = vi.hoisted(() => {
   return {
     runTypecheck: vi.fn(),
@@ -39,7 +39,7 @@ const mocks = vi.hoisted(() => {
 });
 
 // Keep the REAL TypecheckInfrastructureError so run()'s `instanceof` catch works +
-// the real toExitCode maps it to 2; only stub runTypecheck.
+// the inline `return { exitCode: 2 }` in the catch maps it to 2; only stub runTypecheck.
 vi.mock('../core/run-typecheck', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../core/run-typecheck')>();
 
@@ -139,7 +139,7 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
 
     // The anti-false-pass, subtlest new logic: errorCount === 0 but success === false
     // (a first-party diagnostic was dropped) MUST still exit 1 -- proving the 0/1
-    // split comes from evaluateResult().success, NEVER from raw counts / toExitCode.
+    // split comes from evaluateResult().success, NEVER from raw error counts.
     it('returns exitCode 1 for a coverage-incomplete run with errorCount === 0 (success:false)', async () => {
       mocks.runTypecheck.mockResolvedValue(coreResult(0));
       mocks.evaluateResult.mockReturnValue({
@@ -170,7 +170,7 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
       expect(result.exitCode).toBe(1);
     });
 
-    it('returns exitCode 2 for a caught TypecheckInfrastructureError (via toExitCode) and names it in stderr', async () => {
+    it('returns exitCode 2 for a caught TypecheckInfrastructureError (via the inline exit-2 literal) and names it in stderr', async () => {
       mocks.runTypecheck.mockRejectedValue(
         new TypecheckInfrastructureError('simulated internal crash'),
       );
