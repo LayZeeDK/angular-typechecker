@@ -72,7 +72,8 @@ Options:
                           more are union-checked.
       --max-warnings <n>  Fail the run if the warning count exceeds n (a
                           non-negative integer; 0 fails on any warning).
-      --fail-fast         Report only the first failing file.
+      --fail-fast         Report diagnostics only up to the first error (output
+                          brevity; all diagnostics are still gathered).
       --include-deps      Include out-of-project / node_modules diagnostics.
       --strict            Fail on dropped in-graph warnings (verdict only).
   -h, --help              Print this help and exit.
