@@ -38,6 +38,10 @@ Angular CLI users; this is a new, additive surface.
   notices and any error message are written to standard error, each terminated by a
   newline so the last line never runs into your shell prompt. A script can pipe the
   report on its own and read the exit code.
+- Safe piping. If the reader on the other end of the pipe closes early -- for
+  example `angular-typechecker -c tsconfig.json | head` -- the command no longer
+  crashes with a stream error; it stops cleanly and still exits with its real exit
+  code.
 
 ### Compatibility
 
