@@ -41,9 +41,9 @@ import { parseCliArgs } from './parse-args';
  * that writes those strings and exits the process.
  */
 export interface RunResult {
-  exitCode: 0 | 1 | 2;
-  stdout: string;
-  stderr: string;
+  readonly exitCode: 0 | 1 | 2;
+  readonly stdout: string;
+  readonly stderr: string;
 }
 
 /**

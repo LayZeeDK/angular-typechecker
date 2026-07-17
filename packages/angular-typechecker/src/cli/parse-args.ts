@@ -21,9 +21,10 @@ const packageManifest = require('../../package.json') as { version: string };
 
 export interface ParsedOptions {
   readonly kind: 'options';
-  // The RAW repeatable `--tsConfig` values (ARGS-02). Kept as string[] here; the
-  // single-vs-array COLLAPSE (ARGS-03) happens in run() when it builds CoreOptions.
-  readonly tsConfig: string[];
+  // The RAW repeatable `--tsConfig` values (ARGS-02). A readonly array -- run()
+  // only maps over it; the single-vs-array COLLAPSE (ARGS-03) happens there when it
+  // builds CoreOptions.
+  readonly tsConfig: readonly string[];
   readonly maxWarnings?: number;
   readonly failFast: boolean;
   readonly includeDeps: boolean;
