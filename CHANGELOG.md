@@ -18,14 +18,15 @@ Angular CLI users; this is a new, additive surface.
   directly. A short alias, `atc`, is available on your `PATH` after a local install.
 - A command-line flag set. Point the check at one or more tsconfigs with `-c` /
   `--tsConfig` (required, and repeatable to union-check several at once), and
-  control the run with `--max-warnings`, `--fail-fast`, `--include-deps`,
-  `--strict`, `--help`, and `--version`.
+  control the run with `--max-warnings` (a non-negative integer), `--fail-fast`,
+  `--include-deps`, `--strict`, `--help`, and `--version`.
 - Distinct exit codes. The command is the first entry point to return a specific
   process exit code, so a script can tell outcomes apart: `0` for a clean run, `1`
   when the type-check reports a problem (errors, too many warnings, or incomplete
   coverage), and `2` when it could not run at all (a missing or unreadable
-  tsconfig, or a usage error such as an unknown flag). The Nx target and the
-  Angular CLI builder only surfaced pass or fail.
+  tsconfig, or a usage error such as an unknown flag or a `--max-warnings` value
+  that is not a non-negative integer). The Nx target and the Angular CLI builder
+  only surfaced pass or fail.
 
 ### Notes
 
@@ -33,6 +34,10 @@ Angular CLI users; this is a new, additive surface.
   convenience alias that resolves to the command after a local install; do not run
   it through `npx`, because that fetches an unrelated published package
   (`atc@0.0.6`) rather than this tool.
+- Output routing. The type-check report is written to standard output; progress
+  notices and any error message are written to standard error, each terminated by a
+  newline so the last line never runs into your shell prompt. A script can pipe the
+  report on its own and read the exit code.
 
 ### Compatibility
 
