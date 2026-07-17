@@ -1,10 +1,11 @@
 ---
 phase: 29
 slug: docs
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-17
+audited: 2026-07-17
 ---
 
 # Phase 29 — Validation Strategy
@@ -45,9 +46,9 @@ created: 2026-07-17
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 29-01-01 (README `## Standalone CLI` + ToC) | 01 | 1 | DOC-01 | T-29-01 | Section presents `npx angular-typechecker` only; never `npx atc` (typosquat `atc@0.0.6` avoidance) | doc content | asserted by T3 spec | ❌ new | ⬜ pending |
-| 29-01-02 (curated `## 0.2.2` CHANGELOG) | 01 | 1 | DOC-01 | T-29-02 | No internal id/scope leak in the public changelog | doc content | asserted by T3 spec | ❌ new | ⬜ pending |
-| 29-01-03 (`standalone-cli-docs.spec.ts` tripwire) | 01 | 1 | DOC-01 | T-29-01 | HELP_TEXT drift-lock + `not.toContain('npx atc')` | unit (doc tripwire) | `nx test angular-typechecker` | ❌ new | ⬜ pending |
+| 29-01-01 (README `## Standalone CLI` + ToC) | 01 | 1 | DOC-01 | T-29-01 | Section presents `npx angular-typechecker` only; never `npx atc` (typosquat `atc@0.0.6` avoidance) | doc content | asserted by T3 spec | ✅ | ✅ green |
+| 29-01-02 (curated `## 0.2.2` CHANGELOG) | 01 | 1 | DOC-01 | T-29-02 | No internal id/scope leak in the public changelog | doc content | asserted by T3 spec | ✅ | ✅ green |
+| 29-01-03 (`standalone-cli-docs.spec.ts` tripwire) | 01 | 1 | DOC-01 | T-29-01 | HELP_TEXT drift-lock + `not.toContain('npx atc')` | unit (doc tripwire) | `nx test angular-typechecker` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -55,23 +56,26 @@ created: 2026-07-17
 
 ## Wave 0 Requirements
 
-- [ ] `packages/angular-typechecker/src/standalone-cli-docs.spec.ts` — new doc tripwire for
-  the `## Standalone CLI` section (covers DOC-01). Model on the existing
-  `src/angular-cli-docs.spec.ts` / `src/storybook-docs.spec.ts` (pure fs read of `../README.md`,
-  whitespace-normalized `toContain`). Highest-value assertions:
-  - (a) `## Standalone CLI` heading present;
-  - (b) ToC contains `[Standalone CLI](#standalone-cli)`;
-  - (c) `npx angular-typechecker` present AND the section does NOT contain `npx atc`
-    (mirrors `parse-args.spec.ts` `not.toContain('npx atc')`);
-  - (d) each of the 7 flag tokens present (`--tsConfig`/`-c`, `--max-warnings`, `--fail-fast`,
-    `--include-deps`, `--strict`, `--help`/`-h`, `--version`);
-  - (e) the three exit codes `0` / `1` / `2` with their meanings.
-  - **Drift-lock (closes D-06):** `const help = parseCliArgs(['--help']);` then assert each
-    flag token in `help.text` also appears in the README section — the genuine README/`--help`
-    drift guard. `parseCliArgs` is exported (`HELP_TEXT` need not be).
-- [ ] (discretionary) CHANGELOG `## 0.2.2` heading present + no internal-id leak
-  (e.g. `not.toMatch(/DOC-01|CLI-0\d|\bphase\b/i)`) — optional second assertion; the repo-root
-  CHANGELOG does not ship to npm, so this is lower priority than the README tripwire.
+- [x] `packages/angular-typechecker/src/standalone-cli-docs.spec.ts` — doc tripwire for
+  the `## Standalone CLI` section (covers DOC-01). Delivered; modeled on
+  `src/angular-cli-docs.spec.ts` (pure fs read of `../README.md`,
+  whitespace-normalized `toContain`). All highest-value assertions present and green:
+  - (a) `## Standalone CLI` heading present (spec L49-51);
+  - (b) ToC contains `[Standalone CLI](#standalone-cli)` (L53-55);
+  - (c) `npx angular-typechecker` present AND README does NOT contain `npx atc`
+    (L57-60; mirrors `parse-args.spec.ts` `not.toContain('npx atc')`), plus `atc@0.0.6`
+    named (L62-64);
+  - (d) each of the 7 flag tokens present (`-c, --tsConfig`, `--max-warnings`, `--fail-fast`,
+    `--include-deps`, `--strict`, `-h, --help`, `--version`) — L66-71;
+  - (e) the three exit codes `` `0` `` / `` `1` `` / `` `2` `` plus `infrastructure-or-usage`
+    and `verdict-fail` (L73-80).
+  - **Drift-lock (closes D-06):** `const help = parseCliArgs(['--help']);` (L35-36) then each
+    flag token asserted in BOTH `helpText` AND the README (L66-71) — a genuine,
+    non-tautological README/`--help` drift guard reading the LIVE help output, not a hardcoded
+    copy. Verified: renaming/dropping a flag in `HELP_TEXT` or the README fails the spec.
+- [x] CHANGELOG `## 0.2.2` heading present + no internal-id leak over the sliced entry
+  (`not.toMatch(/DOC-01|CLI-0\d|SC#|\bphase\b/i)`, spec L85-97). First tripwire to also read
+  the repo-root CHANGELOG (`../../../CHANGELOG.md`).
 - No framework install needed — Vitest infrastructure already exists.
 
 *Everything else is prose/table edits to two existing files (README.md, CHANGELOG.md) — no new
@@ -90,11 +94,37 @@ test infrastructure.*
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s (full suite 5.54s)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** APPROVED — nyquist_compliant
+
+---
+
+## Audit Verdict (2026-07-17)
+
+**Result: COVERED. Phase 29 / DOC-01 is nyquist-compliant. No gaps; 0 tests generated.**
+
+The single phase requirement DOC-01 is fully covered by the shipped doc-tripwire
+`packages/angular-typechecker/src/standalone-cli-docs.spec.ts` (8 tests). Coverage was
+verified adversarially, not assumed:
+
+- **Ran the suite** (`nx test angular-typechecker --skip-nx-cache`): 44 files / 447 tests
+  passed, including `standalone-cli-docs.spec.ts` (8/8 green, 4ms).
+- **Confirmed the assertions target DOC-01's behavior** (not a simpler proxy):
+  - Section + ToC anchor existence (README ships to npm).
+  - Supply-chain guard `not.toContain('npx atc')` over the whole README (T-29-01, load-bearing
+    D-05) + `atc@0.0.6` named.
+  - Flag-set drift-lock across BOTH the README and the LIVE `parseCliArgs(['--help'])` output.
+    Confirmed non-tautological: `helpText` is derived from source `HELP_TEXT`, so a flag
+    rename/drop in either surface fails the spec.
+  - Exit-code triad `` `0` ``/`` `1` ``/`` `2` `` + `infrastructure-or-usage` + `verdict-fail`.
+  - CHANGELOG `## 0.2.2` hygiene: entry sliced and regex-asserted leak-free (T-29-02).
+
+Residual DOC-01 sub-behaviors are legitimately manual and recorded under Manual-Only
+Verifications (rendered-prose readability; end-user-language judgment of the `## 0.2.2` entry).
+These are prose-quality judgments that no tripwire can assert — not uncovered testable behavior.
