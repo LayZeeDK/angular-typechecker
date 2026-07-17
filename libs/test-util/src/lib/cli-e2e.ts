@@ -58,8 +58,21 @@ export function runShim(
     shell: isWin,
   });
 
+  // A spawn FAILURE (the shim is missing/unexecutable, or the launcher itself
+  // could not start) sets `result.error` with `status === null`. Never fold that
+  // into a verdict-shaped code: this harness exists to prove the SHIPPED bin runs,
+  // so a broken bin must fail LOUDLY here, not masquerade as exit 1 (a real
+  // type-error verdict) with empty output.
+  if (result.error) {
+    throw new Error(
+      `runShim: failed to spawn '${command}': ${result.error.message}`,
+    );
+  }
+
   return {
-    code: result.status ?? 1,
+    // `?? 2` (never 1): a null status with no error means the process was killed
+    // by a signal -- infrastructure-class for a type-checker, not a type-error.
+    code: result.status ?? 2,
     stdout: `${result.stdout ?? ''}${result.stderr ?? ''}`,
   };
 }
