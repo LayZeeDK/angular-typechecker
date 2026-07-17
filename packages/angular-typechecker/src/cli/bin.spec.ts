@@ -50,25 +50,26 @@ describe('bin.ts (CLI-01 / EXIT-02: process wiring over run())', () => {
     process.exitCode = previousExitCode;
     // CRITICAL: remove the 'error' listeners bin.ts attached this test so they do
     // not accumulate on the shared vitest process streams.
-    removeAddedListeners('error', process.stdout, stdoutErrorListeners);
-    removeAddedListeners('error', process.stderr, stderrErrorListeners);
+    removeAddedErrorListeners(process.stdout, stdoutErrorListeners);
+    removeAddedErrorListeners(process.stderr, stderrErrorListeners);
     vi.restoreAllMocks();
     vi.resetModules();
     vi.doUnmock('./main');
   });
 
-  // Remove every listener on `stream` for `event` that is absent from `before`
+  // Remove every 'error' listener on `stream` that is absent from `before`
   // (i.e. added by the just-run import('./bin')).
-  function removeAddedListeners(
-    event: 'error',
+  function removeAddedErrorListeners(
     stream: NodeJS.WriteStream,
     before: readonly ((...args: unknown[]) => void)[],
   ): void {
-    const current = stream.listeners(event) as ((...args: unknown[]) => void)[];
+    const current = stream.listeners('error') as ((
+      ...args: unknown[]
+    ) => void)[];
 
     for (const listener of current) {
       if (!before.includes(listener)) {
-        stream.removeListener(event, listener);
+        stream.removeListener('error', listener);
       }
     }
   }
