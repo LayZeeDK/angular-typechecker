@@ -115,6 +115,10 @@ describe('CHANGELOG ## 0.2.2 entry (hygiene tripwire)', () => {
     const entry = changelog.slice(start, next);
 
     expect(next).toBeGreaterThan(start);
-    expect(entry).not.toMatch(/DOC-01|CLI-0\d|SC#|\bphase\b/i);
+    // `phase[-\s]?\d` (id-shaped) catches leaked GSD phase ids like "phase 29"
+    // / "phase-29" without false-positiving on the plain word "phase(s)", which
+    // is legitimate user-facing vocabulary (the Angular compiler's diagnostic
+    // "phases" are described in the README).
+    expect(entry).not.toMatch(/DOC-01|CLI-0\d|SC#|phase[-\s]?\d/i);
   });
 });
