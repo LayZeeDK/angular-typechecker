@@ -13,9 +13,13 @@ import { parseCliArgs } from './cli/parse-args';
 //      `npx angular-typechecker`, and the docs NEVER say `npx atc` (that would
 //      fetch the unrelated published package `atc@0.0.6`). This mirrors the same
 //      `not.toContain('npx atc')` guard in `src/cli/parse-args.spec.ts`.
-//   2. Flag drift-lock: every flag token the shipped `--help` prints must also
-//      appear in the README section, so a HELP_TEXT change forces a README
-//      update (and vice versa) -- the README and `--help` stay one source.
+//   2. Flag drift-lock: every long-form flag the shipped `--help` prints is
+//      DERIVED from the live help text and must also appear in the README, so a
+//      flag ADDED to `--help` forces a matching README update -- the additive
+//      case a hardcoded list alone would miss (IN-01). A separate FLAG_TOKENS
+//      list locks the current flags against removal/rename in `--help`. (A flag
+//      added to the README ALONE, absent from `--help`, is NOT caught: the README
+//      is too prose-heavy to derive flag tokens from without false positives.)
 //
 // It also asserts the `0`/`1`/`2` exit-code contract table and a hygiene guard on
 // the public CHANGELOG entry (no internal ids/scopes leak into what becomes the
@@ -35,6 +39,9 @@ const normalized = readme.replace(/\s+/g, ' ');
 const help = parseCliArgs(['--help']);
 const helpText = help.kind === 'help' ? help.text.replace(/\s+/g, ' ') : '';
 
+// Removal/rename drift-lock: these MUST stay present in BOTH the live `--help`
+// and the README. A flag removed/renamed in HELP_TEXT fails the `helpText`
+// assertion; a rename fails both.
 const FLAG_TOKENS = [
   '-c, --tsConfig',
   '--max-warnings',
@@ -44,6 +51,13 @@ const FLAG_TOKENS = [
   '-h, --help',
   '--version',
 ];
+
+// Addition drift-lock (IN-01): derive every long-form flag token the live
+// `--help` actually prints. Deriving from the source of truth makes an ADDED
+// flag self-enforcing -- it must also be documented in the README, a case the
+// hardcoded FLAG_TOKENS above could not catch. Long-form only (short aliases
+// like `-c`/`-h` are substrings of too many things to assert usefully).
+const helpFlags = [...new Set(helpText.match(/--[a-zA-Z][\w-]*/g) ?? [])];
 
 describe('README ## Standalone CLI section (docs tripwire)', () => {
   it('has a Standalone CLI section heading', () => {
@@ -63,10 +77,18 @@ describe('README ## Standalone CLI section (docs tripwire)', () => {
     expect(normalized).toContain('atc@0.0.6');
   });
 
-  it('documents every HELP_TEXT flag token in BOTH the README and live --help', () => {
+  it('locks the known flag tokens against removal/rename in BOTH the README and live --help', () => {
     for (const flag of FLAG_TOKENS) {
       expect(normalized).toContain(flag);
       expect(helpText).toContain(flag);
+    }
+  });
+
+  it('documents in the README every long-form flag the live --help prints (additions self-enforce)', () => {
+    expect(helpFlags.length).toBeGreaterThan(0);
+
+    for (const flag of helpFlags) {
+      expect(normalized).toContain(flag);
     }
   });
 
