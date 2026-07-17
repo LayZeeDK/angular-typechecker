@@ -40,47 +40,109 @@ export interface VerdaccioGlobalSetupOptions {
   label?: string;
 }
 
+// D-06 (Pitfall 1): whether a caught error is a connection-level refusal the bounded
+// mintCiToken retry below should re-attempt. Node's fetch (undici) wraps a refused
+// connection as `TypeError: fetch failed` whose `.cause` carries the underlying
+// `code` (ECONNREFUSED / ECONNRESET), so BOTH the top-level error and its cause are
+// inspected. Anything else -- a real 4xx/5xx body, an AbortSignal timeout, a
+// no-token body -- is NOT a connection refusal and must fail immediately.
+function isConnectionRefused(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const code = (error as { code?: string }).code;
+
+  if (code === 'ECONNREFUSED' || code === 'ECONNRESET') {
+    return true;
+  }
+
+  const cause = (error as { cause?: unknown }).cause;
+
+  if (cause instanceof Error) {
+    const causeCode = (cause as { code?: string }).code;
+
+    return causeCode === 'ECONNREFUSED' || causeCode === 'ECONNRESET';
+  }
+
+  return false;
+}
+
 // The couchdb-compatible user-registration endpoint mints a real bearer token
 // (the htpasswd plugin allows sign-up; the `$all` publish group accepts the
 // returned token). A dummy/unverifiable bearer is 401-rejected by Verdaccio 6.
 async function mintCiToken(registryUrl: string): Promise<string> {
   const user = 'ci';
-  const response = await fetch(
-    new URL(`-/user/org.couchdb.user:${user}`, registryUrl),
-    {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        name: user,
-        password: 'ci-password',
-        email: 'ci@example.com',
-        type: 'user',
-        roles: [],
-        date: new Date().toISOString(),
-      }),
-      // Fail fast + loud if the registration stalls (registry mid-startup,
-      // htpasswd write contention, a dropped connection). vitest globalSetup is
-      // NOT bounded by testTimeout/hookTimeout, so without this the whole suite
-      // would hang to the CI job wall-clock limit with no diagnostic.
-      signal: AbortSignal.timeout(10000),
-    },
-  );
 
-  if (response.status !== 200 && response.status !== 201) {
-    const text = await response.text();
+  // D-06 (Pitfall 1): a cold Windows runner's socket-accept can lag the "listening"
+  // log line the readiness scrape resolves on, so this -- the earliest network touch
+  // -- can hit ECONNREFUSED/ECONNRESET before Verdaccio is actually accepting. Retry
+  // ONLY a connection-level refusal, bounded (10 attempts, 500ms backoff); ANY other
+  // error (a real 4xx/5xx body, a no-token body, an AbortSignal timeout) rethrows
+  // immediately via the isConnectionRefused guard. Harmless to the Linux path (never
+  // refused) and backward-compatible with the existing install-e2e / ng-cli-e2e
+  // projects that call createVerdaccioGlobalSetup.
+  let lastError: unknown;
 
-    throw new Error(
-      `Verdaccio user registration failed (${response.status}): ${text}`,
-    );
+  for (let attempt = 1; attempt <= 10; attempt += 1) {
+    try {
+      const response = await fetch(
+        new URL(`-/user/org.couchdb.user:${user}`, registryUrl),
+        {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            name: user,
+            password: 'ci-password',
+            email: 'ci@example.com',
+            type: 'user',
+            roles: [],
+            date: new Date().toISOString(),
+          }),
+          // A FRESH per-attempt signal (AbortSignal.timeout is single-use): each
+          // attempt keeps the original 10s bound. vitest globalSetup is NOT bounded
+          // by testTimeout/hookTimeout, so this guards against a mid-startup stall.
+          signal: AbortSignal.timeout(10000),
+        },
+      );
+
+      if (response.status !== 200 && response.status !== 201) {
+        const text = await response.text();
+
+        throw new Error(
+          `Verdaccio user registration failed (${response.status}): ${text}`,
+        );
+      }
+
+      const body = (await response.json()) as { token?: string };
+
+      if (typeof body.token !== 'string' || body.token.length === 0) {
+        throw new Error(`Verdaccio returned no token: ${JSON.stringify(body)}`);
+      }
+
+      return body.token;
+    } catch (error) {
+      // Only a connection-level refusal is retried (the cold-Verdaccio race, D-06);
+      // every other failure -- including the two throws above -- surfaces at once.
+      if (!isConnectionRefused(error)) {
+        throw error;
+      }
+
+      lastError = error;
+
+      if (attempt < 10) {
+        await new Promise<void>((resolve) => {
+          setTimeout(() => resolve(), 500);
+        });
+      }
+    }
   }
 
-  const body = (await response.json()) as { token?: string };
-
-  if (typeof body.token !== 'string' || body.token.length === 0) {
-    throw new Error(`Verdaccio returned no token: ${JSON.stringify(body)}`);
-  }
-
-  return body.token;
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(
+        'Verdaccio token mint failed: connection refused after retries',
+      );
 }
 
 export function createVerdaccioGlobalSetup(

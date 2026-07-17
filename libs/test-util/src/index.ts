@@ -36,3 +36,8 @@ export {
   type PerProjectScopingArgs,
   type TypecheckArchitectTarget,
 } from './lib/ng-cli-e2e';
+export {
+  assertShippedBinExitCodes,
+  runShim,
+  type ShimResult,
+} from './lib/cli-e2e';

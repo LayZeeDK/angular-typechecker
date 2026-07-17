@@ -51,6 +51,11 @@
     // GUARD-01b consistency spec via `execSync` (not a static import), so the
     // import graph does not reach the file either.
     "tools/ci/list-e2e-projects.mjs",
+    // Phase 28 (VER-04): the shipped-tarball CLI e2e project's vitest globalSetup
+    // (Verdaccio bootstrap + publish-once) is reachable ONLY via vitest.config's
+    // `globalSetup: [...]` string, never via the import graph -- same config-only
+    // reachability as the install-e2e / ng-cli-e2e global-setups above.
+    "e2e/angular-typechecker-cli-e2e/src/global-setup.ts",
   ],
 
   // IN-04: UNKNOWN_ERROR_CODE is a value-mirrored constant consumed only by the
@@ -175,6 +180,14 @@
     "ignore": [
       "e2e/**",
       "fixtures/**",
+      // FAL-12 (Phase 28): libs/** is entirely non-product test-harness -- the
+      // shared Verdaccio e2e setup (libs/test-util, whose `mintCiToken` carries the
+      // D-06 bounded cold-runner ECONNREFUSED/ECONNRESET retry added in 28-01,
+      // pushing it to cyclomatic 10 / cognitive 16) plus the dev typecheck-consumer
+      // libs. Same non-product scaffolding class as e2e/** and tools/**; the retry
+      // is reviewed essential resilience -- declare, do not refactor tested harness
+      // code (CLAUDE.md fallow guidance).
+      "libs/**",
       "**/*.spec.ts",
       "**/*.e2e.spec.ts",
       "packages/angular-typechecker/src/core/walk-references.ts",

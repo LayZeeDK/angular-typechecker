@@ -1,0 +1,7 @@
+# Narrow LF guard on TypeScript source (D-07).
+# newLine:lf in packages/angular-typechecker/tsconfig.lib.json is the PRIMARY emit
+# guard for the shipped bin.js shebang; this is belt-and-suspenders on the SOURCE so
+# the committed *.ts never carries CRLF on the Windows build host. Deliberately NOT a
+# repo-wide `* text=auto eol=lf` renormalization (would churn the committed
+# ng-cli-workspace fixture + lockfiles).
+*.ts text eol=lf

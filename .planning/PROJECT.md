@@ -35,12 +35,30 @@ The Nx executor is renamed `typecheck` (id `angular-typechecker:typecheck`, BREA
 
 v0.1.0 delivered in five phases (incl. inserted 13.1): **Phase 12** (Extended-diagnostic catalog + completeness tripwire, CAT-01..05/DRIFT-01) -- all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes asserted by exact code/category/count in one enum-keyed `it.each` table, with an enum-vs-table completeness tripwire. **Phase 13** (Engine reference-walking, WALK-01/02) -- `runTypecheck` walks a solution tsconfig's in-project referenced leaves in one call, union + dedupe by value identity, module-boundary-guarded, coarse-cached. **Phase 13.1** (Executor rename, EXEC-01) -- the BREAKING rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck`, driving the 0.0.3 -> 0.1.0 minor bump. **Phase 14** (`configuration` + `init` generators + `nx add`, GEN-01..09) -- config-edit-only generator suite wiring the walk-based target and seeding `nx.json` caching. **Phase 15** (Generator e2e + CI self-audit guard, GE2E-01..03/GUARD-01) -- both generator entry points proven against the real tarball, plus the `-p` set-equality CI guard.
 
-## Next Milestone Goals
+## Current Milestone: v0.2.2 Standalone CLI
 
-Not yet scoped. Run `/gsd-new-milestone` to define the next version's requirements and roadmap.
-Candidate carry-forward items (see Out of Scope below): `createNodesV2` inferred targets
-(WALK-FUT-01), `NgtscProgram` incremental (WALK-FUT-02), machine-readable reporters
-(JSON/SARIF), and the deferred GitHub-backed self-hosted Nx remote cache (ROADMAP Backlog).
+**Goal:** Ship a standalone `angular-typechecker` command-line binary that runs the *complete* Angular type-check (TypeScript + template type-check + extended NG8xxx, no emit) outside Nx and the Angular CLI -- a third thin adapter over the same `runTypecheck` core -- and finally owns the literal OS exit code `2` for infrastructure errors.
+
+**Charter -- ADDITIVE ONLY (version rule):** v0.2.2 ships as a patch bump (`0.2.1 -> 0.2.2`) under 0.x conventional commits. NO breaking changes to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API, the Angular CLI builder, or the existing generator schemas. The `v0.3.0` breaking-change escape hatch is triggered only if a breaking change proves unavoidable.
+
+**Target features:**
+- Two `bin` names -> one CLI entry: `angular-typechecker` (primary) and `atc` (short alias); runnable as `npx angular-typechecker -p <tsconfig>` / `atc -p <tsconfig>` with no Nx / Angular CLI workspace required.
+- Runs the SAME `runTypecheck` core as the Nx executor + Angular CLI builder -- same complete diagnostic set, same reference-walking (single tsconfig or a solution `tsconfig.json`), same boundary filtering.
+- Literal OS exit codes 0/1/2 (clean / type error / infrastructure) -- wiring the pure `toExitCode` policy (reserved for the CLI since v0.0.3 COR-04, currently a dead scaffold with no live consumer) to `process.exit`.
+- Args via Node stdlib `util.parseArgs` (no new runtime dependency): `-p/--tsConfig` (repeatable), `--max-warnings`, fail-fast, `--include-deps`, `--strict`, `--help`, `--version`.
+- The CLI path imports ONLY the pure core -- never `@nx/devkit`/`nx` at runtime (lean startup + dodges the nx `chalk`-chain crash class, per the 24-06 lesson); a console-based logger is injected.
+- Human `formatDiagnostics` output; machine-readable JSON/SARIF reporters stay deferred.
+- README `## Standalone CLI` section + the exit-code contract.
+
+**Verification:**
+- CI-authoritative in-repo e2e proving the shipped `bin`s (installed tarball) give correct 0/1/2 exit codes + output in a plain non-Nx project; the cross-platform shebang works on Windows.
+- Real-world end-to-end proof against on-stack (Angular 22) OSS workspaces of BOTH kinds -- a real Nx workspace AND a real Angular CLI (`angular.json`) workspace -- running the shipped `bin`s pointed at real project tsconfigs, planted-error RED / clean GREEN, exit codes asserted.
+
+**Key context:** Thin-adapter charter -- the CLI is a third thin adapter over the one core (like the Nx executor and the `convertNxExecutor` builder), never a re-implementation. `@angular/compiler-cli` reached via the same CJS->ESM `await import()` bridge (built `module: nodenext`). On-stack Angular 22 only (off-stack Ng21 dropped, per v0.2.1). `atc` npm-collision risk is nil (local `bin`, not a package name).
+
+**Out of scope (carried forward):** machine-readable reporters (JSON/SARIF); `NgtscProgram` incremental; `createNodesV2` inference; older-Angular support; Jest; `--watch`; config-file discovery / glob input (these stay in the project-level Out of Scope below).
+
+**Execution status (2026-07-17):** All five phases (25-29) are EXECUTED and verified -- the milestone is feature-complete pending its close/release. **Phase 25** (advisory-notice seam, CLI-04). **Phase 26** (pure `run(argv,env)` CLI core + two-step 0/1/2 exit-code compose, CLI-02/03 + ARGS + EXIT + VER-01/02). **Phase 27** (flush-safe `bin.ts` shell, two `bin` names, LF-shebang + nodenext bridge survival, nx-free import boundary, additive-only audit vs 0.2.1, CLI-01/PKG/VER-03/ADD-01). **Phase 28** (shipped-tarball e2e across npm/yarn/pnpm on Linux+Windows + real-clone UAT, VER-04/05). **Phase 29** (docs, DOC-01) complete 2026-07-17 -- README `## Standalone CLI` section (install, 7-flag reference, 0/1/2 exit-code table, `npx angular-typechecker` canonical / never `npx atc`), curated undated `## 0.2.2` CHANGELOG entry, and a `standalone-cli-docs.spec.ts` HELP_TEXT drift-lock. Next: milestone audit -> close -> Release PR.
 
 ## Shipped Milestone: v0.2.1 -- Angular CLI workspace support
 
@@ -182,7 +200,7 @@ Full detail with outcomes: `.planning/milestones/v0.2.1-REQUIREMENTS.md`. Audit:
 - Bespoke real-disk `createFsTree`/`flushFsTreeChanges` test helpers (FSTREE-01) -- only if a future generator emits files a real compiler must read back.
 - `ng add` (Angular CLI) install schematic (GEN-FUT-02) -- SHIPPED in v0.2.1 (see Validated above); no longer out of scope.
 - Angular CLI (`angular.json`) workspace support for the generators via `convertNxGenerator` (GEN-FUT-01) -- SHIPPED in v0.2.1; no longer out of scope.
-- Standalone CLI binary (non-Nx use); owns the literal OS exit code `2`.
+- Standalone CLI binary (non-Nx use); owns the literal OS exit code `2` -- PROMOTED to the current milestone v0.2.2 (see Current Milestone above); no longer out of scope.
 - `totalFilesCount` observability field on `CoreResult` (OBS-01, `@nx/js` parity) -- pending charter-fit.
 - Storybook `*.stories.ts` type-check support -- SHIPPED in v0.2.0 (see Validated above); no longer out of scope.
 - Angular CLI surface for non-Nx `angular.json` workspaces: our Nx executor re-exported as an Angular **builder** via `convertNxExecutor` -- SHIPPED in v0.2.1; no longer out of scope.
@@ -285,7 +303,9 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-16 -- v0.2.1 milestone CLOSED via `/gsd-complete-milestone`: milestone audit PASSED (16/16 requirements ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD, 4/4 phases, 8-of-8 cross-phase integration seams WIRED, 4/4 E2E flows, Nyquist compliant, 0 open threats). All Active v0.2.1 requirements moved to Validated; ROADMAP collapsed to a SHIPPED one-liner; REQUIREMENTS/ROADMAP/audit archived to `.planning/milestones/v0.2.1-*`; REQUIREMENTS.md removed (fresh for next milestone). `angular-typechecker@0.2.1` already published live to npm 2026-07-16 (PR #38 merged, tag on the release merge commit, tokenless OIDC + SLSA v1 provenance) -- this close is bookkeeping-only, no version change. Next: `/gsd-new-milestone`.*
+*Last updated: 2026-07-17 -- v0.2.2 Phase 29 (Docs, DOC-01) complete: the final phase of the milestone. All phases 25-29 are now executed + verified (README `## Standalone CLI` section, curated `## 0.2.2` CHANGELOG entry, doc-tripwire drift-lock; the CLI is feature-complete). Milestone is ready for its audit -> close -> Release PR. Prior: 2026-07-16 -- v0.2.2 milestone STARTED (Standalone CLI) via `/gsd-new-milestone`: added the `## Current Milestone: v0.2.2` section (ADDITIVE-ONLY charter; a standalone `angular-typechecker`/`atc` CLI binary as a third thin adapter over the core, owning literal OS exit code 2; verified against real on-stack Angular 22 OSS Nx AND Angular CLI workspaces), promoted the standalone-CLI item out of Out of Scope, and reset STATE.md for v0.2.2.*
+
+*Prior update: 2026-07-16 -- v0.2.1 milestone CLOSED via `/gsd-complete-milestone`: milestone audit PASSED (16/16 requirements ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD, 4/4 phases, 8-of-8 cross-phase integration seams WIRED, 4/4 E2E flows, Nyquist compliant, 0 open threats). All Active v0.2.1 requirements moved to Validated; ROADMAP collapsed to a SHIPPED one-liner; REQUIREMENTS/ROADMAP/audit archived to `.planning/milestones/v0.2.1-*`; REQUIREMENTS.md removed (fresh for next milestone). `angular-typechecker@0.2.1` already published live to npm 2026-07-16 (PR #38 merged, tag on the release merge commit, tokenless OIDC + SLSA v1 provenance) -- this close is bookkeeping-only, no version change. Next: `/gsd-new-milestone`.*
 
 *Prior update: 2026-07-10 -- v0.2.1 milestone STARTED (Angular CLI workspace support) via `/gsd-new-milestone`: archived the v0.2.0 phase dirs to `.planning/milestones/v0.2.0-phases/` (completing a skipped close step), added the `## Current Milestone: v0.2.1` section (ADDITIVE-ONLY charter; re-versions to v0.3.0 only if a breaking change is unavoidable), relabeled v0.2.0 as a Shipped Milestone, promoted GEN-FUT-01/GEN-FUT-02 + the `convertNxExecutor` builder line from Out of Scope to Active, and reset STATE.md for v0.2.1. Requirements + roadmap next.*
 

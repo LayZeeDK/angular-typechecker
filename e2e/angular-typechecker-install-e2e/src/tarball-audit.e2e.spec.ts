@@ -49,6 +49,10 @@ const REQUIRED_FILES = [
   'src/generators/configuration/schema.json',
   'src/generators/init/generator.js',
   'src/generators/init/schema.json',
+  // Phase 27 D-11: the compiled standalone-CLI bin the two `bin` names map to
+  // must ship. Excluded from the leak guards below (not a `.spec.`; `bin.ts`'s
+  // sibling `bin-static.spec.ts` is dropped by tsconfig.lib.json).
+  'src/cli/bin.js',
 ];
 
 // The install lifecycle script keys that must be ABSENT from the tarball's
@@ -80,6 +84,7 @@ interface PackResult {
 
 interface TarballManifest {
   scripts?: Record<string, string>;
+  bin?: Record<string, string>;
 }
 
 // Captured in beforeAll, consumed by the it() gates.
@@ -221,6 +226,36 @@ describe('PKG-02: the packed tarball is publish-correct', () => {
     for (const key of INSTALL_SCRIPT_KEYS) {
       expect(manifest.scripts?.[key]).toBeUndefined();
     }
+  });
+});
+
+// CLI-01 / PKG-01 (Phase 27, D-11): the PUBLISHED-artifact half of the shebang +
+// bin-map guard (the dist half is VER-03's bin-static.spec.ts). Distinct describe
+// heading -- the `PKG-02` block above is the v0.2.0 packaging-fidelity id, an
+// unrelated collision. publint's `bin` rule (the existing --strict assertion
+// above) already fails a missing/CRLF/mispathed bin, so this block adds the
+// explicit two-name-map + shipped-file + shebang assertions on the packed tarball.
+describe('CLI-01/PKG-01: the packed tarball ships a runnable bin', () => {
+  it('maps both bin names to the one compiled ./src/cli/bin.js', () => {
+    const manifestPath = join(extractDir, 'package', 'package.json');
+    const manifest = JSON.parse(
+      readFileSync(manifestPath, 'utf8'),
+    ) as TarballManifest;
+
+    expect(manifest.bin?.['angular-typechecker']).toBe('./src/cli/bin.js');
+    expect(manifest.bin?.['atc']).toBe('./src/cli/bin.js');
+  });
+
+  it('ships the mapped src/cli/bin.js inside the tarball', () => {
+    expect(filePaths).toContain('src/cli/bin.js');
+  });
+
+  it('ships src/cli/bin.js with a carriage-return-free #!/usr/bin/env node first line', () => {
+    const binPath = join(extractDir, 'package', 'src', 'cli', 'bin.js');
+    const firstLine = readFileSync(binPath, 'utf8').split('\n')[0];
+
+    expect(firstLine).toBe('#!/usr/bin/env node');
+    expect(firstLine).not.toContain('\r');
   });
 });
 

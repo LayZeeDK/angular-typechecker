@@ -98,20 +98,24 @@ function collectProjectJsonPaths(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-// Slice the `e2e:` job block (from its key to the next top-level job key) WITHOUT a
-// YAML parser (line-level invariant; reuses the release-hygiene no-parser
-// precedent). Shared by the e2e --parallel=2 isolation guard (GUARD-01b) and the
-// typecheck-coverage guard (GUARD-01c) so there is ONE job-scoping implementation.
-// The job-key regex MUST allow digits or it would miss `e2e:` itself (the `2`).
-// Throws a clear located Error if the `e2e:` job is absent, so a ci.yml refactor
+// Slice a top-level job block -- from its `  <jobName>:` key to the next top-level
+// job key -- WITHOUT a YAML parser (line-level invariant; reuses the release-hygiene
+// no-parser precedent). Generalized so GUARD-01f can slice the `e2e-windows` and `ci`
+// jobs too (option b's dedicated Windows job is asserted the same line-level way as
+// the Linux matrix). The next-job-key regex allows digits AND `-`, so it correctly
+// bounds `e2e:` (the `2`) and stops at hyphenated keys like `e2e-windows:`. The job
+// names asserted here (`e2e`, `e2e-windows`, `ci`) contain only literal-safe regex
+// chars. Throws a clear located Error if the job is absent, so a ci.yml refactor
 // fails LOUDLY.
-function extractE2eJobLines(ci: string): string[] {
+function extractJobLines(ci: string, jobName: string): string[] {
   const lines = ci.split('\n');
-  const start = lines.findIndex((line) => /^ {2}e2e:\s*$/.test(line));
+  const start = lines.findIndex((line) =>
+    new RegExp(`^ {2}${jobName}:\\s*$`).test(line),
+  );
 
   if (start === -1) {
     throw new Error(
-      'GUARD-01: could not locate the `e2e:` job in .github/workflows/ci.yml',
+      `GUARD: could not locate the \`${jobName}:\` job in .github/workflows/ci.yml`,
     );
   }
 
@@ -126,6 +130,12 @@ function extractE2eJobLines(ci: string): string[] {
   }
 
   return lines.slice(start, end);
+}
+
+// The `e2e:` job slicer used by GUARD-01/01b/01c -- a thin delegate over the
+// generalized slicer so there is ONE job-scoping implementation.
+function extractE2eJobLines(ci: string): string[] {
+  return extractJobLines(ci, 'e2e');
 }
 
 describe('GUARD-01: run-many -t e2e covers exactly the e2e/* projects', () => {
@@ -394,6 +404,79 @@ describe('GUARD-01b: the ci.yml e2e job is a dynamic per-project matrix with the
         ).toBe(false);
       });
     }
+  });
+});
+
+// GUARD-01f (Windows OS-axis wiring guard). VER-04 SC-2 (D-04) adds a Windows leg
+// for EXACTLY ONE e2e project -- angular-typechecker-cli-e2e -- because the
+// .cmd/.ps1 bin shim is the one genuinely Windows-divergent CLI surface. The
+// mechanism is a SEPARATE dedicated `e2e-windows` job (option b), NOT an `os`
+// dimension merged into the `e2e` dynamic matrix: an `include: { os: windows-latest,
+// project: angular-typechecker-cli-e2e }` would MERGE into the existing
+// `{project: cli-e2e}` combination and silently DROP the Linux cli-e2e leg. Option b
+// leaves the verified-live Linux dynamic matrix + discover contract + GUARD-01b's
+// four assertions untouched. This guard locks the OS-axis wiring against silent
+// drift exactly as GUARD-01b locks the Linux matrix, asserting FOUR facts, each
+// fail-loud + located:
+//   (1) an `e2e-windows` job exists with `runs-on: windows-latest`;
+//   (2) it runs `nx run-many -t e2e -p "$PROJECT"` with
+//       `PROJECT: angular-typechecker-cli-e2e` (the no-command-injection env pattern);
+//   (3) `e2e-windows` is in the `ci` aggregate job's `needs` list (so a Windows
+//       failure fails the required `ci` check); and
+//   (4) angular-typechecker-cli-e2e is in enumerateE2eProjects (so it ALSO runs on
+//       Linux via the auto-discovered dynamic matrix -- D-04 requires BOTH).
+// Same cheap READ-ONLY ci.yml text/regex reads as GUARD-01b; the ci.yml scans use
+// the YAML `#` comment marker in their `^(?!\s*#)` prefixes so this block's own
+// prose (which also names windows-latest / run-many -t e2e / e2e-windows) cannot
+// false-satisfy an assertion. A deleted `e2e-windows` job makes extractJobLines
+// throw (job absent) -> loud failure, so no assertion is a tautology.
+describe('GUARD-01f: a dedicated e2e-windows job runs angular-typechecker-cli-e2e on windows-latest and is a required ci gate', () => {
+  const ci = readFileSync(
+    join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
+    'utf8',
+  );
+
+  it('an `e2e-windows` job exists and runs on windows-latest', () => {
+    const windowsBlock = extractJobLines(ci, 'e2e-windows').join('\n');
+
+    expect(
+      /^(?!\s*#).*runs-on:\s*windows-latest/m.test(windowsBlock),
+      'GUARD-01f: the `e2e-windows` job must set `runs-on: windows-latest` -- the .cmd/.ps1 bin shim is the Windows-divergent CLI surface VER-04 SC-2 requires be covered on a real Windows runner.',
+    ).toBe(true);
+  });
+
+  it('the e2e-windows job runs `nx run-many -t e2e -p "$PROJECT"` with PROJECT=angular-typechecker-cli-e2e', () => {
+    const windowsBlock = extractJobLines(ci, 'e2e-windows').join('\n');
+
+    expect(
+      /^(?!\s*#).*\brun-many\s+-t\s+e2e\b.*-p\s+"\$PROJECT"/m.test(
+        windowsBlock,
+      ),
+      'GUARD-01f: the `e2e-windows` job must RUN `nx run-many -t e2e -p "$PROJECT"` -- a dropped/renamed invocation would silently disable the Windows shim gate (run-many with zero matching projects exits 0).',
+    ).toBe(true);
+
+    expect(
+      /^(?!\s*#).*\bPROJECT:\s*angular-typechecker-cli-e2e\s*$/m.test(
+        windowsBlock,
+      ),
+      'GUARD-01f: the `e2e-windows` job must pin `PROJECT: angular-typechecker-cli-e2e` -- the single Windows-covered project, passed via the env var (never interpolated into a run command, the no-command-injection invariant).',
+    ).toBe(true);
+  });
+
+  it('`e2e-windows` is a dependency of the `ci` aggregate job (a Windows failure fails the required gate)', () => {
+    const ciBlock = extractJobLines(ci, 'ci').join('\n');
+
+    expect(
+      /^(?!\s*#).*\be2e-windows\b/m.test(ciBlock),
+      "GUARD-01f: `e2e-windows` must appear in the `ci` aggregate job `needs` list, so the `contains(needs.*.result, 'failure')` gate covers a Windows-leg failure -- otherwise a red Windows e2e would not block the required `ci` check.",
+    ).toBe(true);
+  });
+
+  it('angular-typechecker-cli-e2e ALSO runs on Linux via the dynamic matrix (enumerated as an e2e project)', () => {
+    expect(
+      enumerateE2eProjects(workspaceRoot),
+      'GUARD-01f: angular-typechecker-cli-e2e must be an e2e/* project so the Linux dynamic matrix auto-covers it -- D-04 requires BOTH the Linux dynamic-matrix leg AND the dedicated Windows job.',
+    ).toContain('angular-typechecker-cli-e2e');
   });
 });
 

@@ -1,0 +1,35 @@
+{
+  "name": "angular-typechecker-cli-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "e2e/angular-typechecker-cli-e2e/src",
+  "tags": ["scope:fixture", "type:e2e"],
+  "implicitDependencies": ["angular-typechecker"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/vitest:test",
+      "dependsOn": [{ "projects": ["angular-typechecker"], "target": "build" }],
+      "outputs": ["{options.reportsDirectory}"],
+      "parallelism": false,
+      "options": {
+        "reportsDirectory": "coverage/e2e/angular-typechecker-cli-e2e"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/tsconfig.base.json",
+        {
+          "externalDependencies": ["typescript", "vitest", "@nx/js", "@nx/vite"]
+        }
+      ],
+      "options": {
+        "command": "tsc --noEmit -p e2e/angular-typechecker-cli-e2e/tsconfig.spec.json",
+        "cwd": "."
+      }
+    }
+  }
+}
