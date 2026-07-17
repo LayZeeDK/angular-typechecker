@@ -142,17 +142,19 @@ export function parseCliArgs(argv: string[]): ParseResult {
     const rawMaxWarnings = values['max-warnings'];
 
     if (rawMaxWarnings !== undefined) {
-      // D-08: accept ONLY a non-negative integer. `--max-warnings 0` stays valid.
-      const parsed = Number(rawMaxWarnings);
-
-      if (!Number.isInteger(parsed) || parsed < 0) {
+      // D-08: accept ONLY a plain non-negative decimal integer. Guard the RAW
+      // string with /^\d+$/ BEFORE Number(): a bare Number() coercion is too
+      // lenient -- it also accepts '' -> 0 (a silent flip to the strictest gate),
+      // '1e3' -> 1000, '0x10' -> 16, and ' 5 ' -> 5, none of which are "a
+      // non-negative integer" the help text promises. `--max-warnings 0` stays valid.
+      if (!/^\d+$/.test(rawMaxWarnings)) {
         return {
           kind: 'usageError',
           message: `angular-typechecker: --max-warnings expects a non-negative integer, got "${rawMaxWarnings}".`,
         };
       }
 
-      maxWarnings = parsed;
+      maxWarnings = Number(rawMaxWarnings);
     }
 
     return {

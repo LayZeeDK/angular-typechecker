@@ -169,6 +169,40 @@ describe('parseCliArgs (ARGS-01..04 flag mapping + usage errors)', () => {
         'usageError',
       );
     });
+
+    // Guard the lenient Number() coercions: without a /^\d+$/ check these all pass
+    // (''-> 0, '1e3' -> 1000, '0x10' -> 16, ' 5 ' -> 5), contradicting the
+    // "non-negative integer" contract. The empty string is the worst -- it would
+    // silently become 0, the strictest gate.
+    it('rejects an empty-string --max-warnings (never silently 0)', () => {
+      const usage = expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--max-warnings', '']),
+        'usageError',
+      );
+
+      expect(usage.message).toContain('--max-warnings');
+    });
+
+    it('rejects scientific notation --max-warnings (1e3)', () => {
+      expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--max-warnings', '1e3']),
+        'usageError',
+      );
+    });
+
+    it('rejects a hexadecimal --max-warnings (0x10)', () => {
+      expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--max-warnings', '0x10']),
+        'usageError',
+      );
+    });
+
+    it('rejects a whitespace-padded --max-warnings (" 5 ")', () => {
+      expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--max-warnings', ' 5 ']),
+        'usageError',
+      );
+    });
   });
 
   describe('--help / -h (ARGS-04 / D-11)', () => {
