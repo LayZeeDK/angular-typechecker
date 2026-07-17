@@ -3,6 +3,7 @@ import { logger } from '@nx/devkit';
 
 import { emitAdvisoryNotices } from '../../core/emit-advisory-notices';
 import { evaluateResult } from '../../core/evaluate-result';
+import { logInfrastructureError } from '../../core/log-infrastructure-error';
 import { renderReport } from '../../core/render-report';
 import {
   runTypecheck,
@@ -70,9 +71,7 @@ export default async function typecheckExecutor(
     return { success };
   } catch (error) {
     if (error instanceof TypecheckInfrastructureError) {
-      logger.error(
-        `angular-typechecker: the Angular compiler failed to run (infrastructure error, not a type error): ${error.message}`,
-      );
+      logInfrastructureError(logger, error);
 
       return { success: false };
     }

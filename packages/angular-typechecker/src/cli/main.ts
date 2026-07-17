@@ -4,6 +4,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { emitAdvisoryNotices } from '../core/emit-advisory-notices';
 import { evaluateResult } from '../core/evaluate-result';
 import { toExitCode } from '../core/exit-codes';
+import { logInfrastructureError } from '../core/log-infrastructure-error';
 import { renderReport } from '../core/render-report';
 import type { CoreOptions } from '../core/run-typecheck';
 import {
@@ -177,9 +178,7 @@ export async function run(
     // type error) is toExitCode's FIRST live consumer -> exit 2. toExitCode appears
     // ONLY here, and is passed ONLY the caught error, never a completed result.
     if (error instanceof TypecheckInfrastructureError) {
-      logger.error(
-        `angular-typechecker: the Angular compiler failed to run (infrastructure error, not a type error): ${error.message}`,
-      );
+      logInfrastructureError(logger, error);
 
       return { exitCode: toExitCode(error), stdout: '', stderr: logger.text };
     }
