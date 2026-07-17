@@ -1,8 +1,10 @@
-// The pure, framework-agnostic exit-code POLICY for a type-check run
-// (COR-04 / D-07). It is the exit-code sibling of `evaluate-result.ts`'s
-// `{ success }` verdict: the single source of truth that classifies a run as
-// clean / type-error / infrastructure-failure, ngc-parallel
-// (`@angular/compiler-cli`'s `exitCodeFromResult`).
+// The pure, framework-agnostic exit-code CONTRACT for a type-check run
+// (COR-04 / D-07), ngc-parallel (`@angular/compiler-cli`'s `exitCodeFromResult`).
+// It is the exit-code sibling of `evaluate-result.ts`'s `{ success }` verdict, but
+// NOT the verdict's source of truth: `evaluateResult` owns the clean-vs-non-clean
+// (0/1) decision, and in the live path `toExitCode` is handed ONLY a caught
+// infrastructure error (-> 2). The `errorCount`-based 0/1 arms encode the ngc parity
+// but have no live adapter caller (see the layering + purity notes below).
 //
 // EXIT-CODE CONTRACT (ngc parity):
 //   - 2 = infrastructure failure: the compiler failed to RUN (a config-resolution
