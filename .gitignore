@@ -46,3 +46,4 @@ Thumbs.db
 
 vitest.config.*.timestamp*
 .angular
+.gsd-opengsd/
