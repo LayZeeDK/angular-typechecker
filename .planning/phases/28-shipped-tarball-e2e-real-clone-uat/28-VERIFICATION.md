@@ -1,21 +1,20 @@
 ---
 phase: 28-shipped-tarball-e2e-real-clone-uat
 verified: 2026-07-17T00:45:00Z
-status: human_needed
-score: 4/4 must-haves verified (SC-4 substantively verified; literal human sign-off is a user decision)
+status: passed
+score: 4/4 must-haves verified (VER-05 human sign-off accepted by the user during the v0.2.2 milestone audit)
 re_verification:
   # Not a re-verification; no previous VERIFICATION.md existed.
-human_verification:
+human_verification_resolved:
   - test: "Decide whether VER-05 requires a LITERAL human sign-off on 28-04-UAT.md, or whether the authorized autonomous agent run satisfies the gate."
-    expected: "User either (a) accepts the autonomous-authorized run as the VER-05 pass (all real-clone assertions ran + passed; results are real, not fabricated), or (b) re-runs the reproducible 28-04-UAT.md procedure and signs the results table by hand."
-    why_human: "The phase PLAN (28-04) and the UAT artifact itself explicitly designed VER-05 as a HUMAN-RUN gate ('the phase must NOT mark VER-05 done from automation -- a blocking human checkpoint gates it'). The run was executed by an authorized autonomous agent per the paused-session HANDOFF decision, NOT a literal human sign-off. Whether a human signature is additionally required is a user judgment call, not something grep can settle. The CI-authoritative VER-04 already proves the identical shipped-bin exit-code contract deterministically."
+    resolution: "RESOLVED 2026-07-17 (v0.2.2 milestone audit): the user ACCEPTED the authorized autonomous run as the VER-05 pass -- all real-clone RED/GREEN/BAD-PATH assertions ran and passed across both workspace kinds, results are real (not fabricated), and the identical shipped-bin exit-code contract is independently gated by the CI-authoritative VER-04 (Linux + Windows, PR #41 green). No re-run required."
 ---
 
 # Phase 28: Shipped-tarball e2e + real-clone UAT Verification Report
 
 **Phase Goal:** The shipped `bin`s, installed from the packed tarball across the package-manager matrix on Linux AND Windows, return literal OS exit codes `0`/`1`/`2` through the real package-manager `.bin` shim, and the same shipped `bin`s prove correct against real on-stack Angular 22 OSS workspaces of both kinds (a real Nx workspace and a real Angular CLI workspace).
 **Verified:** 2026-07-17T00:45:00Z
-**Status:** human_needed
+**Status:** passed (VER-05 human sign-off accepted by the user during the v0.2.2 milestone audit, 2026-07-17)
 **Re-verification:** No -- initial verification
 
 ## Goal Achievement
