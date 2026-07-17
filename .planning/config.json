@@ -70,7 +70,6 @@
   "mode": "yolo",
   "granularity": "standard",
   "context_window": 1000000,
-  "quick_branch_template": null,
   "model_overrides": {
     "gsd-planner": "opus",
     "gsd-roadmapper": "opus",
