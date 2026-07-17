@@ -1,5 +1,10 @@
 import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { expect } from 'vitest';
+
+import { plant } from './ng-cli-e2e';
 
 // Shared building block for the standalone-CLI tarball-e2e specs
 // (angular-typechecker-cli-e2e). Derived from ng-cli-e2e.ts's createNgRun: where
@@ -75,4 +80,105 @@ export function runShim(
     code: result.status ?? 2,
     stdout: `${result.stdout ?? ''}${result.stderr ?? ''}`,
   };
+}
+
+// The clean committed anchor in the fixture component + the broken replacement: a
+// `number` field assigned a string literal -> TS2322. Built with JSON.stringify
+// (ASCII-only, no quote/apostrophe escaping hazard).
+const COMPONENT_ANCHOR =
+  "readonly label: string = 'angular-typechecker cli-consumer';";
+const COMPONENT_INJECTION = `readonly broken: number = ${JSON.stringify(
+  'str',
+)};\n  ${COMPONENT_ANCHOR}`;
+const PLANTED_CODE = 'TS2322';
+
+/**
+ * The shared VER-04 shim exit-code contract, exercised identically by all three CLI
+ * package-manager e2e specs (npm / pnpm / yarn). Given a `cli-consumer` fixture already
+ * installed in `tmp`, it drives the SHIPPED `.bin` shims and asserts the literal OS exit
+ * codes: 0 (clean), 2 (infrastructure -- a nonexistent tsconfig -- AND usage -- an unknown
+ * flag / missing required `-c`), and 1 (a planted TS2322 verdict). Both bin names
+ * (`angular-typechecker` and `atc`) are exercised, and every RED run also proves the
+ * CJS->ESM compiler-cli bridge survived install (no ERR_REQUIRE_ESM / infrastructure error).
+ *
+ * `env` is the package-manager-specific process env each spec builds (npm/pnpm/yarn differ
+ * only there). The planted source is restored in a `finally`, so the fixture is committed-
+ * clean again on return -- a caller may safely run its own extras (e.g. the npm baseline's
+ * `npx` + multi-tsConfig UNION assertions) after this helper.
+ */
+export function assertShippedBinExitCodes(
+  tmp: string,
+  env: NodeJS.ProcessEnv,
+): void {
+  // Shim-resolution assertion (D-03): the PM linked BOTH bin names into .bin.
+  const shimSuffix = process.platform === 'win32' ? '.cmd' : '';
+  expect(
+    existsSync(
+      join(tmp, 'node_modules', '.bin', `angular-typechecker${shimSuffix}`),
+    ),
+  ).toBe(true);
+  expect(
+    existsSync(join(tmp, 'node_modules', '.bin', `atc${shimSuffix}`)),
+  ).toBe(true);
+
+  // exit 0 -- clean fixture, BOTH bin names.
+  const atClean = runShim(
+    tmp,
+    'angular-typechecker',
+    ['-c', 'tsconfig.json'],
+    env,
+  );
+  expect(atClean.code, atClean.stdout).toBe(0);
+  const atcClean = runShim(tmp, 'atc', ['-c', 'tsconfig.json'], env);
+  expect(atcClean.code, atcClean.stdout).toBe(0);
+
+  // exit 2 -- infrastructure (a nonexistent tsconfig), BOTH bin names. This literal
+  // exit 2 is the headline net-new surface (the Nx/ng {success} harness only ever
+  // proves 0/1).
+  const atInfra = runShim(
+    tmp,
+    'angular-typechecker',
+    ['-c', 'does-not-exist.json'],
+    env,
+  );
+  expect(atInfra.code, atInfra.stdout).toBe(2);
+  const atcInfra = runShim(tmp, 'atc', ['-c', 'does-not-exist.json'], env);
+  expect(atcInfra.code, atcInfra.stdout).toBe(2);
+
+  // exit 2 -- usage: an unknown flag (`-p`/`--project` is deliberately unregistered,
+  // so `--nonsense` is an unknown-flag usage error) AND a missing required `-c`.
+  const atcUnknownFlag = runShim(tmp, 'atc', ['--nonsense'], env);
+  expect(atcUnknownFlag.code, atcUnknownFlag.stdout).toBe(2);
+  const atcMissingC = runShim(tmp, 'atc', [], env);
+  expect(atcMissingC.code, atcMissingC.stdout).toBe(2);
+
+  // exit 1 -- a planted diagnostic CODE (TS2322). Assert the CODE, never message
+  // text; every RED run also proves the CJS->ESM compiler-cli bridge survived
+  // install (no ERR_REQUIRE_ESM) and the non-zero exit is a real diagnostic (no
+  // 'infrastructure error'). Restore the committed-clean source in finally.
+  const componentPath = join(tmp, 'src', 'app.component.ts');
+  const original = readFileSync(componentPath, 'utf8');
+
+  try {
+    plant(componentPath, COMPONENT_ANCHOR, COMPONENT_INJECTION);
+
+    const atRed = runShim(
+      tmp,
+      'angular-typechecker',
+      ['-c', 'tsconfig.json'],
+      env,
+    );
+    expect(atRed.code, atRed.stdout).toBe(1);
+    expect(atRed.stdout).toContain(PLANTED_CODE);
+    expect(atRed.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
+    expect(atRed.stdout).not.toContain('infrastructure error');
+
+    const atcRed = runShim(tmp, 'atc', ['-c', 'tsconfig.json'], env);
+    expect(atcRed.code, atcRed.stdout).toBe(1);
+    expect(atcRed.stdout).toContain(PLANTED_CODE);
+    expect(atcRed.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
+    expect(atcRed.stdout).not.toContain('infrastructure error');
+  } finally {
+    writeFileSync(componentPath, original);
+  }
 }
