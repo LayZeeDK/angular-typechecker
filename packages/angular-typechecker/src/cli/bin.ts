@@ -8,6 +8,32 @@
  */
 import { run } from './main';
 
+/**
+ * Swallows an EPIPE stream error and RE-THROWS everything else (Pitfall 6, EPIPE
+ * half). When a downstream reader closes the pipe early (e.g.
+ * `atc -c tsconfig.json | head`), the next drain of `process.stdout` /
+ * `process.stderr` raises an ASYNC `'error'` event with `code === 'EPIPE'` on the
+ * stream. `process.exitCode` is already set SYNCHRONOUSLY in the `.then`/`.catch`
+ * below, before that async event can fire, so swallowing EPIPE lets the process
+ * exit with the already-computed 0/1/2 verdict instead of dying with an uncaught
+ * `write EPIPE` stack + a wrong exit code -- the flush-safety complement to the
+ * existing "process.exitCode, never process.exit()" rule. Any NON-EPIPE stream
+ * failure (e.g. ENOSPC) is RE-THROWN so a genuine write failure stays loud.
+ */
+function ignoreEpipe(error: NodeJS.ErrnoException): void {
+  if (error.code === 'EPIPE') {
+    return;
+  }
+
+  throw error;
+}
+
+// Register the guard on BOTH streams at module load, BEFORE the run() chain below
+// issues any write -- an EPIPE can only be caught if the listener is already
+// attached when the failing write drains.
+process.stdout.on('error', ignoreEpipe);
+process.stderr.on('error', ignoreEpipe);
+
 run(process.argv.slice(2))
   .then(({ exitCode, stdout, stderr }) => {
     if (stdout) {
