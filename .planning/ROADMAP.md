@@ -114,7 +114,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The machine payload contains NO ANSI escape byte even under `FORCE_COLOR=1` and goes to stdout ONLY, while every advisory/notice/error goes to stderr via the injected `Logger`; `--quiet` silences the stderr chatter without touching the payload or the verdict; `--color`/`--no-color` are explicit overrides layered above the `NO_COLOR` > `FORCE_COLOR` > TTY precedence and affect the human path only.
   4. With `--format` omitted, human output is byte-identical to `angular-typechecker@0.2.2` -- the widened `renderReport` seam, the new `CoreResult.totalFilesCount` field (captured from the live `Program` on the direct path and a deduped source-file `Set` across walked leaves), and the enum on the three adapter schemas + both schema-parity specs are all additive; `builder.ts` is unchanged.
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -127,7 +127,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 30-03-PLAN.md (Wave 3, depends 30-02) -- Thread the `--format` (+ `--quiet`, `--color`/`--no-color` via `allowNegative`) enum through the CLI `parse-args`/`main`, the executor `schema.json`/`schema.d.ts`/`normalize-options`/`executor.ts`, and the builder `schema.json` (builder.ts UNCHANGED); add `'format'` to both `schema-parity` specs + README `### Options` rows (HELP_TEXT drift-lock); add the exit-code-parity (incl. coverage-incomplete), `--quiet`-gates-stderr-only, and `--color`/`--no-color` override unit specs. (FMT-01, FMT-03, CLIX-02, VER-01)
+- [x] 30-03-PLAN.md (Wave 3, depends 30-02) -- Thread the `--format` (+ `--quiet`, `--color`/`--no-color` via `allowNegative`) enum through the CLI `parse-args`/`main`, the executor `schema.json`/`schema.d.ts`/`normalize-options`/`executor.ts`, and the builder `schema.json` (builder.ts UNCHANGED); add `'format'` to both `schema-parity` specs + README `### Options` rows (HELP_TEXT drift-lock); add the exit-code-parity (incl. coverage-incomplete), `--quiet`-gates-stderr-only, and `--color`/`--no-color` override unit specs. (FMT-01, FMT-03, CLIX-02, VER-01)
 
 ### Phase 31: SARIF reporter
 
@@ -204,7 +204,7 @@ Plans:
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete | 2026-07-16 |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
-| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 2/3 | In Progress|  |
+| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete   | 2026-07-18 |
 | 31. SARIF reporter | v0.2.3 | 0/2 | Not started | - |
 | 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
 

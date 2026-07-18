@@ -5,16 +5,16 @@ milestone_name: Machine-readable reporters
 current_phase: 30
 current_phase_name: Reporter seam + JSON reporter + --format threading + observability
 status: executing
-stopped_at: Phase 30 plan 30-02 complete (JSON reporter + widened renderReport seam); next 30-03
-last_updated: "2026-07-18T03:50:00Z"
+stopped_at: Phase 30 plan 30-03 complete (--format/--quiet/--color threaded through all three adapters); all 3 plans done, next phase verification
+last_updated: "2026-07-18T04:12:03Z"
 last_activity: 2026-07-18
-last_activity_desc: Executed 30-02 -- zero-dependency JSON reporter + widened renderReport seam (all gates green)
+last_activity_desc: Executed 30-03 -- threaded --format/--quiet/--color through CLI + executor + builder (all gates green; builder.ts byte-unchanged)
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
-  percent: 67
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 ## Current Position
 
 Phase: 30 (Reporter seam + JSON reporter + --format threading + observability) — EXECUTING
-Plan: 30-02 of 3 COMPLETE; next 30-03 (Wave 3, depends 30-02)
-Status: Executing Phase 30 (2/3 plans done)
-Last activity: 2026-07-18 — Executed 30-02: zero-dependency JSON reporter + widened renderReport seam; all gates green
+Plan: 30-03 of 3 COMPLETE; all 3 plans done, next phase verification
+Status: Executing Phase 30 (3/3 plans done)
+Last activity: 2026-07-18 — Executed 30-03: --format/--quiet/--color threaded through all three adapters; all gates green
 
 ## Accumulated Context
 
@@ -96,6 +96,7 @@ archives under `.planning/milestones/`.
 - [Phase 29]: 29-01: documented the shipped standalone CLI -- README ## Standalone CLI section (npx angular-typechecker canonical; atc post-install PATH alias only + atc@0.0.6 supply-chain warning, never the literal 'npx atc'; 7-flag table mirroring HELP_TEXT; 0/1/2 exit-code table framed as first adapter owning literal 2, reconciled with the pass/fail-only ## Exit codes section) + curated undated ## 0.2.2 CHANGELOG entry (end-user language, no internal ids) + standalone-cli-docs.spec.ts tripwire (supply-chain guard + HELP_TEXT/README drift-lock via exported parseCliArgs(['--help']) + CHANGELOG hygiene). Rule 1: removed stale 'standalone CLI is a non-goal' Limitations line. Docs-only, release NOT cut. nx test(447)/format:check/lint/typecheck green.
 - [Phase 30]: 30-01: added OPTIONAL additive CoreResult.totalFilesCount (non-declaration source-file count) captured on BOTH engine paths -- direct path off the live Program, walk/multi-tsconfig-array via a name-deduped Set<string> (LeafAccumulator.sourceFileNames -> WalkResult -> finalizeUnion), so a source compiled in two leaves counts once (OBS-01/D-11). Verdict-neutral: evaluate-result.ts UNTOUCHED, negative test locks the EvaluateInput omission (T-30-01). KEY: the plan-mandated !isDeclarationFile filter (parity with gather-diagnostics.ts) INCLUDES Angular .ngtypecheck.ts TCB shims, so the count is authored files + generated shims -- the solution-style-overlap real-compiler proof pins the EXACT deduped literal 2 (shared.component.ts + its shim; naive per-leaf sum would be 4). 30-02 must describe summary.totalFilesCount accordingly + tolerate undefined (omitted on no-Program guard paths). index.ts barrel + index.drift.ts byte-unchanged (additive-only held). Deviations: 2 Rule-1 test-stub fixes (infra-failure + walk-references program stubs lacked getSourceFiles). nx test(462)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
 - [Phase 30]: 30-02: shipped the zero-dependency JSON reporter + widened the renderReport seam (REP-01/FMT-02/FMT-03/VER-01-slice; FMT-01 seam-half). NEW core/diagnostic-record.ts = the ONE shared pure projection Phase-31 SARIF reuses (D-13): positionsOf file-less-safe single off-by-one helper (0-based+1 both axes, null on undefined file/start), codeStringOf TS####/NG8xxx(via shipped ngCodeOf)/ATC9000x carrying BOTH code+rawCode (D-01), severity from ts.DiagnosticCategory never the code sign, and an exported relativizePath (repo-relative forward-slash, T-30-04) reused for file+tsConfigPath+advisory paths; NO compiler-cli import (json path never loads the ESM peer). NEW core/json-report.ts formatJsonReport(result,ts_,opts) = JSON.stringify-ONLY (D-06) flat diagnostics[] + rich summary; verdict DELEGATED to evaluateResult (D-07 -- coverage-incomplete keeps success:false at errorCount 0, NEVER re-derived), messages via ts.flattenDiagnosticMessageText (no ANSI structurally possible, byte-identical under FORCE_COLOR=1), formatVersion:1 + tool + manifest version (require ../../package.json), totalFilesCount present-if-defined (omit key when undefined, 30-01 tolerance), advisories present-if-non-empty over the five emit-advisory fields with file paths relativized; four key drift-locks (top-level/summary/advisories/diagnostic-record). renderReport WIDENED (D-12): optional format?:ReportFormat default 'human' (shipped callers compile unchanged), result param full CoreResult, switch(format??'human') -> json calls formatJsonReport (loads ts only), sarif THROWS 'Phase 31', human/default loads compiler-cli INSIDE the branch; human output byte-identical. index.ts barrel + index.drift.ts + evaluate-result.ts byte-unchanged (additive-only held; new symbols NOT in the barrel). TDD RED->GREEN separate commits for tasks 1-2 (no pre-commit test gate). Deviations: Rule 3 -- ts99-leak.integration.spec fed the widened seam the full result (nx typecheck caught the partial; nx test missed it, Pitfall 8); prettier line-wrap on json-report.spec. FMT-01 adapter threading + FMT-03 stdout split + VER-01 exit-parity/--quiet slices = 30-03; requirements left Pending (closed at phase verification). nx test(489)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
+- [Phase 30]: 30-03: threaded ONE --format <human|json|sarif> (+ --quiet, --color/--no-color) enum IDENTICALLY through all three adapters over the widened renderReport seam (FMT-01/FMT-03/CLIX-02/VER-01). CLI: parse-args registers the flags with allowNegative:true for --no-color (strict parseArgs, Node 22.4.0+; floor 22.22.3) + an out-of-enum usageError guard mirroring --max-warnings; main.ts does parsed.color ?? colorFromEnv (flag WINS over NO_COLOR>FORCE_COLOR>TTY, D-10, human path only), gates emitAdvisoryNotices on !parsed.quiet (D-09, stderr chatter ONLY), and threads format/maxWarnings/strict into renderReport. Executor+builder: identical format enum (default human) on both schema.json + TypecheckExecutorOptions.format? + NormalizedOptions default; executor.ts forwards format/maxWarnings/strict so --format json takes effect from Nx AND the builder; builder.ts BYTE-UNCHANGED (convertNxExecutor). Both schema-parity EXPECTED_KEYS gain 'format' + an enum/default assertion (the builder satisfies+reverse-probe type-forces it). VER-01 specs: exit code IDENTICAL across human/json incl. coverage-incomplete errorCount===0/success===false->1 (verdict stays evaluateResult's, D-07); --quiet removes the stderr advisory with payload+exit unchanged; --color/--no-color override env; a lastFormat() wiring guard. Inline 'human'|'json'|'sarif' literal union everywhere (not a ReportFormat import) matching the shipped adapter pattern. README ### Options +4 rows (standalone-cli-docs drift-lock green; full ## Machine-readable output prose deferred to Phase 32/DOC-01). Additive-only held: barrel + index.drift.ts byte-unchanged, human path byte-identical with --format omitted. No deviations. nx test(496)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
 
 ### Roadmap Evolution
 
