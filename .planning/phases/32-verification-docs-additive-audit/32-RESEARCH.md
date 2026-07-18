@@ -520,18 +520,21 @@ Not applicable -- Phase 32 is a verification/docs/audit phase, not a rename/refa
 
 ## Open Questions
 
-1. **Nx/ng adapter stdout framing (VER-03).**
+1. **Nx/ng adapter stdout framing (VER-03).** (EXECUTION-DEFERRED)
    - What we know: the CLI `.bin` shim yields truly pure stdout; `nx run`/`ng run` frame the executor's stdout with task-runner output.
    - What's unclear: whether Nx 23 (non-TTY, `NX_DAEMON=false`) prepends any line to stdout vs stderr for a single target.
    - Recommendation: during execution, capture a real `nx run p:typecheck --format json` stdout and inspect; if framed, extract from the first `{` and assert no advisory text inside the payload; keep the CLI shim path as the authoritative purity proof.
+   - Resolution: EXECUTION-DEFERRED with the documented fallback baked into 32-02 (Tasks 2 + 3 capture the real framing at execution time, extract from the first `{`, and assert no advisory text is inside the parsed payload; the CLI shim in 32-02 Task 1 remains the authoritative pure-stdout proof).
 
-2. **Single machine-reporters integration spec vs two (VER-02).**
+2. **Single machine-reporters integration spec vs two (VER-02).** (RESOLVED)
    - What we know: wave-parallelism prefers disjoint files (`global-diagnostics.integration.spec.ts:18-20`).
    - What's unclear: whether one spec (both formats, both fixtures) or two (json / sarif) is cleaner for the wave plan.
    - Recommendation: two files (`*-json` / `*-sarif` `.integration.spec.ts`) sharing the `validateSarif`/`redactVolatile` helpers from `@workspace/test-util` -- disjoint ownership, one shared snapshot dir.
+   - Resolution: RESOLVED / adopted -- 32-01 creates two files (`machine-reporters-json.integration.spec.ts` + `machine-reporters-sarif.integration.spec.ts`) sharing the `@workspace/test-util` helpers.
 
-3. **Docs spec: new file vs extend `standalone-cli-docs.spec.ts` (DOC-01).**
+3. **Docs spec: new file vs extend `standalone-cli-docs.spec.ts` (DOC-01).** (RESOLVED)
    - Recommendation: a new `machine-readable-docs.spec.ts` keeps the section-scoped tripwire self-contained and mirrors the one-section-per-spec shipped convention (`angular-cli-docs.spec.ts`, `storybook-docs.spec.ts`).
+   - Resolution: RESOLVED / adopted -- 32-04 Task 3 creates the new `machine-readable-docs.spec.ts`.
 
 ## Sources
 
