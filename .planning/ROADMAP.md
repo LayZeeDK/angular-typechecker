@@ -141,7 +141,7 @@ Plans:
   3. A require-graph guard proves the human / JSON / `--help` / CLI-boot paths never load `node-sarif-builder` (nor its transitive `fs-extra`); a REAL-import (not mocked) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop resolves via `(mod.default ?? mod)`, and `@nx/dependency-checks` sees `node-sarif-builder` as a `dependency` (or it is added to `ignoredDependencies` with a one-line comment).
   4. The `'sarif'` enum member is threaded across all three adapter schemas and both schema-parity specs, and no ANSI byte appears in the SARIF payload regardless of `FORCE_COLOR` / TTY.
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans complete
 
 Plans:
 **Wave 1**
@@ -150,7 +150,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 31-02-PLAN.md (Wave 2, depends 31-01) -- The require-graph guard proving human / JSON / `--help` / CLI-boot never load `node-sarif-builder` (nor transitive `fs-extra`) + the REAL-import CJS-under-`await import()` interop test + resolve the `@nx/dependency-checks` lazy-only-`import()` visibility against the real `nx lint`. (VER-04)
+- [x] 31-02-PLAN.md (Wave 2, depends 31-01) -- The require-graph guard proving human / JSON / `--help` / CLI-boot never load `node-sarif-builder` (nor transitive `fs-extra`) + the REAL-import CJS-under-`await import()` interop test + resolve the `@nx/dependency-checks` lazy-only-`import()` visibility against the real `nx lint`. (VER-04)
 
 ### Phase 32: Verification + docs + additive audit
 
@@ -209,7 +209,7 @@ Plans:
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
-| 31. SARIF reporter | v0.2.3 | 1/2 | In Progress|  |
+| 31. SARIF reporter | v0.2.3 | 2/2 | Complete   | 2026-07-18 |
 | 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
 
 ## Backlog

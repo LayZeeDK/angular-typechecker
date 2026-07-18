@@ -88,7 +88,7 @@ Each requirement maps to exactly one phase.
 | VER-01 | Phase 30 | Complete |
 | VER-02 | Phase 32 | Pending |
 | VER-03 | Phase 32 | Pending |
-| VER-04 | Phase 31 | Pending |
+| VER-04 | Phase 31 | Complete |
 | ADD-01 | Phase 32 | Pending |
 | DOC-01 | Phase 32 | Pending |
 
