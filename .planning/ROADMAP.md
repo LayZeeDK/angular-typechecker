@@ -164,14 +164,22 @@ Plans:
   3. A git-diff / `index.drift.ts` barrel audit proves additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (only the new `format` option + the optional `totalFilesCount`), the Angular CLI builder, the CLI flag set, or the generator schemas; `node-sarif-builder` is classified as a `dependency` with the lazy-import visibility resolved; the `v0.3.0` escape hatch stays untriggered (ADD-01).
   4. A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- alongside a curated public CHANGELOG entry in end-user language with no internal ids (DOC-01).
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 32-01: Integration specs -- `run()` + the executor over committed real-cold-compiler fixtures emitting JSON + SARIF; SARIF 2.1.0 schema validation (dev-only validator); volatile-field redaction; cross-OS/Node byte-stability incl. Windows path -> forward-slash URI (VER-02).
-- [ ] 32-02: Shipped-tarball e2e proving the installed package emits valid JSON + schema-valid SARIF via all three adapters, stdout-purity (payload parses), and exit-code parity across formats (VER-03).
-- [ ] 32-03: Additive-only git-diff + barrel-drift audit vs `angular-typechecker@0.2.2` -> `32-ADDITIVE-AUDIT.md`; confirm `node-sarif-builder` dependency classification + `@nx/dependency-checks` resolution (ADD-01).
-- [ ] 32-04: README `## Machine-readable output` section (JSON schema + SARIF `upload-sarif` recipe + the run-from-repo-root caveat) + curated end-user-language CHANGELOG entry (DOC-01).
+**Wave 1** *(parallel; no file overlap)*
+
+- [ ] 32-01-PLAN.md (Wave 1) -- VER-02 integration tier + shared dev-only infra: `ajv`/`ajv-formats` root devDeps + committed SARIF 2.1.0 schema fixture + `validateSarif`/`redactVolatile` in `@workspace/test-util`; two `*.integration.spec.ts` driving `run()` + the executor over `layout-b-host` (mixed TS+NG8xxx) and `global-diagnostics` (file-less) emitting JSON + SARIF; true schema validation; redacted byte-stability across the 6-cell matrix incl. the Windows path -> forward-slash URI (VER-02).
+- [ ] 32-04-PLAN.md (Wave 1) -- DOC-01 docs: README `## Machine-readable output` section (`--format`, JSON payload schema, SARIF `upload-sarif` recipe, run-from-repo-root caveat) + curated UNDATED end-user-language CHANGELOG `0.2.3` entry (version stays `0.2.2`) + a `machine-readable-docs.spec.ts` tripwire (DOC-01).
+
+**Wave 2** *(blocked on 32-01)*
+
+- [ ] 32-02-PLAN.md (Wave 2, depends 32-01) -- VER-03 shipped-tarball e2e across all three adapters (standalone CLI, `ng run`, Nx executor): `runShimSplit` (separate streams) + `--format` parity/purity assertions extended into the cli/ng-cli/install e2e projects; stdout-purity (payload parses), schema-valid SARIF (reusing 32-01's `validateSarif`), exit-code parity across `human`/`json`/`sarif` incl. the coverage-incomplete case (VER-03).
+
+**Wave 3** *(blocked on 32-01 + 32-02)*
+
+- [ ] 32-03-PLAN.md (Wave 3, depends 32-01, 32-02) -- ADD-01 additive-only audit vs `angular-typechecker@0.2.2`: `git diff` per published path + `index.drift.ts` barrel tsc + the dependency proof (ONLY `node-sarif-builder` added; `ajv`/`ajv-formats` root devDeps only) + `nx lint` dependency-checks re-confirmation -> `32-ADDITIVE-AUDIT.md` (ADDITIVE-ONLY, v0.3.0 untriggered) (ADD-01).
 
 ## Progress
 
