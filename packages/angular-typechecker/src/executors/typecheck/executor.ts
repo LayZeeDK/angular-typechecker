@@ -51,7 +51,16 @@ export default async function typecheckExecutor(
     // Surface the loud advisory notices BEFORE the report so they cannot be lost
     // below a long codeframe dump. Each fires only when the core flagged the
     // corresponding condition; a clean run stays silent.
-    emitAdvisoryNotices(result, logger);
+    //
+    // CR-01 / D-08 / T-30-07: gate on the HUMAN format ONLY. @nx/devkit's
+    // `logger.info` routes to STDOUT in a task process, so on a machine format
+    // (json/sarif) an advisory notice would prepend text to the raw JSON payload
+    // written below and break `JSON.parse` / `jq`. The machine payload already
+    // carries every advisory field (summary.suppressed* / advisories.*), so the
+    // notices are redundant there. Human format keeps emitting exactly as before.
+    if (format === 'human') {
+      emitAdvisoryNotices(result, logger);
+    }
 
     const report = await renderReport(result, {
       pathBase: coreOptions.pathBase,
