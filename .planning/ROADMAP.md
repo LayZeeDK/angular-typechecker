@@ -114,12 +114,12 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The machine payload contains NO ANSI escape byte even under `FORCE_COLOR=1` and goes to stdout ONLY, while every advisory/notice/error goes to stderr via the injected `Logger`; `--quiet` silences the stderr chatter without touching the payload or the verdict; `--color`/`--no-color` are explicit overrides layered above the `NO_COLOR` > `FORCE_COLOR` > TTY precedence and affect the human path only.
   4. With `--format` omitted, human output is byte-identical to `angular-typechecker@0.2.2` -- the widened `renderReport` seam, the new `CoreResult.totalFilesCount` field (captured from the live `Program` on the direct path and a deduped source-file `Set` across walked leaves), and the enum on the three adapter schemas + both schema-parity specs are all additive; `builder.ts` is unchanged.
 
-**Plans**: 3 plans (sequential chain Wave 1 -> 2 -> 3; the module/type dependencies force ordering -- json-report reads `CoreResult.totalFilesCount`, render-report imports json-report, the adapters call the widened renderReport)
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 30-01-PLAN.md (Wave 1) -- Observability: capture the OPTIONAL `CoreResult.totalFilesCount` (non-declaration source files) off the live `Program` on the direct path and a name-deduped `Set` across walked leaves via `finalizeUnion`; `evaluateResult` never reads it (negative test) + a real-compiler integration proof. (OBS-01, VER-01)
+- [x] 30-01-PLAN.md (Wave 1) -- Observability: capture the OPTIONAL `CoreResult.totalFilesCount` (non-declaration source files) off the live `Program` on the direct path and a name-deduped `Set` across walked leaves via `finalizeUnion`; `evaluateResult` never reads it (negative test) + a real-compiler integration proof. (OBS-01, VER-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -204,7 +204,7 @@ Plans:
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete | 2026-07-16 |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
-| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 0/3 | Not started | - |
+| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 1/3 | In Progress|  |
 | 31. SARIF reporter | v0.2.3 | 0/2 | Not started | - |
 | 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
 

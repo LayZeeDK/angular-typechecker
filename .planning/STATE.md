@@ -3,17 +3,18 @@ gsd_state_version: 1.0
 milestone: v0.2.3
 milestone_name: Machine-readable reporters
 current_phase: 30
-status: planning
-stopped_at: Phase 30 context gathered
-last_updated: "2026-07-18T01:32:36.826Z"
+current_phase_name: Reporter seam + JSON reporter + --format threading + observability
+status: executing
+stopped_at: Phase 30 plan 30-01 complete (totalFilesCount observability); next 30-02
+last_updated: "2026-07-18T03:10:00Z"
 last_activity: 2026-07-18
-last_activity_desc: Roadmap created for v0.2.3 (3 phases, 13/13 requirements mapped, 0 unmapped)
+last_activity_desc: Executed 30-01 -- CoreResult.totalFilesCount captured on both engine paths (all gates green)
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Roadmap created (v0.2.3 Machine-readable reporters, Phases 30-32) -- ready to plan Phase 30.
+**Current focus:** Phase 30 — Reporter seam + JSON reporter + --format threading + observability
 
 ## Current Position
 
-Phase: 30 -- Reporter seam + JSON reporter + `--format` threading + observability (Not started)
-Plan: —
-Status: Roadmap created; awaiting `/gsd-plan-phase 30`
-Last activity: 2026-07-18 — Roadmap created for v0.2.3 (3 phases, 13/13 requirements mapped, 0 unmapped)
+Phase: 30 (Reporter seam + JSON reporter + --format threading + observability) — EXECUTING
+Plan: 30-01 of 3 COMPLETE; next 30-02 (Wave 2, depends 30-01)
+Status: Executing Phase 30 (1/3 plans done)
+Last activity: 2026-07-18 — Executed 30-01: CoreResult.totalFilesCount captured on both engine paths; all gates green
 
 ## Accumulated Context
 
@@ -93,6 +94,7 @@ archives under `.planning/milestones/`.
 - [Phase 28]: 28-03: dedicated e2e-windows CI job (windows-latest, Node 24) runs ONLY angular-typechecker-cli-e2e (option b, NOT matrix.include which would silently drop the Linux cli-e2e leg); wired into the required ci needs; Linux e2e/discover byte-unchanged; every uses: SHA-pinned; PROJECT env (no command injection); shell:bash for byte-identical -p quoting; GUARD-01f locks the four OS-axis wiring facts via a generalized extractJobLines slicer
 - [Phase 28]: 28-04: VER-05 real-clone UAT is HUMAN-RUN -- 28-04-UAT.md (status pending-human-run) authored by the --auto pipeline; both workspace kinds on-stack Angular 22 (Angular CLI ngx-leaflet @818e9ae + realworld-angular @9e3528f; Nx radix-ng/primitives + analogjs/analog with FRESH human-pinned SHAs), atc -c <tsconfig> RED/GREEN/BAD-PATH; VER-05 stays OPEN until a human runs it and records results (blocking checkpoint, not auto-advanced)
 - [Phase 29]: 29-01: documented the shipped standalone CLI -- README ## Standalone CLI section (npx angular-typechecker canonical; atc post-install PATH alias only + atc@0.0.6 supply-chain warning, never the literal 'npx atc'; 7-flag table mirroring HELP_TEXT; 0/1/2 exit-code table framed as first adapter owning literal 2, reconciled with the pass/fail-only ## Exit codes section) + curated undated ## 0.2.2 CHANGELOG entry (end-user language, no internal ids) + standalone-cli-docs.spec.ts tripwire (supply-chain guard + HELP_TEXT/README drift-lock via exported parseCliArgs(['--help']) + CHANGELOG hygiene). Rule 1: removed stale 'standalone CLI is a non-goal' Limitations line. Docs-only, release NOT cut. nx test(447)/format:check/lint/typecheck green.
+- [Phase 30]: 30-01: added OPTIONAL additive CoreResult.totalFilesCount (non-declaration source-file count) captured on BOTH engine paths -- direct path off the live Program, walk/multi-tsconfig-array via a name-deduped Set<string> (LeafAccumulator.sourceFileNames -> WalkResult -> finalizeUnion), so a source compiled in two leaves counts once (OBS-01/D-11). Verdict-neutral: evaluate-result.ts UNTOUCHED, negative test locks the EvaluateInput omission (T-30-01). KEY: the plan-mandated !isDeclarationFile filter (parity with gather-diagnostics.ts) INCLUDES Angular .ngtypecheck.ts TCB shims, so the count is authored files + generated shims -- the solution-style-overlap real-compiler proof pins the EXACT deduped literal 2 (shared.component.ts + its shim; naive per-leaf sum would be 4). 30-02 must describe summary.totalFilesCount accordingly + tolerate undefined (omitted on no-Program guard paths). index.ts barrel + index.drift.ts byte-unchanged (additive-only held). Deviations: 2 Rule-1 test-stub fixes (infra-failure + walk-references program stubs lacked getSourceFiles). nx test(462)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
 
 ### Roadmap Evolution
 
@@ -234,10 +236,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 30 context gathered
-**Resume file:** .planning/phases/30-reporter-seam-json-reporter-format-threading-observability/30-CONTEXT.md
+**Stopped at:** Phase 30 plan 30-01 complete (totalFilesCount observability, all gates green); next plan 30-02 (Wave 2)
+**Resume file:** .planning/phases/30-reporter-seam-json-reporter-format-threading-observability/30-01-SUMMARY.md
 
-Last session: 2026-07-18T01:32:36.818Z
+Last session: 2026-07-18T03:10:00Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
