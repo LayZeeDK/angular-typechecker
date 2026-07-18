@@ -36,7 +36,7 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
             "text": "Type X is not assignable to type Y.",
           },
           "partialFingerprints": {
-            "atcFingerprint/v1": "f63fd6cf7a2bf9cd4161bb1d351372f33daeaf647f6fc00753584b45ad37e6db",
+            "atcFingerprint/v1": "b48cd85e66c220994c36c958ec69ce1e33d5b80a74036e7f4fb5f1a9b8f0857d",
           },
           "ruleId": "TS2322",
         },
@@ -46,7 +46,7 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
             "text": "a references-only config resolved zero root names",
           },
           "partialFingerprints": {
-            "atcFingerprint/v1": "4d35bd86c010ac0ba7ae51f0263fc57a05739ca7cd675097e02a9b708354d6bc",
+            "atcFingerprint/v1": "02b8de2056417eaeea4135cd878d59ed98905723e62912535c75464f45ea6045",
           },
           "ruleId": "ATC90001",
         },

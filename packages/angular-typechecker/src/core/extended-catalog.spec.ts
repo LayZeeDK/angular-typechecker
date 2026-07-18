@@ -24,6 +24,12 @@ describe('EXTENDED_DIAGNOSTIC_CATALOG (structure / D-06)', () => {
     }
   });
 
+  it('assigns every rule a UNIQUE ngCode (a duplicate would collide SARIF rule ids)', () => {
+    const ngCodes = EXTENDED_DIAGNOSTIC_CATALOG.map((entry) => entry.ngCode);
+
+    expect(new Set(ngCodes).size).toBe(ngCodes.length);
+  });
+
   it('gives every rule a non-empty shortDescription (feeds the SARIF rule catalog)', () => {
     for (const entry of EXTENDED_DIAGNOSTIC_CATALOG) {
       expect(typeof entry.shortDescription).toBe('string');

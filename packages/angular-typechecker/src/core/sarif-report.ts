@@ -140,11 +140,14 @@ function toSarifLevel(
 
 /**
  * A deterministic, OS-invariant `sha256` hex fingerprint over a stable tuple
- * (humanized code + repo-relative URI + ANSI-free message + 1-based start line),
- * newline-joined so field boundaries are unambiguous (D-02). It contains NO
- * absolute path, NO cwd, and NO volatile field (tool version, duration), so it is
- * byte-stable across the OS x Node matrix. A file-less record still gets a
- * fingerprint (empty-string sentinels for the missing URI / line).
+ * (humanized code + repo-relative URI + ANSI-free message + 1-based start line +
+ * 1-based start column), newline-joined so field boundaries are unambiguous (D-02).
+ * The column is part of the tuple so two distinct diagnostics on the SAME line that
+ * share a rule + message (e.g. an unparameterized NG8102 fixed-string message) still
+ * get DISTINCT fingerprints. It contains NO absolute path, NO cwd, and NO volatile
+ * field (tool version, duration), so it is byte-stable across the OS x Node matrix.
+ * A file-less record still gets a fingerprint (empty-string sentinels for the missing
+ * URI / line / column).
  */
 function fingerprintOf(record: DiagnosticRecord): string {
   const tuple = [
@@ -152,6 +155,7 @@ function fingerprintOf(record: DiagnosticRecord): string {
     record.file ?? '',
     record.message,
     record.line ?? '',
+    record.column ?? '',
   ].join('\n');
 
   return createHash('sha256').update(tuple, 'utf8').digest('hex');
