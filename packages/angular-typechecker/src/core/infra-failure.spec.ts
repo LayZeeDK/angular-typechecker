@@ -109,12 +109,15 @@ function fileDiagnostic(code: number, fileName: string): ts.Diagnostic {
 
 // Minimal fake Program for the non-infra-failure path: a real `performCompilation`
 // always returns a `program` whose `getTsProgram().useCaseSensitiveFileNames()`
-// the Phase-3 boundary filter reads. The diagnostics here are file-less, so the
-// filter keeps them regardless -- this stub just satisfies the host access.
+// the Phase-3 boundary filter reads and whose `getTsProgram().getSourceFiles()` the
+// OBS-01 direct-path `totalFilesCount` capture (Phase 30) iterates. The diagnostics
+// here are file-less, so the filter keeps them regardless, and an empty source-file
+// list yields totalFilesCount 0 -- this stub just satisfies both host accesses.
 function fakeProgram(): unknown {
   return {
     getTsProgram: () => ({
       useCaseSensitiveFileNames: () => true,
+      getSourceFiles: () => [],
     }),
   };
 }

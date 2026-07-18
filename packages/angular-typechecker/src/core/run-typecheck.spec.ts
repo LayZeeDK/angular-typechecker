@@ -8,9 +8,11 @@ import {
   NG,
   TCB_GENERATION_FATAL_DIAGNOSTIC_CODE,
 } from './diagnostic-codes';
+import { evaluateResult } from './evaluate-result';
 import {
   detectTemplateCheckAborted,
   resolveFilterBasePath,
+  type CoreResult,
 } from './run-typecheck';
 
 // WR-01 regression: the project-boundary filter keys off `basePath`. An empty
@@ -220,5 +222,72 @@ describe('detectTemplateCheckAborted (RES-02 reframe)', () => {
     ];
 
     expect(detectTemplateCheckAborted(reported)).toBeUndefined();
+  });
+});
+
+// OBS-01 (Phase 30, D-11): `CoreResult.totalFilesCount` is the OPTIONAL,
+// additive non-declaration "files checked" count. Two invariants are locked
+// here on the UNIT tier (the real-compiler capture is proven end-to-end in
+// total-files-count.integration.spec.ts):
+//   1. it is carried on the result shape as a number, and
+//   2. LOAD-BEARING (T-30-01): the verdict NEVER reads it -- `evaluateResult`'s
+//      EvaluateInput Pick omits it, so a run's `{ success, outcome }` is
+//      byte-identical whether or not the field is present, at any value, on both
+//      a passing and a failing verdict. This negative test IS the D-11
+//      verdict-neutrality mitigation.
+describe('CoreResult.totalFilesCount (OBS-01 / D-11)', () => {
+  function coreResult(overrides: Partial<CoreResult> = {}): CoreResult {
+    return {
+      tsConfigPath: '/abs/workspace/packages/app/tsconfig.app.json',
+      rootNamesCount: 3,
+      diagnostics: [],
+      errorCount: 0,
+      warningCount: 0,
+      suppressedThirdParty: 0,
+      suppressedInGraphErrorCount: 0,
+      suppressedInGraphWarningCount: 0,
+      suppressedInGraphFiles: [],
+      durationMs: 1,
+      ...overrides,
+    };
+  }
+
+  it('is carried on the result shape as a number', () => {
+    const result = coreResult({ totalFilesCount: 42 });
+
+    expect(result.totalFilesCount).toBe(42);
+  });
+
+  it('is verdict-neutral: evaluateResult is byte-identical with vs without it, at any count, on a clean AND a failing verdict', () => {
+    const cleanBase = coreResult({ errorCount: 0, warningCount: 0 });
+    const failingBase = coreResult({ errorCount: 1, warningCount: 0 });
+
+    // The two base verdicts are the reference values the count must never move.
+    expect(evaluateResult(cleanBase)).toEqual({
+      success: true,
+      outcome: 'clean',
+    });
+    expect(evaluateResult(failingBase)).toEqual({
+      success: false,
+      outcome: 'type-error',
+    });
+
+    for (const totalFilesCount of [0, 1, 7, 3186]) {
+      const cleanWithCount = coreResult({
+        errorCount: 0,
+        warningCount: 0,
+        totalFilesCount,
+      });
+      const failingWithCount = coreResult({
+        errorCount: 1,
+        warningCount: 0,
+        totalFilesCount,
+      });
+
+      expect(evaluateResult(cleanWithCount)).toEqual(evaluateResult(cleanBase));
+      expect(evaluateResult(failingWithCount)).toEqual(
+        evaluateResult(failingBase),
+      );
+    }
   });
 });

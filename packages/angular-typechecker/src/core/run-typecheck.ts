@@ -137,6 +137,19 @@ export interface CoreResult {
   // is deliberately NOT read by `evaluateResult` (D-05), so it NEVER flips the
   // verdict. Additive/non-breaking (0.x semver).
   bundlerQueryImports?: readonly string[];
+  // OBS-01 (Phase 30, D-11): the count of NON-declaration source files the
+  // type-check actually processed -- the meaningful "files checked" number for
+  // agents/CI, surfaced by the JSON reporter as `summary.totalFilesCount` (30-02).
+  // Captured off the live `Program` on the direct single-leaf path and via a
+  // name-deduped `Set<string>` across walked leaves (walk-references.ts ->
+  // finalizeUnion), always excluding `.d.ts` declaration files (so `lib.d.ts` and
+  // node_modules types are never counted). OPTIONAL + additive via the
+  // value-presence spread idiom -- a required field would break CoreResult under the
+  // 0.2.2 -> 0.2.3 patch bump (Pitfall 14). VERDICT-NEUTRAL: `evaluateResult`'s
+  // EvaluateInput Pick deliberately OMITS it, so the verdict is byte-identical with
+  // or without it present (D-11); a negative test locks that omission. `undefined`
+  // on the no-Program guard paths (empty / none-in-project), where nothing ran.
+  totalFilesCount?: number;
 }
 
 /**
@@ -494,12 +507,24 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     options.tsConfigPath,
   );
 
+  // OBS-01 (Phase 30, D-11): capture the non-declaration source-file count off the
+  // live Program -- the SAME `!isDeclarationFile` iteration gather-diagnostics.ts
+  // uses (so `lib.d.ts` and node_modules types are excluded). The Program is proven
+  // defined here by the `result.program === undefined` guard above. Spread with the
+  // value-presence idiom (like `templateCheckAborted` in finalize) -- additive +
+  // optional (Pitfall 14). VERDICT-NEUTRAL: evaluateResult never reads it (D-11).
+  const totalFilesCount = result.program
+    .getTsProgram()
+    .getSourceFiles()
+    .filter((sourceFile) => !sourceFile.isDeclarationFile).length;
+
   return {
     ...directResult,
     ...presentIfNonEmpty(
       'notTypeCheckedDeclaredFiles',
       notTypeCheckedDeclaredFiles,
     ),
+    ...(totalFilesCount !== undefined ? { totalFilesCount } : {}),
   };
 }
 
