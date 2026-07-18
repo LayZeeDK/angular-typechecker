@@ -41,3 +41,5 @@ export {
   runShim,
   type ShimResult,
 } from './lib/cli-e2e';
+export { validateSarif } from './lib/validate-sarif';
+export { redactVolatile } from './lib/redact-volatile';
