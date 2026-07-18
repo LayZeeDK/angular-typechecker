@@ -1,7 +1,7 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2.3
-milestone_name: -- current milestone)
+milestone_name: Machine-readable reporters
 current_phase: 30
 status: planning
 stopped_at: Phase 30 context gathered

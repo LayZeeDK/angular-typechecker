@@ -100,7 +100,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 </details>
 
-## Phase Details (v0.2.3 -- current milestone)
+## Phase Details (v0.2.3 -- Machine-readable reporters)
 
 ### Phase 30: Reporter seam + JSON reporter + `--format` threading + observability
 
