@@ -141,12 +141,12 @@ Plans:
   3. A require-graph guard proves the human / JSON / `--help` / CLI-boot paths never load `node-sarif-builder` (nor its transitive `fs-extra`); a REAL-import (not mocked) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop resolves via `(mod.default ?? mod)`, and `@nx/dependency-checks` sees `node-sarif-builder` as a `dependency` (or it is added to `ignoredDependencies` with a one-line comment).
   4. The `'sarif'` enum member is threaded across all three adapter schemas and both schema-parity specs, and no ANSI byte appears in the SARIF payload regardless of `FORCE_COLOR` / TTY.
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 
-- [ ] 31-01: Add `node-sarif-builder@^4.1.0` as a `dependency`; implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')` -- repo-relative forward-slash URIs from a realpath-normalized `pathBase` + `path.relative`, `partialFingerprints` (deterministic hash recipe), the file-less no-location fallback, and the 18-NG8xxx `rules[]` catalog from `extended-catalog.members.ts`; thread the `'sarif'` enum member through the three schemas + parity specs.
-- [ ] 31-02: The nx-free / no-`node-sarif-builder`-on-human-JSON-boot require-graph guard + the REAL-import CJS-under-`await import()` interop test + confirm/resolve the `@nx/dependency-checks` lazy-only-`import()` visibility (VER-04).
+- [ ] 31-01-PLAN.md (Wave 1) -- Add `node-sarif-builder@^4.1.0` as a `dependency`; promote the 18-NG8xxx catalog to ONE enum-driven production module (`core/extended-catalog.ts`, single member->ngCode source); implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')`, REUSING the shipped `toDiagnosticRecord` projection (D-13 -- repo-relative URIs / 1-based regions / humanized codes come from the record, NOT a fresh `path.relative`), with `partialFingerprints` (`atcFingerprint/v1` sha256 recipe), the file-less no-location fallback, and the 18-rule catalog; replace the `renderReport` sarif throw + SARIF-shape unit specs (VER-01 slice). The `'sarif'` enum value was already threaded in Phase 30. (REP-02, VER-01)
+- [ ] 31-02-PLAN.md (Wave 2, depends 31-01) -- The require-graph guard proving human / JSON / `--help` / CLI-boot never load `node-sarif-builder` (nor transitive `fs-extra`) + the REAL-import CJS-under-`await import()` interop test + resolve the `@nx/dependency-checks` lazy-only-`import()` visibility against the real `nx lint`. (VER-04)
 
 ### Phase 32: Verification + docs + additive audit
 
