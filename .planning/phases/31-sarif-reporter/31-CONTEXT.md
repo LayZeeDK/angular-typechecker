@@ -74,7 +74,7 @@ Each remains a legitimate plan-time re-open if the planner surfaces new evidence
 - **D-02:** Self-compute `partialFingerprints` as a `sha256` hex digest (Node
   stdlib `crypto` — ZERO new dep) over a stable, OS-invariant tuple:
   humanized `ruleId` + repo-relative forward-slash URI + flattened (ANSI-free)
-  message + 1-based `startLine`. Store it under a VERSIONED property key
+  message + 1-based `startLine` + 1-based `startColumn`. Store it under a VERSIONED property key
   `atcFingerprint/v1`. Hash inputs contain NO absolute path, NO `cwd`, NO volatile
   field (tool version, duration), so the fingerprint is deterministic across the
   OS x Node matrix. File-less diagnostics (D-01) still get a fingerprint (empty-URI
