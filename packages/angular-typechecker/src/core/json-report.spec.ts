@@ -1,6 +1,8 @@
-import ts from 'typescript';
-import type tsType from 'typescript';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,6 +10,8 @@ import {
   positionsOf,
   toDiagnosticRecord,
 } from './diagnostic-record';
+import { formatJsonReport } from './json-report';
+import type { CoreResult } from './run-typecheck';
 
 // ESC (0x1b) built from a char code so no literal control char lives in source
 // (CLAUDE.md ASCII rule). Used to assert the machine payload carries NO ANSI.
@@ -33,14 +37,14 @@ const MESSAGE = ts.DiagnosticCategory.Message;
 const START = 100;
 const SPAN = 15;
 
-function positionedDiag(): tsType.Diagnostic {
+function positionedDiag(): ts.Diagnostic {
   const file = {
     fileName: 'D:/ws/proj/src/y.component.ts',
     getLineAndCharacterOfPosition: (position: number) =>
       position === START
         ? { line: 11, character: 4 }
         : { line: 11, character: 19 },
-  } as unknown as tsType.SourceFile;
+  } as unknown as ts.SourceFile;
 
   return {
     category: ERROR,
@@ -49,12 +53,12 @@ function positionedDiag(): tsType.Diagnostic {
     start: START,
     length: SPAN,
     messageText: 'Type X is not assignable to type Y.',
-  } as tsType.Diagnostic;
+  } as ts.Diagnostic;
 }
 
 // The synthesized guard shape (diagnostic-codes.ts:122-135): file/start/length are
 // undefined BY CONSTRUCTION, so the projection MUST tolerate them (Pitfall 10).
-function filelessDiag(code = ATC90001): tsType.Diagnostic {
+function filelessDiag(code = ATC90001): ts.Diagnostic {
   return {
     category: ERROR,
     code,
@@ -62,7 +66,55 @@ function filelessDiag(code = ATC90001): tsType.Diagnostic {
     start: undefined,
     length: undefined,
     messageText: 'a references-only config resolved zero root names',
-  } as tsType.Diagnostic;
+  } as ts.Diagnostic;
+}
+
+// The version drift-lock reads the SAME manifest the reporter reads, via the repo's
+// established readFileSync idiom (main.spec.ts) -- two dirs above src/core/.
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const manifestVersion = (
+  JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as {
+    version: string;
+  }
+).version;
+
+function coreResult(overrides: Partial<CoreResult> = {}): CoreResult {
+  return {
+    tsConfigPath: 'D:/ws/proj/libs/x/tsconfig.lib.json',
+    rootNamesCount: 3,
+    diagnostics: [],
+    errorCount: 0,
+    warningCount: 0,
+    suppressedThirdParty: 0,
+    suppressedInGraphErrorCount: 0,
+    suppressedInGraphWarningCount: 0,
+    suppressedInGraphFiles: [],
+    durationMs: 5,
+    ...overrides,
+  };
+}
+
+// A CoreResult with EVERY optional field present, so the drift-lock fixture pins the
+// MAXIMAL payload key set (D-03) and the snapshot documents the full shape incl. a
+// file-less diagnostic.
+function maximalResult(): CoreResult {
+  return coreResult({
+    diagnostics: [positionedDiag(), filelessDiag()],
+    errorCount: 2,
+    totalFilesCount: 9,
+    templateCheckAborted: {
+      code: NG8109,
+      fileName: 'D:/ws/proj/src/broken.component.ts',
+    },
+    skippedReferences: [
+      { referencePath: 'D:/ws/proj/other/tsconfig.json', reason: 'out-of-project' },
+    ],
+    suppressedInGraphErrorCount: 1,
+    suppressedInGraphWarningCount: 2,
+    suppressedInGraphFiles: ['D:/ws/proj/libs/x/src/y.ts'],
+    notTypeCheckedDeclaredFiles: ['D:/ws/proj/libs/x/doc.mdx'],
+    bundlerQueryImports: ['./logo.svg?raw'],
+  });
 }
 
 describe('diagnostic-record projection (D-13 / D-01)', () => {
@@ -108,7 +160,7 @@ describe('diagnostic-record projection (D-13 / D-01)', () => {
       expect(tsRecord.rawCode).toBe(TS2322);
 
       const ngRecord = toDiagnosticRecord(
-        { ...positionedDiag(), code: NG8109 } as tsType.Diagnostic,
+        { ...positionedDiag(), code: NG8109 } as ts.Diagnostic,
         ts,
         undefined,
       );
@@ -132,7 +184,7 @@ describe('diagnostic-record projection (D-13 / D-01)', () => {
           ...positionedDiag(),
           code: NG8109,
           category: WARNING,
-        } as tsType.Diagnostic,
+        } as ts.Diagnostic,
         ts,
         undefined,
       );
@@ -141,7 +193,7 @@ describe('diagnostic-record projection (D-13 / D-01)', () => {
     });
 
     it('maps each ts.DiagnosticCategory to its severity label', () => {
-      const cases: readonly [tsType.DiagnosticCategory, string][] = [
+      const cases: readonly [ts.DiagnosticCategory, string][] = [
         [ERROR, 'error'],
         [WARNING, 'warning'],
         [SUGGESTION, 'suggestion'],
@@ -150,7 +202,7 @@ describe('diagnostic-record projection (D-13 / D-01)', () => {
 
       for (const [category, severity] of cases) {
         const record = toDiagnosticRecord(
-          { ...positionedDiag(), category } as tsType.Diagnostic,
+          { ...positionedDiag(), category } as ts.Diagnostic,
           ts,
           undefined,
         );
@@ -179,5 +231,245 @@ describe('diagnostic-record projection (D-13 / D-01)', () => {
       expect(record.message).toBe('Type X is not assignable to type Y.');
       expect(record.message).not.toContain(ESC);
     });
+  });
+});
+
+describe('formatJsonReport (REP-01 / D-02..D-07 / FMT-02/FMT-03)', () => {
+  it('serializes the full payload shape (snapshot, version redacted for release-stability)', () => {
+    const payload = JSON.parse(
+      formatJsonReport(maximalResult(), ts, { pathBase: 'D:/ws/proj' }),
+    );
+
+    expect(payload.version).toBe(manifestVersion);
+    expect({ ...payload, version: '[version]' }).toMatchSnapshot();
+  });
+
+  it('marks formatVersion 1, the tool name, and the version from the package manifest (D-03)', () => {
+    const payload = JSON.parse(formatJsonReport(coreResult(), ts, {}));
+
+    expect(payload.formatVersion).toBe(1);
+    expect(payload.tool).toBe('angular-typechecker');
+    expect(payload.version).toBe(manifestVersion);
+  });
+
+  it('delegates the verdict to evaluateResult -- coverage-incomplete keeps success:false at errorCount 0 (D-07)', () => {
+    const payload = JSON.parse(
+      formatJsonReport(
+        coreResult({
+          errorCount: 0,
+          suppressedInGraphErrorCount: 1,
+          suppressedInGraphFiles: ['D:/ws/proj/libs/x/src/y.ts'],
+        }),
+        ts,
+        { pathBase: 'D:/ws/proj' },
+      ),
+    );
+
+    expect(payload.summary.errorCount).toBe(0);
+    expect(payload.summary.success).toBe(false);
+    expect(payload.summary.outcome).toBe('coverage-incomplete');
+  });
+
+  it('never drops a file-less diagnostic -- file:null + null positions, length one-to-one (Pitfall 10)', () => {
+    const result = coreResult({
+      diagnostics: [positionedDiag(), filelessDiag()],
+      errorCount: 2,
+    });
+
+    const payload = JSON.parse(
+      formatJsonReport(result, ts, { pathBase: 'D:/ws/proj' }),
+    );
+
+    expect(payload.diagnostics).toHaveLength(result.diagnostics.length);
+    expect(payload.diagnostics[0].file).toBe('src/y.component.ts');
+
+    const fileless = payload.diagnostics[1];
+
+    expect(fileless.file).toBeNull();
+    expect(fileless.line).toBeNull();
+    expect(fileless.endColumn).toBeNull();
+    expect(fileless.code).toBe('ATC90001');
+  });
+
+  it('maps severity data-driven over the payload diagnostics', () => {
+    const cases: readonly [ts.DiagnosticCategory, string][] = [
+      [ERROR, 'error'],
+      [WARNING, 'warning'],
+      [SUGGESTION, 'suggestion'],
+      [MESSAGE, 'message'],
+    ];
+
+    for (const [category, severity] of cases) {
+      const payload = JSON.parse(
+        formatJsonReport(
+          coreResult({
+            diagnostics: [{ ...positionedDiag(), category } as ts.Diagnostic],
+          }),
+          ts,
+          {},
+        ),
+      );
+
+      expect(payload.diagnostics[0].severity).toBe(severity);
+    }
+  });
+
+  it('emits no ANSI byte and is byte-identical under FORCE_COLOR=1 (FMT-03 / D-10)', () => {
+    const result = coreResult({
+      diagnostics: [positionedDiag()],
+      errorCount: 1,
+    });
+
+    const plain = formatJsonReport(result, ts, { pathBase: 'D:/ws/proj' });
+
+    expect(plain).not.toContain(ESC);
+
+    const previous = process.env.FORCE_COLOR;
+    process.env.FORCE_COLOR = '1';
+
+    try {
+      const forced = formatJsonReport(result, ts, { pathBase: 'D:/ws/proj' });
+
+      expect(forced).toBe(plain);
+      expect(forced).not.toContain(ESC);
+    } finally {
+      if (previous === undefined) {
+        delete process.env.FORCE_COLOR;
+      } else {
+        process.env.FORCE_COLOR = previous;
+      }
+    }
+  });
+
+  it('surfaces totalFilesCount when present and OMITS the key when undefined (30-01 tolerance)', () => {
+    const withCount = JSON.parse(
+      formatJsonReport(coreResult({ totalFilesCount: 7 }), ts, {}),
+    );
+
+    expect(withCount.summary.totalFilesCount).toBe(7);
+
+    const withoutCount = JSON.parse(formatJsonReport(coreResult(), ts, {}));
+
+    expect(withoutCount.summary).not.toHaveProperty('totalFilesCount');
+  });
+
+  it('omits advisories on a clean run and includes each present-if-non-empty (relativized)', () => {
+    const clean = JSON.parse(formatJsonReport(coreResult(), ts, {}));
+
+    expect(clean.summary).not.toHaveProperty('advisories');
+
+    const payload = JSON.parse(
+      formatJsonReport(maximalResult(), ts, { pathBase: 'D:/ws/proj' }),
+    );
+
+    expect(payload.summary.advisories.bundlerQueryImports).toEqual([
+      './logo.svg?raw',
+    ]);
+    expect(payload.summary.advisories.suppressedInGraphFiles).toEqual([
+      'libs/x/src/y.ts',
+    ]);
+    expect(payload.summary.advisories.notTypeCheckedDeclaredFiles).toEqual([
+      'libs/x/doc.mdx',
+    ]);
+    expect(payload.summary.advisories.templateCheckAborted).toEqual({
+      fileName: 'src/broken.component.ts',
+    });
+    expect(payload.summary.advisories.skippedReferences).toEqual([
+      { referencePath: 'other/tsconfig.json', reason: 'out-of-project' },
+    ]);
+  });
+
+  it('relativizes tsConfigPath against pathBase with forward slashes', () => {
+    const payload = JSON.parse(
+      formatJsonReport(coreResult(), ts, { pathBase: 'D:/ws/proj' }),
+    );
+
+    expect(payload.tsConfigPath).toBe('libs/x/tsconfig.lib.json');
+  });
+
+  it('serializes via JSON.stringify (2-space indented, round-trips)', () => {
+    const payload = formatJsonReport(
+      coreResult({ diagnostics: [positionedDiag()], errorCount: 1 }),
+      ts,
+      { pathBase: 'D:/ws/proj' },
+    );
+
+    expect(payload).toContain('\n  "formatVersion": 1');
+    expect(() => JSON.parse(payload)).not.toThrow();
+  });
+});
+
+describe('JSON payload key drift-lock (D-03)', () => {
+  const TOP_LEVEL_KEYS = [
+    'diagnostics',
+    'formatVersion',
+    'summary',
+    'tool',
+    'tsConfigPath',
+    'version',
+  ];
+  const SUMMARY_KEYS = [
+    'advisories',
+    'diagnosticCount',
+    'errorCount',
+    'outcome',
+    'rootNamesCount',
+    'success',
+    'suppressedInGraphErrorCount',
+    'suppressedInGraphWarningCount',
+    'suppressedThirdParty',
+    'totalFilesCount',
+    'warningCount',
+  ];
+  const ADVISORIES_KEYS = [
+    'bundlerQueryImports',
+    'notTypeCheckedDeclaredFiles',
+    'skippedReferences',
+    'suppressedInGraphFiles',
+    'templateCheckAborted',
+  ];
+  const DIAGNOSTIC_KEYS = [
+    'code',
+    'column',
+    'endColumn',
+    'endLine',
+    'file',
+    'line',
+    'message',
+    'rawCode',
+    'severity',
+  ];
+
+  function maximalPayload(): Record<string, unknown> {
+    return JSON.parse(
+      formatJsonReport(maximalResult(), ts, { pathBase: 'D:/ws/proj' }),
+    );
+  }
+
+  it('locks the top-level payload keys', () => {
+    expect(Object.keys(maximalPayload()).sort()).toEqual(TOP_LEVEL_KEYS);
+  });
+
+  it('locks the summary keys (maximal fixture)', () => {
+    const payload = maximalPayload();
+
+    expect(
+      Object.keys(payload.summary as Record<string, unknown>).sort(),
+    ).toEqual(SUMMARY_KEYS);
+  });
+
+  it('locks the advisories keys (maximal fixture)', () => {
+    const summary = maximalPayload().summary as {
+      advisories: Record<string, unknown>;
+    };
+
+    expect(Object.keys(summary.advisories).sort()).toEqual(ADVISORIES_KEYS);
+  });
+
+  it('locks each diagnostic record key set', () => {
+    const payload = maximalPayload();
+    const diagnostics = payload.diagnostics as Record<string, unknown>[];
+
+    expect(Object.keys(diagnostics[0]).sort()).toEqual(DIAGNOSTIC_KEYS);
   });
 });
