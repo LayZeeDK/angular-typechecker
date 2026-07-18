@@ -95,7 +95,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 <summary>[CURRENT] v0.2.3 -- Machine-readable reporters (Phases 30-32)</summary>
 
 - [x] **Phase 30: Reporter seam + JSON reporter + `--format` threading + observability** - Widen the `renderReport` seam with a `format` discriminator, add the zero-dependency JSON reporter, thread `--format`/`--quiet`/`--color` through all three adapters, and capture the optional `totalFilesCount`. (FMT-01/02/03, REP-01, OBS-01, CLIX-02, VER-01) (completed 2026-07-18)
-- [ ] **Phase 31: SARIF reporter** - The lazy-`import()`ed `node-sarif-builder` SARIF 2.1.0 reporter with repo-relative URIs, partialFingerprints, file-less fallback, the 18-NG8xxx rules catalog, plus the nx-free require-graph guard and CJS-under-`import()` interop test. (REP-02, VER-04)
+- [x] **Phase 31: SARIF reporter** - The lazy-`import()`ed `node-sarif-builder` SARIF 2.1.0 reporter with repo-relative URIs, partialFingerprints, file-less fallback, the 18-NG8xxx rules catalog, plus the nx-free require-graph guard and CJS-under-`import()` interop test. (REP-02, VER-04) (completed 2026-07-18)
 - [ ] **Phase 32: Verification + docs + additive audit** - Integration + shipped-tarball e2e across all three adapters, SARIF schema validation, cross-OS determinism, the additive-only git-diff audit vs `@0.2.2`, and the README/CHANGELOG. (VER-02, VER-03, ADD-01, DOC-01)
 
 </details>
@@ -209,7 +209,7 @@ Plans:
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
-| 31. SARIF reporter | v0.2.3 | 2/2 | Complete   | 2026-07-18 |
+| 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
 | 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
 
 ## Backlog
