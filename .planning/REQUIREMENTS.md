@@ -16,7 +16,7 @@
 ### REP (reporters)
 
 - [ ] **REP-01**: `--format json` emits a stable, documented, agent-parseable payload -- a flat `diagnostics[]` (each: `file` [repo-relative path or `null` for file-less], **1-based** `line`/`column`/`endLine`/`endColumn`, a humanized `code` string [`TS####` / `NG8xxx` / `ATC9000x`] AND the raw `rawCode` int, `severity`, `message`) plus a `summary` carrying the discriminated `outcome`, category counts, `totalFilesCount`, and the structured suppression/advisory fields (`suppressedInGraph*`, `templateCheckAborted`, `skippedReferences`, `notTypeCheckedDeclaredFiles`, `bundlerQueryImports`). No new dependency (`JSON.stringify`). A `formatVersion` marker + tool version; the payload keys are drift-locked. (Design defaults, adjustable at plan time: carry BOTH the decoded label and the raw code; do NOT surface a non-deterministic `durationMs`; do NOT publish a hosted `$schema` URL this milestone.)
-- [ ] **REP-02**: `--format sarif` emits valid SARIF 2.1.0 for GitHub Code Scanning `upload-sarif` -- `runs[].tool.driver` (name / version / informationUri + a `rules[]` catalog for the 18 NG8xxx extended diagnostics) and `results[]` (humanized `ruleId`, mapped `level`, `message.text`, `locations[]` with **repo-relative forward-slash** `artifactLocation.uri` + **1-based** `region`, and self-computed `partialFingerprints`), with deterministic `results[]` ordering. Built with `node-sarif-builder` (`^4.1.0`, MIT, CommonJS) **lazy-`import()`ed ONLY on the SARIF path**. File-less diagnostics (synthesized 90001/90002, global TS) are represented, never dropped. (Design default, adjustable at plan time: file-less diagnostics emit a **no-location result** and rely on the verdict/exit code as the authoritative fail signal, rather than anchoring a synthetic region on the tsconfig.)
+- [x] **REP-02**: `--format sarif` emits valid SARIF 2.1.0 for GitHub Code Scanning `upload-sarif` -- `runs[].tool.driver` (name / version / informationUri + a `rules[]` catalog for the 18 NG8xxx extended diagnostics) and `results[]` (humanized `ruleId`, mapped `level`, `message.text`, `locations[]` with **repo-relative forward-slash** `artifactLocation.uri` + **1-based** `region`, and self-computed `partialFingerprints`), with deterministic `results[]` ordering. Built with `node-sarif-builder` (`^4.1.0`, MIT, CommonJS) **lazy-`import()`ed ONLY on the SARIF path**. File-less diagnostics (synthesized 90001/90002, global TS) are represented, never dropped. (Design default, adjustable at plan time: file-less diagnostics emit a **no-location result** and rely on the verdict/exit code as the authoritative fail signal, rather than anchoring a synthetic region on the tsconfig.)
 
 ### OBS (observability)
 
@@ -82,10 +82,10 @@ Each requirement maps to exactly one phase.
 | FMT-02 | Phase 30 | Pending |
 | FMT-03 | Phase 30 | Pending |
 | REP-01 | Phase 30 | Pending |
-| REP-02 | Phase 31 | Pending |
+| REP-02 | Phase 31 | Complete |
 | OBS-01 | Phase 30 | Pending |
 | CLIX-02 | Phase 30 | Pending |
-| VER-01 | Phase 30 | Pending |
+| VER-01 | Phase 30 | Complete |
 | VER-02 | Phase 32 | Pending |
 | VER-03 | Phase 32 | Pending |
 | VER-04 | Phase 31 | Pending |
@@ -93,6 +93,7 @@ Each requirement maps to exactly one phase.
 | DOC-01 | Phase 32 | Pending |
 
 **Coverage:**
+
 - Milestone requirements: 13 total
 - Mapped to phases: 13 (Phase 30: 7 -- FMT-01/02/03, REP-01, OBS-01, CLIX-02, VER-01; Phase 31: 2 -- REP-02, VER-04; Phase 32: 4 -- VER-02, VER-03, ADD-01, DOC-01)
 - Unmapped: 0

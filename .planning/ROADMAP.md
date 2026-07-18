@@ -141,12 +141,12 @@ Plans:
   3. A require-graph guard proves the human / JSON / `--help` / CLI-boot paths never load `node-sarif-builder` (nor its transitive `fs-extra`); a REAL-import (not mocked) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop resolves via `(mod.default ?? mod)`, and `@nx/dependency-checks` sees `node-sarif-builder` as a `dependency` (or it is added to `ignoredDependencies` with a one-line comment).
   4. The `'sarif'` enum member is threaded across all three adapter schemas and both schema-parity specs, and no ANSI byte appears in the SARIF payload regardless of `FORCE_COLOR` / TTY.
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 31-01-PLAN.md (Wave 1) -- Add `node-sarif-builder@^4.1.0` as a `dependency`; promote the 18-NG8xxx catalog to ONE enum-driven production module (`core/extended-catalog.ts`, single member->ngCode source); implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')`, REUSING the shipped `toDiagnosticRecord` projection (D-13 -- repo-relative URIs / 1-based regions / humanized codes come from the record, NOT a fresh `path.relative`), with `partialFingerprints` (`atcFingerprint/v1` sha256 recipe), the file-less no-location fallback, and the 18-rule catalog; replace the `renderReport` sarif throw + SARIF-shape unit specs (VER-01 slice). The `'sarif'` enum value was already threaded in Phase 30. (REP-02, VER-01)
+- [x] 31-01-PLAN.md (Wave 1) -- Add `node-sarif-builder@^4.1.0` as a `dependency`; promote the 18-NG8xxx catalog to ONE enum-driven production module (`core/extended-catalog.ts`, single member->ngCode source); implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')`, REUSING the shipped `toDiagnosticRecord` projection (D-13 -- repo-relative URIs / 1-based regions / humanized codes come from the record, NOT a fresh `path.relative`), with `partialFingerprints` (`atcFingerprint/v1` sha256 recipe), the file-less no-location fallback, and the 18-rule catalog; replace the `renderReport` sarif throw + SARIF-shape unit specs (VER-01 slice). The `'sarif'` enum value was already threaded in Phase 30. (REP-02, VER-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -209,7 +209,7 @@ Plans:
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
-| 31. SARIF reporter | v0.2.3 | 0/2 | Not started | - |
+| 31. SARIF reporter | v0.2.3 | 1/2 | In Progress|  |
 | 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
 
 ## Backlog

@@ -6,14 +6,14 @@ current_phase: 31
 current_phase_name: SARIF reporter
 status: executing
 stopped_at: Phase 31 context gathered
-last_updated: "2026-07-18T12:07:26.671Z"
+last_updated: "2026-07-18T12:40:28.840Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 31 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
   percent: 50
 ---
 
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 ## Current Position
 
 Phase: 31 (SARIF reporter) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 31
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-07-18 — Phase 31 execution started
 
 ## Accumulated Context
@@ -97,6 +97,8 @@ archives under `.planning/milestones/`.
 - [Phase 30]: 30-01: added OPTIONAL additive CoreResult.totalFilesCount (non-declaration source-file count) captured on BOTH engine paths -- direct path off the live Program, walk/multi-tsconfig-array via a name-deduped Set<string> (LeafAccumulator.sourceFileNames -> WalkResult -> finalizeUnion), so a source compiled in two leaves counts once (OBS-01/D-11). Verdict-neutral: evaluate-result.ts UNTOUCHED, negative test locks the EvaluateInput omission (T-30-01). KEY: the plan-mandated !isDeclarationFile filter (parity with gather-diagnostics.ts) INCLUDES Angular .ngtypecheck.ts TCB shims, so the count is authored files + generated shims -- the solution-style-overlap real-compiler proof pins the EXACT deduped literal 2 (shared.component.ts + its shim; naive per-leaf sum would be 4). 30-02 must describe summary.totalFilesCount accordingly + tolerate undefined (omitted on no-Program guard paths). index.ts barrel + index.drift.ts byte-unchanged (additive-only held). Deviations: 2 Rule-1 test-stub fixes (infra-failure + walk-references program stubs lacked getSourceFiles). nx test(462)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
 - [Phase 30]: 30-02: shipped the zero-dependency JSON reporter + widened the renderReport seam (REP-01/FMT-02/FMT-03/VER-01-slice; FMT-01 seam-half). NEW core/diagnostic-record.ts = the ONE shared pure projection Phase-31 SARIF reuses (D-13): positionsOf file-less-safe single off-by-one helper (0-based+1 both axes, null on undefined file/start), codeStringOf TS####/NG8xxx(via shipped ngCodeOf)/ATC9000x carrying BOTH code+rawCode (D-01), severity from ts.DiagnosticCategory never the code sign, and an exported relativizePath (repo-relative forward-slash, T-30-04) reused for file+tsConfigPath+advisory paths; NO compiler-cli import (json path never loads the ESM peer). NEW core/json-report.ts formatJsonReport(result,ts_,opts) = JSON.stringify-ONLY (D-06) flat diagnostics[] + rich summary; verdict DELEGATED to evaluateResult (D-07 -- coverage-incomplete keeps success:false at errorCount 0, NEVER re-derived), messages via ts.flattenDiagnosticMessageText (no ANSI structurally possible, byte-identical under FORCE_COLOR=1), formatVersion:1 + tool + manifest version (require ../../package.json), totalFilesCount present-if-defined (omit key when undefined, 30-01 tolerance), advisories present-if-non-empty over the five emit-advisory fields with file paths relativized; four key drift-locks (top-level/summary/advisories/diagnostic-record). renderReport WIDENED (D-12): optional format?:ReportFormat default 'human' (shipped callers compile unchanged), result param full CoreResult, switch(format??'human') -> json calls formatJsonReport (loads ts only), sarif THROWS 'Phase 31', human/default loads compiler-cli INSIDE the branch; human output byte-identical. index.ts barrel + index.drift.ts + evaluate-result.ts byte-unchanged (additive-only held; new symbols NOT in the barrel). TDD RED->GREEN separate commits for tasks 1-2 (no pre-commit test gate). Deviations: Rule 3 -- ts99-leak.integration.spec fed the widened seam the full result (nx typecheck caught the partial; nx test missed it, Pitfall 8); prettier line-wrap on json-report.spec. FMT-01 adapter threading + FMT-03 stdout split + VER-01 exit-parity/--quiet slices = 30-03; requirements left Pending (closed at phase verification). nx test(489)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
 - [Phase 30]: 30-03: threaded ONE --format <human|json|sarif> (+ --quiet, --color/--no-color) enum IDENTICALLY through all three adapters over the widened renderReport seam (FMT-01/FMT-03/CLIX-02/VER-01). CLI: parse-args registers the flags with allowNegative:true for --no-color (strict parseArgs, Node 22.4.0+; floor 22.22.3) + an out-of-enum usageError guard mirroring --max-warnings; main.ts does parsed.color ?? colorFromEnv (flag WINS over NO_COLOR>FORCE_COLOR>TTY, D-10, human path only), gates emitAdvisoryNotices on !parsed.quiet (D-09, stderr chatter ONLY), and threads format/maxWarnings/strict into renderReport. Executor+builder: identical format enum (default human) on both schema.json + TypecheckExecutorOptions.format? + NormalizedOptions default; executor.ts forwards format/maxWarnings/strict so --format json takes effect from Nx AND the builder; builder.ts BYTE-UNCHANGED (convertNxExecutor). Both schema-parity EXPECTED_KEYS gain 'format' + an enum/default assertion (the builder satisfies+reverse-probe type-forces it). VER-01 specs: exit code IDENTICAL across human/json incl. coverage-incomplete errorCount===0/success===false->1 (verdict stays evaluateResult's, D-07); --quiet removes the stderr advisory with payload+exit unchanged; --color/--no-color override env; a lastFormat() wiring guard. Inline 'human'|'json'|'sarif' literal union everywhere (not a ReportFormat import) matching the shipped adapter pattern. README ### Options +4 rows (standalone-cli-docs drift-lock green; full ## Machine-readable output prose deferred to Phase 32/DOC-01). Additive-only held: barrel + index.drift.ts byte-unchanged, human path byte-identical with --format omitted. No deviations. nx test(496)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
+- [Phase 31]: 31-01: SARIF 2.1.0 reporter (REP-02/VER-01) -- pure formatSarifReport reached via await import('./sarif-report.js') then await import('node-sarif-builder') (mod.default ?? mod), typed by import type (no @types/sarif/fs-extra/'sarif'); reuses toDiagnosticRecord (D-13) so JSON+SARIF cannot drift; one result per diagnostic, file-less -> no-location never dropped (D-01), sha256 partialFingerprints atcFingerprint/v1 (D-02); verdict stays evaluateResult's, exit-parity human/json/sarif incl coverage-incomplete (D-07). Relative dynamic import needs .js under nodenext (TS2835, Rule 3). node-sarif-builder@^4.1.0 declared; @nx/dependency-checks sees the lazy import -> NO ignoredDependencies (A1 confirmed).
+- [Phase 31]: 31-01: promoted the 18-NG8xxx member->ngCode mapping into ONE dependency-free enum-keyed core/extended-catalog.ts; integration spec now ENRICHES rows from it (ngCode cross-checked byte-identical -> behavior-preserving). helpUri per code (NG8011/NG8021 verified 200). Additive-only: barrel/index.drift.ts/builder.ts byte-unchanged. nx test(517)/typecheck/lint(0)/format:check green. VER-04 guards = 31-02.
 
 ### Roadmap Evolution
 
@@ -241,7 +243,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Phase 31 context gathered
 **Resume file:** .planning/phases/31-sarif-reporter/31-CONTEXT.md
 
-Last session: 2026-07-18T10:46:09.540Z
+Last session: 2026-07-18T12:39:16.960Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -290,3 +292,9 @@ Completed the two teed-up autonomous tasks:
 - ADDITIVE-ONLY charter holds: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only if a
   breaking change proves unavoidable. HUMAN-GATED RELEASE at milestone close via the AGENTS.md Release-PR
   flow (do NOT auto-run).
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Notes |
+|-------|------|----------|-------|
+| Phase 31 P01 | 19min | 3 tasks | 12 files |
