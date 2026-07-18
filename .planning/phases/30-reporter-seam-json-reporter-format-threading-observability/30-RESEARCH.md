@@ -455,20 +455,25 @@ export function formatJsonReport(
 
 **Note:** all three assumptions are internal-signature choices explicitly within Claude's Discretion (CONTEXT `## Claude's Discretion`). No assumed *external facts* -- the one external claim (`allowNegative` version) was VERIFIED. The JSON shape, verdict purity, stdout split, and color precedence are all LOCKED decisions (D-01..D-13) or grounded in shipped source.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> All three resolved at plan time; each recommendation was adopted into the Phase 30 plans (30-01/02/03). Retained for traceability.
 
 1. **Where does the JSON `summary` verdict come from -- reporter-delegates or adapter-passes?**
    - What we know: `summary.outcome`/`success` must come from `evaluateResult(result,{maxWarnings,strict})` (`evaluate-result.ts:116-181`); the adapter ALSO calls it for the exit code.
    - Options: (a) `formatJsonReport` calls `evaluateResult` itself (RenderOptions carries `maxWarnings`/`strict`; two pure calls, identical inputs, cannot diverge -- RECOMMENDED, least adapter churn); (b) the adapter calls `evaluateResult` ONCE before `renderReport` and passes `{success,outcome}` into `RenderOptions` (single call, but reorders the compose so evaluate precedes render in `main.ts`/`executor.ts` -- safe since `evaluateResult` is pure, but a bigger touch).
    - Recommendation: (a). Flag for `30-02`.
+   - **RESOLVED:** adopted (a) -- `formatJsonReport` delegates `summary.outcome`/`success` to `evaluateResult` in 30-02 (D-07 / FMT-02; verdict never re-derived from counts).
 
 2. **What does the `'sarif'` branch do in Phase 30?**
    - What we know: the `'sarif'` enum member must be a VALID `--format` value here (FMT-01), but its renderer is Phase 31.
    - Options: (a) `renderReport`'s `sarif` case throws a clear "SARIF lands in v0.2.3 Phase 31" error (explicit, testable); (b) it is accepted by the schema/parser but the renderer stub returns a placeholder. (a) is cleaner and avoids emitting an invalid payload. Recommendation: (a) -- and assert the enum is ACCEPTED by parse/schema but the renderer throws-not-yet, so exit-code parity tests exclude `sarif` until Phase 31.
    - Flag for `30-01`/`30-03`.
+   - **RESOLVED:** adopted (a) -- the `sarif` branch throws a clear "SARIF lands in Phase 31" error in 30-02; the enum is ACCEPTED by parse/schema, and exit-code-parity tests exclude `sarif` until Phase 31.
 
 3. **How to satisfy the `standalone-cli-docs.spec.ts` flag drift-lock when README docs are Phase 32?** (Pitfall 7)
    - Recommendation: extend the existing `## Standalone CLI` README flag table with `--format`/`--quiet`/`--color`/`--no-color` in `30-03` (a minimal, accurate table row each), leaving the full `## Machine-readable output` schema+recipe prose to Phase 32 (DOC-01). Confirm the derived-flags assertion (`:87-93`) passes.
+   - **RESOLVED:** adopted -- 30-03 extends the README `### Options` flag table for the new flags and keeps the `standalone-cli-docs.spec.ts` drift-lock green; the full `## Machine-readable output` prose is deferred to Phase 32 (DOC-01).
 
 ## Environment Availability
 
