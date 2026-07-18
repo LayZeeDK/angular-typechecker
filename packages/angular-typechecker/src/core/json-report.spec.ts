@@ -107,7 +107,10 @@ function maximalResult(): CoreResult {
       fileName: 'D:/ws/proj/src/broken.component.ts',
     },
     skippedReferences: [
-      { referencePath: 'D:/ws/proj/other/tsconfig.json', reason: 'out-of-project' },
+      {
+        referencePath: 'D:/ws/proj/other/tsconfig.json',
+        reason: 'out-of-project',
+      },
     ],
     suppressedInGraphErrorCount: 1,
     suppressedInGraphWarningCount: 2,
