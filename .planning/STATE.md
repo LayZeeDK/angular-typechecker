@@ -1,20 +1,20 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2.3
-milestone_name: Machine-readable reporters
+milestone_name: -- Machine-readable reporters)
 current_phase: 31
 current_phase_name: SARIF reporter
 status: executing
-stopped_at: Phase 30 plan 30-01 complete (totalFilesCount observability, all gates green); next plan 30-02 (Wave 2)
-last_updated: "2026-07-18T10:34:26.726Z"
+stopped_at: Phase 31 context gathered
+last_updated: "2026-07-18T10:46:09.550Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 30 complete, transitioned to Phase 31
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
   total_plans: 3
   completed_plans: 3
-  percent: 100
+  percent: 50
 ---
 
 # Project State
@@ -238,10 +238,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 30 plan 30-01 complete (totalFilesCount observability, all gates green); next plan 30-02 (Wave 2)
-**Resume file:** .planning/phases/30-reporter-seam-json-reporter-format-threading-observability/30-01-SUMMARY.md
+**Stopped at:** Phase 31 context gathered
+**Resume file:** .planning/phases/31-sarif-reporter/31-CONTEXT.md
 
-Last session: 2026-07-18T03:10:00Z
+Last session: 2026-07-18T10:46:09.540Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
