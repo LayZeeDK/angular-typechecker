@@ -15,7 +15,7 @@ import type { TypecheckExecutorOptions } from './schema';
  *   the `includeDeps` boundary switch, and the `pathBase` (workspace root) the
  *   formatter uses for CI annotation paths.
  * - `maxWarnings` + `strict` are verdict-only knobs (consumed by `evaluateResult`).
- * - `failFast` + `color` are reporter-only (consumed by `renderReport`).
+ * - `failFast` + `color` + `format` are reporter-only (consumed by `renderReport`).
  */
 export interface NormalizedOptions {
   coreOptions: CoreOptions;
@@ -23,6 +23,7 @@ export interface NormalizedOptions {
   failFast: boolean;
   color: boolean;
   strict: boolean;
+  format: 'human' | 'json' | 'sarif';
 }
 
 /**
@@ -67,5 +68,8 @@ export function normalizeOptions(
     failFast: options.failFast ?? false,
     color: process.stdout.isTTY === true,
     strict: options.strict ?? false,
+    // FMT-01: a concrete default (mirroring failFast/strict) since renderReport
+    // reads format as a required discriminator.
+    format: options.format ?? 'human',
   };
 }

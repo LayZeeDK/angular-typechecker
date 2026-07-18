@@ -32,6 +32,12 @@
       "type": "boolean",
       "default": false,
       "description": "Opt-in strict mode: FAIL with the coverage-incomplete outcome when a dropped first-party in-graph warning would otherwise leave the verdict clean. By default such a dropped in-graph warning does not fail on its own (it stays clean unless maxWarnings gates it). strict only adds a fail path; it never turns a fail into a pass."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["human", "json", "sarif"],
+      "default": "human",
+      "description": "Output format. human (default) is the colorized codeframe report; json is the machine-readable payload; sarif lands in a later release."
     }
   },
   "required": ["tsConfig"],

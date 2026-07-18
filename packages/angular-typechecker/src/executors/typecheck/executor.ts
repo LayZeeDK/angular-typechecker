@@ -42,7 +42,7 @@ export default async function typecheckExecutor(
   options: TypecheckExecutorOptions,
   context: ExecutorContext,
 ): Promise<{ success: boolean }> {
-  const { coreOptions, maxWarnings, failFast, color, strict } =
+  const { coreOptions, maxWarnings, failFast, color, strict, format } =
     normalizeOptions(options, context);
 
   try {
@@ -57,6 +57,13 @@ export default async function typecheckExecutor(
       pathBase: coreOptions.pathBase,
       color,
       failFast,
+      // FMT-01/D-08: forward the format selector so --format json takes effect
+      // from the Nx executor AND the Angular CLI builder (which inherits this
+      // call via convertNxExecutor). maxWarnings/strict let the json summary
+      // DELEGATE its verdict to evaluateResult (never re-derive counts).
+      format,
+      maxWarnings,
+      strict,
     });
     // D-04: write the report to RAW stdout, NOT logger.info (which prepends Nx
     // chrome/color and corrupts the byte-deterministic codeframes + GitHub
