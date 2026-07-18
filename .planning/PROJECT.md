@@ -14,7 +14,7 @@ Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): An
 
 ## Current State
 
-**Shipped v0.2.1 (2026-07-16)** -- the latest release, published live to npm as `angular-typechecker@0.2.1` (tokenless OIDC Trusted Publisher + SLSA v1 provenance): adds Angular CLI (`angular.json`) workspace support. It follows v0.2.0 (2026-07-07), v0.1.0 (2026-07-02), the v0.1.1 packaging hotfix, v0.0.3 (2026-06-30), and v0.0.1/v0.0.2 (2026-06-28/29).
+**Shipped v0.2.2 (2026-07-17)** -- the latest release, published live to npm as `angular-typechecker@0.2.2` (tokenless OIDC Trusted Publisher + SLSA v1 provenance): adds a standalone `angular-typechecker` / `atc` CLI binary (a third thin adapter over the same `runTypecheck` core, owning literal OS exit code 2). It follows **v0.2.1 (2026-07-16)** (Angular CLI `angular.json` workspace support), v0.2.0 (2026-07-07), v0.1.0 (2026-07-02), the v0.1.1 packaging hotfix, v0.0.3 (2026-06-30), and v0.0.1/v0.0.2 (2026-06-28/29).
 
 `angular-typechecker` now installs and runs in a plain Angular CLI workspace with no Nx. `ng add angular-typechecker` runs a first-party `ng-add` schematic (a vanilla nx-free `@angular-devkit/schematics` Rule, after a mid-milestone root-cause fix -- see below) that auto-wires a `typecheck` architect target into every application + library project at once. `ng generate angular-typechecker:configuration <project>` wires a single project via an early `tree.exists('angular.json')` write-fork in the shared generator, writing `tsConfig: [buildLeaf, specLeaf]`. `ng run <project>:typecheck` runs the `typecheck` executor re-exported as an Angular CLI builder via `convertNxExecutor` -- the exact same complete Angular type-check (TypeScript + template + extended NG8xxx diagnostics, no emit) as the Nx target, same pass/fail verdict. The engine's `tsConfig` option was widened to `string | string[]` (ENG-01) to support the per-project leaf array. Purely additive beside the existing Nx surface -- audited byte-for-byte against `angular-typechecker@0.2.0` (`24-ADDITIVE-AUDIT.md`), no breaking change, package version stayed on the `0.2.x` line.
 
@@ -35,7 +35,29 @@ The Nx executor is renamed `typecheck` (id `angular-typechecker:typecheck`, BREA
 
 v0.1.0 delivered in five phases (incl. inserted 13.1): **Phase 12** (Extended-diagnostic catalog + completeness tripwire, CAT-01..05/DRIFT-01) -- all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes asserted by exact code/category/count in one enum-keyed `it.each` table, with an enum-vs-table completeness tripwire. **Phase 13** (Engine reference-walking, WALK-01/02) -- `runTypecheck` walks a solution tsconfig's in-project referenced leaves in one call, union + dedupe by value identity, module-boundary-guarded, coarse-cached. **Phase 13.1** (Executor rename, EXEC-01) -- the BREAKING rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck`, driving the 0.0.3 -> 0.1.0 minor bump. **Phase 14** (`configuration` + `init` generators + `nx add`, GEN-01..09) -- config-edit-only generator suite wiring the walk-based target and seeding `nx.json` caching. **Phase 15** (Generator e2e + CI self-audit guard, GE2E-01..03/GUARD-01) -- both generator entry points proven against the real tarball, plus the `-p` set-equality CI guard.
 
-## Current Milestone: v0.2.2 Standalone CLI
+## Current Milestone: v0.2.3 Machine-readable reporters
+
+**Goal:** Add machine-readable output -- JSON (agent-parseable structured diagnostics) and SARIF 2.1.0 (GitHub Code Scanning `upload-sarif`) -- so AI coding agents and CI can consume angular-typechecker's *complete* diagnostic set (TypeScript + template type-check + extended NG8xxx, no emit) as data, across all three adapters (Nx executor, Angular CLI builder, standalone CLI) over the one shared `runTypecheck` core.
+
+**Charter -- ADDITIVE ONLY (version rule):** v0.2.3 ships as a patch bump (`0.2.2 -> 0.2.3`) under 0.x conventional commits. NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (a new reporter/`--format` option + an OPTIONAL `CoreResult.totalFilesCount` field are additive), the Angular CLI builder, the CLI flag set, or the generator schemas. The `v0.3.0` breaking-change escape hatch is triggered only if a breaking change proves unavoidable.
+
+**Target features:**
+- **JSON reporter (REP-01):** an opt-in `--format json` reporter -- a pure function over `CoreResult` mirroring `formatDiagnostics` -- emitting agent-parseable diagnostics (file, line/column, code, category/severity, message) under a stable, documented schema. No new dependency.
+- **SARIF reporter (REP-02):** an opt-in `--format sarif` reporter emitting SARIF 2.1.0 for GitHub Code Scanning `upload-sarif`, built with `node-sarif-builder` (MIT, CommonJS, typed via bundled `@types/sarif`). angular-typechecker still owns the realpath-normalized, workspace-root-relative `artifactLocation` URIs and feeds them to the builder.
+- **Observability (OBS-01):** an OPTIONAL `totalFilesCount` field on `CoreResult` (`@nx/js` parity), surfaced in the JSON payload.
+- **CLI ergonomics (CLIX-02):** `--quiet` and explicit `--color` / `--no-color` overrides for clean machine output.
+- Reporter selection wired through all three adapters (a `--format` flag on the CLI; a matching option on the executor + builder); the default stays the human `formatDiagnostics` output.
+
+**Key context:**
+- **One deliberate new runtime dependency:** `node-sarif-builder` (MIT, CJS, node>=20), classified as a `dependency` and policed by `@nx/dependency-checks`. It is **lazy-`import()`ed only when `--format sarif` is requested** -- the JSON, human, and CLI-flag paths never load it (nor its transitive `fs-extra`). The JSON reporter and the CLI flags stay dependency-free.
+- Reporters are pure over `CoreResult` (like `formatDiagnostics`); they add no engine behavior and never change the pass/fail verdict.
+- On-stack Angular 22 only (off-stack Ng20/21 dropped since v0.2.1).
+
+**Out of scope (carried forward):** `NgtscProgram` incremental + `--watch` (CLIX-01, needs the deferred engine rewrite -- the natural future `v0.3.0` trigger); `createNodesV2` inference (WALK-FUT-01); other reporter formats (codeclimate/compact); Jest; older-Angular support; config-file discovery / glob input (these stay in the project-level Out of Scope below).
+
+**Verification:** the repo's Vitest pyramid -- pure reporter unit tests (snapshot the JSON + SARIF shapes; SARIF validated against the 2.1.0 schema), real-cold-compiler integration over committed fixtures, and a shipped-tarball e2e proving the shipped surfaces emit valid JSON + SARIF.
+
+## Shipped Milestone: v0.2.2 -- Standalone CLI
 
 **Goal:** Ship a standalone `angular-typechecker` command-line binary that runs the *complete* Angular type-check (TypeScript + template type-check + extended NG8xxx, no emit) outside Nx and the Angular CLI -- a third thin adapter over the same `runTypecheck` core -- and finally owns the literal OS exit code `2` for infrastructure errors.
 
@@ -58,7 +80,7 @@ v0.1.0 delivered in five phases (incl. inserted 13.1): **Phase 12** (Extended-di
 
 **Out of scope (carried forward):** machine-readable reporters (JSON/SARIF); `NgtscProgram` incremental; `createNodesV2` inference; older-Angular support; Jest; `--watch`; config-file discovery / glob input (these stay in the project-level Out of Scope below).
 
-**Execution status (2026-07-17):** All five phases (25-29) are EXECUTED and verified -- the milestone is feature-complete pending its close/release. **Phase 25** (advisory-notice seam, CLI-04). **Phase 26** (pure `run(argv,env)` CLI core + two-step 0/1/2 exit-code compose, CLI-02/03 + ARGS + EXIT + VER-01/02). **Phase 27** (flush-safe `bin.ts` shell, two `bin` names, LF-shebang + nodenext bridge survival, nx-free import boundary, additive-only audit vs 0.2.1, CLI-01/PKG/VER-03/ADD-01). **Phase 28** (shipped-tarball e2e across npm/yarn/pnpm on Linux+Windows + real-clone UAT, VER-04/05). **Phase 29** (docs, DOC-01) complete 2026-07-17 -- README `## Standalone CLI` section (install, 7-flag reference, 0/1/2 exit-code table, `npx angular-typechecker` canonical / never `npx atc`), curated undated `## 0.2.2` CHANGELOG entry, and a `standalone-cli-docs.spec.ts` HELP_TEXT drift-lock. Next: milestone audit -> close -> Release PR.
+**Status: CLOSED + RELEASED.** All five phases (25-29) executed + verified; milestone audit PASSED 21/21 (`.planning/milestones/v0.2.2-MILESTONE-AUDIT.md`); `angular-typechecker@0.2.2` published live to npm (tag on the release merge commit, tokenless OIDC + SLSA v1 provenance). **Phase 25** (advisory-notice seam, CLI-04). **Phase 26** (pure `run(argv,env)` CLI core + two-step 0/1/2 exit-code compose, CLI-02/03 + ARGS + EXIT + VER-01/02). **Phase 27** (flush-safe `bin.ts` shell, two `bin` names, LF-shebang + nodenext bridge survival, nx-free import boundary, additive-only audit vs 0.2.1, CLI-01/PKG/VER-03/ADD-01). **Phase 28** (shipped-tarball e2e across npm/yarn/pnpm on Linux+Windows + real-clone UAT, VER-04/05). **Phase 29** (docs, DOC-01) complete 2026-07-17 -- README `## Standalone CLI` section (install, 7-flag reference, 0/1/2 exit-code table, `npx angular-typechecker` canonical / never `npx atc`), curated undated `## 0.2.2` CHANGELOG entry, and a `standalone-cli-docs.spec.ts` HELP_TEXT drift-lock. (Milestone artifacts archived retroactively during the GSD1 -> OpenGSD migration cleanup, 2026-07-18.)
 
 ## Shipped Milestone: v0.2.1 -- Angular CLI workspace support
 
@@ -201,11 +223,11 @@ Full detail with outcomes: `.planning/milestones/v0.2.1-REQUIREMENTS.md`. Audit:
 - `ng add` (Angular CLI) install schematic (GEN-FUT-02) -- SHIPPED in v0.2.1 (see Validated above); no longer out of scope.
 - Angular CLI (`angular.json`) workspace support for the generators via `convertNxGenerator` (GEN-FUT-01) -- SHIPPED in v0.2.1; no longer out of scope.
 - Standalone CLI binary (non-Nx use); owns the literal OS exit code `2` -- PROMOTED to the current milestone v0.2.2 (see Current Milestone above); no longer out of scope.
-- `totalFilesCount` observability field on `CoreResult` (OBS-01, `@nx/js` parity) -- pending charter-fit.
+- `totalFilesCount` observability field on `CoreResult` (OBS-01, `@nx/js` parity) -- PROMOTED to the current milestone v0.2.3 (surfaced in the JSON reporter payload); no longer out of scope.
 - Storybook `*.stories.ts` type-check support -- SHIPPED in v0.2.0 (see Validated above); no longer out of scope.
 - Angular CLI surface for non-Nx `angular.json` workspaces: our Nx executor re-exported as an Angular **builder** via `convertNxExecutor` -- SHIPPED in v0.2.1; no longer out of scope.
 - GitHub-backed self-hosted Nx remote cache -- proposed as v0.2.1 roadmap Phase 25, then removed as lower priority than the already-shipped e2e per-project matrix split; tracked in ROADMAP.md Backlog.
-- Machine-readable reporters: JSON, SARIF, and others.
+- Machine-readable reporters: `--format json` + `--format sarif` -- PROMOTED to the current milestone v0.2.3 (see Current Milestone above); other formats (codeclimate, compact, etc.) remain out of scope.
 - `NgtscProgram` migration -> incremental (`oldProgram` + affected files + `OptimizeFor.SingleFile`) and `--watch` mode.
 - Jest support (ESM-mode only, if feasible -- spike-gated; older tooling proved it infeasible, re-test on current stack).
 - Wider support: older Angular (20/21, non-TS-6) on their Nx versions; future Angular/Nx pairs.
@@ -284,6 +306,8 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 | v0.2.1: `nx` promoted from undeclared-transitive to a direct `^23.0.0` dependency | yarn does not auto-install the `@nx/devkit` peer `nx` (npm/pnpm do); a yarn Angular CLI consumer's `ng add`/`ng run` crashed with `Cannot find module 'nx/src/devkit-exports'` | [OK] Validated v0.2.1 (gap-closure 24-04, post-verification) |
 | v0.2.1: `ng-add` rewritten from a `convertNxGenerator` composition to a vanilla nx-free `@angular-devkit/schematics` Rule (Option C), sharing one framework-agnostic wiring core with the Nx `configuration` generator | Angular CLI's post-install `createSchematic('ng-add')` probe crashed loading nx's `chalk`/`ora`/`log-symbols` chain under yarn 4's last-in-wins hoist; a root-cause product fix rather than a doc caveat or upstream-issue workaround | [OK] Validated v0.2.1 (gap-closure 24-06, post-verification) |
 | v0.2.1: off-stack Angular 21 verification DROPPED from every gate (GATE A', ACV-01) | User directive 2026-07-10; verification stays on-stack Angular 22 only, matching the locked stack | [OK] Validated v0.2.1 |
+| v0.2.3: machine-readable reporters (`--format json` + `--format sarif`) as pure functions over `CoreResult`, wired through all three adapters; default stays `formatDiagnostics` | The agent/CI core value; JSON/SARIF were deferred since v0.0.1; additive (new option + optional field) -> patch bump, no `v0.3.0` trigger | Scoped v0.2.3 |
+| v0.2.3: SARIF built with `node-sarif-builder` (MIT, CJS), lazy-`import()`ed ONLY on `--format sarif` | One deliberate new runtime dep earns its keep vs hand-maintaining SARIF 2.1.0; lazy-load keeps the JSON/human/CLI-flag paths dep-free (no `fs-extra` load) | Scoped v0.2.3 |
 
 ## Evolution
 
@@ -303,7 +327,9 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-17 -- v0.2.2 Phase 29 (Docs, DOC-01) complete: the final phase of the milestone. All phases 25-29 are now executed + verified (README `## Standalone CLI` section, curated `## 0.2.2` CHANGELOG entry, doc-tripwire drift-lock; the CLI is feature-complete). Milestone is ready for its audit -> close -> Release PR. Prior: 2026-07-16 -- v0.2.2 milestone STARTED (Standalone CLI) via `/gsd-new-milestone`: added the `## Current Milestone: v0.2.2` section (ADDITIVE-ONLY charter; a standalone `angular-typechecker`/`atc` CLI binary as a third thin adapter over the core, owning literal OS exit code 2; verified against real on-stack Angular 22 OSS Nx AND Angular CLI workspaces), promoted the standalone-CLI item out of Out of Scope, and reset STATE.md for v0.2.2.*
+*Last updated: 2026-07-18 -- v0.2.3 milestone STARTED (Machine-readable reporters) via `/gsd-new-milestone`: retroactively archived the v0.2.2 Standalone CLI milestone artifacts that the GSD1 -> OpenGSD migration left in the working tree (audit + REQUIREMENTS/ROADMAP -> `.planning/milestones/v0.2.2-*`, phases 25-29 -> `v0.2.2-phases/`, MILESTONES.md entry added), relabeled v0.2.2 as a Shipped Milestone, added the `## Current Milestone: v0.2.3` section (ADDITIVE-ONLY charter; JSON + SARIF reporters + `totalFilesCount` + `--quiet`/`--color`, SARIF via lazy-loaded `node-sarif-builder`), promoted REP-01/REP-02/OBS-01 out of Out of Scope, and reset STATE.md for v0.2.3. Requirements + roadmap next.*
+
+*Prior update: 2026-07-17 -- v0.2.2 Phase 29 (Docs, DOC-01) complete: the final phase of the milestone. All phases 25-29 are now executed + verified (README `## Standalone CLI` section, curated `## 0.2.2` CHANGELOG entry, doc-tripwire drift-lock; the CLI is feature-complete). Milestone is ready for its audit -> close -> Release PR. Prior: 2026-07-16 -- v0.2.2 milestone STARTED (Standalone CLI) via `/gsd-new-milestone`: added the `## Current Milestone: v0.2.2` section (ADDITIVE-ONLY charter; a standalone `angular-typechecker`/`atc` CLI binary as a third thin adapter over the core, owning literal OS exit code 2; verified against real on-stack Angular 22 OSS Nx AND Angular CLI workspaces), promoted the standalone-CLI item out of Out of Scope, and reset STATE.md for v0.2.2.*
 
 *Prior update: 2026-07-16 -- v0.2.1 milestone CLOSED via `/gsd-complete-milestone`: milestone audit PASSED (16/16 requirements ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD, 4/4 phases, 8-of-8 cross-phase integration seams WIRED, 4/4 E2E flows, Nyquist compliant, 0 open threats). All Active v0.2.1 requirements moved to Validated; ROADMAP collapsed to a SHIPPED one-liner; REQUIREMENTS/ROADMAP/audit archived to `.planning/milestones/v0.2.1-*`; REQUIREMENTS.md removed (fresh for next milestone). `angular-typechecker@0.2.1` already published live to npm 2026-07-16 (PR #38 merged, tag on the release merge commit, tokenless OIDC + SLSA v1 provenance) -- this close is bookkeeping-only, no version change. Next: `/gsd-new-milestone`.*
 

@@ -1,33 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2.2
-milestone_name: Standalone CLI
-status: completed
-last_updated: "2026-07-17T16:40:00.000Z"
-last_activity: 2026-07-17
+milestone: v0.2.3
+milestone_name: Machine-readable reporters
+status: planning
+last_updated: "2026-07-18T00:35:58.203Z"
+last_activity: 2026-07-18
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-16 -- v0.2.2 milestone started: Standalone CLI)
+See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Milestone complete
+**Current focus:** Defining requirements (v0.2.3 Machine-readable reporters)
 
 ## Current Position
 
-Phase: 29
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-07-17 - Completed quick task 260717-slr: close the Nx application VER-05 verification gap (shipped bin proven against a real Nx-workspace Angular application leaf; VER-05 matrix now complete)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-07-18 — Milestone v0.2.3 started
 
 ## Accumulated Context
 
