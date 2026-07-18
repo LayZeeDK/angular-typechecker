@@ -71,26 +71,6 @@
   "mode": "yolo",
   "granularity": "standard",
   "context_window": 1000000,
-  "model_overrides": {
-    "gsd-planner": "opus",
-    "gsd-roadmapper": "opus",
-    "gsd-executor": "opus",
-    "gsd-phase-researcher": "opus",
-    "gsd-project-researcher": "opus",
-    "gsd-research-synthesizer": "opus",
-    "gsd-debugger": "opus",
-    "gsd-codebase-mapper": "opus",
-    "gsd-verifier": "opus",
-    "gsd-plan-checker": "opus",
-    "gsd-integration-checker": "opus",
-    "gsd-nyquist-auditor": "opus",
-    "gsd-security-auditor": "opus",
-    "gsd-ui-researcher": "opus",
-    "gsd-ui-checker": "opus",
-    "gsd-ui-auditor": "opus",
-    "gsd-doc-writer": "opus",
-    "gsd-doc-verifier": "opus"
-  },
   "code_quality": {
     "fallow": {
       "enabled": false
