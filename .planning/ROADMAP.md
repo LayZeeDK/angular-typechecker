@@ -103,48 +103,67 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ## Phase Details (v0.2.3 -- current milestone)
 
 ### Phase 30: Reporter seam + JSON reporter + `--format` threading + observability
+
 **Goal**: A user selects machine-readable JSON (or the default human) output via one `--format` flag threaded identically through all three adapters, and gets a stable, documented, agent-parseable JSON payload on stdout -- while the verdict and exit code stay owned by the engine, never re-derived by the reporter. This establishes the widened seam + full three-adapter plumbing that the SARIF reporter reuses.
 **Depends on**: v0.2.2 (shipped)
 **Requirements**: FMT-01, FMT-02, FMT-03, REP-01, OBS-01, CLIX-02, VER-01
 **Success Criteria** (what must be TRUE):
+
   1. `atc -c tsconfig.json --format json` (and the matching Nx executor `format` option + Angular CLI builder `format` option) prints ONE parseable JSON payload to stdout: a flat `diagnostics[]` (each carrying a repo-relative `file` or `null` for file-less, 1-based `line`/`column`/`endLine`/`endColumn`, a humanized `code` string [`TS####`/`NG8xxx`/`ATC9000x`] plus the raw `rawCode` int, `severity`, `message`) and a `summary` (the discriminated `outcome`, category counts, `totalFilesCount`, and the structured suppression/advisory fields), with a `formatVersion` marker + tool version and drift-locked keys.
   2. The exit code for a given project is IDENTICAL across `--format human` and `--format json` (and the omitted default) -- including a coverage-incomplete run where `errorCount === 0` but the run still fails -- proving the reporter is a pure function over `CoreResult` that never re-decides `success` from counts (`evaluateResult`/`toExitCode` stay the sole owners).
   3. The machine payload contains NO ANSI escape byte even under `FORCE_COLOR=1` and goes to stdout ONLY, while every advisory/notice/error goes to stderr via the injected `Logger`; `--quiet` silences the stderr chatter without touching the payload or the verdict; `--color`/`--no-color` are explicit overrides layered above the `NO_COLOR` > `FORCE_COLOR` > TTY precedence and affect the human path only.
   4. With `--format` omitted, human output is byte-identical to `angular-typechecker@0.2.2` -- the widened `renderReport` seam, the new `CoreResult.totalFilesCount` field (captured from the live `Program` on the direct path and a deduped source-file `Set` across walked leaves), and the enum on the three adapter schemas + both schema-parity specs are all additive; `builder.ts` is unchanged.
+
 **Plans**: 3 plans (sequential chain Wave 1 -> 2 -> 3; the module/type dependencies force ordering -- json-report reads `CoreResult.totalFilesCount`, render-report imports json-report, the adapters call the widened renderReport)
 
 Plans:
+**Wave 1**
+
 - [ ] 30-01-PLAN.md (Wave 1) -- Observability: capture the OPTIONAL `CoreResult.totalFilesCount` (non-declaration source files) off the live `Program` on the direct path and a name-deduped `Set` across walked leaves via `finalizeUnion`; `evaluateResult` never reads it (negative test) + a real-compiler integration proof. (OBS-01, VER-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 30-02-PLAN.md (Wave 2, depends 30-01) -- The reporter seam + JSON reporter: a shared pure `core/diagnostic-record.ts` projection (1-based off-by-one helper, `TS####`/`NG8xxx`/`ATC9000x` code strings + `rawCode`, category severity, repo-relative paths); pure `core/json-report.ts` (`formatJsonReport`) with flat `diagnostics[]` + rich `summary` (outcome DELEGATED to `evaluateResult`, `formatVersion:1`, tool version) via `JSON.stringify` only; widen `core/render-report.ts` to dispatch on an optional `format` (default human), moving `loadCompilerCli()` into the human branch (sarif throws "Phase 31") + VER-01 JSON shape/snapshot/no-ANSI/key-drift specs. (FMT-01, FMT-02, FMT-03, REP-01, VER-01)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 30-03-PLAN.md (Wave 3, depends 30-02) -- Thread the `--format` (+ `--quiet`, `--color`/`--no-color` via `allowNegative`) enum through the CLI `parse-args`/`main`, the executor `schema.json`/`schema.d.ts`/`normalize-options`/`executor.ts`, and the builder `schema.json` (builder.ts UNCHANGED); add `'format'` to both `schema-parity` specs + README `### Options` rows (HELP_TEXT drift-lock); add the exit-code-parity (incl. coverage-incomplete), `--quiet`-gates-stderr-only, and `--color`/`--no-color` override unit specs. (FMT-01, FMT-03, CLIX-02, VER-01)
 
 ### Phase 31: SARIF reporter
+
 **Goal**: A user selects `--format sarif` and gets valid SARIF 2.1.0 ready for GitHub Code Scanning `upload-sarif`, built with the one deliberate new dependency (`node-sarif-builder`) that is lazy-`import()`ed ONLY on the SARIF path -- the human / JSON / `--help` / CLI-boot paths never load it. The reporter reuses Phase 30's shared normalized-record projection so JSON and SARIF cannot drift on positions/codes/paths.
 **Depends on**: Phase 30
 **Requirements**: REP-02, VER-04
 **Success Criteria** (what must be TRUE):
+
   1. `atc -c tsconfig.json --format sarif` (and the executor/builder `format: sarif`) emits schema-valid SARIF 2.1.0 to stdout: `runs[].tool.driver` (name / version / informationUri + a `rules[]` catalog for the 18 NG8xxx extended diagnostics) and `results[]` with a humanized `ruleId`, a mapped `level`, `message.text`, and `locations[]` carrying a repo-relative forward-slash `artifactLocation.uri` + a 1-based `region` + self-computed `partialFingerprints`, in deterministic order.
   2. File-less diagnostics (synthesized 90001/90002, global TS) are represented as no-location results and never dropped; the verdict/exit code -- not the SARIF -- is the authoritative fail signal for them, and the exit code stays identical to the human/JSON runs for the same input.
   3. A require-graph guard proves the human / JSON / `--help` / CLI-boot paths never load `node-sarif-builder` (nor its transitive `fs-extra`); a REAL-import (not mocked) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop resolves via `(mod.default ?? mod)`, and `@nx/dependency-checks` sees `node-sarif-builder` as a `dependency` (or it is added to `ignoredDependencies` with a one-line comment).
   4. The `'sarif'` enum member is threaded across all three adapter schemas and both schema-parity specs, and no ANSI byte appears in the SARIF payload regardless of `FORCE_COLOR` / TTY.
+
 **Plans**: TBD
 
 Plans:
+
 - [ ] 31-01: Add `node-sarif-builder@^4.1.0` as a `dependency`; implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')` -- repo-relative forward-slash URIs from a realpath-normalized `pathBase` + `path.relative`, `partialFingerprints` (deterministic hash recipe), the file-less no-location fallback, and the 18-NG8xxx `rules[]` catalog from `extended-catalog.members.ts`; thread the `'sarif'` enum member through the three schemas + parity specs.
 - [ ] 31-02: The nx-free / no-`node-sarif-builder`-on-human-JSON-boot require-graph guard + the REAL-import CJS-under-`await import()` interop test + confirm/resolve the `@nx/dependency-checks` lazy-only-`import()` visibility (VER-04).
 
 ### Phase 32: Verification + docs + additive audit
+
 **Goal**: The SHIPPED tarball emits valid JSON + schema-valid SARIF across all three adapters, the payloads are byte-stable across the OS/Node matrix, the whole milestone is proven additive-only vs `angular-typechecker@0.2.2`, and the README/CHANGELOG document the feature in end-user language. Proof + docs land after both reporters work.
 **Depends on**: Phase 31
 **Requirements**: VER-02, VER-03, ADD-01, DOC-01
 **Success Criteria** (what must be TRUE):
+
   1. An integration tier runs `run()` + the Nx executor over committed real-cold-compiler fixtures emitting JSON + SARIF; the SARIF validates against the 2.1.0 schema (dev-only validator) and both payloads are byte-stable across the OS/Node cells after redacting volatile fields (tool version, any duration), including the Windows path -> forward-slash URI conversion (VER-02).
   2. A shipped-tarball e2e proves the installed package emits valid JSON + schema-valid SARIF through ALL three adapters (Nx executor, `ng run`, CLI `--format`), asserting the stdout payload parses cleanly (stdout-purity) and the exit code is identical across `human`/`json`/`sarif` (VER-03).
   3. A git-diff / `index.drift.ts` barrel audit proves additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (only the new `format` option + the optional `totalFilesCount`), the Angular CLI builder, the CLI flag set, or the generator schemas; `node-sarif-builder` is classified as a `dependency` with the lazy-import visibility resolved; the `v0.3.0` escape hatch stays untriggered (ADD-01).
   4. A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- alongside a curated public CHANGELOG entry in end-user language with no internal ids (DOC-01).
+
 **Plans**: TBD
 
 Plans:
+
 - [ ] 32-01: Integration specs -- `run()` + the executor over committed real-cold-compiler fixtures emitting JSON + SARIF; SARIF 2.1.0 schema validation (dev-only validator); volatile-field redaction; cross-OS/Node byte-stability incl. Windows path -> forward-slash URI (VER-02).
 - [ ] 32-02: Shipped-tarball e2e proving the installed package emits valid JSON + schema-valid SARIF via all three adapters, stdout-purity (payload parses), and exit-code parity across formats (VER-03).
 - [ ] 32-03: Additive-only git-diff + barrel-drift audit vs `angular-typechecker@0.2.2` -> `32-ADDITIVE-AUDIT.md`; confirm `node-sarif-builder` dependency classification + `@nx/dependency-checks` resolution (ADD-01).
