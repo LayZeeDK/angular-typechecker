@@ -40,18 +40,17 @@ describe('totalFilesCount walk-path name-dedupe (solution-style-overlap)', () =>
     });
 
     // EXACT deduped literal (determined by running the fixture, not guessed): the
-    // two DISTINCT non-declaration source files each leaf's Program carries are the
-    // authored `shared.component.ts` AND its Angular-generated
-    // `shared.component.ngtypecheck.ts` TCB shim (a non-declaration `.ts`, so the
-    // `!isDeclarationFile` filter -- matching gather-diagnostics.ts:152-153 -- keeps
-    // it). BOTH leaves compile the SAME `shared.component.ts` at the SAME path (the
-    // sibling walk-references.integration.spec.ts dedupe-collapse test proves that
-    // shared path identity), so both the source AND the shim carry identical
-    // fileNames across the two leaves and the name-deduped Set collapses each to
-    // ONE -> 2. A dedupe regression (a naive per-leaf SUM) would count both files
-    // twice (2 + 2) and yield 4 -- strictly larger -- so this exact-literal
-    // assertion IS the dedupe proof. `>= rootNamesCount` is deliberately avoided
-    // (it passes whether or not dedupe works).
-    expect(result.totalFilesCount).toBe(2);
+    // ONLY authored non-declaration source file each leaf's Program carries is
+    // `shared.component.ts`. Its Angular-generated `shared.component.ngtypecheck.ts`
+    // TCB shim is a non-declaration `.ts`, but WR-01 excludes `.ngtypecheck.ts` shims
+    // from the count (they are compiler-internal, not authored source), so it does NOT
+    // contribute. BOTH leaves compile the SAME `shared.component.ts` at the SAME path
+    // (the sibling walk-references.integration.spec.ts dedupe-collapse test proves that
+    // shared path identity), so the authored file carries an identical fileName across
+    // the two leaves and the name-deduped Set collapses it to ONE -> 1. A dedupe
+    // regression (a naive per-leaf SUM) would count it twice and yield 2 -- strictly
+    // larger -- so this exact-literal assertion IS the dedupe proof. `>= rootNamesCount`
+    // is deliberately avoided (it passes whether or not dedupe works).
+    expect(result.totalFilesCount).toBe(1);
   });
 });

@@ -173,13 +173,21 @@ export function gatherLeafInto(
   );
 
   // OBS-01 (Phase 30, D-11): accumulate this leaf's NON-declaration source files by
-  // NAME off the live Program -- the SAME `!isDeclarationFile` iteration
-  // gather-diagnostics.ts uses, so `lib.d.ts` and node_modules types are excluded.
-  // The Set dedupes across leaves, so a source file both leaves compile is counted
-  // once. `result.program` is live here exactly as it is for the direct path (the
-  // caller re-throws any per-leaf infra-500 over the union afterwards).
+  // NAME off the live Program, so `lib.d.ts` and node_modules types are excluded. The
+  // Set dedupes across leaves, so a source file both leaves compile is counted once.
+  // `result.program` is live here exactly as it is for the direct path (the caller
+  // re-throws any per-leaf infra-500 over the union afterwards).
+  //
+  // WR-01: also skip Angular-generated `.ngtypecheck.ts` TCB shims. They are
+  // non-declaration `.ts` files the compiler injects (one per component), NOT authored
+  // source -- counting them inflates the "files checked" metric and drifts across
+  // Angular versions. The `!isDeclarationFile` parity with gather-diagnostics is for
+  // DIAGNOSTIC iteration; this observability count wants authored files only.
   for (const sourceFile of result.program.getTsProgram().getSourceFiles()) {
-    if (sourceFile.isDeclarationFile) {
+    if (
+      sourceFile.isDeclarationFile ||
+      sourceFile.fileName.endsWith('.ngtypecheck.ts')
+    ) {
       continue;
     }
 

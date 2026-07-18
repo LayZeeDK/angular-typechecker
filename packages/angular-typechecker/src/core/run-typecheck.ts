@@ -515,15 +515,25 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
   );
 
   // OBS-01 (Phase 30, D-11): capture the non-declaration source-file count off the
-  // live Program -- the SAME `!isDeclarationFile` iteration gather-diagnostics.ts
-  // uses (so `lib.d.ts` and node_modules types are excluded). The Program is proven
-  // defined here by the `result.program === undefined` guard above. Spread with the
-  // value-presence idiom (like `templateCheckAborted` in finalize) -- additive +
-  // optional (Pitfall 14). VERDICT-NEUTRAL: evaluateResult never reads it (D-11).
+  // live Program (so `lib.d.ts` and node_modules types are excluded). The Program is
+  // proven defined here by the `result.program === undefined` guard above. Spread
+  // with the value-presence idiom (like `templateCheckAborted` in finalize) --
+  // additive + optional (Pitfall 14). VERDICT-NEUTRAL: evaluateResult never reads it
+  // (D-11).
+  //
+  // WR-01: also exclude Angular-generated `.ngtypecheck.ts` TCB shims. They are
+  // non-declaration `.ts` files the compiler injects (one per component), NOT authored
+  // source -- counting them inflates the "files checked" metric and drifts across
+  // Angular versions. The `!isDeclarationFile` parity with gather-diagnostics is for
+  // DIAGNOSTIC iteration; this observability count wants authored files only.
   const totalFilesCount = result.program
     .getTsProgram()
     .getSourceFiles()
-    .filter((sourceFile) => !sourceFile.isDeclarationFile).length;
+    .filter(
+      (sourceFile) =>
+        !sourceFile.isDeclarationFile &&
+        !sourceFile.fileName.endsWith('.ngtypecheck.ts'),
+    ).length;
 
   return {
     ...directResult,
