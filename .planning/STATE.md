@@ -5,16 +5,16 @@ milestone_name: Machine-readable reporters
 current_phase: 30
 current_phase_name: Reporter seam + JSON reporter + --format threading + observability
 status: executing
-stopped_at: Phase 30 plan 30-01 complete (totalFilesCount observability); next 30-02
-last_updated: "2026-07-18T03:10:00Z"
+stopped_at: Phase 30 plan 30-02 complete (JSON reporter + widened renderReport seam); next 30-03
+last_updated: "2026-07-18T03:50:00Z"
 last_activity: 2026-07-18
-last_activity_desc: Executed 30-01 -- CoreResult.totalFilesCount captured on both engine paths (all gates green)
+last_activity_desc: Executed 30-02 -- zero-dependency JSON reporter + widened renderReport seam (all gates green)
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 ## Current Position
 
 Phase: 30 (Reporter seam + JSON reporter + --format threading + observability) — EXECUTING
-Plan: 30-01 of 3 COMPLETE; next 30-02 (Wave 2, depends 30-01)
-Status: Executing Phase 30 (1/3 plans done)
-Last activity: 2026-07-18 — Executed 30-01: CoreResult.totalFilesCount captured on both engine paths; all gates green
+Plan: 30-02 of 3 COMPLETE; next 30-03 (Wave 3, depends 30-02)
+Status: Executing Phase 30 (2/3 plans done)
+Last activity: 2026-07-18 — Executed 30-02: zero-dependency JSON reporter + widened renderReport seam; all gates green
 
 ## Accumulated Context
 
@@ -95,6 +95,7 @@ archives under `.planning/milestones/`.
 - [Phase 28]: 28-04: VER-05 real-clone UAT is HUMAN-RUN -- 28-04-UAT.md (status pending-human-run) authored by the --auto pipeline; both workspace kinds on-stack Angular 22 (Angular CLI ngx-leaflet @818e9ae + realworld-angular @9e3528f; Nx radix-ng/primitives + analogjs/analog with FRESH human-pinned SHAs), atc -c <tsconfig> RED/GREEN/BAD-PATH; VER-05 stays OPEN until a human runs it and records results (blocking checkpoint, not auto-advanced)
 - [Phase 29]: 29-01: documented the shipped standalone CLI -- README ## Standalone CLI section (npx angular-typechecker canonical; atc post-install PATH alias only + atc@0.0.6 supply-chain warning, never the literal 'npx atc'; 7-flag table mirroring HELP_TEXT; 0/1/2 exit-code table framed as first adapter owning literal 2, reconciled with the pass/fail-only ## Exit codes section) + curated undated ## 0.2.2 CHANGELOG entry (end-user language, no internal ids) + standalone-cli-docs.spec.ts tripwire (supply-chain guard + HELP_TEXT/README drift-lock via exported parseCliArgs(['--help']) + CHANGELOG hygiene). Rule 1: removed stale 'standalone CLI is a non-goal' Limitations line. Docs-only, release NOT cut. nx test(447)/format:check/lint/typecheck green.
 - [Phase 30]: 30-01: added OPTIONAL additive CoreResult.totalFilesCount (non-declaration source-file count) captured on BOTH engine paths -- direct path off the live Program, walk/multi-tsconfig-array via a name-deduped Set<string> (LeafAccumulator.sourceFileNames -> WalkResult -> finalizeUnion), so a source compiled in two leaves counts once (OBS-01/D-11). Verdict-neutral: evaluate-result.ts UNTOUCHED, negative test locks the EvaluateInput omission (T-30-01). KEY: the plan-mandated !isDeclarationFile filter (parity with gather-diagnostics.ts) INCLUDES Angular .ngtypecheck.ts TCB shims, so the count is authored files + generated shims -- the solution-style-overlap real-compiler proof pins the EXACT deduped literal 2 (shared.component.ts + its shim; naive per-leaf sum would be 4). 30-02 must describe summary.totalFilesCount accordingly + tolerate undefined (omitted on no-Program guard paths). index.ts barrel + index.drift.ts byte-unchanged (additive-only held). Deviations: 2 Rule-1 test-stub fixes (infra-failure + walk-references program stubs lacked getSourceFiles). nx test(462)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
+- [Phase 30]: 30-02: shipped the zero-dependency JSON reporter + widened the renderReport seam (REP-01/FMT-02/FMT-03/VER-01-slice; FMT-01 seam-half). NEW core/diagnostic-record.ts = the ONE shared pure projection Phase-31 SARIF reuses (D-13): positionsOf file-less-safe single off-by-one helper (0-based+1 both axes, null on undefined file/start), codeStringOf TS####/NG8xxx(via shipped ngCodeOf)/ATC9000x carrying BOTH code+rawCode (D-01), severity from ts.DiagnosticCategory never the code sign, and an exported relativizePath (repo-relative forward-slash, T-30-04) reused for file+tsConfigPath+advisory paths; NO compiler-cli import (json path never loads the ESM peer). NEW core/json-report.ts formatJsonReport(result,ts_,opts) = JSON.stringify-ONLY (D-06) flat diagnostics[] + rich summary; verdict DELEGATED to evaluateResult (D-07 -- coverage-incomplete keeps success:false at errorCount 0, NEVER re-derived), messages via ts.flattenDiagnosticMessageText (no ANSI structurally possible, byte-identical under FORCE_COLOR=1), formatVersion:1 + tool + manifest version (require ../../package.json), totalFilesCount present-if-defined (omit key when undefined, 30-01 tolerance), advisories present-if-non-empty over the five emit-advisory fields with file paths relativized; four key drift-locks (top-level/summary/advisories/diagnostic-record). renderReport WIDENED (D-12): optional format?:ReportFormat default 'human' (shipped callers compile unchanged), result param full CoreResult, switch(format??'human') -> json calls formatJsonReport (loads ts only), sarif THROWS 'Phase 31', human/default loads compiler-cli INSIDE the branch; human output byte-identical. index.ts barrel + index.drift.ts + evaluate-result.ts byte-unchanged (additive-only held; new symbols NOT in the barrel). TDD RED->GREEN separate commits for tasks 1-2 (no pre-commit test gate). Deviations: Rule 3 -- ts99-leak.integration.spec fed the widened seam the full result (nx typecheck caught the partial; nx test missed it, Pitfall 8); prettier line-wrap on json-report.spec. FMT-01 adapter threading + FMT-03 stdout split + VER-01 exit-parity/--quiet slices = 30-03; requirements left Pending (closed at phase verification). nx test(489)/integration(120)/typecheck/lint(maxWarnings:0)/format:check green.
 
 ### Roadmap Evolution
 

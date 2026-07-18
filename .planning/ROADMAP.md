@@ -114,7 +114,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The machine payload contains NO ANSI escape byte even under `FORCE_COLOR=1` and goes to stdout ONLY, while every advisory/notice/error goes to stderr via the injected `Logger`; `--quiet` silences the stderr chatter without touching the payload or the verdict; `--color`/`--no-color` are explicit overrides layered above the `NO_COLOR` > `FORCE_COLOR` > TTY precedence and affect the human path only.
   4. With `--format` omitted, human output is byte-identical to `angular-typechecker@0.2.2` -- the widened `renderReport` seam, the new `CoreResult.totalFilesCount` field (captured from the live `Program` on the direct path and a deduped source-file `Set` across walked leaves), and the enum on the three adapter schemas + both schema-parity specs are all additive; `builder.ts` is unchanged.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
@@ -123,7 +123,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 30-02-PLAN.md (Wave 2, depends 30-01) -- The reporter seam + JSON reporter: a shared pure `core/diagnostic-record.ts` projection (1-based off-by-one helper, `TS####`/`NG8xxx`/`ATC9000x` code strings + `rawCode`, category severity, repo-relative paths); pure `core/json-report.ts` (`formatJsonReport`) with flat `diagnostics[]` + rich `summary` (outcome DELEGATED to `evaluateResult`, `formatVersion:1`, tool version) via `JSON.stringify` only; widen `core/render-report.ts` to dispatch on an optional `format` (default human), moving `loadCompilerCli()` into the human branch (sarif throws "Phase 31") + VER-01 JSON shape/snapshot/no-ANSI/key-drift specs. (FMT-01, FMT-02, FMT-03, REP-01, VER-01)
+- [x] 30-02-PLAN.md (Wave 2, depends 30-01) -- The reporter seam + JSON reporter: a shared pure `core/diagnostic-record.ts` projection (1-based off-by-one helper, `TS####`/`NG8xxx`/`ATC9000x` code strings + `rawCode`, category severity, repo-relative paths); pure `core/json-report.ts` (`formatJsonReport`) with flat `diagnostics[]` + rich `summary` (outcome DELEGATED to `evaluateResult`, `formatVersion:1`, tool version) via `JSON.stringify` only; widen `core/render-report.ts` to dispatch on an optional `format` (default human), moving `loadCompilerCli()` into the human branch (sarif throws "Phase 31") + VER-01 JSON shape/snapshot/no-ANSI/key-drift specs. (FMT-01, FMT-02, FMT-03, REP-01, VER-01)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -204,7 +204,7 @@ Plans:
 | 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete | 2026-07-16 |
 | 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
-| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 1/3 | In Progress|  |
+| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 2/3 | In Progress|  |
 | 31. SARIF reporter | v0.2.3 | 0/2 | Not started | - |
 | 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
 
