@@ -7,8 +7,9 @@ import type { CoreResult } from './run-typecheck';
 /**
  * The output format the seam dispatches on (FMT-01 / D-12). `human` is the shipped
  * colorized codeframe report; `json` is the zero-dependency machine payload
- * (`formatJsonReport`); `sarif` is a VALID enum member here but its renderer lands
- * in Phase 31 -- the `sarif` case throws until then.
+ * (`formatJsonReport`); `sarif` is the SARIF 2.1.0 machine payload
+ * (`formatSarifReport`, REP-02), lazy-`import()`ed so its `node-sarif-builder`
+ * dependency loads ONLY on the SARIF path.
  */
 export type ReportFormat = 'human' | 'json' | 'sarif';
 
@@ -43,8 +44,12 @@ export interface RenderOptions {
  * - `json`: `formatJsonReport` over the full `CoreResult`. Loads `typescript`
  *   (already warm from `runTypecheck`) but NOT `@angular/compiler-cli` -- the
  *   machine path never pays for the heavy ESM peer.
- * - `sarif`: throws -- the renderer lands in Phase 31 (the enum is valid here so
- *   the adapters can thread it; only the renderer is deferred).
+ * - `sarif`: `formatSarifReport` over the full `CoreResult`, reached via a lazy
+ *   `await import('./sarif-report.js')` (D-03) so `node-sarif-builder` (+ its
+ *   transitive `fs-extra`) load ONLY on the SARIF path. The `.js` specifier is
+ *   required for a relative dynamic import under `module: nodenext` (a CommonJS
+ *   file preserves `import()` rather than downleveling to `require`). Like `json`,
+ *   it loads `typescript` but NOT `@angular/compiler-cli`.
  * - `human` (default): loads the memoized `@angular/compiler-cli` and delegates to
  *   `formatReport`, byte-identical to v0.2.2.
  *
@@ -71,10 +76,13 @@ export async function renderReport(
     }
 
     case 'sarif': {
-      throw new Error(
-        'angular-typechecker: the SARIF reporter lands in Phase 31 (v0.2.3). ' +
-          'Use --format json or --format human until then.',
-      );
+      // D-03: the SARIF renderer + node-sarif-builder are reached ONLY via this
+      // lazy import, so the human / JSON / --help / CLI-boot paths never load them
+      // (the 31-02 require-graph guard locks it). `ts_` is already loaded above and
+      // `options.pathBase` is already threaded -- no adapter change is required.
+      const { formatSarifReport } = await import('./sarif-report.js');
+
+      return formatSarifReport(result, ts_, options.pathBase);
     }
 
     case 'human':

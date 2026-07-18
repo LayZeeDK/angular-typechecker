@@ -208,8 +208,8 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
     });
   });
 
-  describe('FMT-02 / D-07: exit-code parity across --format human and --format json', () => {
-    it('yields the IDENTICAL exit code for the same CoreResult under human and json (type-error -> 1)', async () => {
+  describe('FMT-02 / D-07: exit-code parity across --format human, json and sarif', () => {
+    it('yields the IDENTICAL exit code for the same CoreResult under human, json and sarif (type-error -> 1)', async () => {
       mocks.runTypecheck.mockResolvedValue(coreResult(2));
       mocks.evaluateResult.mockReturnValue({
         success: false,
@@ -218,15 +218,18 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
 
       const human = await run(['-c', 'tsconfig.app.json', '--format', 'human']);
       const json = await run(['-c', 'tsconfig.app.json', '--format', 'json']);
+      const sarif = await run(['-c', 'tsconfig.app.json', '--format', 'sarif']);
 
       expect(human.exitCode).toBe(json.exitCode);
+      expect(sarif.exitCode).toBe(human.exitCode);
+      expect(sarif.exitCode).toBe(json.exitCode);
       expect(json.exitCode).toBe(1);
     });
 
-    // The cardinal anti-false-pass MUST hold under json too: errorCount === 0 but
+    // The cardinal anti-false-pass MUST hold under sarif too: errorCount === 0 but
     // success === false still exits 1, because the verdict is evaluateResult's, not
-    // the reporter's -- the format never changes the exit code (D-07).
-    it('keeps the coverage-incomplete anti-false-pass (errorCount 0, success false -> 1) under BOTH formats', async () => {
+    // the reporter's -- the format never changes the exit code (D-07 / VER-01).
+    it('keeps the coverage-incomplete anti-false-pass (errorCount 0, success false -> 1) under ALL THREE formats', async () => {
       mocks.runTypecheck.mockResolvedValue(coreResult(0));
       mocks.evaluateResult.mockReturnValue({
         success: false,
@@ -235,9 +238,11 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
 
       const human = await run(['-c', 'tsconfig.app.json', '--format', 'human']);
       const json = await run(['-c', 'tsconfig.app.json', '--format', 'json']);
+      const sarif = await run(['-c', 'tsconfig.app.json', '--format', 'sarif']);
 
       expect(human.exitCode).toBe(1);
       expect(json.exitCode).toBe(1);
+      expect(sarif.exitCode).toBe(1);
     });
 
     it('threads the selected --format into renderReport, defaulting to human (wiring guard)', async () => {

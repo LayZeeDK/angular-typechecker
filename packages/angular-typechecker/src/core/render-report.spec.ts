@@ -175,9 +175,17 @@ describe('renderReport (D-02 seam)', () => {
     expect(out).not.toContain(ESC);
   });
 
-  it('throws a Phase-31 error for format:sarif (enum valid here, renderer deferred)', async () => {
-    await expect(
-      renderReport(coreResultOf([]), { format: 'sarif', color: false }),
-    ).rejects.toThrow(/Phase 31/);
+  it('dispatches format:sarif to formatSarifReport (parseable SARIF 2.1.0, ANSI-free)', async () => {
+    const out = await renderReport(
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts')]),
+      { format: 'sarif', color: false, pathBase: 'D:/ws/proj' },
+    );
+
+    const log = JSON.parse(out);
+
+    expect(log.version).toBe('2.1.0');
+    expect(log.runs[0].results).toHaveLength(1);
+    expect(log.runs[0].results[0].ruleId).toBe('TS2322');
+    expect(out).not.toContain(ESC);
   });
 });
