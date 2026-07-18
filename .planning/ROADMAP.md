@@ -144,8 +144,12 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 31-01-PLAN.md (Wave 1) -- Add `node-sarif-builder@^4.1.0` as a `dependency`; promote the 18-NG8xxx catalog to ONE enum-driven production module (`core/extended-catalog.ts`, single member->ngCode source); implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')`, REUSING the shipped `toDiagnosticRecord` projection (D-13 -- repo-relative URIs / 1-based regions / humanized codes come from the record, NOT a fresh `path.relative`), with `partialFingerprints` (`atcFingerprint/v1` sha256 recipe), the file-less no-location fallback, and the 18-rule catalog; replace the `renderReport` sarif throw + SARIF-shape unit specs (VER-01 slice). The `'sarif'` enum value was already threaded in Phase 30. (REP-02, VER-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 31-02-PLAN.md (Wave 2, depends 31-01) -- The require-graph guard proving human / JSON / `--help` / CLI-boot never load `node-sarif-builder` (nor transitive `fs-extra`) + the REAL-import CJS-under-`await import()` interop test + resolve the `@nx/dependency-checks` lazy-only-`import()` visibility against the real `nx lint`. (VER-04)
 
 ### Phase 32: Verification + docs + additive audit
