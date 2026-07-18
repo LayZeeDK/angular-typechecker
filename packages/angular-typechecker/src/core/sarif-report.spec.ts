@@ -49,6 +49,26 @@ function positionedDiag(): ts.Diagnostic {
   } as ts.Diagnostic;
 }
 
+// Two diagnostics that share the SAME line, SAME rule code, and SAME (unparameterized)
+// message text but sit at DIFFERENT columns -- the exact same-line-collision scenario
+// the fingerprint fix (commit d3e1cd3) closed. Prior to that fix the tuple omitted
+// `column`, so these two would have produced IDENTICAL `atcFingerprint/v1` values.
+function diagAtColumn(character: number): ts.Diagnostic {
+  const file = {
+    fileName: 'D:/ws/proj/src/y.component.ts',
+    getLineAndCharacterOfPosition: () => ({ line: 11, character }),
+  } as unknown as ts.SourceFile;
+
+  return {
+    category: ERROR,
+    code: TS2322,
+    file,
+    start: character,
+    length: 1,
+    messageText: 'Type X is not assignable to type Y.',
+  } as ts.Diagnostic;
+}
+
 // A synthesized guard shape (diagnostic-codes.ts:122-135): file/start/length are
 // undefined BY CONSTRUCTION -> a no-location SARIF result (D-01).
 function filelessDiag(code = ATC90001): ts.Diagnostic {
@@ -183,6 +203,35 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
         /^[0-9a-f]{64}$/,
       );
     }
+  });
+
+  it('gives two same-line, same-rule, same-message diagnostics DISTINCT fingerprints when their columns differ (D-02 collision fix)', async () => {
+    const log = await sarifOf(
+      coreResult({
+        diagnostics: [diagAtColumn(5), diagAtColumn(10)],
+        errorCount: 2,
+      }),
+    );
+
+    expect(log.runs[0].results).toHaveLength(2);
+
+    const [first, second] = log.runs[0].results;
+
+    // Same rule + message (the collision precondition) but different columns...
+    expect(first.ruleId).toBe(second.ruleId);
+    expect(first.message.text).toBe(second.message.text);
+    expect(first.locations?.[0].physicalLocation.region.startLine).toBe(
+      second.locations?.[0].physicalLocation.region.startLine,
+    );
+    expect(first.locations?.[0].physicalLocation.region.startColumn).not.toBe(
+      second.locations?.[0].physicalLocation.region.startColumn,
+    );
+
+    // ...must NOT collide on partialFingerprints (GitHub would otherwise merge two
+    // distinct alerts into one).
+    expect(first.partialFingerprints?.['atcFingerprint/v1']).not.toBe(
+      second.partialFingerprints?.['atcFingerprint/v1'],
+    );
   });
 
   it('maps each severity to its SARIF level (suggestion/message -> note)', async () => {
