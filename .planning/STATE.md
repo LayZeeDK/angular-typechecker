@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v0.2.3
 milestone_name: Machine-readable reporters
 status: planning
-last_updated: "2026-07-18T00:35:58.203Z"
+last_updated: "2026-07-18T01:10:00.000Z"
 last_activity: 2026-07-18
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Defining requirements (v0.2.3 Machine-readable reporters)
+**Current focus:** Roadmap created (v0.2.3 Machine-readable reporters, Phases 30-32) -- ready to plan Phase 30.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 30 -- Reporter seam + JSON reporter + `--format` threading + observability (Not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-18 — Milestone v0.2.3 started
+Status: Roadmap created; awaiting `/gsd-plan-phase 30`
+Last activity: 2026-07-18 — Roadmap created for v0.2.3 (3 phases, 13/13 requirements mapped, 0 unmapped)
 
 ## Accumulated Context
 
@@ -77,7 +77,7 @@ archives under `.planning/milestones/`.
 - [Phase 24]: 24-05 (gap closure): finalized the CI-authoritative CLI e2e coverage on the 24-04 fix. YARN spec (flat + workspace): stripped debug scaffolding, installs via the REAL `ng add angular-typechecker` (nx now transitive via 24-04), asserts `ng add` did NOT wire under yarn, then wires via `ng g angular-typechecker:ng-add`. KEY FINDING (three e2e runs): yarn's `ng add` INSTALLS but does NOT auto-wire -- Angular CLI's post-install ng-add detection (`createSchematic('ng-add')`) silently fails on yarn's node-modules layout; npm + pnpm both run the same schematic on the identical package (NOT an angular-typechecker defect, NOT collection-resolution). Coordinator-approved Option A1: keep real `ng add` install + `ng g` wire (the plan's own authorized `ng add`-misbehaves->`ng g` fallback); Task-1 acceptance grep `ng g...` becomes 1 (approved deviation), other 3 scaffolding tokens 0, `enableMirror:false` retained. NEW pnpm spec: committed ACV-01 gate #2 (CLI x pnpm-workspace root-name-collision) -- `ng add` wires the app target with the FULL `[tsconfig.app.json, tsconfig.spec.json]` array (build leaf never dropped) + per-project scoping. pnpm build-gate satisfied via `strictDepBuilds: false` (skip ALL build scripts) NOT the planned `allowBuilds:{nx:true}` (the full Angular fixture flags 5-6 native build-script deps, not just nx); this changes threat T-24-10 to "no dependency build scripts run at all" (MORE restrictive, mirrors npm's skip-and-succeed). All 4 specs green (npm+yarnx2+pnpm); coverage guard green (349). Debug doc `cli-yarn-e2e-wrong-version.md` resolved.
 - [Phase 24]: 24-04 (gap closure): ACP-02 root-cause product fix -- declared `nx` as a DIRECT `^23.0.0` dependency in the plugin manifest (NOT a peer). `@nx/devkit`'s entrypoint `require()`s `nx/src/devkit-exports` at load and yarn does not auto-install peers (npm/pnpm do), so a yarn Angular CLI consumer crashed on `ng add`/`ng run` with `Cannot find module 'nx/src/devkit-exports'`; declaring `nx` directly fixes it for every PM. Range `^23.0.0` is a strict subset of `@nx/devkit@23.0.1`'s `nx` peer -> no double-constraint, cannot pull nx 22/24. Inverted BOTH `package-manifest.spec.ts` nx-absent guards (now assert `dependencies.nx === '^23.0.0'`, still not a peer) + restated header comment/it-titles; added `'nx'` to `@nx/dependency-checks` `ignoredDependencies` (unimported runtime-transitive dep) so `nx lint` stays green at maxWarnings:0. Flipped the identical operative Dependencies constraint in PROJECT.md + CLAUDE.md and date-annotated (not rewrote) the CLAUDE.md STACK-research rows + the "What NOT to Use" nx row with `[v0.2.1 CORRECTION (2026-07-12): ...]`; AGENTS.md byte-unchanged. nx test(349)/lint/build green; dist manifest carries `nx: ^23.0.0`.
 
-- [Phase 24]: 24-06 (gap closure): NGADD-01 yarn first-run auto-wire (Option C, spike-CONFIRMED). Made the ng-add schematic a VANILLA @angular-devkit/schematics Rule -- Rule/Tree/SchematicContext type-only imports (erased at compile), so the compiled schematic.js requires ONLY the pure first-party core (ZERO @nx/devkit). The Angular CLI post-install createSchematic('ng-add') probe no longer loads nx's ora/log-symbols/chalk chain (the `chalk.blue is not a function` throw under yarn 4's last-in-wins hoist), so `ng add angular-typechecker` AUTO-WIRES every application + library project on the FIRST run under yarn 4 (npm+pnpm already worked). Reading angular.json directly is also collision-immune (ACV-01). EXTRACTED (not duplicated) the leaf-array resolution + targetName default/empty-guard + collision-by-builder + [build,spec] idempotent merge into src/core/angular-cli-wiring.ts -- pure (node:path posix.join replaces devkit joinPathFragments; an injected exists() callback replaces tree.exists; every error string byte-preserved), enforced framework-agnostic by the D-11 core/** lint boundary. BOTH the vanilla ng-add AND the Nx configuration generator import it; the Nx configuration observable behavior is byte-identical (configuration.spec + configuration-angular-cli.spec + configuration-matrix.spec + schema-parity.spec + all init specs green). Deleted the dead generators/ng-add/generator.ts (schema.json/schema.d.ts kept; collection.json byte-unchanged; ng-add still absent from generators.json). Flipped the CI-authoritative yarn CLI e2e to assert first-run `ng add` auto-wire (dropped the `ng g` fallback + the no-wire quirk-lock; enableMirror:false retained); retired the README yarn-caveat todo (product-fixed -> pending/->done/, README needs no edit). Additive-only vs 0.2.0 holds (unreleased-surface implementation change). Deviations (Rule 3): the migrated ng-add spec invokes the synchronous Rule directly with a runner.logger-backed context (SchematicTestRunner.callRule builds a NullLogger context and crashes on a passed parent logger, so it cannot capture context.logger notices); removed a non-null assertion (read angular.json once, null => absent) for maxWarnings:0. nx test(366)/build/lint/typecheck green; standalone nx e2e angular-typechecker-ng-cli-e2e green 4/4 (npm + yarn flat + yarn workspace first-run auto-wire + pnpm collision). KNOWN INFRA (not 24-06): `nx run-many -t e2e --parallel=1` fails only on ng-cli-e2e via an Nx local-registry task re-invocation ("already invoked by a parent Nx process in this chain"), Nx-flagged flaky; install(37)/matrix(7)/cache(9) pass under run-many and ng-cli-e2e passes standalone -- CI runs each e2e as a fresh per-job `npm ci` (not run-many), so the conflict does not occur in CI.
+- [Phase 24]: 24-06 (gap closure): NGADD-01 yarn first-run auto-wire (Option C, spike-CONFIRMED). Made the ng-add schematic a VANILLA @angular-devkit/schematics Rule -- Rule/Tree/SchematicContext type-only imports (erased at compile), so the compiled schematic.js requires ONLY the pure first-party core (ZERO @nx/devkit). The Angular CLI post-install createSchematic('ng-add') probe no longer loads nx's ora/log-symbols/chalk chain (the `chalk.blue is not a function` throw under yarn 4's last-in-wins hoist), so `ng add angular-typechecker` AUTO-WIRES every application + library project on the FIRST run under yarn 4 (npm+pnpm already worked). Reading angular.json directly is also collision-immune (ACV-01). EXTRACTED (not duplicated) the leaf-array resolution + targetName default/empty-guard + collision-by-builder + [build,spec] idempotent merge into src/core/angular-cli-wiring.ts -- pure (node:path posix.join replaces devkit joinPathFragments; an injected exists() callback replaces tree.exists; every error string byte-preserved), enforced framework-agnostic by the D-11 core/** lint boundary. BOTH the vanilla ng-add AND the Nx configuration generator import it; the Nx configuration observable behavior is byte-identical (configuration.spec + configuration-angular-cli.spec + configuration-matrix.spec + schema-parity.spec + all init specs green). Deleted the dead generators/ng-add/generator.ts (schema.json/schema.d.ts kept; collection.json byte-unchanged; ng-add still absent from generators.json). Flipped the CI-authoritative yarn CLI e2e to assert first-run `ng add` auto-wire (dropped the `ng g` fallback + the no-wire quirk-lock; enableMirror:false retained). Additive-only vs 0.2.0 holds (unreleased-surface implementation change). Deviations (Rule 3): the migrated ng-add spec invokes the synchronous Rule directly with a runner.logger-backed context (SchematicTestRunner.callRule builds a NullLogger context and crashes on a passed parent logger, so it cannot capture context.logger notices); removed a non-null assertion (read angular.json once, null => absent) for maxWarnings:0. nx test(366)/build/lint/typecheck green; standalone nx e2e angular-typechecker-ng-cli-e2e green 4/4 (npm + yarn flat + yarn workspace first-run auto-wire + pnpm collision). KNOWN INFRA (not 24-06): `nx run-many -t e2e --parallel=1` fails only on ng-cli-e2e via an Nx local-registry task re-invocation ("already invoked by a parent Nx process in this chain"), Nx-flagged flaky; install(37)/matrix(7)/cache(9) pass under run-many and ng-cli-e2e passes standalone -- CI runs each e2e as a fresh per-job `npm ci` (not run-many), so the conflict does not occur in CI.
 - [Phase 25]: 25-01: extracted the five executor advisory helpers + skippedReferenceVerdictNote VERBATIM into a pure core/emit-advisory-notices.ts behind a homegrown structural core/logger.ts Logger seam (info/warn/error, imports nothing -> src/core D-11 boundary clean); the Nx executor now emits every advisory through ONE emitAdvisoryNotices(result, logger) call, injecting its @nx/devkit logger with ZERO adapter (structural assignability, D-02). Byte-identical vs 0.2.1: existing executor+builder specs stay green with NO assertion edits (D-10); new emit-advisory-notices.spec.ts anchors each notice with EXACT full-string toHaveBeenCalledWith + stream routing (info=node_modules count, warn=all else, error=never) + clean-result silence (D-09). Locked emission order preserved (templateCheckAborted -> skippedReferences per-ref -> suppressed info-then-warn -> notTypeChecked -> bundlerQueryImports). Infra TypecheckInfrastructureError catch/logger.error stays in the executor (D-08). Additive/internal only (CLI-04, ADD-01): no barrel/public-API/verdict change, zero new dependency. Enables the Phase-26 CLI to drive advisories without importing executor.ts (@nx/devkit/chalk 24-06 crash class). build/test(400)/integration(107)/lint(maxWarnings:0)/typecheck/format:check green.
 - [Phase 26]: 26-01: built the nx-free CLI foundation the load-bearing run() (26-02) consumes. NEW src/cli/ dir (sibling of executors/, builders/; @nx/js:tsc already globs src/**/*.ts). parse-args.ts = util.parseArgs (strict, no positionals, tsConfig short 'c'+multiple, help short 'h') mapped to a discriminated ParseResult (options | help | version | usageError): short flag is 'c' NEVER 'p' (a p/project flag surfaces as an unknown-flag usageError, ARGS-02/D-12); parseArgs wrapped in try/catch -> usageError (D-14) with missing-required-tsConfig + non-negative-integer max-warnings checks (D-08, 0 stays valid); help text says 'npx angular-typechecker' never 'npx atc' (D-11) + the 0/1/2 exit-code line; version reads the real package.json manifest via require two dirs up (D-10, drift-locked + confirmed working under Vitest). tsConfig kept as the RAW string[] here -- the single-vs-array collapse (ARGS-03) is run()'s job in 26-02. console-logger.ts = BufferingLogger implements the pure core/logger.ts Logger via a type-only import; info/warn/error all push onto ONE array; a text getter joins by newline (empty string when unused, D-04); NO stream/console writes (bin.ts is Phase 27). parse-args.spec.ts = 19 pure direct-call assertions (no vi.mock) for ARGS-01/02/04 + the max-warnings matrix + help/version guarantees + the version drift-lock. nx-free by construction (D-15): both source files import only node:util + the manifest + a type-only Logger; boundary grep clean. Deviations (both Rule 3, pre-commit gate fixes): dropped an unused eslint-disable that failed report-unused-disable-directives at maxWarnings:0 (no-require-imports is not enabled -- require is lint-clean); reworded the D-15 doc-comments to drop the literal @nx/devkit token so the acceptance grep returns nothing. Requirements ARGS-01/02/04+CLI-03+VER-01 left Pending (each also spans 26-02/26-03; closed at phase verification). build/test(413)/lint(maxWarnings:0)/format:check green.
 - [Phase 26]: 26-02: built the load-bearing run(argv, env): Promise<{ exitCode: 0|1|2; stdout; stderr }> in src/cli/main.ts -- the THIRD thin adapter mirroring executor.ts's compose order VERBATIM (parse via Wave-1 parseCliArgs -> resolve+normalize --tsConfig -> runTypecheck -> emitAdvisoryNotices BEFORE the report -> renderReport -> evaluateResult), swapping the Nx devkit logger for the Wave-1 BufferingLogger, joinPathFragments for nx-free node:path resolve + a try/catch-guarded realpathSync.native (ENOENT falls through to the .replace'd resolved path so a bad tsconfig returns exit 2 via the core, not an uncaught throw -- RESEARCH Open Question 1), and the Nx { success } return for the literal exit code via the two-step compose (D-01): usage -> 2 DIRECTLY; caught TypecheckInfrastructureError -> toExitCode(error)=2 (its FIRST live consumer, and the ONLY toExitCode call site); completed -> evaluateResult(...).success ? 0 : 1, so a coverage-incomplete/warnings-exceeded run (errorCount===0, success===false) correctly returns 1 (the anti-false-pass). Single --tsConfig collapses to a STRING, 2+ stay string[] (ARGS-03/D-13). Color from env NO_COLOR>FORCE_COLOR>isTTY (D-09). Pure (D-02/EXIT-02): no process.exit/stream write; stdout=renderReport only, stderr=BufferingLogger.text (D-03). nx-free by construction (D-15; acceptance grep clean, toExitCode only in the infra catch). main.spec.ts = 20 stubbed-core assertions (vi.hoisted+vi.mock(importOriginal) one level up; real TypecheckInfrastructureError/emitAdvisoryNotices/toExitCode/BufferingLogger) locking the EXIT-01 matrix incl. errorCount===0/success===false->1, CLI-03 routing, EXIT-02 purity, ARGS-03/05, VER-01 drift-lock, plus the D-04 BufferingLogger contract. Deviations (both Rule 3, pre-commit gate): dropped the literal Nx-devkit token from a doc-comment so the acceptance grep returns nothing; prettier --write whitespace. Requirements CLI-02/03+ARGS-03/05+EXIT-01/02+PKG-03+VER-01 left Pending (span 26-03/phase verification). build/test(433)/lint(maxWarnings:0)/format:check green.
@@ -93,6 +93,7 @@ archives under `.planning/milestones/`.
 
 ### Roadmap Evolution
 
+- v0.2.3 roadmap created 2026-07-18: 3 phases (30-32), numbering CONTINUED from v0.2.2's Phase 29 (never reset). All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one phase -- 100% coverage, 0 unmapped. Structure follows the namespaced milestone research build-order (`.planning/research/v0.2.3-reporters/SUMMARY.md`, "Implications for Roadmap"), dependency-ordered because SARIF depends on Phase 30's widened `renderReport` seam + shared normalized-record projection + the threaded `--format` enum: **Phase 30** = the widened seam + the zero-dependency JSON reporter + `--format`/`--quiet`/`--color` through all three adapters + the optional `CoreResult.totalFilesCount` (FMT-01/02/03, REP-01, OBS-01, CLIX-02, VER-01); **Phase 31** = the lazy-`import()`ed `node-sarif-builder` SARIF 2.1.0 reporter + the nx-free require-graph guard + the CJS-under-`import()` interop test (REP-02, VER-04); **Phase 32** = integration + shipped-tarball e2e across all three adapters + SARIF schema validation + cross-OS determinism + the additive-only git-diff audit vs `@0.2.2` + README/CHANGELOG (VER-02, VER-03, ADD-01, DOC-01). VER-01 anchored to Phase 30 (Unit tier; SARIF-shape unit specs ride along in Phase 31, closed at phase verification). ADDITIVE-ONLY charter: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only if a breaking change proves unavoidable.
 - Phase 25 added 2026-07-15 (via /gsd-phase, current milestone v0.2.1): GitHub-backed self-hosted Nx remote cache -- a workspace-wide CI cache optimization deferred out of the e2e wall-clock quick task (quick-260715-050). Grounded by `260715-050-RESEARCH-3.md` (GitHub Actions Cache backend; CREEP-mitigated via the `pull_request` merge-ref scoping + a cache-miss-by-design release build; ~90-day retention TTL; read-write in CI, read-only from local). Lower priority: the e2e per-project split already banks the ~43% tier win cache-free, so this phase justifies itself on workspace-wide cross-run hits, not the e2e tier. Requires fixing the OS/Node hash landmine (`RUNNER_OS` + Node major as `env` named inputs) before any cache replay.
 - v0.2.1 roadmap created 2026-07-10: 4 phases (21-24), numbering continued from v0.2.0's Phase 20. All 16 v0.2.1 requirements (ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD) mapped to exactly one phase, 100% coverage, 0 unmapped. Structure follows the research build-order (`.planning/research/v0.2.1-angular-cli/SUMMARY.md`, CORRECTION & LOCKED DECISIONS): Phase 21 carries the GATE A' GO/NO-GO spike (ACB-02 -- the CJS->ESM `await import()` bridge surviving `convertNxExecutor` + a real `ng run`, on-stack Ng22 + off-stack Ng21) and gates the milestone; Phase 22 carries the highest design weight (the `angular.json` write-fork, Option A `tsConfig: [buildLeaf, specLeaf]`); Phase 23 is `ng-add` auto-wire-all + `init` parity + optional-peer classification; Phase 24 is the real-OSS + scaffolded e2e, the additive-only audit, and docs. ADDITIVE-ONLY charter: re-versions to v0.3.0 only if a breaking change proves unavoidable.
 - Phase 20 added 2026-07-07: Vite/Analog Storybook query-import guidance (SB-09). Follow-up surfaced by the Phase-19 OSS real-repo UAT (`19-UAT.md`) and validated by spikes 009-010. BOTH signals in scope for v0.2.0 (user-committed 2026-07-07): the `vite/client` README recipe (docs) AND the `?query` detection advisory (engine + executor). Reopens v0.2.0 beyond its passed milestone audit.
@@ -212,9 +213,10 @@ Tracked as Future Requirements (out of scope, not debt):
 | Generator surface | GEN-FUT-01 (Angular CLI `angular.json`) / GEN-FUT-02 (`ng add` Angular CLI schematic) | SHIPPED v0.2.1 (Phases 22-24) -- no longer deferred | v0.0.4 requirements definition |
 | Engine / performance | WALK-FUT-01 (`createNodesV2` per-leaf targets) / WALK-FUT-02 (`NgtscProgram` incremental) | Deferred (additive) | v0.0.4 re-scope |
 | Resilience | REP-RES-02b: faithful per-file template recovery after a TCB Fatal | Deferred (needs `NgtscProgram`) | v0.0.3 RES-02 reframe |
-| Observability | OBS-01: `totalFilesCount` on `CoreResult` | Deferred pending charter-fit | v0.0.3 requirements definition |
-| Surfaces | Standalone CLI (owns literal OS exit code `2`) | Deferred | v0.0.3 (COR-04) |
-| Reporters | Machine-readable JSON/SARIF | Deferred | v0.0.1 close |
+| Observability | OBS-01: `totalFilesCount` on `CoreResult` | PROMOTED to v0.2.3 (Phase 30, JSON summary) -- no longer deferred | v0.0.3 requirements definition |
+| Surfaces | Standalone CLI (owns literal OS exit code `2`) | SHIPPED v0.2.2 (Phases 25-29) -- no longer deferred | v0.0.3 (COR-04) |
+| Reporters | Machine-readable JSON/SARIF (`--format json` / `--format sarif`) | PROMOTED to v0.2.3 (Phases 30-32) -- no longer deferred; other formats (codeclimate/compact/GitLab, REP-03) stay deferred | v0.0.1 close |
+| CLI ergonomics | CLIX-01 (`--watch`, needs `NgtscProgram` incremental) / CLIX-03 (`--output <file>`, shell redirection covers it) | Deferred (Future Requirements) | v0.2.3 requirements definition |
 | Feature families | INF / SUR / REP / SUP carried from v0.0.1 | Deferred | v0.0.1 close |
 | CI infra | GitHub-backed self-hosted Nx remote cache (was roadmap Phase 25, removed) | Deferred (backlog, lower priority than the shipped e2e per-project split) | v0.2.1 roadmap evolution |
 
@@ -223,13 +225,28 @@ Tracked as Future Requirements (out of scope, not debt):
 The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false positives or already-resolved after investigation, per the recurring known scanner bug (see below) -- none represent open work:
 
 - **19 quick tasks flagged "missing"**: the scanner checks for a bare `<dir>/SUMMARY.md` but this repo's convention is `<id>-SUMMARY.md` (see the Quick Tasks Completed table above -- all 19 are `Verified`, each with a real `<id>-SUMMARY.md`). This is the same recurring scanner mismatch noted at every prior milestone close (v0.0.3, v0.1.0, v0.2.0).
-- **1 of those 19 (`260709-w96-obs-01-add-totalfilescount-observability`) was a genuine anomaly, not the scanner bug**: the directory existed but was completely empty and untracked by git (no `PLAN.md`/`SUMMARY.md`, never staged) -- an abandoned stub from 2026-07-09 that was never executed. Removed at this close. `OBS-01` (`totalFilesCount` observability) correctly remains tracked as a deferred Future Requirement above -- nothing was lost.
+- **1 of those 19 (`260709-w96-obs-01-add-totalfilescount-observability`) was a genuine anomaly, not the scanner bug**: the directory existed but was completely empty and untracked by git (no `PLAN.md`/`SUMMARY.md`, never staged) -- an abandoned stub from 2026-07-09 that was never executed. Removed at this close. `OBS-01` (`totalFilesCount` observability) correctly remains tracked as a deferred Future Requirement above -- nothing was lost. (Now PROMOTED to v0.2.3 Phase 30.)
 - **`24-ACV-01-UAT.md` (`executed-fail`) and `24-HUMAN-UAT.md`**: both refer to the ORIGINAL pre-24-06 ACV-01 execution, superseded by the 2026-07-15 re-run (quick task 260715-ig5, commit 895ee43) which PASSED against post-24-06 HEAD on both real-clone gates. The stale UAT file status is cosmetic.
 - **`24-VERIFICATION.md` (`human_needed`)**: the single flagged human item (re-run the ACV-01 real-clone gate post-24-06) was RESOLVED by the same 260715-ig5 re-run, one session before this close. The frontmatter `status: human_needed` was never re-flipped -- a cosmetic bookkeeping gap, not open work. Already recorded as a `bookkeeping` (non-blocking) item in `v0.2.1-MILESTONE-AUDIT.md`.
 
 ## Session Continuity
 
-Last session: 2026-07-16T23:45:33.088Z
+Last session: 2026-07-18 -- v0.2.3 roadmap created (gsd-roadmapper). 3 phases (30-32), numbering continued
+from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
+phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
+populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
+`renderReport` seam + zero-dep JSON reporter + `--format`/`--quiet`/`--color` through all three adapters +
+optional `CoreResult.totalFilesCount`), Phase 31 (lazy-`import()`ed `node-sarif-builder` SARIF 2.1.0
+reporter + nx-free require-graph guard + CJS-under-`import()` interop test), Phase 32 (integration +
+shipped-tarball e2e across all three adapters + SARIF schema validation + cross-OS determinism +
+additive-only git-diff audit vs `@0.2.2` + README/CHANGELOG). ADDITIVE-ONLY charter: patch bump
+`0.2.2 -> 0.2.3`. Next: `/gsd-plan-phase 30`.
+
+Prior session: 2026-07-18 -- v0.2.3 milestone started (PROJECT.md updated, REQUIREMENTS.md defined:
+13 requirements FMT-01/02/03, REP-01/02, OBS-01, CLIX-02, VER-01/02/03/04, ADD-01, DOC-01). v0.2.2
+milestone artifacts archived retroactively during the GSD1 -> OpenGSD migration cleanup.
+
+Prior session: 2026-07-16T23:45:33.088Z
 Completed the two teed-up autonomous tasks:
 
 - **Fixed PR #41 CI blockers** (fallow + format-lint). fallow: declared the new cli-e2e globalSetup an
@@ -247,117 +264,19 @@ Completed the two teed-up autonomous tasks:
   exit-0 GREEN blocked ONLY by analog's own unbuilt-monorepo TS2882, not a tool defect). NO ERR_REQUIRE_ESM /
   infrastructure error on ANY run. Recorded as an AGENT run, NOT a human sign-off (a literal human sign-off
   remains available). Clones are uncommitted scratch, restored pristine.
-Then closed PR #41 (CI-verification only, all 23 checks GREEN incl. e2e-windows + cli-e2e; NOT merged) and ran
-ALL Phase-28 post-execution gates IN ORDER, each reached by its DEDICATED agent:
-
-- **verify** (gsd-verifier): 28-VERIFICATION.md -> 4/4 success criteria VERIFIED (SC-1/2/3 proven on real CI
-  Linux+Windows via PR #41; SC-4 assertions ran+passed). ONE human_needed surfaced: VER-05 was designed as a
-  literal HUMAN-run gate but executed as an AUTHORIZED AUTONOMOUS agent run -- whether a literal human signature
-  is additionally required is a USER decision (presented; not silently passed). Also fixed a dup `status:` key in
-  28-04-UAT.md.
-
-- **secure** (gsd-security-auditor): 28-SECURITY.md -> SECURED, 6/6 threats closed, 0 open, no file edited,
-  public-repo hygiene clean (T-28-01 CI cmd-injection via PROJECT env; T-28-02 127.0.0.1 Verdaccio gate; T-28-03
-  no `npx atc`; T-28-05 SHA-pinned uses; T-28-06 stripAllNpmConfig/strictDepBuilds).
-
-- **validate** (gsd-nyquist-auditor): 28-VALIDATION.md -> nyquist_compliant, 4/4 COVERED, 0 tests generated
-  (coverage already complete; guard tier 20/20 local + PR #41 real-CI proof).
-
-- **extract-learnings** (inline) + **global bridge**: 28-LEARNINGS.md (6 decisions/4 lessons/4 patterns/4 surprises);
-  bridged 18 items into the cross-project store (18 created, 0 skipped); temp .planning/LEARNINGS.md removed, never staged.
-Committed each gate artifact atomically + checked the ROADMAP Phase-28 `<details>` box (phase.complete leaves it
-unchecked) + this STATE. NO product/test/version change (stays 0.2.1); NO release cut (human-gated).
-OPEN (user decision): the VER-05 literal human sign-off (optional; VER-04 already CI-proves the identical contract).
-HANDOFF.json + .continue-here.md are superseded -- safe to delete. Next: Phase 29 (Docs), the final v0.2.2 phase.
-
-Prior this-session note: resumed Phase 28 from HANDOFF.json (paused at the UAT gate). Completed the two teed-up
-autonomous tasks first: fixed PR #41 CI blockers (fallow + format-lint, commit b15a01f -> PR went fully green) and
-ran the VER-05 real-clone UAT autonomously (commit 26e7e58, PASS across 4 on-stack Angular 22 OSS clones of both
-kinds; analog's only non-green cell is its own unbuilt-monorepo TS2882, not a tool defect; NO ERR_REQUIRE_ESM /
-infra error on any run). Clones are uncommitted scratch, restored pristine.
-
-Prior session: 2026-07-16T20:26:40.659Z
-Phase 24 execute-phase CLOSE-OUT. Confirmed all execute-phase workflow steps complete: 6/6 plans
-committed with SUMMARY.md, ROADMAP all `[x]`, working tree clean, authoritative post-merge gate GREEN
-(`nx run-many -t build test lint --projects=angular-typechecker --skip-nx-cache` => 39 files/373 tests,
-lint maxWarnings:0, build ok; `nx format:check --base origin/main` exit 0). Then ran ALL global-CLAUDE.md
-post-execute steps IN ORDER, each reached by its DEDICATED agent, because the prior gates (2026-07-12
-10:xx) predated gap-closure plan 24-06 (SUMMARY 16:36) and were therefore stale:
-
-- **verify** (gsd-verifier): 24-VERIFICATION.md refreshed -> passed 6/6 truths at code level. ONE
-  `human_needed`: re-run the ACV-01 manual real-clone tarball gate against post-24-06 HEAD before the
-  v0.2.1 release (LOW risk -- 24-06 rewrote the exact ng-add path ACV-01 exercises + the last manual UAT
-  was 2026-07-11, one day before 24-06; the CI-authoritative ACV-02 e2e covers the identical `ng add`->
-  `ng run` flow on the new code, green 4/4). See Operator Next Steps.
-
-- **secure** (gsd-security-auditor): 24-SECURITY.md refreshed -> SECURED, threats_open 0 (15/15 closed;
-  4 new 24-06 threats all closed), no code edited, public-repo hygiene clean.
-
-- **validate** (gsd-nyquist-auditor): 24-VALIDATION.md refreshed -> nyquist_compliant, 0 gaps, 0 tests
-  generated (24-06 shipped angular-cli-wiring.spec 18 + ng-add.spec 13; YAGNI, added nothing).
-
-- **extract-learnings** (inline) + **global-learnings bridge** (features.global_learnings:true):
-  24-LEARNINGS.md refreshed to 11 decisions / 12 lessons / 7 patterns / 7 surprises covering 24-06;
-  bridged 37 items into the cross-project store (16 created, 21 deduped); temp .planning/LEARNINGS.md
-  removed, never staged.
-Committed the 4 refreshed gate artifacts + this STATE. NO product/test/version change (stays 0.2.0);
-NO release cut (human-gated). HANDOFF.json / .continue-here.md are now superseded (24-06 executed + gated).
-
-Prior session: 2026-07-12T14:33:14.385Z
-(nx-free vanilla ng-add, Option C -- plan-checked PASSED, 0/3 tasks). Proceeding to
-`/gsd-execute-phase 24 --gaps-only` on the main checkout (single-plan wave, no worktree). HANDOFF.json
-retained until 24-06 execution completes.
-
-Prior session: 2026-07-12 (autonomous). Executed the paused Phase-24 gap-closure Wave 2 (plan 24-05):
-finalized the yarn + pnpm CLI e2e. Yarn spec installs via the REAL `ng add` (nx transitive via 24-04)
-and wires via `ng g` -- Angular CLI's `ng add` does NOT run the ng-add schematic under yarn
-(post-install detection fails on yarn's node-modules layout; npm + pnpm both wire). New committed
-CLI x pnpm-workspace root-name-collision e2e proves the app build leaf is never dropped; pnpm build-gate
-satisfied via `strictDepBuilds: false` (skip all build scripts, safer than allowBuilds). All 4
-ng-cli-e2e specs green (npm + yarn x2 + pnpm) + coverage guard green (349). Debug doc
-`cli-yarn-e2e-wrong-version.md` resolved (moved to debug/resolved/). Deferred (user decision before
-release): README `## Angular CLI` "auto-wire-all" claim needs a yarn caveat
-(.planning/todos/pending/readme-yarn-ng-add-caveat.md). `packages/angular-typechecker/package.json`
-stays at `0.2.0` (v0.2.1 NOT yet cut).
-
-Prior session: 2026-07-11 (autonomous). Resumed from HANDOFF.json to run the Phase-24 ACV-01
-real-clone milestone gate. Gate #1 (bluehalo/ngx-leaflet @818e9ae, npm, app+lib) PASS. Gate #2
-(realworld-angular @9e3528f, pnpm, app-only) initially FAILED -- surfaced a REAL defect in the
-(unreleased) Angular CLI `configuration`/`ng-add` generator: on an Angular CLI workspace that is
-ALSO a pnpm workspace with a name-colliding root package.json, `readProjectConfiguration` returns a
-shadowing package stub, so the CLI write-fork silently dropped the app build leaf (root app ->
-spec-only under-check) or threw (subdir app). FIXED (commit 1837b25): the CLI branch reads
-projectType/root straight from angular.json. Regression tests hardened + proven non-vacuous
-(49974f1) and covered at the ng-add entry point (cf90407); gate #2 re-verified PASS on the real
-clone. Trigger verified NARROW (pnpm-workspace + name collision only; npm/yarn/lockfile/mismatch
-unaffected; Nx branch robust). Additive-only vs 0.2.0 HOLDS (fix is inside the unreleased Angular
-CLI generator). All four post-execution gates re-run via their DEDICATED agents: code-review
-(24-REVIEW-ACV01FIX.md, 0 blockers; 1 major + 1 minor addressed), verify (24-VERIFICATION.md
-passed, 5/5), secure (24-SECURITY.md SECURED, threats_open 0), validate (24-VALIDATION.md compliant,
-+ng-add gap filled). Phase 24 complete; extract-learnings done (24-LEARNINGS.md) +
-global-learnings bridged (18 entries); v0.2.1 MILESTONE AUDIT = PASSED (16/16 reqs, integrated,
-0 gaps, all phases Nyquist-compliant). Follow-on (full-matrix coverage): added
-configuration-matrix.spec.ts locking {CLI,Nx} x {flat,npm/yarn-workspaces,pnpm-workspace} x
-{collision,clean} x {root,subdir} (invariant: build leaf never silently dropped, or loud throw),
-then ran /gsd-code-review --fix on the added tests (gsd-code-reviewer 0 blockers/2 warnings/4 info
--> gsd-code-fixer applied WR-01/WR-02/IN-02/IN-04; 24-REVIEW-ADDED-TESTS(-FIX).md). nx
-test(349)/lint/typecheck/build/format all green.
-`packages/angular-typechecker/package.json` stays at `0.2.0` (v0.2.1 NOT yet cut). OSS clones under
-D:/projects/github/{bluehalo/ngx-leaflet, realworld-angular/realworld-angular} are UNCOMMITTED scratch.
 
 ## Operator Next Steps
 
-- **[RESOLVED 2026-07-15 -- quick task 260715-ig5]** The pre-release ACV-01 human item (re-run the manual
-  real-clone tarball gate against post-24-06 HEAD) is DONE. Both gates PASS on the nx-free vanilla ng-add:
-  ngx-leaflet @818e9ae (npm, app+lib) first-run `ng add` auto-wire-all + clean per-project scoping; and
-  realworld-angular @9e3528f (pnpm-workspace + name-collision) wired the full [tsconfig.app.json,
-  tsconfig.spec.json] array (build leaf not dropped) via the documented pnpm-native install + `ng g`. No
-  open items block the release on this gate. Evidence: `.planning/quick/260715-ig5-.../`.
+- **Plan Phase 30** -- `/gsd-plan-phase 30` (Reporter seam + JSON reporter + `--format` threading +
+  observability). This phase establishes the widened `renderReport` seam + full three-adapter threading
+  that SARIF (Phase 31) depends on. Research is done (`.planning/research/v0.2.3-reporters/SUMMARY.md`,
+  research flag: Phase 30 = standard patterns, skip research-phase).
 
-- (optional) `/gsd-complete-milestone v0.2.1` if not already done this session -- archive Phase 21-24
-  dirs + collapse ROADMAP + evolve PROJECT.md.
+- Phases 31 (SARIF) and 32 (verification + docs + additive audit) follow in dependency order. Phase 31
+  carries a MEDIUM research flag (the `node-sarif-builder` CJS-under-`await import()` interop shape + the
+  `@nx/dependency-checks` lazy-only-import behavior must be confirmed against the REAL package during
+  planning/execution, not inferred).
 
-- HUMAN-GATED RELEASE (do NOT auto-run): cut v0.2.1 via the AGENTS.md Release-PR flow -- branch
-  `release/0.2.1` off main, `npx nx release --dry-run` then `--skip-publish`, curate CHANGELOG,
-  PR into PR-only `main`, tag `angular-typechecker@0.2.1` on the merge commit, push to fire
-  `release.yml` OIDC publish (approve the `npm-publish` environment), cut the GitHub Release.
+- ADDITIVE-ONLY charter holds: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only if a
+  breaking change proves unavoidable. HUMAN-GATED RELEASE at milestone close via the AGENTS.md Release-PR
+  flow (do NOT auto-run).

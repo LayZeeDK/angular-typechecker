@@ -74,29 +74,31 @@ Explicitly excluded this milestone. Documented to prevent scope creep.
 
 ## Traceability
 
-Populated during roadmap creation. Each requirement maps to exactly one phase.
+Each requirement maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FMT-01 | TBD | Pending |
-| FMT-02 | TBD | Pending |
-| FMT-03 | TBD | Pending |
-| REP-01 | TBD | Pending |
-| REP-02 | TBD | Pending |
-| OBS-01 | TBD | Pending |
-| CLIX-02 | TBD | Pending |
-| VER-01 | TBD | Pending |
-| VER-02 | TBD | Pending |
-| VER-03 | TBD | Pending |
-| VER-04 | TBD | Pending |
-| ADD-01 | TBD | Pending |
-| DOC-01 | TBD | Pending |
+| FMT-01 | Phase 30 | Pending |
+| FMT-02 | Phase 30 | Pending |
+| FMT-03 | Phase 30 | Pending |
+| REP-01 | Phase 30 | Pending |
+| REP-02 | Phase 31 | Pending |
+| OBS-01 | Phase 30 | Pending |
+| CLIX-02 | Phase 30 | Pending |
+| VER-01 | Phase 30 | Pending |
+| VER-02 | Phase 32 | Pending |
+| VER-03 | Phase 32 | Pending |
+| VER-04 | Phase 31 | Pending |
+| ADD-01 | Phase 32 | Pending |
+| DOC-01 | Phase 32 | Pending |
 
 **Coverage:**
 - Milestone requirements: 13 total
-- Mapped to phases: 0 (filled by the roadmapper)
-- Unmapped: 13
+- Mapped to phases: 13 (Phase 30: 7 -- FMT-01/02/03, REP-01, OBS-01, CLIX-02, VER-01; Phase 31: 2 -- REP-02, VER-04; Phase 32: 4 -- VER-02, VER-03, ADD-01, DOC-01)
+- Unmapped: 0
+
+**Note on VER-01:** anchored to Phase 30 (the Unit tier -- the pure-reporter test harness, the JSON shape, the exit-code-parity mechanism, the no-ANSI check, and `--quiet` gating are established there alongside the JSON reporter). The SARIF-shape unit specs ride along in Phase 31 as part of REP-02's own work, and full cross-format exit-code parity is exercised once SARIF exists; the requirement is fully closed at phase verification.
 
 ---
 *Requirements defined: 2026-07-18*
-*Last updated: 2026-07-18 after initial definition*
+*Last updated: 2026-07-18 -- roadmap created (Phases 30-32), traceability populated (13/13 mapped, 0 unmapped)*
