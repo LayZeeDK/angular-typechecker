@@ -526,6 +526,10 @@ The command mirrors the executor's behavior through these flags, the same list
 | `--fail-fast`           | Report diagnostics only up to the first error (output brevity; all diagnostics are still gathered).                                |
 | `--include-deps`        | Include out-of-project / node_modules diagnostics.                                                                                 |
 | `--strict`              | Fail on dropped in-graph warnings (verdict only).                                                                                  |
+| `--format <fmt>`        | Output format: `human` (default), `json`, or `sarif` (SARIF lands in a later release).                                             |
+| `--quiet`               | Silence advisory notices on stderr. Never affects the report on stdout or the exit code.                                           |
+| `--color`               | Force ANSI color on the human report, overriding `NO_COLOR` / `FORCE_COLOR` / TTY detection.                                       |
+| `--no-color`            | Disable ANSI color on the human report.                                                                                            |
 | `-h, --help`            | Print this help and exit.                                                                                                          |
 | `--version`             | Print the version and exit.                                                                                                        |
 

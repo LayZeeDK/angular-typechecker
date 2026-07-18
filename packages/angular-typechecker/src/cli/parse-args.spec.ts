@@ -205,6 +205,64 @@ describe('parseCliArgs (ARGS-01..04 flag mapping + usage errors)', () => {
     });
   });
 
+  describe('--format / --quiet / --color / --no-color (FMT-01 / CLIX-02 / D-08/D-09/D-10)', () => {
+    it('defaults format to human, quiet to false, and leaves color unset without the flags', () => {
+      const options = expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json']),
+        'options',
+      );
+
+      expect(options.format).toBe('human');
+      expect(options.quiet).toBe(false);
+      expect(options.color).toBeUndefined();
+    });
+
+    it.each(['human', 'json', 'sarif'] as const)(
+      'parses --format %s to that value',
+      (format) => {
+        const options = expectKind(
+          parseCliArgs(['-c', 'libs/x/tsconfig.json', '--format', format]),
+          'options',
+        );
+
+        expect(options.format).toBe(format);
+      },
+    );
+
+    it('rejects an out-of-enum --format (usageError -> exit 2 in run())', () => {
+      const usage = expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--format', 'nonsense']),
+        'usageError',
+      );
+
+      expect(usage.message).toContain('--format');
+      expect(usage.message).toContain('"nonsense"');
+    });
+
+    it('parses --quiet to true (default false)', () => {
+      const options = expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--quiet']),
+        'options',
+      );
+
+      expect(options.quiet).toBe(true);
+    });
+
+    it('parses --color to true and --no-color to false (allowNegative)', () => {
+      const on = expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--color']),
+        'options',
+      );
+      const off = expectKind(
+        parseCliArgs(['-c', 'libs/x/tsconfig.json', '--no-color']),
+        'options',
+      );
+
+      expect(on.color).toBe(true);
+      expect(off.color).toBe(false);
+    });
+  });
+
   describe('--help / -h (ARGS-04 / D-11)', () => {
     it('returns a help result whose text steers to npx angular-typechecker', () => {
       const help = expectKind(parseCliArgs(['--help']), 'help');

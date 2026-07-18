@@ -29,6 +29,13 @@ export interface ParsedOptions {
   readonly failFast: boolean;
   readonly includeDeps: boolean;
   readonly strict: boolean;
+  // FMT-01 / CLIX-02 (D-08/D-09/D-10): the machine-output selector + the two
+  // human-path stream/color knobs. `format` defaults to 'human'; `quiet` gates the
+  // stderr advisory chatter ONLY (never the payload/verdict); `color` is the
+  // explicit --color/--no-color override (undefined = no flag, fall back to env).
+  readonly format: 'human' | 'json' | 'sarif';
+  readonly quiet: boolean;
+  readonly color?: boolean;
 }
 
 export interface ParsedHelp {
@@ -77,6 +84,13 @@ Options:
                           brevity; all diagnostics are still gathered).
       --include-deps      Include out-of-project / node_modules diagnostics.
       --strict            Fail on dropped in-graph warnings (verdict only).
+      --format <fmt>      Output format: human (default), json, or sarif
+                          (sarif lands in a later release).
+      --quiet             Silence advisory notices on stderr (never the report
+                          or the exit code).
+      --color             Force ANSI color on the human report, overriding
+                          NO_COLOR / FORCE_COLOR / TTY.
+      --no-color          Disable ANSI color on the human report.
   -h, --help              Print this help and exit.
       --version           Print the version and exit.
 
@@ -106,6 +120,11 @@ export function parseCliArgs(argv: string[]): ParseResult {
       args: argv,
       strict: true,
       allowPositionals: false,
+      // Pitfall 9 / D-10: allowNegative lets `--no-color` set color:false under
+      // strict mode -- without it strict parseArgs throws
+      // ERR_PARSE_ARGS_UNKNOWN_OPTION on `--no-color`. Added in Node 22.4.0; the
+      // engines floor is 22.22.3, so it is available on every supported Node.
+      allowNegative: true,
       options: {
         // D-12: short is `c` (for --tsConfig), NEVER `p` -- `-p`/`--project`
         // is deliberately NOT registered (it would collide with Angular CLI /
@@ -113,6 +132,11 @@ export function parseCliArgs(argv: string[]): ParseResult {
         // usage error.
         tsConfig: { type: 'string', short: 'c', multiple: true },
         'max-warnings': { type: 'string' },
+        // FMT-01 / CLIX-02: --format <human|json|sarif>, --quiet, and
+        // --color/--no-color (the latter via allowNegative above).
+        format: { type: 'string' },
+        quiet: { type: 'boolean' },
+        color: { type: 'boolean' },
         'fail-fast': { type: 'boolean' },
         'include-deps': { type: 'boolean' },
         strict: { type: 'boolean' },
@@ -158,10 +182,29 @@ export function parseCliArgs(argv: string[]): ParseResult {
       maxWarnings = Number(rawMaxWarnings);
     }
 
+    // FMT-01 (D-08): validate --format against the enum, mirroring the
+    // --max-warnings guard. An out-of-enum value is a usage error (exit 2). The
+    // cast in the return is safe by construction -- this guard rejects everything
+    // that is not one of the three members (undefined defaults to 'human').
+    const rawFormat = values.format;
+
+    if (
+      rawFormat !== undefined &&
+      !['human', 'json', 'sarif'].includes(rawFormat)
+    ) {
+      return {
+        kind: 'usageError',
+        message: `angular-typechecker: --format expects one of human, json, sarif, got "${rawFormat}".`,
+      };
+    }
+
     return {
       kind: 'options',
       tsConfig,
       maxWarnings,
+      format: (rawFormat ?? 'human') as 'human' | 'json' | 'sarif',
+      quiet: values.quiet ?? false,
+      color: values.color,
       failFast: values['fail-fast'] ?? false,
       includeDeps: values['include-deps'] ?? false,
       strict: values.strict ?? false,
