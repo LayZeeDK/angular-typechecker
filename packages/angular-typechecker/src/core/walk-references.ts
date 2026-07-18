@@ -71,6 +71,11 @@ export interface WalkResult {
   // when every reference walked cleanly; `runTypecheck` maps `[]` -> `undefined`
   // on `CoreResult` so the adapter's presence check is sufficient.
   skippedReferences: readonly SkippedReference[];
+  // OBS-01 (Phase 30, D-11): the count of DISTINCT non-declaration source files
+  // across all walked (surviving) leaves -- `acc.sourceFileNames.size`, name-deduped
+  // so a source shared by two leaves counts ONCE. `finalizeUnion` (run-typecheck.ts)
+  // threads it onto CoreResult.totalFilesCount. 0 when no leaf survives.
+  totalFilesCount: number;
 }
 
 /**
@@ -113,6 +118,14 @@ export interface LeafAccumulator {
   rootNamePaths: string[];
   notTypeCheckedDeclaredFiles: string[];
   rootNamesCount: number;
+  // OBS-01 (Phase 30, D-11): the NON-declaration source-file names gathered across
+  // every surviving leaf, deduped BY NAME. A source file compiled in two leaves
+  // (e.g. a shared component both leaves import) is therefore counted ONCE.
+  // `set.size` is threaded onto CoreResult.totalFilesCount via finalizeUnion. Dedupe
+  // by NAME (a `fileName` string), NOT object identity: two leaves' Programs return
+  // DISTINCT SourceFile objects for the same path, so an object-keyed Set would
+  // double-count the shared file (RESEARCH A3).
+  sourceFileNames: Set<string>;
 }
 
 /**
@@ -158,6 +171,20 @@ export function gatherLeafInto(
   acc.notTypeCheckedDeclaredFiles.push(
     ...detectUncheckedDeclaredFiles(ts, parsed, entryPath),
   );
+
+  // OBS-01 (Phase 30, D-11): accumulate this leaf's NON-declaration source files by
+  // NAME off the live Program -- the SAME `!isDeclarationFile` iteration
+  // gather-diagnostics.ts uses, so `lib.d.ts` and node_modules types are excluded.
+  // The Set dedupes across leaves, so a source file both leaves compile is counted
+  // once. `result.program` is live here exactly as it is for the direct path (the
+  // caller re-throws any per-leaf infra-500 over the union afterwards).
+  for (const sourceFile of result.program.getTsProgram().getSourceFiles()) {
+    if (sourceFile.isDeclarationFile) {
+      continue;
+    }
+
+    acc.sourceFileNames.add(sourceFile.fileName);
+  }
 }
 
 /**
@@ -196,6 +223,7 @@ export async function walkReferences(
     rootNamePaths: [],
     notTypeCheckedDeclaredFiles: [],
     rootNamesCount: 0,
+    sourceFileNames: new Set(),
   };
   const skippedReferences: SkippedReference[] = [];
   const seenCanonicalLeaves = new Set<string>();
@@ -341,6 +369,9 @@ export async function walkReferences(
     // union stays raw -- `finalize` owns diagnostic dedupe -- this is the advisory
     // display set only.
     notTypeCheckedDeclaredFiles: [...new Set(acc.notTypeCheckedDeclaredFiles)],
+    // OBS-01 (Phase 30, D-11): the name-deduped non-declaration source-file count
+    // across every surviving leaf (a source shared by two leaves counts once).
+    totalFilesCount: acc.sourceFileNames.size,
   };
 }
 

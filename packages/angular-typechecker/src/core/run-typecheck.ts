@@ -281,7 +281,8 @@ function presentIfNonEmpty<K extends keyof CoreResult, T>(
  * combined raw union with `buildFinalizeFilter` keyed on the combined `rootNamePaths`
  * (input-set membership, `ts.sys` case-fold -- no per-leaf Program survives either
  * path), then attaches `skippedReferences` + `notTypeCheckedDeclaredFiles` via the
- * `presentIfNonEmpty` presence idiom. The two callers differ ONLY in what they feed in
+ * `presentIfNonEmpty` presence idiom and the OBS-01 `totalFilesCount` (the walked
+ * name-deduped non-declaration source-file count) via the value-presence spread. The two callers differ ONLY in what they feed in
  * (`handleSolutionWalk` prepends `configDiagnostics`; `handleMultiTsConfig`'s union is
  * already complete) and in the representative `parsed`/`tsConfigPath` for the basePath
  * fallback; BOTH pass an ALREADY-deduped notTypeChecked set. Module-private -- both
@@ -299,6 +300,7 @@ function finalizeUnion(
   start: number,
   skippedReferences: readonly SkippedReference[],
   notTypeCheckedDeclaredFiles: readonly string[],
+  totalFilesCount: number,
 ): CoreResult {
   const result = finalize(
     ts,
@@ -322,6 +324,11 @@ function finalizeUnion(
       'notTypeCheckedDeclaredFiles',
       notTypeCheckedDeclaredFiles,
     ),
+    // OBS-01 (Phase 30, D-11): thread the walked name-deduped non-declaration
+    // source-file count onto CoreResult with the value-presence spread idiom (like
+    // the direct path). Both walk callers pass a Set size, so it is always present
+    // on the union path; the guard paths (no surviving leaf) never reach here.
+    ...(totalFilesCount !== undefined ? { totalFilesCount } : {}),
   };
 }
 
@@ -595,6 +602,7 @@ async function handleSolutionWalk(
       start,
       walk.skippedReferences,
       walk.notTypeCheckedDeclaredFiles,
+      walk.totalFilesCount,
     );
   }
 
@@ -677,6 +685,7 @@ async function handleMultiTsConfig(
     rootNamePaths: [],
     notTypeCheckedDeclaredFiles: [],
     rootNamesCount: 0,
+    sourceFileNames: new Set(),
   };
   const skippedReferences: SkippedReference[] = [];
   let firstParsed: ParsedConfiguration | undefined;
@@ -751,6 +760,7 @@ async function handleMultiTsConfig(
     start,
     skippedReferences,
     [...new Set(acc.notTypeCheckedDeclaredFiles)],
+    acc.sourceFileNames.size,
   );
 }
 

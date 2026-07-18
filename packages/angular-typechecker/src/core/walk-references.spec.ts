@@ -55,13 +55,20 @@ function diagnostic(code: number, fileName?: string): ts.Diagnostic {
   } as ts.Diagnostic;
 }
 
-// A minimal Program stub -- walkReferences reads NOTHING off the returned
-// Program (it only pushes `result.diagnostics` to the union), so an empty object
-// cast is sufficient.
+// A minimal Program stub. Besides pushing `result.diagnostics` to the union,
+// `gatherLeafInto` now iterates `program.getTsProgram().getSourceFiles()` for the
+// OBS-01 `totalFilesCount` capture (Phase 30), so the stub exposes an empty
+// source-file list -- these walk-routing unit tests do not assert the count (the
+// real name-deduped count is proven in total-files-count.integration.spec.ts).
 function performResult(
   diagnostics: readonly ts.Diagnostic[],
 ): PerformCompilationResult {
-  return { diagnostics, program: {} as Program };
+  return {
+    diagnostics,
+    program: {
+      getTsProgram: () => ({ getSourceFiles: () => [] }),
+    } as unknown as Program,
+  };
 }
 
 interface LeafSpec {
