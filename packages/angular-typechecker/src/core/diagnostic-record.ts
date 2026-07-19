@@ -109,15 +109,80 @@ export function codeStringOf(rawCode: number): string {
  * the payload never leaks an absolute local path (Security V5 / T-30-04) and stays
  * cross-OS stable. When `pathBase` is unset the path is left as-is (only slash-
  * normalized) -- the production adapters always pass a base.
+ *
+ * FAST PATH: when `node:path` `relative()` yields a non-escaping result (does not
+ * start with `..`), it is returned slash-normalized -- BYTE-IDENTICAL to the historic
+ * behavior, so Windows/Linux payloads and every real-case `diagnostics[].file` path
+ * are untouched.
+ *
+ * FALLBACK: `relative()` is case-SENSITIVE on POSIX, so on a case-insensitive FS
+ * (macOS) a case-only difference between `pathBase` (real cwd case) and a
+ * TS-canonicalized, lowercased advisory-list path makes `relative()` find no common
+ * prefix and escape with `../../..`. {@link stripBaseCaseInsensitive} recovers the
+ * repo-relative remainder from that case-only mismatch; a GENUINE escape (the path is
+ * really outside the base) yields `undefined` and the real `..` escape is preserved.
  */
 export function relativizePath(
   absolutePath: string,
   pathBase: string | undefined,
 ): string {
-  const relativePath =
-    pathBase !== undefined ? relative(pathBase, absolutePath) : absolutePath;
+  if (pathBase === undefined) {
+    return absolutePath.replace(/\\/g, '/');
+  }
 
-  return relativePath.replace(/\\/g, '/');
+  const relativePath = relative(pathBase, absolutePath);
+
+  if (!relativePath.startsWith('..')) {
+    return relativePath.replace(/\\/g, '/');
+  }
+
+  const recovered = stripBaseCaseInsensitive(absolutePath, pathBase);
+
+  return (recovered ?? relativePath).replace(/\\/g, '/');
+}
+
+/**
+ * Strips `pathBase` off `absolutePath` with a CASE-INSENSITIVE base comparison,
+ * returning the repo-relative remainder in its REAL casing (or `undefined` when
+ * `absolutePath` is not actually under `pathBase`).
+ *
+ * WHY it exists: on a case-insensitive filesystem (macOS) the Angular compiler
+ * canonicalizes (lowercases) advisory-list file names (`useCaseSensitiveFileNames`
+ * === false) while `pathBase` keeps the real cwd casing, so a plain case-sensitive
+ * `node:path` `relative()` escapes with `../../..` instead of the repo-relative path.
+ * This recovers that path from the case-only mismatch. It is OS-independent pure
+ * string logic (no `node:path` FS calls), so it is unit-testable on a Windows dev
+ * machine WITHOUT a macOS runner -- the local proof for a fix that only ever triggers
+ * on macOS CI.
+ *
+ * Exported for that direct unit test; NOT added to the public barrel (`index.ts`).
+ */
+export function stripBaseCaseInsensitive(
+  absolutePath: string,
+  pathBase: string,
+): string | undefined {
+  const base = pathBase.replace(/[/\\]+$/, '');
+  const foldedBase = base.toLowerCase();
+  const foldedPath = absolutePath.toLowerCase();
+
+  if (foldedPath === foldedBase) {
+    return '';
+  }
+
+  if (!foldedPath.startsWith(foldedBase)) {
+    return undefined;
+  }
+
+  // A sibling like `/repo/rootx` shares the folded prefix `/repo/root` but is NOT a
+  // child -- the char right after the base in the ORIGINAL path must be a separator.
+  const separator = absolutePath[base.length];
+
+  if (separator !== '/' && separator !== '\\') {
+    return undefined;
+  }
+
+  // Slice from the ORIGINAL path so the remainder keeps its real casing.
+  return absolutePath.slice(base.length + 1);
 }
 
 function fileOf(
