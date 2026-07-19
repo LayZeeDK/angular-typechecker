@@ -47,7 +47,7 @@ shipped runtime is a CommonJS executor that dynamically `import()`s the ESM-only
 - `@nx/angular` `23.0.1` - powers the Angular fixtures/spike app under `apps/` and `e2e/` consumer workspaces.
 - ESLint `^9.8.0` (flat config) + `typescript-eslint` `^8.40.0` + `angular-eslint` `^22.0.0` - lint. Root config `eslint.config.mjs`; per-package `packages/angular-typechecker/eslint.config.mjs`.
 - Prettier `~3.6.2` - formatting (`singleQuote` preference; `.planning/` is Prettier-ignored).
-- fallow `2.103.0` - dead-code / duplication / complexity audit (gated in CI, not via the GSD pre-pass). Config: `.fallowrc.jsonc`.
+- fallow `3.6.0` - dead-code / duplication / complexity audit (gated in CI, not via the GSD pre-pass). Config: `.fallowrc.jsonc`.
 
 ## Key Dependencies
 
