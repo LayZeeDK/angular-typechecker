@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
 
-import { toDiagnosticRecord, type DiagnosticRecord } from './diagnostic-record';
+import {
+  toDiagnosticRecord,
+  toolVersion,
+  type DiagnosticRecord,
+} from './diagnostic-record';
 import { EXTENDED_DIAGNOSTIC_CATALOG } from './extended-catalog';
 import type { CoreResult } from './run-typecheck';
 
@@ -40,10 +44,6 @@ const INFORMATION_URI = 'https://github.com/LayZeeDK/angular-typechecker';
 // for the catalog codes incl. the two lower-numbered outliers NG8011 + NG8021 (A2).
 const HELP_URI_BASE = 'https://angular.dev/extended-diagnostics/NG';
 
-// The version is read from the REAL manifest (json-report.ts:31 pattern): compiled
-// `src/core/sarif-report.js` -> `../../package.json` is the package root.
-const packageManifest = require('../../package.json') as { version: string };
-
 /**
  * Serializes a completed `CoreResult` to a SARIF 2.1.0 JSON string. See the module
  * header for the contract.
@@ -68,7 +68,7 @@ export async function formatSarifReport(
 
   const runBuilder = new SarifRunBuilder().initSimple({
     toolDriverName: 'angular-typechecker',
-    toolDriverVersion: packageManifest.version,
+    toolDriverVersion: toolVersion,
     url: INFORMATION_URI,
   });
 

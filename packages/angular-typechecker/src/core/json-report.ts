@@ -1,6 +1,7 @@
 import {
   relativizePath,
   toDiagnosticRecord,
+  toolVersion,
   type DiagnosticRecord,
 } from './diagnostic-record';
 import { evaluateResult, type Outcome } from './evaluate-result';
@@ -28,11 +29,6 @@ import type { SkippedReference } from './walk-references';
 // D-03: the payload marker version. Bump ONLY on a breaking shape change; the key
 // drift-lock spec is the tripwire that forces a deliberate bump.
 const FORMAT_VERSION = 1;
-
-// The version is read from the REAL manifest (parse-args.ts:20 pattern): compiled
-// `src/core/json-report.js` -> `../../package.json` is the package root. A unit test
-// drift-locks the emitted value to the manifest so it can never go stale.
-const packageManifest = require('../../package.json') as { version: string };
 
 export interface JsonReportOptions {
   // The relativization base for `file` / `tsConfigPath` / advisory paths, yielding
@@ -121,7 +117,7 @@ export function formatJsonReport(
   const payload: JsonReport = {
     formatVersion: FORMAT_VERSION,
     tool: 'angular-typechecker',
-    version: packageManifest.version,
+    version: toolVersion,
     tsConfigPath: relativizePath(result.tsConfigPath, opts.pathBase),
     summary: {
       outcome,

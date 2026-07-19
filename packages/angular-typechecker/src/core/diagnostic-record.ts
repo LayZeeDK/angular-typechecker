@@ -16,6 +16,17 @@ import { ngCodeOf } from './diagnostic-codes';
  * `runTypecheck`) for `DiagnosticCategory` + `flattenDiagnosticMessageText`.
  */
 
+// STD-4: the shipped tool version, read from the package root in ONE place and reused
+// by BOTH machine reporters (json-report.ts + sarif-report.ts) so their emitted
+// `version` / `toolDriverVersion` can never drift. Compiled
+// `src/core/diagnostic-record.js` -> `../../package.json` is the package root -- the
+// same depth the two reporters previously read from. A `.json` require does not pull
+// `node-sarif-builder` into the static require graph, so the SARIF lazy-import firewall
+// (render-report.ts's `await import('./sarif-report.js')`) is unaffected.
+export const toolVersion: string = (
+  require('../../package.json') as { version: string }
+).version;
+
 /**
  * A single diagnostic, normalized for a machine payload. Positions are 1-based (or
  * `null` for a file-less diagnostic); `file` is repo-relative forward-slash (or
