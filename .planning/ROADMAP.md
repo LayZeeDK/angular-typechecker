@@ -164,7 +164,7 @@ Plans:
   3. A git-diff / `index.drift.ts` barrel audit proves additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (only the new `format` option + the optional `totalFilesCount`), the Angular CLI builder, the CLI flag set, or the generator schemas; `node-sarif-builder` is classified as a `dependency` with the lazy-import visibility resolved; the `v0.3.0` escape hatch stays untriggered (ADD-01).
   4. A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- alongside a curated public CHANGELOG entry in end-user language with no internal ids (DOC-01).
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 
 Plans:
 
@@ -175,7 +175,7 @@ Plans:
 
 **Wave 2** *(blocked on 32-01)*
 
-- [ ] 32-02-PLAN.md (Wave 2, depends 32-01) -- VER-03 shipped-tarball e2e across all three adapters (standalone CLI, `ng run`, Nx executor): `runShimSplit` (separate streams) + `--format` parity/purity assertions extended into the cli/ng-cli/install e2e projects; stdout-purity (payload parses), schema-valid SARIF (reusing 32-01's `validateSarif`), exit-code parity across `human`/`json`/`sarif` incl. the coverage-incomplete case (VER-03).
+- [x] 32-02-PLAN.md (Wave 2, depends 32-01) -- VER-03 shipped-tarball e2e across all three adapters (standalone CLI, `ng run`, Nx executor): `runShimSplit` (separate streams) + `--format` parity/purity assertions extended into the cli/ng-cli/install e2e projects; stdout-purity (payload parses), schema-valid SARIF (reusing 32-01's `validateSarif`), exit-code parity across `human`/`json`/`sarif` incl. the coverage-incomplete case (VER-03).
 
 **Wave 3** *(blocked on 32-01 + 32-02)*
 
@@ -218,7 +218,7 @@ Plans:
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
 | 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
-| 32. Verification + docs + additive audit | v0.2.3 | 2/4 | In Progress|  |
+| 32. Verification + docs + additive audit | v0.2.3 | 3/4 | In Progress|  |
 
 ## Backlog
 

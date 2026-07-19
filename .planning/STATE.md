@@ -6,14 +6,14 @@ current_phase: 32
 current_phase_name: Verification + docs + additive audit
 status: executing
 stopped_at: Phase 32 context gathered
-last_updated: "2026-07-19T00:21:36.412Z"
+last_updated: "2026-07-19T01:05:45.214Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 32 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
   percent: 67
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 ## Current Position
 
 Phase: 32 (Verification + docs + additive audit) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-07-18 — Phase 32 execution started
 
@@ -179,6 +179,8 @@ archives under `.planning/milestones/`.
   vs `<id>-SUMMARY.md`) recurred at v0.0.3 and v0.1.0 closes; and "close requirement statuses at phase
   verification" has recurred. Both want a mechanical gate before the next milestone close.
 
+- v0.2.3 tarball leaks dev-only __snapshots__/*.snap: install-e2e tarball-audit PKG-02 + verdaccio-publish REL-04 RED. Root cause: plugin build asset glob copies .snap into dist/src. Fix packaging in a 32 gap-closure plan before the Release-PR (see phases/32-.../deferred-items.md).
+
 ### Pending Todos
 
 None.
@@ -247,7 +249,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Phase 32 context gathered
 **Resume file:** .planning/phases/32-verification-docs-additive-audit/32-CONTEXT.md
 
-Last session: 2026-07-19T00:20:36.899Z
+Last session: 2026-07-19T01:05:27.785Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -305,3 +307,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 31 P02 | 15min | 3 tasks | 2 files |
 | Phase 32 P01 | 18min | 3 tasks | 10 files |
 | Phase 32 P04 | 8min | 3 tasks | 3 files |
+| Phase 32 P02 | 33min | 3 tasks | 6 files |
