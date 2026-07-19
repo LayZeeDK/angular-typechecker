@@ -53,7 +53,7 @@ tarball e2e (32-02: `install-e2e` 11 files / 40 tests).
 | `@nx/dependency-checks` -- no missing/obsolete/mismatched dep; `node-sarif-builder` correctly classified with NO `ignoredDependencies` entry (A1) | `nx lint angular-typechecker` (`maxWarnings:0`) | green |
 | Docs claims drift-locked against `HELP_TEXT` + the payload shape; CHANGELOG 0.2.3 hygiene | `src/machine-readable-docs.spec.ts` (32-04) | present + green |
 | VER-02: real-compiler JSON + SARIF payloads schema-valid + byte-stable across the 6-cell matrix | `src/core/machine-reporters-{json,sarif}.integration.spec.ts` (32-01) | present + green |
-| VER-03: the shipped tarball emits parseable JSON + schema-valid SARIF across all three adapters with exit-code parity | `e2e/*/…` cli-exit-codes / ng-add-ng-run / install-smoke `--format` blocks (32-02) | present + green |
+| VER-03: the shipped tarball emits parseable JSON + schema-valid SARIF across all three adapters with exit-code parity | `e2e/*/...` cli-exit-codes / ng-add-ng-run / install-smoke `--format` blocks (32-02) | present + green |
 
 The barrel-drift tripwire (`src/index.drift.ts`, run under `tsconfig.drift.json`) is the
 authoritative ADD-01 leg (a): a removed or renamed barrel export fails `tsc --noEmit`
@@ -133,3 +133,39 @@ All four are reached module-to-module through the widened `renderReport` seam an
 specs, integration specs, and e2e coverage; none is on the `src/index.ts` barrel. The
 `--format` flag that dispatches them was added widen-only to the executor/builder schemas
 (Section 2) and to the CLI `parse-args.ts` (`HELP_TEXT`, not a published schema).
+
+## 4. ADD-01 disposition
+
+- **No executor-id break:** `angular-typechecker:typecheck` is unchanged (`executors.json`
+  byte-identical), and `nx run <project>:typecheck` stays resolvable via `executors ?? builders`.
+- **No barrel break:** `src/index.ts` is byte-unchanged since `0.2.2` and is locked by the
+  `src/index.drift.ts` standing tripwire (green this phase); the three net-new reporters and
+  `renderReport` are NOT exported.
+- **No builder break:** `builders.json`, `src/builders/typecheck/builder.ts`, and its
+  `schema.d.ts` are byte-unchanged; the builder `schema.json` only widened by the optional
+  `format` enum (mirroring the executor).
+- **No schema break:** every pre-existing executor / builder / generator option is unchanged;
+  the executor and builder schemas gained ONLY the OPTIONAL `format` enum
+  (`required`/`additionalProperties` unchanged), and `CoreResult` gained ONLY the OPTIONAL
+  `totalFilesCount` -- both widen-only/additive under 0.x semver.
+- **No CLI flag-set break:** `--format` is an additive optional flag; omitting it preserves
+  the byte-identical `0.2.2` human output and the identical exit code across formats
+  (evaluate-result / toExitCode are the sole verdict owners, verified by the VER-03 exit-code
+  parity e2e).
+- **One new runtime dependency, correctly classified:** the plugin `dependencies` gained
+  EXACTLY `node-sarif-builder@^4.1.0`; `@nx/dependency-checks` SEES its lazy `import()` and
+  needs NO `ignoredDependencies` entry (A1). `ajv`/`ajv-formats` are dev-only ROOT
+  devDependencies and never reach the shipped manifest.
+- **Packaging correction, not a contract change:** the `project.json` asset-glob
+  `ignore: ["**/__snapshots__/**"]` restores the tarball to `@0.2.2`'s clean file set; no
+  public API / executor id / schema / dependency / version change.
+- **Charter satisfied:** ADDITIVE-ONLY holds. There is no breaking change, so the milestone
+  remains on the **0.2.x** line and does NOT re-version to v0.3.0; the v0.3.0 breaking-change
+  escape hatch stays **UNTRIGGERED**. The package `version` stays `0.2.2` -- this phase cuts
+  NO release; the `0.2.2 -> 0.2.3` bump + tag + npm publish are the later human-gated
+  Release-PR flow (AGENTS.md).
+
+---
+
+*Phase: 32-verification-docs-additive-audit*
+*Audited: 2026-07-19 against `angular-typechecker@0.2.2` (baseline `6d3214d`, HEAD `6ca7628`)*
