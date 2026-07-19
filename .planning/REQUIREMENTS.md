@@ -9,31 +9,31 @@
 
 ### FMT (format selector + reporter seam)
 
-- [ ] **FMT-01**: A user selects the output format via `--format <human|json|sarif>` on the standalone CLI and a matching `format` option on the Nx executor + Angular CLI builder, default `human`. Implemented by widening the EXISTING `core/render-report.ts` `renderReport` seam with a `format` discriminator and threading the enum through all three adapter entry points (CLI `parse-args`, executor `schema.json` + `schema.d.ts` + `normalize-options`, builder `schema.json`; both `schema-parity` specs gain `'format'`). With `--format` omitted, behavior is byte-identical to v0.2.2 (`builder.ts` unchanged).
-- [ ] **FMT-02**: The reporters are PURE functions over `CoreResult` and NEVER change the verdict or exit code -- `evaluateResult` / `toExitCode` remain the sole owners, and the same input yields the IDENTICAL exit code across `human` / `json` / `sarif`. (Anti-false-pass: a coverage-incomplete run has `errorCount === 0` but `success === false`; a reporter must never re-derive success from counts.)
-- [ ] **FMT-03**: The machine payload (JSON/SARIF) is written to **stdout only**; every advisory notice, warning, and error goes to **stderr** via the injected `Logger`. No ANSI color ever appears in a machine payload, regardless of TTY / `FORCE_COLOR` (messages built from `ts.flattenDiagnosticMessageText`, never the human colorizing renderer).
+- [x] **FMT-01**: A user selects the output format via `--format <human|json|sarif>` on the standalone CLI and a matching `format` option on the Nx executor + Angular CLI builder, default `human`. Implemented by widening the EXISTING `core/render-report.ts` `renderReport` seam with a `format` discriminator and threading the enum through all three adapter entry points (CLI `parse-args`, executor `schema.json` + `schema.d.ts` + `normalize-options`, builder `schema.json`; both `schema-parity` specs gain `'format'`). With `--format` omitted, behavior is byte-identical to v0.2.2 (`builder.ts` unchanged).
+- [x] **FMT-02**: The reporters are PURE functions over `CoreResult` and NEVER change the verdict or exit code -- `evaluateResult` / `toExitCode` remain the sole owners, and the same input yields the IDENTICAL exit code across `human` / `json` / `sarif`. (Anti-false-pass: a coverage-incomplete run has `errorCount === 0` but `success === false`; a reporter must never re-derive success from counts.)
+- [x] **FMT-03**: The machine payload (JSON/SARIF) is written to **stdout only**; every advisory notice, warning, and error goes to **stderr** via the injected `Logger`. No ANSI color ever appears in a machine payload, regardless of TTY / `FORCE_COLOR` (messages built from `ts.flattenDiagnosticMessageText`, never the human colorizing renderer).
 
 ### REP (reporters)
 
-- [ ] **REP-01**: `--format json` emits a stable, documented, agent-parseable payload -- a flat `diagnostics[]` (each: `file` [repo-relative path or `null` for file-less], **1-based** `line`/`column`/`endLine`/`endColumn`, a humanized `code` string [`TS####` / `NG8xxx` / `ATC9000x`] AND the raw `rawCode` int, `severity`, `message`) plus a `summary` carrying the discriminated `outcome`, category counts, `totalFilesCount`, and the structured suppression/advisory fields (`suppressedInGraph*`, `templateCheckAborted`, `skippedReferences`, `notTypeCheckedDeclaredFiles`, `bundlerQueryImports`). No new dependency (`JSON.stringify`). A `formatVersion` marker + tool version; the payload keys are drift-locked. (Design defaults, adjustable at plan time: carry BOTH the decoded label and the raw code; do NOT surface a non-deterministic `durationMs`; do NOT publish a hosted `$schema` URL this milestone.)
+- [x] **REP-01**: `--format json` emits a stable, documented, agent-parseable payload -- a flat `diagnostics[]` (each: `file` [repo-relative path or `null` for file-less], **1-based** `line`/`column`/`endLine`/`endColumn`, a humanized `code` string [`TS####` / `NG8xxx` / `ATC9000x`] AND the raw `rawCode` int, `severity`, `message`) plus a `summary` carrying the discriminated `outcome`, category counts, `totalFilesCount`, and the structured suppression/advisory fields (`suppressedInGraph*`, `templateCheckAborted`, `skippedReferences`, `notTypeCheckedDeclaredFiles`, `bundlerQueryImports`). No new dependency (`JSON.stringify`). A `formatVersion` marker + tool version; the payload keys are drift-locked. (Design defaults, adjustable at plan time: carry BOTH the decoded label and the raw code; do NOT surface a non-deterministic `durationMs`; do NOT publish a hosted `$schema` URL this milestone.)
 - [x] **REP-02**: `--format sarif` emits valid SARIF 2.1.0 for GitHub Code Scanning `upload-sarif` -- `runs[].tool.driver` (name / version / informationUri + a `rules[]` catalog for the 18 NG8xxx extended diagnostics) and `results[]` (humanized `ruleId`, mapped `level`, `message.text`, `locations[]` with **repo-relative forward-slash** `artifactLocation.uri` + **1-based** `region`, and self-computed `partialFingerprints`), with deterministic `results[]` ordering. Built with `node-sarif-builder` (`^4.1.0`, MIT, CommonJS) **lazy-`import()`ed ONLY on the SARIF path**. File-less diagnostics (synthesized 90001/90002, global TS) are represented, never dropped. (Design default, adjustable at plan time: file-less diagnostics emit a **no-location result** and rely on the verdict/exit code as the authoritative fail signal, rather than anchoring a synthetic region on the tsconfig.)
 
 ### OBS (observability)
 
-- [ ] **OBS-01**: An OPTIONAL `CoreResult.totalFilesCount` field (additive; `evaluateResult` never reads it), captured from the live `Program` on the direct path and a deduped `Set` of source-file names across walked leaves, surfaced in the JSON `summary`. (Design default, adjustable at plan time: count **non-declaration** source files -- the meaningful "files checked" number -- rather than raw `@nx/js`-parity all-files.)
+- [x] **OBS-01**: An OPTIONAL `CoreResult.totalFilesCount` field (additive; `evaluateResult` never reads it), captured from the live `Program` on the direct path and a deduped `Set` of source-file names across walked leaves, surfaced in the JSON `summary`. (Design default, adjustable at plan time: count **non-declaration** source files -- the meaningful "files checked" number -- rather than raw `@nx/js`-parity all-files.)
 
 ### CLIX (CLI ergonomics)
 
-- [ ] **CLIX-02**: `--quiet` suppresses advisory/notice chatter on stderr (NEVER the machine payload, NEVER the verdict -- the never-silent charter); `--color` / `--no-color` are explicit overrides layered above the shipped `NO_COLOR` > `FORCE_COLOR` > TTY precedence (machine formats stay unconditionally plain either way).
+- [x] **CLIX-02**: `--quiet` suppresses advisory/notice chatter on stderr (NEVER the machine payload, NEVER the verdict -- the never-silent charter); `--color` / `--no-color` are explicit overrides layered above the shipped `NO_COLOR` > `FORCE_COLOR` > TTY precedence (machine formats stay unconditionally plain either way).
 
 ### VER (verification -- the repo's Vitest pyramid + CI matrix)
 
 Test tiers mirror the shipped strategy: **Unit** = `*.spec.ts` (`test` target, `dependsOn: build`); **Integration** = `*.integration.spec.ts` (real cold `@angular/compiler-cli`); both ride the LEAN 6-cell OS x Node matrix. **e2e** = the packed tarball + Verdaccio + real installs, per-project dynamic CI matrix.
 
-- [ ] **VER-01 (Unit)**: Pure-reporter unit + snapshot specs -- JSON shape (flat `diagnostics[]`, 1-based positions, code strings, file-less `null`, `summary`/`outcome`); SARIF shape; the `ts.DiagnosticCategory` -> SARIF `level` / JSON `severity` mapping; exit-code PARITY across `human`/`json`/`sarif` (stubbed core, incl. the coverage-incomplete `errorCount === 0`/`success === false` case); no-ANSI-in-payload under `FORCE_COLOR=1`; `--quiet` gates stderr chatter only.
-- [ ] **VER-02 (Integration)**: `run()` + the executor exercised over committed real-cold-compiler fixtures emitting JSON + SARIF; the SARIF validated against the 2.1.0 schema (dev-only validator); volatile fields (`durationMs`, tool version) redacted; byte-stable across the OS/Node cells (incl. Windows path -> forward-slash URI).
-- [ ] **VER-03 (Shipped-tarball e2e)**: The SHIPPED tarball emits valid JSON + schema-valid SARIF via all three adapters (Nx executor, `ng run`, CLI `--format`); asserts stdout-purity (payload parses) and exit-code parity across formats.
-- [ ] **VER-04 (nx-free + interop guard)**: A require-graph guard proves the human / JSON / CLI-boot paths never load `node-sarif-builder`; a REAL-import (not mock) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop (`(mod.default ?? mod)`).
+- [x] **VER-01 (Unit)**: Pure-reporter unit + snapshot specs -- JSON shape (flat `diagnostics[]`, 1-based positions, code strings, file-less `null`, `summary`/`outcome`); SARIF shape; the `ts.DiagnosticCategory` -> SARIF `level` / JSON `severity` mapping; exit-code PARITY across `human`/`json`/`sarif` (stubbed core, incl. the coverage-incomplete `errorCount === 0`/`success === false` case); no-ANSI-in-payload under `FORCE_COLOR=1`; `--quiet` gates stderr chatter only.
+- [x] **VER-02 (Integration)**: `run()` + the executor exercised over committed real-cold-compiler fixtures emitting JSON + SARIF; the SARIF validated against the 2.1.0 schema (dev-only validator); volatile fields (`durationMs`, tool version) redacted; byte-stable across the OS/Node cells (incl. Windows path -> forward-slash URI).
+- [x] **VER-03 (Shipped-tarball e2e)**: The SHIPPED tarball emits valid JSON + schema-valid SARIF via all three adapters (Nx executor, `ng run`, CLI `--format`); asserts stdout-purity (payload parses) and exit-code parity across formats.
+- [x] **VER-04 (nx-free + interop guard)**: A require-graph guard proves the human / JSON / CLI-boot paths never load `node-sarif-builder`; a REAL-import (not mock) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop (`(mod.default ?? mod)`).
 
 ### ADD (additive-only charter)
 
@@ -78,13 +78,13 @@ Each requirement maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FMT-01 | Phase 30 | Pending |
-| FMT-02 | Phase 30 | Pending |
-| FMT-03 | Phase 30 | Pending |
-| REP-01 | Phase 30 | Pending |
+| FMT-01 | Phase 30 | Complete |
+| FMT-02 | Phase 30 | Complete |
+| FMT-03 | Phase 30 | Complete |
+| REP-01 | Phase 30 | Complete |
 | REP-02 | Phase 31 | Complete |
-| OBS-01 | Phase 30 | Pending |
-| CLIX-02 | Phase 30 | Pending |
+| OBS-01 | Phase 30 | Complete |
+| CLIX-02 | Phase 30 | Complete |
 | VER-01 | Phase 30 | Complete |
 | VER-02 | Phase 32 | Complete |
 | VER-03 | Phase 32 | Complete |
@@ -102,4 +102,4 @@ Each requirement maps to exactly one phase.
 
 ---
 *Requirements defined: 2026-07-18*
-*Last updated: 2026-07-18 -- roadmap created (Phases 30-32), traceability populated (13/13 mapped, 0 unmapped)*
+*Last updated: 2026-07-19 -- milestone audit: all 13 requirements verified SATISFIED; traceability + checkboxes reconciled to verified state (13/13 Complete)*
