@@ -2,6 +2,47 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.2.3
+
+**Machine-readable output.** angular-typechecker can now report in two machine
+formats alongside its human-readable output: a flat JSON payload and SARIF 2.1.0.
+Pass `--format json` or `--format sarif` -- the standalone CLI flag, or the
+matching `format` option on the Nx executor and the Angular CLI builder -- to pick
+one. Nothing changes for existing users: with `--format` omitted the output is the
+same human-readable report as before, and the pass/fail exit code is identical in
+every format.
+
+### Features
+
+- JSON output for agents and scripts. `--format json` prints a single JSON object
+  with a flat `diagnostics` array (1-based positions, repo-relative paths, and a
+  stable code string per diagnostic) and a `summary` carrying the verdict and the
+  counts. It is written to standard output on its own, with progress and advisory
+  notices kept on standard error, so a script can capture the payload and parse it
+  directly.
+- SARIF for GitHub Code Scanning. `--format sarif` prints SARIF 2.1.0. Redirect it
+  to a file and upload it with the `upload-sarif` action to see each diagnostic as
+  a Code Scanning alert, including the Angular extended (NG8xxx) template checks.
+- The same formats everywhere. The Nx executor, the Angular CLI builder, and the
+  standalone CLI all accept the format selector, so you get the identical payload
+  from `nx typecheck`, `ng run <project>:typecheck`, and `npx angular-typechecker`.
+
+### Notes
+
+- Run angular-typechecker from your repository root when producing SARIF, so each
+  result's file path stays relative to the repository and GitHub Code Scanning can
+  match the alert to the right file.
+- A whole-program diagnostic with no source location is reported without a location
+  rather than dropped. Because Code Scanning cannot pin a location-less alert to a
+  line, rely on the exit code, not the alert, as the fail signal for those.
+
+### Compatibility
+
+- Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript `>=6.0.0 <6.1.0`,
+  Node `^22.22.3 || ^24.15.0 || ^26.0.0`.
+- SARIF output adds one runtime dependency, `node-sarif-builder`; JSON output adds
+  none.
+
 ## 0.2.2
 
 **Standalone command-line interface.** angular-typechecker now ships a standalone
