@@ -169,7 +169,11 @@ export function stripBaseCaseInsensitive(
     return '';
   }
 
-  if (!foldedPath.startsWith(foldedBase)) {
+  // Compare the ORIGINAL path's leading `base.length` span (folded) rather than
+  // `foldedPath.startsWith(foldedBase)`: `toLowerCase()` can change length (e.g.
+  // U+0130), which would let a folded-prefix match pass while `base.length` no
+  // longer marks the real boundary used by the separator check + slice below.
+  if (absolutePath.slice(0, base.length).toLowerCase() !== foldedBase) {
     return undefined;
   }
 
