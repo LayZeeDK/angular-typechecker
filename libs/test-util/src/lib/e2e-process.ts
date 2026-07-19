@@ -68,6 +68,32 @@ export interface RunResult {
 }
 
 /**
+ * Extract the single JSON payload object from FRAMED CLI output. The Nx / Angular CLI
+ * task runners wrap an executor's raw stdout with their own chrome (a leading
+ * task-echo line, a trailing run summary), so `JSON.parse(rawStdout)` fails even
+ * though the machine payload itself is pure. The payload is the ONLY brace-delimited
+ * object in the output, so slice from the first `{` to the last `}`; a JSON.parse /
+ * validateSarif on the slice then proves the payload boundary is clean -- and fails
+ * LOUDLY (never a false pass) if chrome ever bled INSIDE the braces.
+ *
+ * Used for the `ng run` / `nx run` adapters (VER-03), where -- unlike the standalone
+ * `.bin` shim -- the framework owns stdout framing. The guaranteed-pure stdout proof
+ * stays on the CLI shim path (`runShimSplit`).
+ */
+export function extractJsonPayload(rawStdout: string): string {
+  const start = rawStdout.indexOf('{');
+  const end = rawStdout.lastIndexOf('}');
+
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(
+      `extractJsonPayload: no brace-delimited payload in output:\n${rawStdout}`,
+    );
+  }
+
+  return rawStdout.slice(start, end + 1);
+}
+
+/**
  * Run `npx nx run <target> --output-style=static [--skip-nx-cache]` in `cwd` and
  * capture the result. `execSync` throws on a non-zero exit, so the catch is how the
  * exit code + combined stdout/stderr of the nested nx run are captured (NEVER pipe
