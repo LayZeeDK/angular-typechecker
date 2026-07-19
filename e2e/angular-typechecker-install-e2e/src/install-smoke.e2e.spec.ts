@@ -12,11 +12,14 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  ADVISORY_NOTICE_PREFIX,
   buildCleanEnv,
+  extractJsonPayload,
   findWorkspaceRoot,
   removeTmpDir,
   run,
   sh,
+  validateSarif,
 } from '@workspace/test-util';
 
 // TEST-05: THE tracer bullet (D-22). 05-02 proved the packed tarball is SHAPED
@@ -147,6 +150,58 @@ describe('TEST-05: a clean install of the packed tarball resolves + runs the exe
       const green = run(tmp, TARGET, { env });
       expect(green.code).toBe(0);
 
+      // VER-03 (Nx executor adapter): the shipped executor emits a parseable JSON +
+      // schema-valid SARIF payload and returns the IDENTICAL exit code across
+      // --format human|json|sarif for the SAME input. `nx run` frames the executor's
+      // raw stdout, so extractJsonPayload isolates the single JSON object and we
+      // assert no Nx chrome / advisory text is INSIDE the payload boundary (the
+      // executor gates advisory notices to the human format, so json/sarif never emit
+      // them). NX_DAEMON=false comes from buildCleanEnv; --skip-nx-cache keeps each
+      // format a fresh run rather than a cache replay.
+      const cleanHuman = run(tmp, `${TARGET} --format human`, {
+        env,
+        skipNxCache: true,
+      });
+      const cleanJson = run(tmp, `${TARGET} --format json`, {
+        env,
+        skipNxCache: true,
+      });
+      const cleanSarif = run(tmp, `${TARGET} --format sarif`, {
+        env,
+        skipNxCache: true,
+      });
+
+      // exit-code parity: every format exits 0 on the clean consumer project.
+      expect(cleanHuman.code, cleanHuman.stdout).toBe(0);
+      expect(cleanJson.code, cleanJson.stdout).toBe(0);
+      expect(cleanSarif.code, cleanSarif.stdout).toBe(0);
+
+      // Observed framing (Nx 23 `nx run consumer-app:typecheck --format json
+      // --output-style=static`): stdout IS framed -- a leading `> nx run ...` task
+      // echo + a Node NO_COLOR/FORCE_COLOR warning, and a trailing ` NX  Successfully
+      // ran target ...` summary. extractJsonPayload (first `{` .. last `}`) isolates the
+      // single executor payload; a JSON.parse / validateSarif on the slice then fails
+      // LOUDLY (never a false pass) if chrome ever bled inside the braces.
+      // json payload: parseable + shaped (formatVersion + diagnostics[] + summary);
+      // no Nx chrome / advisory text bled into the payload boundary.
+      const jsonPayload = extractJsonPayload(cleanJson.stdout);
+      const parsedJson = JSON.parse(jsonPayload) as {
+        formatVersion: number;
+        summary: unknown;
+        diagnostics: unknown[];
+      };
+      expect(parsedJson.formatVersion).toBe(1);
+      expect(Array.isArray(parsedJson.diagnostics)).toBe(true);
+      expect(parsedJson.summary).toBeDefined();
+      expect(jsonPayload).not.toContain(ADVISORY_NOTICE_PREFIX);
+
+      // sarif payload: schema-valid SARIF 2.1.0 (shared dev-only validateSarif); no
+      // Nx chrome / advisory text inside the payload.
+      const sarifPayload = extractJsonPayload(cleanSarif.stdout);
+      const sarif = validateSarif(sarifPayload);
+      expect(sarif.valid, sarif.errors).toBe(true);
+      expect(sarifPayload).not.toContain(ADVISORY_NOTICE_PREFIX);
+
       // Inject a known TS2322 into the TMP copy's component source. Because the
       // tmp workspace is discarded via rmSync, mutating the copy is inherently
       // crash-safe -- no .pristine sidecar needed (D-18). Build the broken line
@@ -174,6 +229,20 @@ describe('TEST-05: a clean install of the packed tarball resolves + runs the exe
       expect(bad.stdout).toContain(INJECTED_TS_CODE);
       expect(bad.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
       expect(bad.stdout).not.toContain('infrastructure error');
+
+      // VER-03 exit-code parity under a planted verdict-fail: the code is IDENTICAL
+      // and non-zero across all three formats (the cardinal anti-false-pass -- a
+      // machine format must never mask the verdict).
+      const badJson = run(tmp, `${TARGET} --format json`, {
+        env,
+        skipNxCache: true,
+      });
+      const badSarif = run(tmp, `${TARGET} --format sarif`, {
+        env,
+        skipNxCache: true,
+      });
+      expect(badJson.code, badJson.stdout).toBe(bad.code);
+      expect(badSarif.code, badSarif.stdout).toBe(bad.code);
     } finally {
       removeTmpDir(tmp);
     }
