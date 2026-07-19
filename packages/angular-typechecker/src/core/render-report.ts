@@ -17,8 +17,8 @@ export type ReportFormat = 'human' | 'json' | 'sarif';
  * Options for {@link renderReport}.
  *
  * - FMT-01/D-12: `format` selects the reporter; OPTIONAL, defaulting to `'human'`,
- *   so the shipped callers (main.ts, executor.ts) compile unchanged until 30-03
- *   threads a real value. Human output stays byte-identical to v0.2.2.
+ *   so a caller that omits it stays back-compatible. Human output stays
+ *   byte-identical to v0.2.2.
  * - D-08: `pathBase` is the relativization base for CI-annotation / machine paths.
  *   Unset => ABSOLUTE paths. The adapter fills it from `context.root`.
  * - D-04/D-10: `color` false => strip ANSI (CI / agents / pipes); true => keep it.

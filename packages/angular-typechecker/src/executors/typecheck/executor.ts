@@ -54,10 +54,15 @@ export default async function typecheckExecutor(
     //
     // CR-01 / D-08 / T-30-07: gate on the HUMAN format ONLY. @nx/devkit's
     // `logger.info` routes to STDOUT in a task process, so on a machine format
-    // (json/sarif) an advisory notice would prepend text to the raw JSON payload
-    // written below and break `JSON.parse` / `jq`. The machine payload already
-    // carries every advisory field (summary.suppressed* / advisories.*), so the
-    // notices are redundant there. Human format keeps emitting exactly as before.
+    // (json/sarif) an advisory notice would prepend text to the raw payload
+    // written below and break `JSON.parse` / `jq` -- that corruption risk is the
+    // load-bearing reason for the gate and applies to BOTH machine formats.
+    // The JSON payload additionally carries every advisory field
+    // (summary.suppressed* / advisories.*), so the notices are redundant THERE;
+    // SARIF emits only tool.driver + rules[] + results[] -- it has no slot for
+    // advisory meta and INTENTIONALLY omits it. Either way the verdict / exit code
+    // still reflects coverage: evaluateResult owns the verdict and this gate does
+    // not touch it. Human format keeps emitting exactly as before.
     if (format === 'human') {
       emitAdvisoryNotices(result, logger);
     }
