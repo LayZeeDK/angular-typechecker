@@ -41,7 +41,7 @@ Test tiers mirror the shipped strategy: **Unit** = `*.spec.ts` (`test` target, `
 
 ### DOC (docs)
 
-- [ ] **DOC-01**: A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- plus a curated public CHANGELOG entry in end-user language (no internal ids).
+- [x] **DOC-01**: A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- plus a curated public CHANGELOG entry in end-user language (no internal ids).
 
 ## Future Requirements
 
@@ -90,7 +90,7 @@ Each requirement maps to exactly one phase.
 | VER-03 | Phase 32 | Pending |
 | VER-04 | Phase 31 | Complete |
 | ADD-01 | Phase 32 | Pending |
-| DOC-01 | Phase 32 | Pending |
+| DOC-01 | Phase 32 | Complete |
 
 **Coverage:**
 

@@ -6,14 +6,14 @@ current_phase: 32
 current_phase_name: Verification + docs + additive audit
 status: executing
 stopped_at: Phase 32 context gathered
-last_updated: "2026-07-19T00:05:40.407Z"
+last_updated: "2026-07-19T00:21:36.412Z"
 last_activity: 2026-07-18
 last_activity_desc: Phase 32 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 67
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 ## Current Position
 
 Phase: 32 (Verification + docs + additive audit) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-07-18 — Phase 32 execution started
 
@@ -102,6 +102,7 @@ archives under `.planning/milestones/`.
 - [Phase ?]: 31-02: VER-04 closed -- require-graph guard (render-report.js + bin.js static walks + positive control that the lazy import is present) + REAL-import (mod.default ?? mod) SARIF 2.1.0 interop; nx lint green with NO ignoredDependencies (A1). Positive-control substring is the actual single-quoted .js emit; interop cast mirrors shipped sarif-report.ts (typeof mod sketch fails TS2352). Additive-only holds (no prod code/dep/version).
 - [Phase 32]: Phase 32-01: SARIF validation uses the committed SchemaStore draft-07 schema + plain ajv@^8 + ajv-formats (strict:false); ajv/ajv-formats are ROOT devDeps only, plugin manifest byte-unchanged (additive-only held).
 - [Phase 32]: Phase 32-01: validateSarif + redactVolatile live in @workspace/test-util (validate-sarif.ts uses __dirname for the commonjs lib build); the 32-02 VER-03 e2e reuses the SAME validator.
+- [Phase 32]: 32-04: DOC-01 docs -- README ## Machine-readable output (--format json/sarif, JSON schema, SARIF upload-sarif recipe, run-from-repo-root artifactLocation.uri caveat) + curated UNDATED end-user CHANGELOG 0.2.3 (no ids, version held 0.2.2, no cut) + machine-readable-docs.spec.ts tripwire. Reconciled 3 now-false reporter passages (non-goal / 'lands in a later release'); tripwire absence-locks them. SARIF recipe uses npx angular-typechecker (atc not on PATH in GH Actions run:). Deferred: stale HELP_TEXT 'sarif lands in a later release' (parse-args.ts, out of scope).
 
 ### Roadmap Evolution
 
@@ -246,7 +247,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Phase 32 context gathered
 **Resume file:** .planning/phases/32-verification-docs-additive-audit/32-CONTEXT.md
 
-Last session: 2026-07-19T00:04:40.322Z
+Last session: 2026-07-19T00:20:36.899Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -303,3 +304,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 31 P01 | 19min | 3 tasks | 12 files |
 | Phase 31 P02 | 15min | 3 tasks | 2 files |
 | Phase 32 P01 | 18min | 3 tasks | 10 files |
+| Phase 32 P04 | 8min | 3 tasks | 3 files |
