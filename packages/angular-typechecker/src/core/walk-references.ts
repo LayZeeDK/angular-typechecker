@@ -192,12 +192,27 @@ export function gatherLeafInto(
     ...detectUncheckedDeclaredFiles(ts, parsed, entryPath),
   );
 
+  // PR47-F1: a leaf that crashes DURING Program construction returns
+  // `{ program: undefined }` alongside its diagnostics (which carry the 500 that is
+  // ALREADY unioned into `acc.rawDiagnostics` above). Guard BEFORE the OBS-01
+  // source-file deref -- else `result.program.getTsProgram()` throws a RAW TypeError
+  // that escapes before the caller can re-classify the 500. Mirrors the direct
+  // path's `result.program === undefined` guard shape (run-typecheck.ts), but here we
+  // only `return` (void): walk-references stays pure and free of the run-typecheck
+  // import cycle, so the caller's post-walk / post-loop throwIfInfrastructureFailure
+  // (handleSolutionWalk / handleMultiTsConfig) classifies the unioned 500. The
+  // crashed leaf contributes 0 authored files -- verdict-neutral for totalFilesCount.
+  if (result.program === undefined) {
+    return;
+  }
+
   // OBS-01 (Phase 30, D-11): accumulate this leaf's authored source files by NAME off
   // the live Program (the authored-source rule -- skip `.d.ts` + `.ngtypecheck.ts`
   // shims -- lives in isAuthoredSourceFile), so `lib.d.ts` and node_modules types are
   // excluded. The Set dedupes across leaves, so a source file both leaves compile is
-  // counted once. `result.program` is live here exactly as it is for the direct path
-  // (the caller re-throws any per-leaf infra-500 over the union afterwards).
+  // counted once. `result.program` is proven defined by the PR47-F1 guard above
+  // (as on the direct path; the caller re-throws any per-leaf infra-500 over the
+  // union afterwards).
   for (const sourceFile of result.program.getTsProgram().getSourceFiles()) {
     if (!isAuthoredSourceFile(sourceFile)) {
       continue;

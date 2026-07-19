@@ -76,6 +76,11 @@ interface LeafSpec {
   parsed: ParsedConfiguration;
   // The diagnostics the leaf's performCompilation returns (raw, pre-filter).
   diagnostics: readonly ts.Diagnostic[];
+  // PR47-F1: when true, this leaf's performCompilation returns NO Program
+  // (`program: undefined`) plus its `diagnostics` -- an infra crash DURING Program
+  // construction. Default (omitted) keeps a valid empty-source Program so every
+  // existing test is byte-unchanged.
+  crashProgram?: boolean;
 }
 
 function parsedConfig(
@@ -128,7 +133,20 @@ function stubCompilerCli(leaves: Record<string, LeafSpec>): {
 
       performedPaths.push(match[0]);
 
-      return performResult(match[1].diagnostics);
+      const spec = match[1];
+
+      if (spec.crashProgram === true) {
+        // PR47-F1: an infra crash DURING Program construction -- NO Program plus
+        // the raw diagnostics (including a 500). The shim types `program` as
+        // non-optional (compiler-cli-types.ts), so cast to model the real
+        // engine's OPTIONAL `program?` return.
+        return {
+          diagnostics: spec.diagnostics,
+          program: undefined,
+        } as unknown as PerformCompilationResult;
+      }
+
+      return performResult(spec.diagnostics);
     },
   );
 
@@ -489,6 +507,48 @@ describe('walkReferences', () => {
     expect(codes).not.toContain(REFERENCE_NOT_FOUND);
     expect(walk.skippedReferences).toEqual([]);
     expect(performedPaths).toEqual([]);
+  });
+
+  it('RESOLVES a surviving leaf whose performCompilation returns NO Program + a 500 -- 500 stays in the union, 0 authored files, no raw TypeError (PR47-F1)', async () => {
+    const ts = tsForWalk(await import('typescript'));
+
+    // A SURVIVING leaf that crashes DURING Program construction:
+    // performCompilation returns { program: undefined } plus a raw 500. Before the
+    // gatherLeafInto guard this threw a raw TypeError off the OBS-01 source-file
+    // deref BEFORE the caller could re-classify the 500. The walk must RESOLVE with
+    // the 500 in the union (handleSolutionWalk re-throws it as infrastructure) and
+    // the crashed leaf must contribute 0 authored files.
+    const crashPath = leaf('./tsconfig.app.json');
+    const crashSource = leaf('./app.ts');
+
+    const { ng, performedPaths } = stubCompilerCli({
+      [crashPath]: {
+        parsed: parsedConfig(crashPath, [crashSource]),
+        diagnostics: [diagnostic(UNKNOWN_ERROR_CODE)],
+        crashProgram: true,
+      },
+    });
+
+    const solutionParsed = parsedConfig(
+      SOLUTION_TSCONFIG,
+      [],
+      [],
+      [{ path: './tsconfig.app.json' }],
+    );
+
+    const walk = await walkReferences(
+      ng,
+      ts,
+      solutionParsed,
+      SOLUTION_TSCONFIG,
+    );
+
+    // The leaf ran and the walk RESOLVED (no raw TypeError).
+    expect(performedPaths).toEqual([crashPath]);
+    // The raw 500 is left in the union for the caller to re-throw as infrastructure.
+    expect(walk.rawDiagnostics.map((d) => d.code)).toContain(UNKNOWN_ERROR_CODE);
+    // The crashed leaf contributes 0 authored files (the deref never ran).
+    expect(walk.totalFilesCount).toBe(0);
   });
 
   it('WALKS a leaf whose realpath throws instead of dropping it (boundary over-keep-safe, S-1)', async () => {

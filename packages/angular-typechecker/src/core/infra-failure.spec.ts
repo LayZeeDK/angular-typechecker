@@ -323,6 +323,29 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
       runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
     ).rejects.toThrow(/returned no Program/);
   });
+
+  // PR47-F1 (multi-tsconfig parity): an ARRAY tsConfigPath whose surviving entry's
+  // performCompilation returns { program: undefined } + a 500 must REJECT with a
+  // TypecheckInfrastructureError, never a raw TypeError off gatherLeafInto's
+  // source-file deref. The guard leaves the 500 in the union;
+  // handleMultiTsConfig's post-loop throwIfInfrastructureFailure classifies it,
+  // exactly as the solution-walk path does.
+  it('PR47-F1: an ARRAY tsConfigPath entry returning program:undefined + a 500 REJECTS as TypecheckInfrastructureError, not a raw TypeError', async () => {
+    compilerCliStub.performCompilation.mockReturnValue({
+      diagnostics: [
+        errorDiagnostic(UNKNOWN_ERROR_CODE, 'simulated internal crash'),
+      ],
+      program: undefined,
+    });
+
+    const { runTypecheck, TypecheckInfrastructureError } = await import(
+      './run-typecheck'
+    );
+
+    await expect(
+      runTypecheck({ tsConfigPath: ['/virtual/a.json', '/virtual/b.json'] }),
+    ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
+  });
 });
 
 // COR-01 / D-01..D-03 unit twin: the SECOND 500 scan, on `parsed.errors`. A
