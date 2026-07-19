@@ -4,8 +4,8 @@ milestone: v0.2.3
 milestone_name: -- Machine-readable reporters)
 current_phase: 32
 current_phase_name: Verification + docs + additive audit
-status: verifying
-stopped_at: Phase 32 context gathered
+status: complete
+stopped_at: Phase 32 close-out complete (secure + validate + extract-learnings); milestone close + Release-PR are human-gated next
 last_updated: "2026-07-19T03:12:29.809Z"
 last_activity: 2026-07-19
 progress:
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 
 ## Current Position
 
-Phase: 32 (Verification + docs + additive audit) — EXECUTING
+Phase: 32 (Verification + docs + additive audit) — CLOSED (final phase of v0.2.3)
 Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-07-19
+Status: Goal verified (1 human_needed = CI cross-OS observation); SECURED (threats_open:0) + NYQUIST-COMPLIANT (4/4 covered, 1 CI-observable manual-only) + learnings extracted. Milestone close + human-gated Release-PR remain.
+Last activity: 2026-07-19 — Phase 32 close-out (secure/validate/extract-learnings) complete
 
 ## Accumulated Context
 
@@ -254,8 +254,8 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 32 context gathered
-**Resume file:** .planning/phases/32-verification-docs-additive-audit/32-CONTEXT.md
+**Stopped at:** Phase 32 fully closed out -- secure (bc2780b, SECURED, threats_open:0), validate (ee05c89, nyquist_compliant, 4/4 covered + 1 CI-observable manual-only), extract-learnings (46f452f, 25 learnings bridged to the cross-project store). Milestone close + the human-gated v0.2.3 Release-PR are the only remaining work.
+**Resume file:** none (phase close-out complete; HANDOFF.json + .continue-here.md cleared)
 
 Last session: 2026-07-19T02:21:17.061Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
@@ -293,19 +293,28 @@ Completed the two teed-up autonomous tasks:
 
 ## Operator Next Steps
 
-- **Plan Phase 30** -- `/gsd-plan-phase 30` (Reporter seam + JSON reporter + `--format` threading +
-  observability). This phase establishes the widened `renderReport` seam + full three-adapter threading
-  that SARIF (Phase 31) depends on. Research is done (`.planning/research/v0.2.3-reporters/SUMMARY.md`,
-  research flag: Phase 30 = standard patterns, skip research-phase).
+Phase 32 (final phase of v0.2.3) is fully closed out. All three milestone phases (30, 31, 32)
+are complete, verified, secured, and validated. Remaining is the milestone close + the
+human-gated Release-PR:
 
-- Phases 31 (SARIF) and 32 (verification + docs + additive audit) follow in dependency order. Phase 31
-  carries a MEDIUM research flag (the `node-sarif-builder` CJS-under-`await import()` interop shape + the
-  `@nx/dependency-checks` lazy-only-import behavior must be confirmed against the REAL package during
-  planning/execution, not inferred).
+- **Milestone audit** -- `/gsd-audit-milestone` audits v0.2.3 against original intent before
+  archiving, and produces + commits `v0.2.3-MILESTONE-AUDIT.md`. Note the 3-source cross-reference
+  will surface VER-02's one open `human_needed` item (CI cross-OS byte-stability) -- it resolves the
+  moment the branch is pushed for the Release-PR, so it is a known non-blocker, not a gap.
 
-- ADDITIVE-ONLY charter holds: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only if a
-  breaking change proves unavoidable. HUMAN-GATED RELEASE at milestone close via the AGENTS.md Release-PR
-  flow (do NOT auto-run).
+- **Complete milestone** -- `/gsd-complete-milestone` archives the v0.2.3 phase dirs to
+  `.planning/milestones/v0.2.3-phases/` and updates MILESTONES.md. (Watch the OpenGSD-migration
+  archival + branch-name gotchas from prior milestone closes.)
+
+- **HUMAN-GATED v0.2.3 Release-PR** (do NOT auto-run): follow the AGENTS.md Release-PR flow --
+  branch `release/0.2.3` off main, `npx nx release --dry-run` then `--skip-publish` (patch bump
+  0.2.2 -> 0.2.3; curated CHANGELOG 0.2.3 already drafted, no tag/push), curate + amend, open the
+  PR, self-merge only on green `ci`, then tag `angular-typechecker@0.2.3` on the MERGE commit and
+  push to fire OIDC publish. `main` is PR-only; NEVER push it directly, NEVER approve the
+  npm-publish deployment (human-only). Pushing the branch is also what closes VER-02's CI item.
+
+- ADDITIVE-ONLY charter holds: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only
+  if a breaking change proves unavoidable.
 
 ## Performance Metrics
 
