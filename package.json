@@ -8,7 +8,8 @@
     "integration": "nx run-many -t integration",
     "e2e": "nx run-many -t e2e --parallel=1",
     "lint": "nx run-many -t lint",
-    "format:check": "nx format:check"
+    "format:check": "nx format:check",
+    "fallow": "fallow audit --format human --base origin/main"
   },
   "private": true,
   "devDependencies": {
