@@ -73,7 +73,7 @@
   "context_window": 1000000,
   "code_quality": {
     "fallow": {
-      "enabled": false
+      "enabled": true
     }
   }
 }
