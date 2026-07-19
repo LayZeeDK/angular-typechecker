@@ -15,7 +15,11 @@ import { filterDiagnostics } from './filter-diagnostics';
 import { runNoEmitCompilation } from './gather-diagnostics';
 import { loadTypescript } from './load-typescript';
 import type { LeafAccumulator, SkippedReference } from './walk-references';
-import { gatherLeafInto, walkReferences } from './walk-references';
+import {
+  gatherLeafInto,
+  isAuthoredSourceFile,
+  walkReferences,
+} from './walk-references';
 
 export interface CoreOptions {
   // ENG-01 (D-06): a single ABSOLUTE tsconfig path (the unchanged direct path), OR a
@@ -324,11 +328,11 @@ function finalizeUnion(
       'notTypeCheckedDeclaredFiles',
       notTypeCheckedDeclaredFiles,
     ),
-    // OBS-01 (Phase 30, D-11): thread the walked name-deduped non-declaration
-    // source-file count onto CoreResult with the value-presence spread idiom (like
-    // the direct path). Both walk callers pass a Set size, so it is always present
-    // on the union path; the guard paths (no surviving leaf) never reach here.
-    ...(totalFilesCount !== undefined ? { totalFilesCount } : {}),
+    // OBS-01 (Phase 30, D-11): thread the walked name-deduped authored source-file
+    // count onto CoreResult. Both walk callers pass a Set size (always a number), so
+    // it is emitted as a plain property; the guard paths (no surviving leaf) never
+    // reach here.
+    totalFilesCount,
   };
 }
 
@@ -514,26 +518,16 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     options.tsConfigPath,
   );
 
-  // OBS-01 (Phase 30, D-11): capture the non-declaration source-file count off the
-  // live Program (so `lib.d.ts` and node_modules types are excluded). The Program is
-  // proven defined here by the `result.program === undefined` guard above. Spread
-  // with the value-presence idiom (like `templateCheckAborted` in finalize) --
-  // additive + optional (Pitfall 14). VERDICT-NEUTRAL: evaluateResult never reads it
-  // (D-11).
-  //
-  // WR-01: also exclude Angular-generated `.ngtypecheck.ts` TCB shims. They are
-  // non-declaration `.ts` files the compiler injects (one per component), NOT authored
-  // source -- counting them inflates the "files checked" metric and drifts across
-  // Angular versions. The `!isDeclarationFile` parity with gather-diagnostics is for
-  // DIAGNOSTIC iteration; this observability count wants authored files only.
+  // OBS-01 (Phase 30, D-11): capture the authored source-file count off the live
+  // Program (so `lib.d.ts`, node_modules types, and `.ngtypecheck.ts` shims are
+  // excluded -- the authored-source rule lives in isAuthoredSourceFile). The Program
+  // is proven defined here by the `result.program === undefined` guard above.
+  // VERDICT-NEUTRAL: evaluateResult never reads it (D-11). Always a number here, so it
+  // is emitted as a plain property.
   const totalFilesCount = result.program
     .getTsProgram()
     .getSourceFiles()
-    .filter(
-      (sourceFile) =>
-        !sourceFile.isDeclarationFile &&
-        !sourceFile.fileName.endsWith('.ngtypecheck.ts'),
-    ).length;
+    .filter(isAuthoredSourceFile).length;
 
   return {
     ...directResult,
@@ -541,7 +535,7 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
       'notTypeCheckedDeclaredFiles',
       notTypeCheckedDeclaredFiles,
     ),
-    ...(totalFilesCount !== undefined ? { totalFilesCount } : {}),
+    totalFilesCount,
   };
 }
 

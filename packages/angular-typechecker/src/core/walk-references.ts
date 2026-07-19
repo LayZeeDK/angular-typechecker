@@ -129,6 +129,26 @@ export interface LeafAccumulator {
 }
 
 /**
+ * WR-01: the SINGLE authored-source predicate, shared by both `totalFilesCount`
+ * (OBS-01) capture sites -- this leaf loop (`gatherLeafInto`) and the direct-path
+ * count (run-typecheck.ts). A source file counts as authored iff it is NOT a `.d.ts`
+ * declaration file AND NOT an Angular-generated `.ngtypecheck.ts` TCB shim. The
+ * compiler injects one `.ngtypecheck.ts` shim per component -- they are
+ * non-declaration `.ts` files but NOT authored source, so counting them inflates the
+ * "files checked" metric and drifts across Angular versions. (The bare
+ * `!isDeclarationFile` parity in gather-diagnostics.ts is a DIFFERENT predicate for
+ * DIAGNOSTIC iteration; this observability count wants authored files only.)
+ *
+ * Exported for reuse by run-typecheck.ts; NOT added to the public barrel (`index.ts`).
+ */
+export function isAuthoredSourceFile(sourceFile: ts.SourceFile): boolean {
+  return (
+    !sourceFile.isDeclarationFile &&
+    !sourceFile.fileName.endsWith('.ngtypecheck.ts')
+  );
+}
+
+/**
  * The SHARED per-surviving-leaf gather block, used by BOTH `walkReferences` (a
  * solution tsconfig's resolved leaves) and run-typecheck's `handleMultiTsConfig` (an
  * explicit tsConfig array). It runs the SAME no-emit whole-program compilation the
@@ -172,22 +192,14 @@ export function gatherLeafInto(
     ...detectUncheckedDeclaredFiles(ts, parsed, entryPath),
   );
 
-  // OBS-01 (Phase 30, D-11): accumulate this leaf's NON-declaration source files by
-  // NAME off the live Program, so `lib.d.ts` and node_modules types are excluded. The
-  // Set dedupes across leaves, so a source file both leaves compile is counted once.
-  // `result.program` is live here exactly as it is for the direct path (the caller
-  // re-throws any per-leaf infra-500 over the union afterwards).
-  //
-  // WR-01: also skip Angular-generated `.ngtypecheck.ts` TCB shims. They are
-  // non-declaration `.ts` files the compiler injects (one per component), NOT authored
-  // source -- counting them inflates the "files checked" metric and drifts across
-  // Angular versions. The `!isDeclarationFile` parity with gather-diagnostics is for
-  // DIAGNOSTIC iteration; this observability count wants authored files only.
+  // OBS-01 (Phase 30, D-11): accumulate this leaf's authored source files by NAME off
+  // the live Program (the authored-source rule -- skip `.d.ts` + `.ngtypecheck.ts`
+  // shims -- lives in isAuthoredSourceFile), so `lib.d.ts` and node_modules types are
+  // excluded. The Set dedupes across leaves, so a source file both leaves compile is
+  // counted once. `result.program` is live here exactly as it is for the direct path
+  // (the caller re-throws any per-leaf infra-500 over the union afterwards).
   for (const sourceFile of result.program.getTsProgram().getSourceFiles()) {
-    if (
-      sourceFile.isDeclarationFile ||
-      sourceFile.fileName.endsWith('.ngtypecheck.ts')
-    ) {
+    if (!isAuthoredSourceFile(sourceFile)) {
       continue;
     }
 
