@@ -37,7 +37,7 @@ Test tiers mirror the shipped strategy: **Unit** = `*.spec.ts` (`test` target, `
 
 ### ADD (additive-only charter)
 
-- [ ] **ADD-01**: Additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck` / `CoreResult` / `CoreOptions` public API (a new `format` option + an OPTIONAL `totalFilesCount` field only), the Angular CLI builder, the CLI flag set, or the generator schemas. `renderReport` is not in the public barrel (its widening is internal). The `index.drift.ts` barrel tripwire stays green; a git-diff audit runs before release. `node-sarif-builder` is classified as a `dependency` and the `@nx/dependency-checks` lazy-only-`import()` visibility watch-item is resolved (scoped `ignoredDependencies` with a one-line comment if the rule cannot see it). The `v0.3.0` escape hatch triggers only if a breaking change proves unavoidable.
+- [x] **ADD-01**: Additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck` / `CoreResult` / `CoreOptions` public API (a new `format` option + an OPTIONAL `totalFilesCount` field only), the Angular CLI builder, the CLI flag set, or the generator schemas. `renderReport` is not in the public barrel (its widening is internal). The `index.drift.ts` barrel tripwire stays green; a git-diff audit runs before release. `node-sarif-builder` is classified as a `dependency` and the `@nx/dependency-checks` lazy-only-`import()` visibility watch-item is resolved (scoped `ignoredDependencies` with a one-line comment if the rule cannot see it). The `v0.3.0` escape hatch triggers only if a breaking change proves unavoidable.
 
 ### DOC (docs)
 
@@ -89,7 +89,7 @@ Each requirement maps to exactly one phase.
 | VER-02 | Phase 32 | Complete |
 | VER-03 | Phase 32 | Complete |
 | VER-04 | Phase 31 | Complete |
-| ADD-01 | Phase 32 | Pending |
+| ADD-01 | Phase 32 | Complete |
 | DOC-01 | Phase 32 | Complete |
 
 **Coverage:**

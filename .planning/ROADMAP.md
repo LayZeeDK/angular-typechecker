@@ -164,7 +164,7 @@ Plans:
   3. A git-diff / `index.drift.ts` barrel audit proves additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (only the new `format` option + the optional `totalFilesCount`), the Angular CLI builder, the CLI flag set, or the generator schemas; `node-sarif-builder` is classified as a `dependency` with the lazy-import visibility resolved; the `v0.3.0` escape hatch stays untriggered (ADD-01).
   4. A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- alongside a curated public CHANGELOG entry in end-user language with no internal ids (DOC-01).
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans complete
 
 Plans:
 
@@ -179,7 +179,7 @@ Plans:
 
 **Wave 3** *(blocked on 32-01 + 32-02)*
 
-- [ ] 32-03-PLAN.md (Wave 3, depends 32-01, 32-02) -- ADD-01 additive-only audit vs `angular-typechecker@0.2.2`: `git diff` per published path + `index.drift.ts` barrel tsc + the dependency proof (ONLY `node-sarif-builder` added; `ajv`/`ajv-formats` root devDeps only) + `nx lint` dependency-checks re-confirmation -> `32-ADDITIVE-AUDIT.md` (ADDITIVE-ONLY, v0.3.0 untriggered) (ADD-01).
+- [x] 32-03-PLAN.md (Wave 3, depends 32-01, 32-02) -- ADD-01 additive-only audit vs `angular-typechecker@0.2.2`: `git diff` per published path + `index.drift.ts` barrel tsc + the dependency proof (ONLY `node-sarif-builder` added; `ajv`/`ajv-formats` root devDeps only) + `nx lint` dependency-checks re-confirmation -> `32-ADDITIVE-AUDIT.md` (ADDITIVE-ONLY, v0.3.0 untriggered) (ADD-01).
 
 ## Progress
 
@@ -218,7 +218,7 @@ Plans:
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
 | 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
-| 32. Verification + docs + additive audit | v0.2.3 | 3/4 | In Progress|  |
+| 32. Verification + docs + additive audit | v0.2.3 | 4/4 | Complete   | 2026-07-19 |
 
 ## Backlog
 
