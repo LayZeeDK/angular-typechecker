@@ -4,9 +4,9 @@ milestone: v0.2.3
 milestone_name: -- Machine-readable reporters)
 current_phase: 32
 current_phase_name: Verification + docs + additive audit
-status: complete
+status: "Milestone v0.2.3 shipped -- PR #47"
 stopped_at: Phase 32 close-out complete (secure + validate + extract-learnings); milestone close + Release-PR are human-gated next
-last_updated: "2026-07-19T03:12:29.809Z"
+last_updated: "2026-07-19T11:05:53.351Z"
 last_activity: 2026-07-19
 progress:
   total_phases: 3
@@ -29,8 +29,8 @@ See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machi
 
 Phase: 32 (Verification + docs + additive audit) — CLOSED (final phase of v0.2.3)
 Plan: 4 of 4
-Status: Goal verified (1 human_needed = CI cross-OS observation); SECURED (threats_open:0) + NYQUIST-COMPLIANT (4/4 covered, 1 CI-observable manual-only) + learnings extracted. Milestone close + human-gated Release-PR remain.
-Last activity: 2026-07-19 — Phase 32 close-out (secure/validate/extract-learnings) complete
+Status: Milestone v0.2.3 shipped -- PR #47
+Last activity: 2026-07-19
 
 ## Accumulated Context
 
