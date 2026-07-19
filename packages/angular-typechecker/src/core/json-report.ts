@@ -1,5 +1,9 @@
-import { relativizePath, toDiagnosticRecord } from './diagnostic-record';
-import { evaluateResult } from './evaluate-result';
+import {
+  relativizePath,
+  toDiagnosticRecord,
+  type DiagnosticRecord,
+} from './diagnostic-record';
+import { evaluateResult, type Outcome } from './evaluate-result';
 import type { CoreResult } from './run-typecheck';
 import type { SkippedReference } from './walk-references';
 
@@ -47,7 +51,7 @@ export interface JsonReportOptions {
  * FILE path is relativized (T-30-04); `bundlerQueryImports` are module specifiers,
  * not local paths, so they pass through verbatim.
  */
-interface Advisories {
+export interface Advisories {
   templateCheckAborted?: { fileName: string | null };
   skippedReferences?: readonly {
     referencePath: string;
@@ -56,6 +60,45 @@ interface Advisories {
   suppressedInGraphFiles?: readonly string[];
   notTypeCheckedDeclaredFiles?: readonly string[];
   bundlerQueryImports?: readonly string[];
+}
+
+/**
+ * The `summary` block of {@link JsonReport}: the verdict (`outcome`/`success`,
+ * DELEGATED to `evaluateResult` -- never re-derived from counts, D-07) plus the
+ * scalar counts. `totalFilesCount` and `advisories` are OPTIONAL and present only
+ * when non-empty (the value-presence spread idiom in {@link formatJsonReport}), so
+ * the type mirrors the exact emitted shape (absent key vs `null` -- never `null`).
+ */
+export interface JsonReportSummary {
+  outcome: Outcome;
+  success: boolean;
+  errorCount: number;
+  warningCount: number;
+  diagnosticCount: number;
+  rootNamesCount: number;
+  totalFilesCount?: number;
+  suppressedThirdParty: number;
+  suppressedInGraphErrorCount: number;
+  suppressedInGraphWarningCount: number;
+  advisories?: Advisories;
+}
+
+/**
+ * The stable, agent-parseable JSON payload `formatJsonReport` serializes (REP-01 /
+ * FMT-02). Named so the payload contract is a single importable, diffable type --
+ * `formatJsonReport`'s return object is annotated with it, so adding, removing, or
+ * retyping a field is a COMPILE error unless this interface is updated in lockstep,
+ * the structural companion to the runtime `formatVersion` marker + the key-drift
+ * snapshot tripwire (D-03). The emitted key ORDER is fixed by the object literal,
+ * not this interface; the interface guards the shape.
+ */
+export interface JsonReport {
+  formatVersion: number;
+  tool: 'angular-typechecker';
+  version: string;
+  tsConfigPath: string;
+  summary: JsonReportSummary;
+  diagnostics: readonly DiagnosticRecord[];
 }
 
 /**
@@ -74,7 +117,7 @@ export function formatJsonReport(
 
   const advisories = buildAdvisories(result, opts.pathBase);
 
-  const payload = {
+  const payload: JsonReport = {
     formatVersion: FORMAT_VERSION,
     tool: 'angular-typechecker',
     version: packageManifest.version,
