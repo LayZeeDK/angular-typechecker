@@ -164,13 +164,13 @@ Plans:
   3. A git-diff / `index.drift.ts` barrel audit proves additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (only the new `format` option + the optional `totalFilesCount`), the Angular CLI builder, the CLI flag set, or the generator schemas; `node-sarif-builder` is classified as a `dependency` with the lazy-import visibility resolved; the `v0.3.0` escape hatch stays untriggered (ADD-01).
   4. A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- alongside a curated public CHANGELOG entry in end-user language with no internal ids (DOC-01).
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 
 Plans:
 
 **Wave 1** *(parallel; no file overlap)*
 
-- [ ] 32-01-PLAN.md (Wave 1) -- VER-02 integration tier + shared dev-only infra: `ajv`/`ajv-formats` root devDeps + committed SARIF 2.1.0 schema fixture + `validateSarif`/`redactVolatile` in `@workspace/test-util`; two `*.integration.spec.ts` driving `run()` + the executor over `layout-b-host` (mixed TS+NG8xxx) and `global-diagnostics` (file-less) emitting JSON + SARIF; true schema validation; redacted byte-stability across the 6-cell matrix incl. the Windows path -> forward-slash URI (VER-02).
+- [x] 32-01-PLAN.md (Wave 1) -- VER-02 integration tier + shared dev-only infra: `ajv`/`ajv-formats` root devDeps + committed SARIF 2.1.0 schema fixture + `validateSarif`/`redactVolatile` in `@workspace/test-util`; two `*.integration.spec.ts` driving `run()` + the executor over `layout-b-host` (mixed TS+NG8xxx) and `global-diagnostics` (file-less) emitting JSON + SARIF; true schema validation; redacted byte-stability across the 6-cell matrix incl. the Windows path -> forward-slash URI (VER-02).
 - [ ] 32-04-PLAN.md (Wave 1) -- DOC-01 docs: README `## Machine-readable output` section (`--format`, JSON payload schema, SARIF `upload-sarif` recipe, run-from-repo-root caveat) + curated UNDATED end-user-language CHANGELOG `0.2.3` entry (version stays `0.2.2`) + a `machine-readable-docs.spec.ts` tripwire (DOC-01).
 
 **Wave 2** *(blocked on 32-01)*
@@ -218,7 +218,7 @@ Plans:
 | 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
 | 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
-| 32. Verification + docs + additive audit | v0.2.3 | 0/4 | Not started | - |
+| 32. Verification + docs + additive audit | v0.2.3 | 1/4 | In Progress|  |
 
 ## Backlog
 

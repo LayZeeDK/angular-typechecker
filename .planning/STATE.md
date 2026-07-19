@@ -6,14 +6,14 @@ current_phase: 32
 current_phase_name: Verification + docs + additive audit
 status: executing
 stopped_at: Phase 32 context gathered
-last_updated: "2026-07-18T23:40:29.642Z"
+last_updated: "2026-07-19T00:05:40.407Z"
 last_activity: 2026-07-18
-last_activity_desc: Phase 32 planning complete
+last_activity_desc: Phase 32 execution started
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 9
+  completed_plans: 6
   percent: 67
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 31 — SARIF reporter
+**Current focus:** Phase 32 — Verification + docs + additive audit
 
 ## Current Position
 
-Phase: 32 — Verification + docs + additive audit
-Plan: Not started
+Phase: 32 (Verification + docs + additive audit) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-07-18 — Phase 32 planning complete
+Last activity: 2026-07-18 — Phase 32 execution started
 
 ## Accumulated Context
 
@@ -100,6 +100,8 @@ archives under `.planning/milestones/`.
 - [Phase 31]: 31-01: SARIF 2.1.0 reporter (REP-02/VER-01) -- pure formatSarifReport reached via await import('./sarif-report.js') then await import('node-sarif-builder') (mod.default ?? mod), typed by import type (no @types/sarif/fs-extra/'sarif'); reuses toDiagnosticRecord (D-13) so JSON+SARIF cannot drift; one result per diagnostic, file-less -> no-location never dropped (D-01), sha256 partialFingerprints atcFingerprint/v1 (D-02); verdict stays evaluateResult's, exit-parity human/json/sarif incl coverage-incomplete (D-07). Relative dynamic import needs .js under nodenext (TS2835, Rule 3). node-sarif-builder@^4.1.0 declared; @nx/dependency-checks sees the lazy import -> NO ignoredDependencies (A1 confirmed).
 - [Phase 31]: 31-01: promoted the 18-NG8xxx member->ngCode mapping into ONE dependency-free enum-keyed core/extended-catalog.ts; integration spec now ENRICHES rows from it (ngCode cross-checked byte-identical -> behavior-preserving). helpUri per code (NG8011/NG8021 verified 200). Additive-only: barrel/index.drift.ts/builder.ts byte-unchanged. nx test(517)/typecheck/lint(0)/format:check green. VER-04 guards = 31-02.
 - [Phase ?]: 31-02: VER-04 closed -- require-graph guard (render-report.js + bin.js static walks + positive control that the lazy import is present) + REAL-import (mod.default ?? mod) SARIF 2.1.0 interop; nx lint green with NO ignoredDependencies (A1). Positive-control substring is the actual single-quoted .js emit; interop cast mirrors shipped sarif-report.ts (typeof mod sketch fails TS2352). Additive-only holds (no prod code/dep/version).
+- [Phase 32]: Phase 32-01: SARIF validation uses the committed SchemaStore draft-07 schema + plain ajv@^8 + ajv-formats (strict:false); ajv/ajv-formats are ROOT devDeps only, plugin manifest byte-unchanged (additive-only held).
+- [Phase 32]: Phase 32-01: validateSarif + redactVolatile live in @workspace/test-util (validate-sarif.ts uses __dirname for the commonjs lib build); the 32-02 VER-03 e2e reuses the SAME validator.
 
 ### Roadmap Evolution
 
@@ -244,7 +246,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Phase 32 context gathered
 **Resume file:** .planning/phases/32-verification-docs-additive-audit/32-CONTEXT.md
 
-Last session: 2026-07-18T22:28:38.695Z
+Last session: 2026-07-19T00:04:40.322Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -300,3 +302,4 @@ Completed the two teed-up autonomous tasks:
 |-------|------|----------|-------|
 | Phase 31 P01 | 19min | 3 tasks | 12 files |
 | Phase 31 P02 | 15min | 3 tasks | 2 files |
+| Phase 32 P01 | 18min | 3 tasks | 10 files |

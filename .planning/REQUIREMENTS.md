@@ -86,7 +86,7 @@ Each requirement maps to exactly one phase.
 | OBS-01 | Phase 30 | Pending |
 | CLIX-02 | Phase 30 | Pending |
 | VER-01 | Phase 30 | Complete |
-| VER-02 | Phase 32 | Pending |
+| VER-02 | Phase 32 | Complete |
 | VER-03 | Phase 32 | Pending |
 | VER-04 | Phase 31 | Complete |
 | ADD-01 | Phase 32 | Pending |
