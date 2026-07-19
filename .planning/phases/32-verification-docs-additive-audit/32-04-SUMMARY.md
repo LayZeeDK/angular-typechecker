@@ -29,11 +29,14 @@ key-files:
   modified:
     - packages/angular-typechecker/README.md
     - CHANGELOG.md
+    - packages/angular-typechecker/src/cli/parse-args.ts
+    - packages/angular-typechecker/src/executors/typecheck/schema.json
+    - packages/angular-typechecker/src/builders/typecheck/schema.json
 
 key-decisions:
   - "SARIF README recipe uses `npx angular-typechecker --format sarif`, NOT the plan's literal `atc` -- a bare `atc` is not on PATH in a GitHub Actions `run:` step (node_modules/.bin is not added there), so `npx angular-typechecker` is the reliable + canonical invocation (Rule 1)."
   - "CHANGELOG 0.2.3 hygiene slice ends at the specific `## 0.2.2` heading (not a generic `## `) to avoid mis-slicing on the `### ` subheadings -- mirrors the shipped standalone-cli-docs.spec.ts idiom."
-  - "The now-false CLI HELP_TEXT clause `sarif lands in a later release` (parse-args.ts) is OUT OF SCOPE for this docs plan (files_modified is README/CHANGELOG/spec only) -> logged to deferred-items.md, not fixed here."
+  - "The now-false `sarif lands in a later release` claim shipped in THREE --format surfaces (CLI HELP_TEXT + the executor + builder schema.json format descriptions); all three reworded so json/sarif read as the available machine-readable payloads (coordinator-directed follow-up). Description-string-only -> additive-safe: no enum/default/required/additionalProperties changed, both {executors,builders}/typecheck/schema-parity.spec.ts stay green with no expectation edit, so it is not a contract change."
   - "Documented JSON schema was verified against the source of truth (json-report.spec.ts key drift-lock: exact top-level/summary/diagnostic key sets + the four outcome values), not paraphrased."
 
 patterns-established:
@@ -83,14 +86,15 @@ status: complete
 - **Duration:** ~8 min
 - **Started:** 2026-07-19T00:10:22Z
 - **Completed:** 2026-07-19T00:18:57Z
-- **Tasks:** 3
-- **Files modified:** 3 (1 created, 2 modified) + deferred-items.md
+- **Tasks:** 3 (+1 coordinator-directed fix)
+- **Files modified:** 6 (1 created, 5 modified)
 
 ## Accomplishments
 - Added a `## Machine-readable output` README section (+ ToC anchor) in end-user language: `--format <human|json|sarif>` on the CLI and the matching `format` option on the Nx executor / Angular CLI builder; the exact JSON payload schema (top-level `formatVersion`/`tool`/`version`/`tsConfigPath`/`summary`/`diagnostics[]`, the four `outcome` values, 1-based positions, `TS####`/`NG8xxx`/`ATC9000x` code strings, `file:null` for file-less); the SARIF `upload-sarif` GitHub Actions recipe with the 18-NG8xxx `rules[]` catalog + `partialFingerprints`; and the run-from-repo-root `artifactLocation.uri` caveat.
 - Reconciled the three now-false pre-existing reporter passages (JSON shipped Phase 30, SARIF shipped Phase 31): dropped the `--format` Options-row `(SARIF lands in a later release)` clause, replaced the `## Output` "deliberate non-goal ... only output" paragraph with a pointer to the new section, and deleted the `## Limitations` "non-goals in v0.x" bullet. The README now carries NO reporter non-goal claim and NO "lands in a later release" clause.
 - Added a curated UNDATED public CHANGELOG `## 0.2.3` entry (end-user prose, no internal ids / plan scopes / board jargon), with `package.json` version held at `0.2.2` (no bump, tag, or publish -- the cut is the later human-gated Release-PR).
 - Added `machine-readable-docs.spec.ts` (mirrors `standalone-cli-docs.spec.ts`): a pure README + CHANGELOG read locking the section + ToC anchor, the three `--format` values, the `upload-sarif` recipe, the `artifactLocation.uri` repo-root caveat, the `--format` drift-lock against live `parseCliArgs(['--help'])`, the ABSENCE of the two reconciled stale claims, and CHANGELOG 0.2.3 hygiene.
+- Corrected the stale `sarif lands in a later release` claim in all THREE shipped `--format` surfaces (coordinator-directed): the CLI `HELP_TEXT` (`parse-args.ts`) and both the Nx executor and Angular CLI builder `schema.json` `format` descriptions now read `json` and `sarif` as the available machine-readable payloads. Description-string-only (additive-safe); the tripwire was extended to drift-lock the phrase absent from the live help + both schema descriptions.
 
 ## Task Commits
 
@@ -99,14 +103,17 @@ Each task was committed atomically:
 1. **Task 1: README ## Machine-readable output section + ToC anchor + reconcile 3 stale passages** - `055dbb3` (docs)
 2. **Task 2: Curated undated CHANGELOG 0.2.3 entry** - `1575134` (docs)
 3. **Task 3: Docs content tripwire spec** - `088d363` (test)
+4. **Follow-up (coordinator-directed): correct stale "SARIF lands later" claim in CLI help + executor/builder schema descriptions** - `4ab821d` (docs)
 
-**Plan metadata:** (final docs commit — SUMMARY.md, STATE.md, ROADMAP.md, REQUIREMENTS.md, deferred-items.md)
+**Plan metadata:** `174e2e2` (SUMMARY/STATE/ROADMAP/REQUIREMENTS) + a follow-up SUMMARY update closing the resolved deferred item.
 
 ## Files Created/Modified
 - `packages/angular-typechecker/README.md` - New `## Machine-readable output` section + ToC anchor; the three now-false reporter passages reconciled.
 - `CHANGELOG.md` - New undated end-user `## 0.2.3` entry above `## 0.2.2`.
-- `packages/angular-typechecker/src/machine-readable-docs.spec.ts` - Docs content tripwire (README section/anchor/claims + absence drift-lock + --format help/README lock + CHANGELOG 0.2.3 hygiene).
-- `.planning/phases/32-verification-docs-additive-audit/deferred-items.md` - Logs the out-of-scope stale CLI HELP_TEXT clause (see Deviations).
+- `packages/angular-typechecker/src/cli/parse-args.ts` - HELP_TEXT `--format` description reworded (SARIF available, no "lands in a later release").
+- `packages/angular-typechecker/src/executors/typecheck/schema.json` - Nx executor `format` description reworded (description-only; enum/default/required/additionalProperties unchanged).
+- `packages/angular-typechecker/src/builders/typecheck/schema.json` - Angular CLI builder `format` description reworded (description-only; enum/default/required/additionalProperties unchanged).
+- `packages/angular-typechecker/src/machine-readable-docs.spec.ts` - Docs content tripwire (README section/anchor/claims + absence drift-lock + --format help/README lock + CHANGELOG 0.2.3 hygiene) + a shipped-surface block asserting the stale phrase is absent from the live HELP_TEXT and both schema descriptions.
 
 ## Decisions Made
 - **SARIF recipe uses `npx angular-typechecker`, not `atc`.** The plan suggested `atc -c tsconfig.json --format sarif`, but a bare `atc` does not resolve in a GitHub Actions `run:` step (`node_modules/.bin` is not on PATH there, and the README itself flags `npx atc` as the `atc@0.0.6` supply-chain hazard). `npx angular-typechecker` is the reliable, canonical invocation, so the CI recipe uses it.
@@ -125,18 +132,19 @@ Each task was committed atomically:
 - **Verification:** `machine-readable-docs.spec.ts` green (`upload-sarif` + caveat present); `nx format:check` green.
 - **Committed in:** `055dbb3` (Task 1 commit)
 
-### Out-of-scope discovery (logged, not fixed)
-
-**2. Stale CLI `--help` text: `sarif (sarif lands in a later release)`**
-- **Found during:** Task 1 (grep-confirming the "lands in a later release" string)
-- **Issue:** `parse-args.ts:87-88` `HELP_TEXT` still says SARIF "lands in a later release", now false (SARIF shipped Phase 31) and would ship in 0.2.3, contradicting the new README section.
-- **Why not fixed here:** 32-04's `files_modified` is scoped to `README.md`, `CHANGELOG.md`, and the spec only; `parse-args.ts` is a separate shipped surface with its own tests, and the 32-04 tripwire only checks the README for the clause. Fixing it would expand scope beyond the plan.
-- **Disposition:** logged to `deferred-items.md` (one-line fix, owner = a follow-up quick task or the 32-03 additive-audit pass, before the v0.2.3 Release-PR).
+**2. [Rule 1 - Bug] Stale `sarif lands in a later release` in THREE shipped `--format` surfaces (coordinator-directed follow-up)**
+- **Found during:** Task 1 (grep-confirming the "lands in a later release" string); initially logged as out-of-scope, then fixed on coordinator direction before completing.
+- **Issue:** SARIF shipped in Phase 31, so the `sarif lands in a later release` claim is FALSE in all three user-facing `--format` surfaces and would ship in 0.2.3: the CLI `HELP_TEXT` (`parse-args.ts:87-88`), the Nx executor `schema.json` `format` description, and the Angular CLI builder `schema.json` `format` description.
+- **Fix:** reworded all three so `json` and `sarif` read as the available machine-readable payloads; extended `machine-readable-docs.spec.ts` to drift-lock the phrase ABSENT from the live `HELP_TEXT` and both schema.json descriptions.
+- **Additive-safe:** description-string-only -- no `enum` value, `default`, `required`, or `additionalProperties` changed, so both `{executors,builders}/typecheck/schema-parity.spec.ts` stay green with no expectation edit (they lock keys/enum/defaults, not description prose). A description-only edit is not a contract change. **Flag for the 32-03 additive audit:** it will see two `schema.json` description-line diffs + a `HELP_TEXT` prose diff, all non-breaking.
+- **Files modified:** `parse-args.ts`, `executors/typecheck/schema.json`, `builders/typecheck/schema.json`, `machine-readable-docs.spec.ts`
+- **Verification:** `nx test` (534), `nx typecheck`, `nx lint` (maxWarnings:0), `nx format:check` all green.
+- **Committed in:** `4ab821d`
 
 ---
 
-**Total deviations:** 1 auto-fixed (Rule 1 - recipe correctness) + 1 out-of-scope discovery logged (no fix).
-**Impact on plan:** No scope creep. Every acceptance criterion holds; the one recipe change makes the documented CI snippet actually runnable.
+**Total deviations:** 2 auto-fixed (Rule 1 - README recipe correctness; Rule 1 - stale SARIF-unavailable claim in 3 shipped `--format` surfaces, coordinator-directed).
+**Impact on plan:** No scope creep. Every acceptance criterion holds; the recipe change makes the CI snippet runnable, and the three-surface fix removes a falsehood that would otherwise ship in 0.2.3. Both fixes are additive-safe (docs/description strings only; the plugin `dependencies` and every schema contract are unchanged).
 
 ## Issues Encountered
 - None. All four gates green (`nx test` 532, `nx typecheck`, `nx lint` maxWarnings:0, `nx format:check`).
@@ -152,14 +160,14 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 - DOC-01 is the last of Phase 32's four requirements (VER-02 done in 32-01, VER-03/ADD-01 in sibling plans); the README + CHANGELOG feed the eventual v0.2.3 Release-PR.
-- One follow-up before the Release-PR: apply the deferred one-line HELP_TEXT fix (`deferred-items.md`) so the shipped `--help` no longer says SARIF "lands in a later release".
+- The stale `sarif lands in a later release` claim is corrected in all three shipped `--format` surfaces (CLI help + executor + builder schema descriptions) and drift-locked by the tripwire; the deferred item is closed. No open follow-ups for DOC-01.
 
 ## Self-Check: PASSED
 
 - Created file exists: `packages/angular-typechecker/src/machine-readable-docs.spec.ts`.
-- Modified files carry the changes: README has `## Machine-readable output` + anchor and NO `non-goal` / `lands in a later release`; CHANGELOG has `## 0.2.3`.
-- All 3 task commits present: `055dbb3`, `1575134`, `088d363`.
-- Version held at `0.2.2`; four gates green.
+- Modified files carry the changes: README has `## Machine-readable output` + anchor and NO `non-goal` / `lands in a later release`; CHANGELOG has `## 0.2.3`; the stale `lands in a later release` phrase is absent from all three shipped `--format` surfaces (CLI HELP_TEXT + executor + builder schema.json).
+- All commits present: `055dbb3`, `1575134`, `088d363`, `4ab821d`.
+- Version held at `0.2.2`; four gates green (`nx test` 534, typecheck, lint maxWarnings:0, format:check). Schema diffs are description-line only (additive-safe).
 
 ---
 *Phase: 32-verification-docs-additive-audit*
