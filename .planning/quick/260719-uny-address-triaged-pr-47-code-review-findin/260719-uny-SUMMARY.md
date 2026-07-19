@@ -52,16 +52,17 @@ held at `0.2.2` (the Release PR owns the bump).
 
 ## Verification -- full CI-parity battery (all green)
 
-Run on the main checkout against real `node_modules` after the final commit:
+Run on the main checkout against real `node_modules`. Re-run in full by the executor
+after recovery (all three commits already landed + pushed, 23 PR CI checks green):
 
 | Check | Result |
 |-------|--------|
 | `nx run-many -t typecheck` | PASS -- 12 projects (the gate that catches spec type errors `nx test` misses) |
 | `nx run-many -t test` | PASS -- 550 tests / 52 files, **no snapshot or assertion edited** |
-| `nx run-many -t integration` | PASS -- 140 tests / 24 files (real cold-compiler fixtures) |
-| `nx run-many -t lint` | PASS -- 3 projects |
+| `nx run-many -t integration` | PASS -- 140 tests / 24 files (real cold-compiler fixtures; already green pre-recovery) |
+| `nx run-many -t lint` | PASS -- 3 projects (maxWarnings:0) |
 | `nx format:check` | PASS |
-| `fallow audit --format human --base origin/main` | PASS -- no issues in 204 changed files |
+| `fallow audit --format human --base origin/main` | PASS -- no issues in 205 changed files |
 
 The zero-behavior bar is evidenced by the untouched snapshots: `json-report`,
 `sarif-report`, and both `machine-reporters-*` integration snapshots all matched
@@ -69,17 +70,19 @@ byte-for-byte without regeneration.
 
 ## Deviations from plan
 
-- **Executor interrupted (external).** The `gsd-executor` subagent terminated
+- **Executor interrupted then resumed.** The `gsd-executor` subagent terminated
   mid-run on an org monthly spend-limit API error after committing Task 1
   (`fa9e7e3`), leaving a partial uncommitted edit in `diagnostic-record.ts`. Tasks 2
-  and 3 were completed inline by the orchestrator from the same checked plan, and the
-  partial edit was carried forward intact. Commit content and messages match the plan.
-- **`gsd-verifier` not spawned.** The same spend limit blocked the `--validate`
-  verification subagent, so no `260719-uny-VERIFICATION.md` was produced. Verification
-  was instead performed inline via the full CI-parity battery above (a stronger signal
-  than the plan's `must_haves` check for a zero-behavior refactor, but it is NOT the
-  independent fresh-context audit `--validate` normally provides). Flagged here rather
-  than silently marked verified.
+  and 3 were completed during recovery from the same checked plan (partial edit
+  carried forward intact), then the executor agent was **resumed** to formally close
+  its run: it confirmed all three commits match the plan (no deviations, no re-work)
+  and re-ran the full CI-parity battery green. Commit content and messages match the
+  plan.
+- **`gsd-verifier` ran (independent gate).** After the resume, `gsd-verifier` was
+  spawned and produced `260719-uny-VERIFICATION.md` -- verdict **passed**, 6/6
+  must-haves verified independently against the codebase (not from this SUMMARY),
+  with the live `typecheck` + `test` gates re-run fresh. The `--validate`
+  fresh-context audit was NOT skipped.
 - **No worktree isolation.** Single-plan wave, and the executor had to run the Vitest
   suite to prove snapshots stayed green -- per AGENTS.md ("Single-plan wave: skip
   worktrees"), execution ran sequentially on the main checkout with real
