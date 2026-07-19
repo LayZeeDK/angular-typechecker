@@ -11,8 +11,14 @@
  * future volatile fields here, never as a literal assertion in a spec.
  *
  * - SARIF branch (payload has a `runs` array): each `runs[].tool.driver.version`
- *   maps to `'[version]'`.
- * - JSON branch: the top-level `version` maps to `'[version]'`.
+ *   maps to `'[version]'` WHEN PRESENT (never injected -- see PR47-F2 below).
+ * - JSON branch: the top-level `version` maps to `'[version]'` WHEN PRESENT.
+ *
+ * PR47-F2 (present-only): redaction REPLACES an existing `version`, it never
+ * INJECTS one. An unconditional inject masked a dropped tool-version regression --
+ * a reporter that stopped emitting `version` still matched the redacted snapshot
+ * because the helper re-added the placeholder. Present-only lets the drop fail the
+ * snapshot instead.
  *
  * Redact the OBJECT (not the raw string) so vitest serializes it deterministically
  * for `toMatchSnapshot`. Every other field is preserved verbatim.
@@ -33,7 +39,11 @@ export function redactVolatile(payload: unknown): unknown {
     };
   }
 
-  return { ...record, version: VERSION_PLACEHOLDER };
+  if ('version' in record) {
+    return { ...record, version: VERSION_PLACEHOLDER };
+  }
+
+  return record;
 }
 
 /**
@@ -60,12 +70,20 @@ function redactRunVersion(run: unknown): unknown {
     return runRecord;
   }
 
+  const driverRecord = driver as Record<string, unknown>;
+
+  // PR47-F2 (present-only): replace an existing driver.version, never inject one --
+  // mirroring the missing-intermediate-level short-circuits above.
+  if (!('version' in driverRecord)) {
+    return runRecord;
+  }
+
   return {
     ...runRecord,
     tool: {
       ...toolRecord,
       driver: {
-        ...(driver as Record<string, unknown>),
+        ...driverRecord,
         version: VERSION_PLACEHOLDER,
       },
     },
