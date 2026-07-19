@@ -94,27 +94,27 @@ export function extractJsonPayload(rawStdout: string): string {
 }
 
 /**
- * Run `npx nx run <target> --output-style=static [--skip-nx-cache]` in `cwd` and
- * capture the result. `execSync` throws on a non-zero exit, so the catch is how the
- * exit code + combined stdout/stderr of the nested nx run are captured (NEVER pipe
- * nx through head/rg -- the pipe tail's exit code masks Nx's). A fixed target id +
- * fixed flags only reach the shell.
+ * Run `command` in `options.cwd` with `options.env` and capture the exit code +
+ * combined stdout/stderr. `execSync` throws on a non-zero exit, so the catch is how
+ * a failing command's output + status are captured (NEVER pipe the command through
+ * head/rg -- the pipe tail's exit code would mask the command's). `maxBuffer` is
+ * forwarded verbatim; passing `undefined` is byte-equivalent to omitting it
+ * (execSync's 1 MB default).
  *
- * `options.env` defaults to a default-strip {@link buildCleanEnv} so a caller that
- * forgets to pass an env still gets nested-nx isolation rather than raw process.env.
+ * Shared by {@link run} (default buffer) and the ng-cli e2e `ng run` runner (20 MB,
+ * IN-02) -- the identical execSync -> {@link RunResult} try/catch lived in both.
  */
-export function run(
-  cwd: string,
-  target: string,
-  options?: { env?: NodeJS.ProcessEnv; skipNxCache?: boolean },
+export function execToRunResult(
+  command: string,
+  options: { cwd: string; env: NodeJS.ProcessEnv; maxBuffer?: number },
 ): RunResult {
-  const env = options?.env ?? buildCleanEnv();
-  const command = `npx nx run ${target} --output-style=static${
-    options?.skipNxCache ? ' --skip-nx-cache' : ''
-  }`;
-
   try {
-    const stdout = execSync(command, { cwd, env, encoding: 'utf8' });
+    const stdout = execSync(command, {
+      cwd: options.cwd,
+      env: options.env,
+      encoding: 'utf8',
+      maxBuffer: options.maxBuffer,
+    });
 
     return { stdout, code: 0 };
   } catch (error) {
@@ -129,6 +129,27 @@ export function run(
       code: execError.status ?? 1,
     };
   }
+}
+
+/**
+ * Run `npx nx run <target> --output-style=static [--skip-nx-cache]` in `cwd` and
+ * capture the result via {@link execToRunResult} (a fixed target id + fixed flags
+ * only reach the shell).
+ *
+ * `options.env` defaults to a default-strip {@link buildCleanEnv} so a caller that
+ * forgets to pass an env still gets nested-nx isolation rather than raw process.env.
+ */
+export function run(
+  cwd: string,
+  target: string,
+  options?: { env?: NodeJS.ProcessEnv; skipNxCache?: boolean },
+): RunResult {
+  const env = options?.env ?? buildCleanEnv();
+  const command = `npx nx run ${target} --output-style=static${
+    options?.skipNxCache ? ' --skip-nx-cache' : ''
+  }`;
+
+  return execToRunResult(command, { cwd, env });
 }
 
 interface InstallTimingRecord {
