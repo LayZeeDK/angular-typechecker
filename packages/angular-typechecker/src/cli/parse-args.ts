@@ -84,8 +84,9 @@ Options:
                           brevity; all diagnostics are still gathered).
       --include-deps      Include out-of-project / node_modules diagnostics.
       --strict            Fail on dropped in-graph warnings (verdict only).
-      --format <fmt>      Output format: human (default), json, or sarif
-                          (sarif lands in a later release).
+      --format <fmt>      Output format: human (default) is the colorized
+                          codeframe report; json and sarif are the
+                          machine-readable payloads.
       --quiet             Silence advisory notices on stderr (never the report
                           or the exit code).
       --color             Force ANSI color on the human report, overriding

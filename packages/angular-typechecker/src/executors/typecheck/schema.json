@@ -37,7 +37,7 @@
       "type": "string",
       "enum": ["human", "json", "sarif"],
       "default": "human",
-      "description": "Output format. human (default) is the colorized codeframe report; json is the machine-readable payload; sarif lands in a later release."
+      "description": "Output format. human (default) is the colorized codeframe report; json and sarif are the machine-readable payloads."
     }
   },
   "required": ["tsConfig"],

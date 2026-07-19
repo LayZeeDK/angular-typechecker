@@ -104,3 +104,35 @@ describe('CHANGELOG ## 0.2.3 entry (hygiene tripwire)', () => {
     );
   });
 });
+
+// The stale "sarif lands in a later release" falsehood shipped in THREE
+// user-facing `--format` surfaces (SARIF shipped in Phase 31). Lock all three so
+// it cannot regress: the CLI `--help` text and BOTH the Nx executor and Angular
+// CLI builder `schema.json` `format` descriptions.
+const executorFormatDescription = (
+  JSON.parse(
+    readFileSync(join(here, 'executors/typecheck/schema.json'), 'utf8'),
+  ) as { properties: { format: { description: string } } }
+).properties.format.description;
+const builderFormatDescription = (
+  JSON.parse(
+    readFileSync(join(here, 'builders/typecheck/schema.json'), 'utf8'),
+  ) as { properties: { format: { description: string } } }
+).properties.format.description;
+
+describe('shipped --format surfaces present SARIF as available (DOC-01)', () => {
+  it('the CLI --help text does not say SARIF lands in a later release', () => {
+    expect(helpText).not.toContain('lands in a later release');
+    expect(helpText).toContain('sarif');
+  });
+
+  it('the executor + builder format descriptions do not say SARIF lands in a later release', () => {
+    for (const description of [
+      executorFormatDescription,
+      builderFormatDescription,
+    ]) {
+      expect(description).not.toContain('lands in a later release');
+      expect(description).toContain('sarif');
+    }
+  });
+});
