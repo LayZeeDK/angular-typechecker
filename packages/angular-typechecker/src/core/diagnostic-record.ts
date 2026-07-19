@@ -106,9 +106,10 @@ export function codeStringOf(rawCode: number): string {
 
 /**
  * Relativizes an absolute path to `pathBase` and normalizes separators to `/` so
- * the payload never leaks an absolute local path (Security V5 / T-30-04) and stays
- * cross-OS stable. When `pathBase` is unset the path is left as-is (only slash-
- * normalized) -- the production adapters always pass a base.
+ * machine payloads carry repo-relative, cross-OS-stable paths in the common case
+ * (Security V5 / T-30-04). When `pathBase` is unset the path is left as-is (only
+ * slash-normalized) -- the production adapters always pass a base. See the CROSS-DRIVE
+ * note for the one Windows case where no relative form exists.
  *
  * FAST PATH: when `node:path` `relative()` yields a non-escaping result (does not
  * start with `..`), it is returned slash-normalized -- BYTE-IDENTICAL to the historic
@@ -121,6 +122,18 @@ export function codeStringOf(rawCode: number): string {
  * prefix and escape with `../../..`. {@link stripBaseCaseInsensitive} recovers the
  * repo-relative remainder from that case-only mismatch; a GENUINE escape (the path is
  * really outside the base) yields `undefined` and the real `..` escape is preserved.
+ *
+ * CROSS-DRIVE (Windows, T-30-04 residual): when the file is on a DIFFERENT DRIVE than
+ * `pathBase` (base `D:\repo`, file `C:\other\a.ts`) there is NO relative form, so
+ * `path.win32.relative` returns the ABSOLUTE path -- which does not start with `..`,
+ * so it passes through the FAST PATH forward-slashed AS-IS (e.g. `C:/other/a.ts`).
+ * This is DELIBERATE: it matches how TypeScript (`getRelativePathFromDirectory`),
+ * ESLint, and Biome emit an out-of-root file -- keeping the location actionable rather
+ * than redacting it. So this function does NOT guarantee "never emit an absolute path":
+ * that holds for same-root paths only. It is a documented, ASVS-L1-ACCEPTED residual
+ * (30-SECURITY.md IN-03), is rare (a cross-drive tsconfig reference / symlinked dep),
+ * cannot occur on POSIX (no drive concept), and is pinned by a win32 unit test.
+ * (Redacting it via SARIF `uriBaseId` is deferred Phase-31+ territory.)
  */
 export function relativizePath(
   absolutePath: string,

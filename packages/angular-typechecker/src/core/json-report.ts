@@ -35,9 +35,10 @@ const FORMAT_VERSION = 1;
 const packageManifest = require('../../package.json') as { version: string };
 
 export interface JsonReportOptions {
-  // The relativization base for `file` / `tsConfigPath` / advisory paths (never
-  // leak an absolute local path -- T-30-04). The adapter fills it from the
-  // workspace/context root (30-03).
+  // The relativization base for `file` / `tsConfigPath` / advisory paths, yielding
+  // repo-relative paths for same-root files (T-30-04; a Windows cross-drive path has
+  // no relative form and stays absolute -- see relativizePath). The adapter fills it
+  // from the workspace/context root (30-03).
   pathBase?: string;
   // Forwarded to `evaluateResult` for the DELEGATED `summary.outcome`/`success`
   // (D-07). NOT read to decide success in this module.

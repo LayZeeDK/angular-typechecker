@@ -38,6 +38,21 @@ describe('relativizePath', () => {
       '../other/file.ts',
     );
   });
+
+  it.runIf(process.platform === 'win32')(
+    'emits the forward-slashed ABSOLUTE path for a Windows cross-drive file (no relative form -- T-30-04 ASVS-L1 residual, matches tsc/ESLint)',
+    () => {
+      // Base D:\repo and file C:\other\a.ts have NO relative form across drives, so
+      // path.win32.relative returns the absolute path, which does not start with '..'
+      // and passes through the fast path forward-slashed as-is. DELIBERATE (see the
+      // relativizePath CROSS-DRIVE note): actionable over redacted, matching how
+      // TypeScript/ESLint/Biome emit an out-of-root file. Windows-only -- POSIX has no
+      // drive concept, so this case cannot occur there and the test is skipped.
+      expect(relativizePath('C:\\other\\a.ts', 'D:\\repo')).toBe(
+        'C:/other/a.ts',
+      );
+    },
+  );
 });
 
 describe('stripBaseCaseInsensitive', () => {
