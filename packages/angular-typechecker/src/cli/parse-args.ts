@@ -116,6 +116,8 @@ export function parseCliArgs(argv: string[]): ParseResult {
   // help/version short-circuits and the validation checks only RETURN, so
   // keeping them inside the try changes no semantics and lets `values` stay
   // fully typed from parseArgs inference (avoids an implicit-any intermediate).
+  // The per-flag validation is delegated to the small PURE validators below so
+  // this stays a flat, linear read (D-14 mapping kept here, in the catch).
   try {
     const { values } = parseArgs({
       args: argv,
@@ -126,24 +128,7 @@ export function parseCliArgs(argv: string[]): ParseResult {
       // ERR_PARSE_ARGS_UNKNOWN_OPTION on `--no-color`. Added in Node 22.4.0; the
       // engines floor is 22.22.3, so it is available on every supported Node.
       allowNegative: true,
-      options: {
-        // D-12: short is `c` (for --tsConfig), NEVER `p` -- `-p`/`--project`
-        // is deliberately NOT registered (it would collide with Angular CLI /
-        // Nx workspace PROJECT selection) and must surface as an unknown-flag
-        // usage error.
-        tsConfig: { type: 'string', short: 'c', multiple: true },
-        'max-warnings': { type: 'string' },
-        // FMT-01 / CLIX-02: --format <human|json|sarif>, --quiet, and
-        // --color/--no-color (the latter via allowNegative above).
-        format: { type: 'string' },
-        quiet: { type: 'boolean' },
-        color: { type: 'boolean' },
-        'fail-fast': { type: 'boolean' },
-        'include-deps': { type: 'boolean' },
-        strict: { type: 'boolean' },
-        help: { type: 'boolean', short: 'h' },
-        version: { type: 'boolean' },
-      },
+      options: PARSE_ARGS_OPTION_CONFIG,
     });
 
     if (values.help === true) {
@@ -154,62 +139,29 @@ export function parseCliArgs(argv: string[]): ParseResult {
       return { kind: 'version', text: packageManifest.version + '\n' };
     }
 
-    const tsConfig = values.tsConfig;
+    const tsConfig = validateTsConfig(values.tsConfig);
 
-    if (tsConfig === undefined || tsConfig.length === 0) {
-      return {
-        kind: 'usageError',
-        message:
-          'angular-typechecker: missing required --tsConfig (-c) option. Pass at least one tsconfig path.',
-      };
+    if (!tsConfig.ok) {
+      return { kind: 'usageError', message: tsConfig.message };
     }
 
-    let maxWarnings: number | undefined;
-    const rawMaxWarnings = values['max-warnings'];
+    const maxWarnings = validateMaxWarnings(values['max-warnings']);
 
-    if (rawMaxWarnings !== undefined) {
-      // D-08: accept ONLY a plain non-negative decimal integer. Guard the RAW
-      // string with /^\d+$/ BEFORE Number(): a bare Number() coercion is too
-      // lenient -- it also accepts '' -> 0 (a silent flip to the strictest gate),
-      // '1e3' -> 1000, '0x10' -> 16, and ' 5 ' -> 5, none of which are "a
-      // non-negative integer" the help text promises. `--max-warnings 0` stays valid.
-      if (!/^\d+$/.test(rawMaxWarnings)) {
-        return {
-          kind: 'usageError',
-          message: `angular-typechecker: --max-warnings expects a non-negative integer, got "${rawMaxWarnings}".`,
-        };
-      }
-
-      maxWarnings = Number(rawMaxWarnings);
+    if (!maxWarnings.ok) {
+      return { kind: 'usageError', message: maxWarnings.message };
     }
 
-    // FMT-01 (D-08): validate --format against the enum, mirroring the
-    // --max-warnings guard. An out-of-enum value is a usage error (exit 2). The
-    // cast in the return is safe by construction -- this guard rejects everything
-    // that is not one of the three members (undefined defaults to 'human').
-    const rawFormat = values.format;
+    const format = validateFormat(values.format);
 
-    if (
-      rawFormat !== undefined &&
-      !['human', 'json', 'sarif'].includes(rawFormat)
-    ) {
-      return {
-        kind: 'usageError',
-        message: `angular-typechecker: --format expects one of human, json, sarif, got "${rawFormat}".`,
-      };
+    if (!format.ok) {
+      return { kind: 'usageError', message: format.message };
     }
 
-    return {
-      kind: 'options',
-      tsConfig,
-      maxWarnings,
-      format: (rawFormat ?? 'human') as 'human' | 'json' | 'sarif',
-      quiet: values.quiet ?? false,
-      color: values.color,
-      failFast: values['fail-fast'] ?? false,
-      includeDeps: values['include-deps'] ?? false,
-      strict: values.strict ?? false,
-    };
+    return buildParsedOptions(values, {
+      tsConfig: tsConfig.value,
+      maxWarnings: maxWarnings.value,
+      format: format.value,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
@@ -218,4 +170,124 @@ export function parseCliArgs(argv: string[]): ParseResult {
       message: `angular-typechecker: ${message}`,
     };
   }
+}
+
+// The parseArgs option registration, hoisted to a module constant so parseCliArgs
+// reads as a flat sequence. D-12: short is `c` (for --tsConfig), NEVER `p` --
+// `-p`/`--project` is deliberately NOT registered (it would collide with Angular
+// CLI / Nx workspace PROJECT selection) and must surface as an unknown-flag usage
+// error. FMT-01 / CLIX-02: --format <human|json|sarif>, --quiet, and
+// --color/--no-color (the latter via allowNegative on the parseArgs call).
+const PARSE_ARGS_OPTION_CONFIG = {
+  tsConfig: { type: 'string', short: 'c', multiple: true },
+  'max-warnings': { type: 'string' },
+  format: { type: 'string' },
+  quiet: { type: 'boolean' },
+  color: { type: 'boolean' },
+  'fail-fast': { type: 'boolean' },
+  'include-deps': { type: 'boolean' },
+  strict: { type: 'boolean' },
+  help: { type: 'boolean', short: 'h' },
+  version: { type: 'boolean' },
+} as const;
+
+/**
+ * A per-flag validation outcome: the validated `value`, or a usage-error `message`
+ * the caller maps to a {@link ParsedUsageError}. Keeps each validator a pure,
+ * single-responsibility function so parseCliArgs stays below the complexity gate.
+ */
+type Validated<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly message: string };
+
+/** `--tsConfig` (`-c`) is required and repeatable; at least one value must be present. */
+function validateTsConfig(
+  raw: readonly string[] | undefined,
+): Validated<readonly string[]> {
+  if (raw === undefined || raw.length === 0) {
+    return {
+      ok: false,
+      message:
+        'angular-typechecker: missing required --tsConfig (-c) option. Pass at least one tsconfig path.',
+    };
+  }
+
+  return { ok: true, value: raw };
+}
+
+/**
+ * `--max-warnings` accepts ONLY a plain non-negative decimal integer (D-08). Guard
+ * the RAW string with /^\d+$/ BEFORE Number(): a bare Number() coercion is too
+ * lenient -- it also accepts '' -> 0 (a silent flip to the strictest gate), '1e3'
+ * -> 1000, '0x10' -> 16, and ' 5 ' -> 5, none of which are "a non-negative integer"
+ * the help text promises. `--max-warnings 0` stays valid; an absent flag is valid
+ * (value undefined).
+ */
+function validateMaxWarnings(
+  raw: string | undefined,
+): Validated<number | undefined> {
+  if (raw === undefined) {
+    return { ok: true, value: undefined };
+  }
+
+  if (!/^\d+$/.test(raw)) {
+    return {
+      ok: false,
+      message: `angular-typechecker: --max-warnings expects a non-negative integer, got "${raw}".`,
+    };
+  }
+
+  return { ok: true, value: Number(raw) };
+}
+
+/**
+ * `--format` must be one of the three enum members (FMT-01 / D-08); an out-of-enum
+ * value is a usage error (exit 2). An absent flag defaults to 'human'. The cast is
+ * safe by construction -- this guard rejects everything that is not a member.
+ */
+function validateFormat(
+  raw: string | undefined,
+): Validated<'human' | 'json' | 'sarif'> {
+  if (raw !== undefined && !['human', 'json', 'sarif'].includes(raw)) {
+    return {
+      ok: false,
+      message: `angular-typechecker: --format expects one of human, json, sarif, got "${raw}".`,
+    };
+  }
+
+  return { ok: true, value: (raw ?? 'human') as 'human' | 'json' | 'sarif' };
+}
+
+/** The boolean flag reads parseArgs surfaces as `boolean | undefined`. */
+interface ParsedFlagValues {
+  readonly quiet?: boolean;
+  readonly color?: boolean;
+  readonly 'fail-fast'?: boolean;
+  readonly 'include-deps'?: boolean;
+  readonly strict?: boolean;
+}
+
+/**
+ * Assembles the validated pieces into the final {@link ParsedOptions}, applying the
+ * boolean `?? false` defaults (color stays `undefined` = no flag -> fall back to env).
+ */
+function buildParsedOptions(
+  values: ParsedFlagValues,
+  validated: {
+    readonly tsConfig: readonly string[];
+    readonly maxWarnings: number | undefined;
+    readonly format: 'human' | 'json' | 'sarif';
+  },
+): ParsedOptions {
+  return {
+    kind: 'options',
+    tsConfig: validated.tsConfig,
+    maxWarnings: validated.maxWarnings,
+    format: validated.format,
+    quiet: values.quiet ?? false,
+    color: values.color,
+    failFast: values['fail-fast'] ?? false,
+    includeDeps: values['include-deps'] ?? false,
+    strict: values.strict ?? false,
+  };
 }

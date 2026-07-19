@@ -107,47 +107,95 @@ export function formatJsonReport(
   return JSON.stringify(payload, null, 2);
 }
 
+/**
+ * Assembles the present-if-non-empty advisory block by spreading five per-field
+ * partials (each `{}` when absent/empty, or `{ key: value }` when present), then
+ * returns `undefined` when nothing is present. The spread order fixes the emitted
+ * key order -- byte-identical to the historic single conditional-spread chain.
+ */
 function buildAdvisories(
   result: CoreResult,
   pathBase: string | undefined,
 ): Advisories | undefined {
   const advisories: Advisories = {
-    ...(result.templateCheckAborted !== undefined
-      ? {
-          templateCheckAborted: {
-            fileName:
-              result.templateCheckAborted.fileName !== undefined
-                ? relativizePath(result.templateCheckAborted.fileName, pathBase)
-                : null,
-          },
-        }
-      : {}),
-    ...(result.skippedReferences?.length
-      ? {
-          skippedReferences: result.skippedReferences.map((reference) => ({
-            referencePath: relativizePath(reference.referencePath, pathBase),
-            reason: reference.reason,
-          })),
-        }
-      : {}),
-    ...(result.suppressedInGraphFiles.length > 0
-      ? {
-          suppressedInGraphFiles: result.suppressedInGraphFiles.map((file) =>
-            relativizePath(file, pathBase),
-          ),
-        }
-      : {}),
-    ...(result.notTypeCheckedDeclaredFiles?.length
-      ? {
-          notTypeCheckedDeclaredFiles: result.notTypeCheckedDeclaredFiles.map(
-            (file) => relativizePath(file, pathBase),
-          ),
-        }
-      : {}),
-    ...(result.bundlerQueryImports?.length
-      ? { bundlerQueryImports: [...result.bundlerQueryImports] }
-      : {}),
+    ...templateCheckAbortedAdvisory(result, pathBase),
+    ...skippedReferencesAdvisory(result, pathBase),
+    ...suppressedInGraphFilesAdvisory(result, pathBase),
+    ...notTypeCheckedDeclaredFilesAdvisory(result, pathBase),
+    ...bundlerQueryImportsAdvisory(result),
   };
 
   return Object.keys(advisories).length > 0 ? advisories : undefined;
+}
+
+function templateCheckAbortedAdvisory(
+  result: CoreResult,
+  pathBase: string | undefined,
+): Partial<Advisories> {
+  if (result.templateCheckAborted === undefined) {
+    return {};
+  }
+
+  return {
+    templateCheckAborted: {
+      fileName:
+        result.templateCheckAborted.fileName !== undefined
+          ? relativizePath(result.templateCheckAborted.fileName, pathBase)
+          : null,
+    },
+  };
+}
+
+function skippedReferencesAdvisory(
+  result: CoreResult,
+  pathBase: string | undefined,
+): Partial<Advisories> {
+  if (!result.skippedReferences?.length) {
+    return {};
+  }
+
+  return {
+    skippedReferences: result.skippedReferences.map((reference) => ({
+      referencePath: relativizePath(reference.referencePath, pathBase),
+      reason: reference.reason,
+    })),
+  };
+}
+
+function suppressedInGraphFilesAdvisory(
+  result: CoreResult,
+  pathBase: string | undefined,
+): Partial<Advisories> {
+  if (result.suppressedInGraphFiles.length === 0) {
+    return {};
+  }
+
+  return {
+    suppressedInGraphFiles: result.suppressedInGraphFiles.map((file) =>
+      relativizePath(file, pathBase),
+    ),
+  };
+}
+
+function notTypeCheckedDeclaredFilesAdvisory(
+  result: CoreResult,
+  pathBase: string | undefined,
+): Partial<Advisories> {
+  if (!result.notTypeCheckedDeclaredFiles?.length) {
+    return {};
+  }
+
+  return {
+    notTypeCheckedDeclaredFiles: result.notTypeCheckedDeclaredFiles.map(
+      (file) => relativizePath(file, pathBase),
+    ),
+  };
+}
+
+function bundlerQueryImportsAdvisory(result: CoreResult): Partial<Advisories> {
+  if (!result.bundlerQueryImports?.length) {
+    return {};
+  }
+
+  return { bundlerQueryImports: [...result.bundlerQueryImports] };
 }
