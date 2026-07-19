@@ -10,7 +10,7 @@ import {
   positionsOf,
   toDiagnosticRecord,
 } from './diagnostic-record';
-import { formatJsonReport } from './json-report';
+import { formatJsonReport, type JsonReport } from './json-report';
 import type { CoreResult } from './run-typecheck';
 
 // ESC (0x1b) built from a char code so no literal control char lives in source
@@ -273,7 +273,13 @@ describe('formatJsonReport (REP-01 / D-02..D-07 / FMT-02/FMT-03)', () => {
   });
 
   it('marks formatVersion 1, the tool name, and the version from the package manifest (D-03)', () => {
-    const payload = JSON.parse(formatJsonReport(coreResult(), ts, {}));
+    // Typed as the exported JsonReport contract: the annotation is the payload's
+    // compile-time drift guard (a field add/remove/retype in json-report.ts that
+    // diverges from JsonReport breaks HERE), the structural companion to
+    // formatVersion + the key-drift snapshot.
+    const payload: JsonReport = JSON.parse(
+      formatJsonReport(coreResult(), ts, {}),
+    );
 
     expect(payload.formatVersion).toBe(1);
     expect(payload.tool).toBe('angular-typechecker');
