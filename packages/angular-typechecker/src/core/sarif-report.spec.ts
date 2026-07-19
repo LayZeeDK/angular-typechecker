@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import { validateSarif } from '@workspace/test-util';
 
 import { evaluateResult } from './evaluate-result';
 import { EXTENDED_DIAGNOSTIC_CATALOG } from './extended-catalog';
@@ -79,6 +80,32 @@ function filelessDiag(code = ATC90001): ts.Diagnostic {
     start: undefined,
     length: undefined,
     messageText: 'a references-only config resolved zero root names',
+  } as ts.Diagnostic;
+}
+
+// The file-SET but position-ABSENT shape (the SAME fixture json-report.spec.ts pins):
+// the diagnostic carries its owning `file` yet has no `start`/`length`. `positionsOf`
+// short-circuits on the undefined `start`, so `getLineAndCharacterOfPosition` is NEVER
+// invoked -- it throws here to lock that. SARIF must still emit a LOCATED result
+// (artifactLocation set) but with NO region, since node-sarif-builder only builds a
+// region when `startLine` is neither null nor undefined.
+function fileSetPositionAbsentDiag(): ts.Diagnostic {
+  const file = {
+    fileName: 'D:/ws/proj/src/z.component.ts',
+    getLineAndCharacterOfPosition: () => {
+      throw new Error(
+        'getLineAndCharacterOfPosition must not be called when start is undefined',
+      );
+    },
+  } as unknown as ts.SourceFile;
+
+  return {
+    category: ERROR,
+    code: TS2322,
+    file,
+    start: undefined,
+    length: undefined,
+    messageText: 'Type X is not assignable to type Y.',
   } as ts.Diagnostic;
 }
 
@@ -186,6 +213,48 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
 
     expect(fileless.ruleId).toBe('ATC90001');
     expect('locations' in fileless).toBe(false);
+  });
+
+  it('emits a file-SET but position-ABSENT diagnostic as a LOCATED result with NO region, length one-to-one, schema-valid (FIX 4 / REP-02)', async () => {
+    const result = coreResult({
+      diagnostics: [fileSetPositionAbsentDiag()],
+      errorCount: 1,
+    });
+    const log = await sarifOf(result);
+
+    expect(log.runs[0].results).toHaveLength(result.diagnostics.length);
+
+    const physical = log.runs[0].results[0].locations?.[0].physicalLocation;
+
+    // The artifact IS reported (contrast the file-less case, which omits `locations`)...
+    expect(physical?.artifactLocation.uri).toBe('src/z.component.ts');
+    // ...but node-sarif-builder only builds a region when startLine is neither null
+    // nor undefined, so a position-absent diagnostic carries NO region at all --
+    // never a degenerate 0/1 span that would mis-anchor a GitHub alert.
+    expect(physical?.region).toBeUndefined();
+
+    const { valid, errors } = validateSarif(
+      await formatSarifReport(result, ts, 'D:/ws/proj'),
+    );
+
+    expect(valid, errors).toBe(true);
+  });
+
+  it('renders a clean CoreResult as an EMPTY results array still carrying the 18-rule catalog, schema-valid (FIX 6 / REP-02)', async () => {
+    const log = await sarifOf(coreResult());
+
+    expect(log.runs[0].results).toHaveLength(0);
+    // The catalog ships regardless of whether any diagnostic referenced a rule.
+    expect(log.runs[0].tool.driver.rules).toHaveLength(
+      EXTENDED_DIAGNOSTIC_CATALOG.length,
+    );
+    expect(log.runs[0].tool.driver.rules).toHaveLength(18);
+
+    const { valid, errors } = validateSarif(
+      await formatSarifReport(coreResult(), ts, 'D:/ws/proj'),
+    );
+
+    expect(valid, errors).toBe(true);
   });
 
   it('writes a versioned partialFingerprints (atcFingerprint/v1 sha256 hex) on every result, file-less included (D-02)', async () => {

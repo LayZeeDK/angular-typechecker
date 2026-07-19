@@ -69,6 +69,31 @@ function filelessDiag(code = ATC90001): ts.Diagnostic {
   } as ts.Diagnostic;
 }
 
+// The file-SET but position-ABSENT shape: the diagnostic carries its owning `file`
+// yet has no `start`/`length` (a file-scoped diagnostic). `positionsOf` short-circuits
+// on the undefined `start`, so `getLineAndCharacterOfPosition` is NEVER invoked --
+// it throws here to lock that. The record must keep a NON-null relativized `file`
+// while all four positions go null, and must never be dropped.
+function fileSetPositionAbsentDiag(): ts.Diagnostic {
+  const file = {
+    fileName: 'D:/ws/proj/src/z.component.ts',
+    getLineAndCharacterOfPosition: () => {
+      throw new Error(
+        'getLineAndCharacterOfPosition must not be called when start is undefined',
+      );
+    },
+  } as unknown as ts.SourceFile;
+
+  return {
+    category: ERROR,
+    code: TS2322,
+    file,
+    start: undefined,
+    length: undefined,
+    messageText: 'Type X is not assignable to type Y.',
+  } as ts.Diagnostic;
+}
+
 // The version drift-lock reads the SAME manifest the reporter reads, via the repo's
 // established readFileSync idiom (main.spec.ts) -- two dirs above src/core/.
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -292,6 +317,29 @@ describe('formatJsonReport (REP-01 / D-02..D-07 / FMT-02/FMT-03)', () => {
     expect(fileless.line).toBeNull();
     expect(fileless.endColumn).toBeNull();
     expect(fileless.code).toBe('ATC90001');
+  });
+
+  it('keeps a file-SET but position-ABSENT diagnostic -- file non-null, all four positions null, length one-to-one (FIX 4 / REP-01)', () => {
+    const result = coreResult({
+      diagnostics: [fileSetPositionAbsentDiag()],
+      errorCount: 1,
+    });
+
+    const payload = JSON.parse(
+      formatJsonReport(result, ts, { pathBase: 'D:/ws/proj' }),
+    );
+
+    expect(payload.diagnostics).toHaveLength(result.diagnostics.length);
+
+    const record = payload.diagnostics[0];
+
+    // The owning file IS reported (contrast the file-less case above, which nulls it)...
+    expect(record.file).toBe('src/z.component.ts');
+    // ...while every position stays null -- the projection never invents a 0 or 1.
+    expect(record.line).toBeNull();
+    expect(record.column).toBeNull();
+    expect(record.endLine).toBeNull();
+    expect(record.endColumn).toBeNull();
   });
 
   it('maps severity data-driven over the payload diagnostics', () => {
