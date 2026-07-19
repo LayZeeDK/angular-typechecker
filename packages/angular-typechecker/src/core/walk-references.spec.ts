@@ -546,7 +546,9 @@ describe('walkReferences', () => {
     // The leaf ran and the walk RESOLVED (no raw TypeError).
     expect(performedPaths).toEqual([crashPath]);
     // The raw 500 is left in the union for the caller to re-throw as infrastructure.
-    expect(walk.rawDiagnostics.map((d) => d.code)).toContain(UNKNOWN_ERROR_CODE);
+    expect(walk.rawDiagnostics.map((d) => d.code)).toContain(
+      UNKNOWN_ERROR_CODE,
+    );
     // The crashed leaf contributes 0 authored files (the deref never ran).
     expect(walk.totalFilesCount).toBe(0);
   });
