@@ -3,6 +3,7 @@ import { isAbsolute } from 'node:path';
 import type { ExecutorContext } from '@nx/devkit';
 import { joinPathFragments } from '@nx/devkit';
 
+import type { ReportFormat } from '../../core/render-report';
 import type { CoreOptions } from '../../core/run-typecheck';
 import type { TypecheckExecutorOptions } from './schema';
 
@@ -23,7 +24,7 @@ export interface NormalizedOptions {
   failFast: boolean;
   color: boolean;
   strict: boolean;
-  format: 'human' | 'json' | 'sarif';
+  format: ReportFormat;
 }
 
 /**
