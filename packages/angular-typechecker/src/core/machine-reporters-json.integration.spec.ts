@@ -1,7 +1,6 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { ExecutorContext } from '@nx/devkit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { findWorkspaceRoot, redactVolatile } from '@workspace/test-util';
 
@@ -80,7 +79,12 @@ async function captureExecutorJson(tsConfig: string): Promise<string> {
   }) as typeof process.stdout.write;
 
   try {
-    const context = { root: workspaceRoot } as ExecutorContext;
+    // Derive the ExecutorContext type from the executor's own signature -- core/
+    // is nx-free (D-11), so this spec never imports @nx/devkit. normalizeOptions
+    // reads only context.root.
+    const context = {
+      root: workspaceRoot,
+    } as Parameters<typeof typecheckExecutor>[1];
     await typecheckExecutor({ tsConfig, format: 'json' }, context);
   } finally {
     process.stdout.write = originalWrite;
