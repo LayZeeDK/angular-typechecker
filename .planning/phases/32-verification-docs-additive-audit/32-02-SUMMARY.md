@@ -36,12 +36,13 @@ key-files:
     - e2e/angular-typechecker-cli-e2e/src/cli-exit-codes.e2e.spec.ts
     - e2e/angular-typechecker-ng-cli-e2e/src/ng-add-ng-run.e2e.spec.ts
     - e2e/angular-typechecker-install-e2e/src/install-smoke.e2e.spec.ts
+    - packages/angular-typechecker/project.json  # build asset-glob ignore (snapshot-leak fix, additive-safe)
 
 key-decisions:
   - "runShim/runShimSplit share a private spawnShim so the spawn options (Windows shell+quoted-path CVE-2024-27980 handling, maxBuffer) live in ONE place; runShim's stream-merged output and error message are byte-unchanged."
   - "Observed (not assumed) framing: Angular CLI 22 `ng run` emits PURE stdout (leading/trailing empty); Nx 23 `nx run --output-style=static` FRAMES stdout (leading `> nx run` echo + a NO_COLOR/FORCE_COLOR node warning, trailing ` NX  Successfully ran ...`). extractJsonPayload isolates the payload for both; the CLI `.bin` shim stays the guaranteed-pure proof."
   - "ADVISORY_NOTICE_PREFIX = 'angular-typechecker:' is a safe purity needle: the json/sarif payloads name the tool `\"angular-typechecker\"` (no trailing colon), and the executor gates advisory notices to the human format, so a machine payload never contains it."
-  - "Snapshot tarball leak (below) is OUT OF SCOPE for this test-only VER-03 plan and NOT caused by it -- logged to deferred-items.md + STATE blocker for a 32 gap-closure / packaging fix."
+  - "Snapshot tarball leak (surfaced by the Task 3 e2e gate, pre-existing) was FIXED here at the coordinator's direction (commit 7a77b51): ignore:['**/__snapshots__/**'] on the build asset glob -- build-config only, additive-safe (restores @0.2.2's clean tarball shape); NOT a public-API/schema/dependency/version change."
 
 patterns-established:
   - "One shared validateSarif across the integration tier (32-01) and all three e2e adapters (32-02)."
@@ -122,23 +123,27 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - the three VER-03 adapter proofs were implemented and pass exactly as the plan specified. (The tarball-leak finding below is a DISCOVERED out-of-scope blocker, not a deviation in the planned work.)
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Excluded dev-only Vitest snapshots from the published tarball (PKG-02)**
+- **Found during:** Task 3 verify gate (`nx e2e angular-typechecker-install-e2e`) surfaced two RED specs I did not modify -- `tarball-audit` PKG-02 and `verdaccio-publish` REL-04.
+- **Issue:** the plugin build asset glob `**/!(*.ts)` in `packages/angular-typechecker/project.json` copied `src/**/__snapshots__/*.snap` into `dist/.../src/`, which `files: ["src"]` packed -- leaking four dev-only Vitest snapshots (`json-report.spec.ts.snap` P30, `sarif-report.spec.ts.snap` P31, the two `machine-reporters-*.integration.spec.ts.snap` 32-01) into the tarball. Pre-existing (reproduces at the pre-32-02 HEAD), surfaced by this plan's e2e gate.
+- **Fix:** added `ignore: ["**/__snapshots__/**"]` to the asset glob -- Vitest snapshots are no longer copied; every real non-`.ts` asset (executors/schema/collection/builders/generators JSON, README, LICENSE) still ships.
+- **Additive-safe:** build-config (packaging) change ONLY -- no public API / executor id / schema contract / dependency / version change. `@0.2.2`'s tarball carried no reporter snapshots (they arrived unreleased in Phase 30/31), so excluding them restores 0.2.3's tarball to `@0.2.2`'s clean shape -- a regression fix, not a breaking change. **32-03 ADD-01 should expect a `project.json` asset-glob diff and classify it non-breaking.**
+- **Files modified:** `packages/angular-typechecker/project.json`
+- **Verification:** `nx build angular-typechecker` dist has zero `.snap` and all real assets present; `nx e2e angular-typechecker-install-e2e` GREEN (11 files / 40 tests); `nx typecheck/lint angular-typechecker` (maxWarnings:0) + `nx format:check` green.
+- **Committed in:** `7a77b51` (distinct fix commit)
+
+---
+
+**Total deviations:** 1 auto-fixed (1 packaging-correctness bug). The three planned VER-03 adapter proofs were implemented and pass exactly as specified.
+**Impact on plan:** the fix was directed by the coordinator (fix now, not defer). It is a real 0.2.3 ship-blocker and a minimal, additive-safe build-config change. No scope creep into public API.
 
 ## Issues Encountered / Deferred Issues
 
-### BLOCKER (out of scope, NOT caused by this plan): the published tarball leaks dev-only `__snapshots__/*.snap`
+### RESOLVED (commit `7a77b51`): the published tarball leaked dev-only `__snapshots__/*.snap`
 
-Running the Task 3 verify gate (`nx e2e angular-typechecker-install-e2e`) surfaced two RED specs I did NOT modify:
-- `tarball-audit.e2e.spec.ts` PKG-02 "leaks no spec/tsconfig.spec/fixture/consumer files"
-- `verdaccio-publish.e2e.spec.ts` REL-04 "ships compiled JS + types with zero .ts source"
-
-Both fail because the packed tarball carries four `.snap` files:
-`json-report.spec.ts.snap` (Phase 30), `sarif-report.spec.ts.snap` (Phase 31), and the two `machine-reporters-*.integration.spec.ts.snap` (32-01). **Root cause:** the plugin build asset glob in `packages/angular-typechecker/project.json` (`glob: "**/!(*.ts)"`) copies every non-`.ts` file under `src/` -- including the Vitest snapshots -- into `dist/.../src/`, which `files: ["src"]` then packs.
-
-- **Not caused by 32-02:** this plan added ZERO files under `packages/angular-typechecker/src/`; the failure reproduces identically at the pre-32-02 HEAD. My own install-smoke `--format` block PASSED.
-- **Why not fixed here:** 32-02 is a test-only VER-03 plan; the fix is production build/packaging config (asset glob / `files` / `.npmignore`), outside this plan's file scope and its additive-only "test-only changes" charter.
-- **Why 32-03 won't catch it:** ADD-01 audits the published-surface git-diff + the dependency diff; the `.snap` files are additive NEW files, so a scoped git-diff never flags them.
-- **Action taken:** logged to `deferred-items.md` (with the recommended fix) and recorded a STATE blocker. Recommended: a `/gsd-plan-phase 32 --gaps` (or quick task) to exclude Vitest snapshots from the package, then re-green `nx e2e angular-typechecker-install-e2e` BEFORE the v0.2.3 Release-PR.
+Fixed in this plan (see the deviation above). The two previously-RED install-e2e specs (`tarball-audit` PKG-02, `verdaccio-publish` REL-04) are now GREEN. `deferred-items.md` and the STATE blocker are marked RESOLVED.
 
 ## Known Stubs
 None - every deliverable is wired to the real installed tarball and asserted.
@@ -151,16 +156,16 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 - `runShimSplit`, `assertMachineFormatParity`, `extractJsonPayload`, and `ADVISORY_NOTICE_PREFIX` are exported from `@workspace/test-util`.
-- 32-03 (ADD-01) can proceed on the published-surface additive-only audit, BUT the milestone carries an open BLOCKER: the `.snap` tarball leak must be fixed (build/packaging) and `nx e2e angular-typechecker-install-e2e` re-greened before the v0.2.3 Release-PR. See `deferred-items.md`.
-- Green gates: `nx e2e angular-typechecker-cli-e2e`, `nx e2e angular-typechecker-ng-cli-e2e`, the install-smoke `--format` spec, `nx typecheck/lint test-util`, `nx typecheck/lint angular-typechecker` (maxWarnings:0), `nx format:check`.
+- 32-03 (ADD-01) can proceed; the `.snap` tarball leak is RESOLVED (commit `7a77b51`). ADD-01 should expect a `packages/angular-typechecker/project.json` asset-glob diff (`ignore: ["**/__snapshots__/**"]`) and classify it as a non-breaking build-config/packaging change (no public API / executor id / schema / dependency / version change).
+- Green gates: `nx e2e angular-typechecker-cli-e2e`, `nx e2e angular-typechecker-ng-cli-e2e`, `nx e2e angular-typechecker-install-e2e` (11 files / 40 tests, all GREEN), `nx build angular-typechecker`, `nx typecheck/lint test-util`, `nx typecheck/lint angular-typechecker` (maxWarnings:0), `nx format:check`.
 
 ## Self-Check: PASSED
 
 - All created/modified files exist on disk (SUMMARY, deferred-items, cli-e2e helper, 3 e2e specs).
 - All 3 task commits present: `5031cf5`, `20fbd0a`, `d18091f`.
 - VER-03 adapter proofs green: `nx e2e angular-typechecker-cli-e2e` (5 tests), `nx e2e angular-typechecker-ng-cli-e2e` (5 tests), the install-smoke `--format` spec.
-- Plugin surface unchanged: `nx typecheck/lint angular-typechecker`, `nx format:check` green.
-- Open BLOCKER (out of scope): the pre-existing `.snap` tarball leak keeps two install-e2e packaging specs RED (see deferred-items.md).
+- Plugin surface unchanged (public API/executor/schema/deps/version): `nx typecheck/lint angular-typechecker`, `nx format:check` green.
+- `nx e2e angular-typechecker-install-e2e` GREEN (11 files / 40 tests) after the snapshot-leak fix (`7a77b51`); the blocker is RESOLVED in deferred-items.md + STATE.md.
 
 ---
 *Phase: 32-verification-docs-additive-audit*

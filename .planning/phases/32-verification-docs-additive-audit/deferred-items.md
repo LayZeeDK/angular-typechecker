@@ -4,7 +4,16 @@ Discoveries logged during execution that are OUT OF SCOPE for the plan that foun
 them (per the executor scope-boundary rule: only auto-fix issues DIRECTLY caused by
 the current task's changes).
 
-## BLOCKER: the published tarball leaks dev-only `__snapshots__/*.snap` files
+## RESOLVED 2026-07-19 (commit `7a77b51`): the published tarball leaked dev-only `__snapshots__/*.snap` files
+
+**Resolution:** Fixed in 32-02 (at the coordinator's direction -- fix now, not defer). Added
+`ignore: ["**/__snapshots__/**"]` to the `**/!(*.ts)` build asset glob in
+`packages/angular-typechecker/project.json`, so Vitest snapshots are no longer copied into
+`dist/.../src/` while every real non-`.ts` asset still ships. Verified: `nx build angular-typechecker`
+dist has zero `.snap` and all real assets present; `nx e2e angular-typechecker-install-e2e` GREEN
+(11 files / 40 tests, including `tarball-audit` PKG-02 + `verdaccio-publish` REL-04 + install-smoke).
+Build-config only -- no public API / executor id / schema / dependency / version change; restores
+0.2.3's tarball to `@0.2.2`'s clean shape (additive-safe). The original analysis is retained below.
 
 - **Discovered during:** 32-02 (VER-03), Task 3 verify gate (`nx e2e angular-typechecker-install-e2e`).
 - **Symptom:** two e2e specs I did NOT modify are RED:

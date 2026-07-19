@@ -179,7 +179,15 @@ archives under `.planning/milestones/`.
   vs `<id>-SUMMARY.md`) recurred at v0.0.3 and v0.1.0 closes; and "close requirement statuses at phase
   verification" has recurred. Both want a mechanical gate before the next milestone close.
 
-- v0.2.3 tarball leaks dev-only __snapshots__/*.snap: install-e2e tarball-audit PKG-02 + verdaccio-publish REL-04 RED. Root cause: plugin build asset glob copies .snap into dist/src. Fix packaging in a 32 gap-closure plan before the Release-PR (see phases/32-.../deferred-items.md).
+- **v0.2.3 tarball snapshot leak -- RESOLVED 2026-07-19 (Plan 32-02, commit `7a77b51`).** Was: the plugin
+  build asset glob `**/!(*.ts)` copied dev-only `src/**/__snapshots__/*.snap` into `dist/.../src/`, which
+  `files:["src"]` packed -- leaking four Vitest snapshots into the tarball and failing `install-e2e`
+  tarball-audit PKG-02 + verdaccio-publish REL-04. FIX (build-config only, additive-safe): added
+  `ignore:["**/__snapshots__/**"]` to the asset glob. `@0.2.2`'s tarball had no reporter snapshots (Phase
+  30/31 unreleased), so this restores the clean tarball shape -- no public API / executor id / schema /
+  dependency / version change. VERIFIED: `nx build` dist has zero `.snap` + all real assets; `nx e2e
+  angular-typechecker-install-e2e` GREEN (11 files / 40 tests). 32-03 ADD-01 should expect a `project.json`
+  asset-glob diff (non-breaking).
 
 ### Pending Todos
 
