@@ -40,6 +40,7 @@ run everywhere the editor is not.
 - [How it compares](#how-it-compares)
 - [Angular CLI](#angular-cli)
 - [Standalone CLI](#standalone-cli)
+- [Machine-readable output](#machine-readable-output)
 - [Storybook](#storybook)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
@@ -257,8 +258,9 @@ Three things shape the output:
 - Paths are workspace-root-relative, so they line up with a standard
   `file:line:col` problem matcher (see [Continuous integration](#continuous-integration)).
 
-Machine-readable reporters (JSON, SARIF) are a deliberate non-goal in v0.x; the
-human-readable format above is the only output.
+This is the default human-readable report. For JSON and SARIF output aimed at
+agents, scripts, and GitHub Code Scanning, see
+[Machine-readable output](#machine-readable-output).
 
 ## Exit codes
 
@@ -526,7 +528,7 @@ The command mirrors the executor's behavior through these flags, the same list
 | `--fail-fast`           | Report diagnostics only up to the first error (output brevity; all diagnostics are still gathered).                                |
 | `--include-deps`        | Include out-of-project / node_modules diagnostics.                                                                                 |
 | `--strict`              | Fail on dropped in-graph warnings (verdict only).                                                                                  |
-| `--format <fmt>`        | Output format: `human` (default), `json`, or `sarif` (SARIF lands in a later release).                                             |
+| `--format <fmt>`        | Output format: `human` (default), `json`, or `sarif`. See [Machine-readable output](#machine-readable-output).                     |
 | `--quiet`               | Silence advisory notices on stderr. Never affects the report on stdout or the exit code.                                           |
 | `--color`               | Force ANSI color on the human report, overriding `NO_COLOR` / `FORCE_COLOR` / TTY detection.                                       |
 | `--no-color`            | Disable ANSI color on the human report.                                                                                            |
@@ -577,6 +579,135 @@ apps/my-app/src/app/app.component.ts:8:38 - error TS2322: Type 'number' is not a
 ```
 
 A clean run prints nothing and exits `0`.
+
+## Machine-readable output
+
+By default angular-typechecker prints the human-readable report described under
+[Output](#output). For AI agents, scripts, and CI security dashboards it can also
+emit two machine formats: a flat JSON payload and SARIF 2.1.0. Select one with
+`--format`:
+
+```sh
+npx angular-typechecker -c tsconfig.json --format json
+npx angular-typechecker -c tsconfig.json --format sarif
+```
+
+The same choice is available on the Nx executor and the Angular CLI builder
+through a `format` option (`human` by default), so `nx typecheck` and
+`ng run <project>:typecheck` produce the identical payload:
+
+```jsonc
+{
+  "targets": {
+    "typecheck": {
+      "executor": "angular-typechecker:typecheck",
+      "options": {
+        "tsConfig": "apps/my-app/tsconfig.json",
+        "format": "json",
+      },
+    },
+  },
+}
+```
+
+The machine payload is written to stdout, and nothing else goes there: advisory
+and progress notices stay on stderr, and no ANSI color ever appears in a machine
+payload, whatever the terminal. So `... --format json > report.json` captures a
+clean payload while the notices stay visible on your terminal. The exit code is
+identical across `human`, `json`, and `sarif` for the same input, so switching
+format never changes pass or fail.
+
+### JSON
+
+`--format json` emits a single JSON object with a flat `diagnostics` array and a
+`summary`. Positions are 1-based, paths are repo-relative, and a file-less
+diagnostic carries `null` for its file and positions:
+
+```json
+{
+  "formatVersion": 1,
+  "tool": "angular-typechecker",
+  "version": "0.2.2",
+  "tsConfigPath": "apps/my-app/tsconfig.json",
+  "summary": {
+    "outcome": "type-error",
+    "success": false,
+    "errorCount": 1,
+    "warningCount": 0,
+    "diagnosticCount": 1,
+    "rootNamesCount": 12,
+    "totalFilesCount": 34,
+    "suppressedThirdParty": 0,
+    "suppressedInGraphErrorCount": 0,
+    "suppressedInGraphWarningCount": 0
+  },
+  "diagnostics": [
+    {
+      "file": "apps/my-app/src/app/app.component.ts",
+      "line": 8,
+      "column": 38,
+      "endLine": 8,
+      "endColumn": 39,
+      "code": "TS2322",
+      "rawCode": 2322,
+      "severity": "error",
+      "message": "Type 'number' is not assignable to type 'string'."
+    }
+  ]
+}
+```
+
+Field reference:
+
+- **Top level:** `formatVersion` (an integer that bumps only on a breaking shape
+  change), `tool`, `version` (the installed angular-typechecker version),
+  `tsConfigPath`, `summary`, and `diagnostics`.
+- **`summary`:** `outcome` is one of `clean`, `type-error`, `coverage-incomplete`,
+  or `warnings-exceeded`; `success` is the pass/fail verdict; `errorCount`,
+  `warningCount`, `diagnosticCount`, and `rootNamesCount` are counts.
+  `suppressedThirdParty` counts dropped `node_modules` diagnostics, while
+  `suppressedInGraphErrorCount` and `suppressedInGraphWarningCount` count dropped
+  first-party ones. `totalFilesCount` (the number of source files checked) and
+  `advisories` (the same notices printed on stderr, as data) appear only when
+  there is something to report.
+- **Each `diagnostics` entry:** `file` (repo-relative, or `null` for a file-less
+  diagnostic), 1-based `line`, `column`, `endLine`, and `endColumn` (all `null`
+  when file-less), a `code` string (`TS2322`, an `NG8xxx` template code, or an
+  `ATC9000x` tool code), the raw `rawCode` integer, `severity`
+  (`error` / `warning` / `suggestion` / `message`), and the `message`.
+
+The `success` field, not the presence of any single diagnostic, is the
+authoritative verdict: a `coverage-incomplete` run reports `success: false` with
+`errorCount: 0`, so never infer pass or fail by counting `diagnostics` yourself.
+
+### SARIF and GitHub Code Scanning
+
+`--format sarif` emits SARIF 2.1.0, the format GitHub Code Scanning ingests. Each
+diagnostic becomes a SARIF result; the 18 Angular extended (`NG8xxx`) checks are
+declared once in the run's `rules` catalog, and every result carries a
+`partialFingerprints` value so Code Scanning can group and track the same alert
+across runs. Write the SARIF to a file and hand it to the `upload-sarif` action:
+
+```yaml
+- run: npm ci
+- run: npx angular-typechecker -c tsconfig.json --format sarif > results.sarif
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results.sarif
+```
+
+A file-less diagnostic (a whole-program error with no source location) is emitted
+as a result with no location rather than being dropped. GitHub cannot pin a
+no-location result to a line, so treat the run's exit code / `success`, not the
+SARIF alert, as the authoritative fail signal for those.
+
+#### Run from the repository root
+
+Each result's `artifactLocation.uri` is made relative to the directory the check
+runs in. Run angular-typechecker from the repository root so those URIs stay
+repo-relative and GitHub Code Scanning can match each alert to the file in your
+source tree. Running from a subdirectory produces URIs relative to that
+subdirectory, which GitHub cannot line up with the repository.
 
 ## Storybook
 
@@ -691,7 +822,6 @@ whether that fails the run depends on the case (see [Partial coverage](#partial-
 - Some first-party files can't be fully covered when a project is checked in
   isolation; see [Partial coverage](#partial-coverage) for the cases and how to
   control them.
-- Machine-readable reporters (JSON, SARIF) are non-goals in v0.x.
 
 ## Contributing
 
