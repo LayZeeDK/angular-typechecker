@@ -58,6 +58,26 @@ fresh (`npm ci`) per job, so the patched versions flow through automatically.
 - Final Dependabot state (all 4 alerts on the affected lockfiles) is expected to auto-close once this
   branch's lockfiles land on `main`.
 
+## Follow-up: 2 new alerts surfaced by the merge re-scan (#15, #14 brace-expansion)
+
+Merging PR #50 triggered a Dependabot re-scan that opened **2 new high-severity alerts** --
+#15 (root `package-lock.json`) and #14 (consumer `pnpm-lock.yaml`), both `brace-expansion`
+GHSA-3jxr-9vmj-r5cp (ReDoS, exponential-time expansion, range `>=3.0.0 <5.0.7`, patched 5.0.7).
+
+- **Not a regression from PR #50.** The brace-expansion version set is byte-identical before and
+  after that PR (`1.1.16, 2.1.2, 5.0.6, 5.0.7`). The advisory was published 2026-07-20; the merge
+  push was simply the first re-scan to see the pre-existing `brace-expansion@5.0.6` (nested under
+  `nx`) against the new advisory.
+- **Fix (PR #51):** a **version-scoped** override `brace-expansion@5.0.6 -> 5.0.7` in the root
+  `overrides` and the consumer fixture `pnpm.overrides`. Scoped on purpose so the unaffected
+  1.1.16 / 2.1.2 instances (minimatch 1.x/2.x consumers, below the vuln range) are NOT forced up
+  two majors. Root + consumer lockfiles re-scanned CLEAN of the `>=3.0.0 <5.0.7` range.
+- **`nx migrate` considered and rejected** as the fix: the scoped override clears the nx-nested
+  `brace-expansion@5.0.6` without touching nx at all, whereas `nx migrate latest` would move off the
+  deliberately pinned Nx 23.0.1 / Angular 22 / TS 6 locked stack (big diff + migration scripts +
+  full re-verification) -- a sledgehammer for a single transitive ReDoS. A version bump remains a
+  separate maintenance decision on its own merits, not a security workaround.
+
 ## Notes
 
 - Executed **inline** rather than via the `--full` subagent pipeline (researcher/planner/checker/
