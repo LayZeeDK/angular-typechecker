@@ -556,7 +556,7 @@ jobs:
           fi
       - name: Upload angular-typechecker SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.atc-sarif.outputs.produced == 'true' }}
-        uses: github/codeql-action/upload-sarif@b7351df727350dca84cb9d725d57dcf5bc82ba26 # v3.37.1
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           sarif_file: angular-typechecker.sarif
           category: angular-typechecker
@@ -566,7 +566,7 @@ jobs:
       # value and re-trigger the "multiple runs with the same category" rejection.
       - name: Upload fallow SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.fallow-sarif.outputs.produced == 'true' }}
-        uses: github/codeql-action/upload-sarif@b7351df727350dca84cb9d725d57dcf5bc82ba26 # v3.37.1
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           sarif_file: fallow.sarif
 
