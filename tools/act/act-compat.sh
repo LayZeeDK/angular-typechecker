@@ -114,6 +114,7 @@ assert_selected "$PR_PLAN" "ci/fallow" "pull_request"
 assert_selected "$PR_PLAN" "ci/format-lint" "pull_request"
 assert_selected "$PR_PLAN" "ci/act-compat" "pull_request"
 assert_selected "$PR_PLAN" "ci/lint-workflows" "pull_request"
+assert_selected "$PR_PLAN" "ci/code-scanning" "pull_request"
 assert_selected "$PR_PLAN" "ci/ci" "pull_request"
 assert_absent "$PR_PLAN" "release/publish" "pull_request"
 
@@ -121,6 +122,7 @@ assert_absent "$PR_PLAN" "release/publish" "pull_request"
 # ref gate is false on a branch ref).
 PUSH_MAIN_PLAN="$(plan push -e "$EVENTS/push-main.json" --env GITHUB_REF=$BRANCH_REF)"
 assert_selected "$PUSH_MAIN_PLAN" "ci/test-" "push-main"
+assert_selected "$PUSH_MAIN_PLAN" "ci/code-scanning" "push-main"
 assert_selected "$PUSH_MAIN_PLAN" "ci/ci" "push-main"
 assert_absent "$PUSH_MAIN_PLAN" "release/publish" "push-main"
 

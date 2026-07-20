@@ -454,6 +454,122 @@ jobs:
       - run: npm ci
       - run: npx nx scoped-name-guard angular-typechecker
 
+  # Code Scanning reporting (quick-260720-t8u). DOGFOODS angular-typechecker by
+  # running its own standalone CLI (--format sarif) on this repo's real Angular app
+  # (apps/ng-spike-app), and also emits fallow's SARIF, then uploads BOTH to GitHub
+  # Code Scanning via the SHA-pinned upload-sarif action.
+  #
+  # DELIBERATELY NOT in the `ci` aggregate's needs: SARIF upload is additive
+  # reporting, never a merge gate. The real gates stay put -- angular-typechecker's
+  # whole-repo type-check runs in `test`, fallow's new-only verdict gates in
+  # `fallow`. Keeping this job out of `ci` means a Code Scanning outage or a fork-PR
+  # upload skip can NEVER deadlock the PR-only merge button.
+  #
+  # Least privilege: the top-level `contents: read` is untouched. `security-events:
+  # write` is granted at the JOB level ONLY (job-level permissions REPLACE the
+  # top-level block, so `contents: read` is restated here for actions/checkout). On
+  # a fork PR the GITHUB_TOKEN is read-only regardless of the declared scope, so each
+  # upload step is gated to skip fork PRs -- the analysis still RUNS on a fork PR,
+  # only the upload is skipped. This keeps the job safe under the SAFE pull_request
+  # trigger the rest of this file uses (no PR-metadata is interpolated into any shell
+  # command; the fork check is evaluated by the Actions expression engine, not a
+  # shell). angular-typechecker (a single SARIF run) uploads under an explicit
+  # `category`; fallow emits multiple runs in one file, so it is tagged per-run with
+  # distinct `automationDetails.id`s and uploaded WITHOUT a `category` (see the
+  # fallow steps below) -- so the two tools, and fallow's own sub-analyses, are all
+  # tracked separately and never overwrite each other.
+  #
+  # SARIF-generation vs upload semantics (MED-01). A verdict-fail exit
+  # (angular-typechecker exit 1 on a type error, fallow exit 1 on an introduced
+  # finding) STILL writes the full SARIF payload, and that is exactly when the
+  # alerts matter most -- so the upload must proceed on exit 1. But an
+  # infrastructure/usage exit (angular-typechecker exit 2: config-resolution or
+  # compiler-cli failure, empty stdout) writes NOTHING, so the `>` redirect leaves a
+  # 0-byte file that would make `upload-sarif` fail. So each generation step
+  # tolerates a non-zero exit (`|| true`) and publishes a `produced` output that is
+  # `true` ONLY when a NON-EMPTY SARIF file exists (`[ -s <file> ]`) -- which
+  # distinguishes exit 0/1 (valid file -> upload) from exit 2 (empty -> skip). The
+  # uploads gate on that output (AND the fork check), so exit 2 and a genuine infra
+  # failure (npm ci / nx build, which abort the job before generation) both skip the
+  # upload cleanly instead of feeding it an invalid file. No `always()`.
+  #
+  # fallow SARIF uses `--format sarif -o` (NOT `--sarif-file`): the adjunct
+  # `--sarif-file` writes nothing on a zero-changed-files run (a clean tree / a
+  # post-merge push), whereas `--format sarif -o` always writes a valid file.
+  # fetch-depth: 0 is load-bearing for fallow's new-vs-inherited base attribution
+  # (mirrors the `fallow` job). The angular-typechecker CLI is run from the repo
+  # ROOT so its SARIF artifactLocation URIs stay repo-relative and Code Scanning can
+  # map each alert to a source file (README: "Run from the repository root").
+  #
+  # Path-gated (D-08), SAME NEGATIVE if: form as test/e2e -- skips a planning/docs-
+  # only PR yet stays in the `act -n` plan under the empty filter output.
+  code-scanning:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      NX_DAEMON: false
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Build the plugin so the standalone CLI is runnable from dist
+      # (bin -> dist/packages/angular-typechecker/src/cli/bin.js). Small @nx/js:tsc lib.
+      - run: npx nx build angular-typechecker
+      # Dogfood: run angular-typechecker on this repo's own Angular app. The
+      # standalone CLI writes a byte-pure SARIF payload to stdout (advisories stay on
+      # stderr) -- unlike `nx typecheck`, which frames the executor's stdout. `|| true`
+      # tolerates a verdict-fail exit; `produced` is true only when a NON-EMPTY SARIF
+      # exists, so exit 2 (empty stdout) is not uploaded as an invalid file.
+      - id: atc-sarif
+        run: |
+          node dist/packages/angular-typechecker/src/cli/bin.js -c apps/ng-spike-app/tsconfig.app.json --format sarif > angular-typechecker.sarif || true
+          if [ -s angular-typechecker.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
+      # fallow's SARIF report. `--format sarif -o` always writes a valid file (even a
+      # clean / zero-changed-files run); the authoritative fallow gate is the separate
+      # `fallow` job, so a fail verdict here must not fail this reporting job. Same
+      # `|| true` + non-empty `produced` guard as above. fallow emits MULTIPLE SARIF
+      # runs in one file (a dead-code run + a complexity run, with disjoint rule ids),
+      # and GitHub Code Scanning (2025-07-21+) REJECTS multiple runs that share one
+      # category. So tag each run with a distinct `automationDetails.id` and upload
+      # WITHOUT a `category` input -- the per-run id becomes the category, so the two
+      # sub-analyses land as distinct fallow analyses instead of colliding.
+      - id: fallow-sarif
+        env:
+          FALLOW_AUDIT_BASE: origin/main
+        run: |
+          npx fallow audit --format sarif -o fallow.sarif --base origin/main || true
+          if [ -s fallow.sarif ]; then
+            node -e 'const fs=require("fs");const f="fallow.sarif";const j=JSON.parse(fs.readFileSync(f,"utf8"));(j.runs||[]).forEach(function(r,i){r.automationDetails={id:"fallow/"+i}});fs.writeFileSync(f,JSON.stringify(j))'
+            echo "produced=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "produced=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload angular-typechecker SARIF
+        if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.atc-sarif.outputs.produced == 'true' }}
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          sarif_file: angular-typechecker.sarif
+          category: angular-typechecker
+      # No `category:` here on purpose -- the multi-run fallow file carries a distinct
+      # automationDetails.id per run (set above), which the action uses as the
+      # per-run category. Passing a single `category` would override all runs to one
+      # value and re-trigger the "multiple runs with the same category" rejection.
+      - name: Upload fallow SARIF
+        if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.fallow-sarif.outputs.produced == 'true' }}
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          sarif_file: fallow.sarif
+
   # Aggregate gate (RD-09 / D-02 cross-phase contract). Job id AND name are
   # EXACTLY `ci` -- the exact required-status-check name Phase 7's Default branch
   # ruleset will consume. needs all upstream jobs (incl. the new `changes`);
