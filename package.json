@@ -9,7 +9,8 @@
     "e2e": "nx run-many -t e2e --parallel=1",
     "lint": "nx run-many -t lint",
     "format:check": "nx format:check",
-    "fallow": "fallow audit --format human --base origin/main"
+    "fallow": "fallow audit --format human --base origin/main",
+    "cve-lite": "cve-lite . --fail-on high"
   },
   "private": true,
   "devDependencies": {
@@ -45,6 +46,7 @@
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "angular-eslint": "22.0.0",
+    "cve-lite-cli": "1.27.0",
     "eslint": "9.39.4",
     "eslint-config-prettier": "10.1.8",
     "fallow": "3.6.0",
