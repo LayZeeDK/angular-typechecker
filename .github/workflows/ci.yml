@@ -564,7 +564,12 @@ jobs:
       - id: atc-sarif
         run: |
           node dist/packages/angular-typechecker/src/cli/bin.js -c apps/ng-spike-app/tsconfig.app.json --format sarif > angular-typechecker.sarif || true
-          if [ -s angular-typechecker.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -s angular-typechecker.sarif ]; then
+            node tools/ci/spike-sarif-probe.mjs angular-typechecker.sarif apps/ng-spike-app/src
+            echo "produced=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "produced=false" >> "$GITHUB_OUTPUT"
+          fi
       # fallow's SARIF report. `--format sarif -o` always writes a valid file (even a
       # clean / zero-changed-files run); the authoritative fallow gate is the separate
       # `fallow` job, so a fail verdict here must not fail this reporting job. Same
