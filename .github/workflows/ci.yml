@@ -473,7 +473,10 @@ jobs:
   # only the upload is skipped. This keeps the job safe under the SAFE pull_request
   # trigger the rest of this file uses (no PR-metadata is interpolated into any shell
   # command; the fork check is evaluated by the Actions expression engine, not a
-  # shell). Each upload carries a distinct `category` so the two tools' analyses are
+  # shell). angular-typechecker (a single SARIF run) uploads under an explicit
+  # `category`; fallow emits multiple runs in one file, so it is tagged per-run with
+  # distinct `automationDetails.id`s and uploaded WITHOUT a `category` (see the
+  # fallow steps below) -- so the two tools, and fallow's own sub-analyses, are all
   # tracked separately and never overwrite each other.
   #
   # SARIF-generation vs upload semantics (MED-01). A verdict-fail exit
@@ -534,25 +537,38 @@ jobs:
       # fallow's SARIF report. `--format sarif -o` always writes a valid file (even a
       # clean / zero-changed-files run); the authoritative fallow gate is the separate
       # `fallow` job, so a fail verdict here must not fail this reporting job. Same
-      # `|| true` + non-empty `produced` guard as above.
+      # `|| true` + non-empty `produced` guard as above. fallow emits MULTIPLE SARIF
+      # runs in one file (a dead-code run + a complexity run, with disjoint rule ids),
+      # and GitHub Code Scanning (2025-07-21+) REJECTS multiple runs that share one
+      # category. So tag each run with a distinct `automationDetails.id` and upload
+      # WITHOUT a `category` input -- the per-run id becomes the category, so the two
+      # sub-analyses land as distinct fallow analyses instead of colliding.
       - id: fallow-sarif
         env:
           FALLOW_AUDIT_BASE: origin/main
         run: |
           npx fallow audit --format sarif -o fallow.sarif --base origin/main || true
-          if [ -s fallow.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -s fallow.sarif ]; then
+            node -e 'const fs=require("fs");const f="fallow.sarif";const j=JSON.parse(fs.readFileSync(f,"utf8"));(j.runs||[]).forEach(function(r,i){r.automationDetails={id:"fallow/"+i}});fs.writeFileSync(f,JSON.stringify(j))'
+            echo "produced=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "produced=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Upload angular-typechecker SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.atc-sarif.outputs.produced == 'true' }}
         uses: github/codeql-action/upload-sarif@b7351df727350dca84cb9d725d57dcf5bc82ba26 # v3.37.1
         with:
           sarif_file: angular-typechecker.sarif
           category: angular-typechecker
+      # No `category:` here on purpose -- the multi-run fallow file carries a distinct
+      # automationDetails.id per run (set above), which the action uses as the
+      # per-run category. Passing a single `category` would override all runs to one
+      # value and re-trigger the "multiple runs with the same category" rejection.
       - name: Upload fallow SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.fallow-sarif.outputs.produced == 'true' }}
         uses: github/codeql-action/upload-sarif@b7351df727350dca84cb9d725d57dcf5bc82ba26 # v3.37.1
         with:
           sarif_file: fallow.sarif
-          category: fallow
 
   # Aggregate gate (RD-09 / D-02 cross-phase contract). Job id AND name are
   # EXACTLY `ci` -- the exact required-status-check name Phase 7's Default branch
