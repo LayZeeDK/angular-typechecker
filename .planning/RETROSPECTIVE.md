@@ -193,6 +193,52 @@
 
 ---
 
+## Milestone: v0.2.3 -- Machine-readable reporters
+
+**Closed:** 2026-07-21 (released 2026-07-20 -- `angular-typechecker@0.2.3` published live to npm via the human-gated Release-PR flow)
+**Phases:** 3 (30-32) | **Plans:** 9 | **Tasks:** 25 | **Timeline:** 2026-07-18 -> 2026-07-20
+
+### What Was Built
+
+- A zero-dependency JSON reporter (`formatJsonReport`, `--format json`): a pure `JSON.stringify`-only function over `CoreResult` emitting a flat `diagnostics[]` (repo-relative file / 1-based positions / `TS####`/`NG8xxx`/`ATC9000x` code + raw int / severity / message) plus a rich `summary`, with the verdict DELEGATED to `evaluateResult` (never re-derived from counts).
+- A SARIF 2.1.0 reporter (`formatSarifReport`, `--format sarif`) built on `node-sarif-builder`, reached ONLY via `await import()` so the human / JSON / `--help` / CLI-boot paths never load it (nor its transitive `fs-extra`): repo-relative forward-slash URIs, 1-based regions, self-computed sha256 `partialFingerprints`, a file-less no-location fallback, and an enum-keyed 18-NG8xxx rules catalog.
+- ONE shared pure `toDiagnosticRecord` projection (positions / codes / paths) that BOTH reporters consume, so JSON and SARIF cannot drift.
+- A widened `renderReport` seam dispatching on an optional `format` (default human), threaded IDENTICALLY through all three adapters (standalone CLI flag + Nx executor + Angular CLI builder option) alongside `--quiet` and `--color`/`--no-color`; `builder.ts` byte-unchanged (`convertNxExecutor`).
+- An optional verdict-neutral `CoreResult.totalFilesCount` captured on both engine paths (live `Program` + name-deduped `Set` across walked leaves).
+- Dev-only cross-OS proof: an ajv SARIF-2.1.0 schema validator + a redaction helper + committed redacted snapshots locking byte-stability across the 6-cell OS/Node matrix; a shipped-tarball e2e emitting valid JSON + schema-valid SARIF through all three adapters; and an additive-only git-diff audit vs `@0.2.2`.
+
+### What Worked
+
+- **The three-thin-adapters architecture paid off again.** The reporters slotted in behind ONE widened `renderReport` seam, so the CLI / executor / builder all gained `--format` with `builder.ts` byte-unchanged, and the verdict stayed owned by `evaluateResult` across every format (exit-code parity incl. the coverage-incomplete case).
+- **The shared normalized-record projection prevented reporter drift by construction.** JSON and SARIF both read `toDiagnosticRecord`, so positions / codes / paths cannot diverge -- a single tripwire-locked source.
+- **The lazy-import dependency firewall was proven, not assumed.** A static require-graph guard (over the built `render-report.js` + `bin.js`) proves `node-sarif-builder`/`fs-extra` never reach the non-SARIF paths, and a REAL-import (not mocked) interop test proves the CJS-under-`await import()` shape resolves -- keeping startup lean and the JSON/human paths dependency-free.
+- **Additive-only held under audit.** `32-ADDITIVE-AUDIT.md` proved the published surface byte-additive vs `@0.2.2` (barrel / executor-id UNCHANGED; schemas WIDEN-ONLY), so the patch bump was safe and the `v0.3.0` escape hatch stayed untriggered.
+
+### What Was Inefficient
+
+- **The `audit-open` quick-task false-positive recurred a FOURTH close -- and its true root cause was only now pinned.** Prior closes blamed a bare-`SUMMARY.md` naming bug; the OpenGSD scanner actually reads the `status:` frontmatter FIELD, so 17 older quick tasks using the legacy `outcome:`/`completed:` convention flagged as `[unknown]`. Fixed at source this close (`status: complete`), which also prevents recurrence -- but four closes of manual workaround means the durable fix (emit `status:` in the `/gsd:quick` SUMMARY template) still belongs upstream.
+- **CI caught two defect classes local checks could not.** A macOS case-insensitive-FS `relativizePath` bug in the reporter path surfaced ONLY on the `macos-latest` cell (quick 260719-iib); and fallow's new-only complexity/duplication gate flagged regressions `nx lint` never runs -- which is why `npm run fallow` was added (260719-k2i) to mirror the CI gate locally.
+- **PR #47 absorbed an unusually long tail of review passes.** Five-plus separate review rounds (thermo-nuclear x2, built-in code-review, `/simplify`, a multi-agent review, plus Dependabot / cve-lite) each spawned a quick task; all landed additive / no-version-change, but the verification tail was long relative to the milestone's 3-phase engine scope.
+
+### Patterns Established
+
+- **Shared normalized-record projection for multi-format reporters:** when two output formats must agree on positions/codes/paths, project once and have every reporter consume it, tripwire-locked -- so a shape change is a compile/test error, not silent drift.
+- **Proven lazy-import dependency firewall:** gate a heavy/optional dependency behind `await import()` on exactly one path, and PROVE the isolation with a static require-graph guard over the BUILT artifact + a real-import interop test -- not just a mock.
+- **Dev-only cross-OS determinism harness:** validate machine output against its real schema (ajv) and lock byte-stability with redacted snapshots across the OS/Node matrix, keeping the validator/redactor in `test-util` (zero shipped-manifest impact).
+
+### Key Lessons
+
+1. **The `audit-open` scanner keys on the `status:` frontmatter field (OpenGSD), not a bare `SUMMARY.md`.** A quick task reads as complete ONLY when its SUMMARY frontmatter has `status: complete`; the legacy `outcome:`/`completed:` shape reads `[unknown]`. Fix stale statuses at source before a close, and emit `status:` in every quick-task SUMMARY.
+2. **Path handling must be tested cross-OS, not just on the dev machine.** A case-SENSITIVE `node:path` `relative()` over TS-canonicalized (lowercased) paths escaped repo-relative only on macOS's case-insensitive FS -- invisible locally on Windows/Linux; the fix (`stripBaseCaseInsensitive`) landed in the ONE shared projection so JSON + SARIF were corrected together.
+3. **A CI-only quality gate needs a local mirror.** fallow runs `--gate new-only` in CI but `nx lint` does not; adding `npm run fallow` closed the exact gap that let complexity/duplication regressions pass locally yet fail CI.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for GSD planning / execution / verification agents.
+- Notable: the engine work (3 phases, JSON + SARIF over one shared seam) was compact; the disproportionate spend was the verification/review tail on PR #47 (5+ review passes) and the two CI-only defect classes (macOS FS, fallow new-only) that only real CI surfaced.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

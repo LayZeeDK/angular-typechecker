@@ -1,5 +1,25 @@
 # Milestones: angular-typechecker
 
+## v0.2.3 Machine-readable reporters (Shipped: 2026-07-20)
+
+**Phases completed:** 3 phases, 9 plans, 25 tasks
+**Published:** `angular-typechecker@0.2.3` (npm, live, `latest`; tag on the release merge commit dated 2026-07-20, tokenless OIDC + SLSA v1 provenance).
+**Closeout:** milestone audit PASSED 13/13 requirements, 3/3 phases, 13/13 integration, 3/3 flows. Known verification overrides: 1 -- quick task `260714-nub` (optional CI actions/cache optimization; authored but never applied; predates v0.2.3; acknowledged-deferred, tracked in ROADMAP Backlog + STATE Deferred Items). All other pre-close `audit-open` flags were stale bookkeeping (older quick-task SUMMARYs missing a `status:` field + two CI-observable Phase-32 statuses), resolved before close.
+
+**Key accomplishments:**
+
+- Optional, verdict-neutral `CoreResult.totalFilesCount` (non-declaration source-file count) captured on both engine paths — the direct live Program and a name-deduped `Set<string>` across walked leaves via `finalizeUnion` — proven by a real-compiler exact-literal dedupe spec.
+- A shared pure `diagnostic-record` projection (positions/codes/paths), a `JSON.stringify`-only `formatJsonReport` that delegates its verdict to `evaluateResult` and cannot emit ANSI, and a widened `renderReport` that dispatches on an optional `format` (loading `@angular/compiler-cli` only for the human branch) — human output byte-identical, barrel byte-unchanged.
+- One `--format <human|json|sarif>` enum (+ `--quiet`, `--color`/`--no-color`) threaded identically through the standalone CLI, the Nx executor, and the Angular CLI builder over the single widened `renderReport` seam -- exit code identical across formats (incl. coverage-incomplete), `--quiet` silences stderr chatter only, `--color`/`--no-color` win over env, and `builder.ts` stays byte-unchanged.
+- A pure lazy-`import()`ed SARIF 2.1.0 reporter (`formatSarifReport`) built on `node-sarif-builder@4.1.0` over the shared `toDiagnosticRecord` projection, driven by a new enum-keyed 18-NG8xxx catalog, wired into the `renderReport` seam with the verdict staying owned by `evaluateResult`.
+- Two test-tier specs that LOCK Phase-31's lazy SARIF boundary: a static require-graph guard proving `node-sarif-builder` (+ its transitive `fs-extra`) never reach the human/JSON/`--help`/CLI-boot paths (from `render-report.js` and `bin.js`, with a positive control that the lazy `import('./sarif-report.js')` is present), and a REAL-import (not mocked) interop spec proving the CJS-under-`await import()` shape resolves via `(mod.default ?? mod)` and builds SARIF 2.1.0 -- with `@nx/dependency-checks` visibility resolved green at the real `nx lint` (A1: no `ignoredDependencies` entry).
+- JSON + SARIF reporters proven over real cold-compiler fixtures through run() and the Nx executor, with a dev-only ajv SARIF 2.1.0 schema validator, a shared redaction helper, and committed redacted snapshots locking cross-OS byte-stability -- all dev-only, plugin manifest byte-unchanged.
+- The Verdaccio-installed tarball emits parseable JSON + schema-valid SARIF through all three adapters (standalone CLI, `ng run`, Nx executor) with clean payload boundaries and identical exit codes across `--format human|json|sarif` for the same input -- proven with a new `runShimSplit` stream-split, the shared 32-01 `validateSarif`, and an `extractJsonPayload` framing isolator.
+- `32-ADDITIVE-AUDIT.md` records the release-gating verdict for the whole v0.2.3 milestone (Phases 30-32) vs `angular-typechecker@0.2.2`: the published surface is byte-additive (barrel/builder/executor-id/generator-schemas UNCHANGED; the executor+builder schemas WIDEN-ONLY by the optional `format` enum; `CoreResult.totalFilesCount` ADDITIVE), the plugin `dependencies` gained EXACTLY `node-sarif-builder` (ajv/ajv-formats are dev-only ROOT devDeps), and every standing guard is green -- so ADDITIVE-ONLY HOLDS, v0.3.0 stays UNTRIGGERED, and the version is held at 0.2.2.
+- README `## Machine-readable output` section (--format json/sarif, the JSON payload schema, the SARIF upload-sarif Code Scanning recipe, the run-from-repo-root artifactLocation.uri caveat) + a curated undated public CHANGELOG 0.2.3 entry + a docs tripwire that drift-locks the claims and keeps the three now-false reporter passages removed -- docs-only, version held at 0.2.2.
+
+---
+
 A historical record of shipped versions. For current work see `.planning/ROADMAP.md`.
 
 ---
