@@ -1,2 +1,7 @@
 <app-nx-welcome></app-nx-welcome>
 <router-outlet></router-outlet>
+<!-- SPIKE (code-scanning-alert-probe): deliberate template diagnostics. THROWAWAY. -->
+<!-- NG8107: optional chaining on the non-nullable string `title` (warning). -->
+<p>{{ title?.length }}</p>
+<!-- TS2339 in a template: `toFixed` does not exist on `string` (error). -->
+<p>{{ title.toFixed(2) }}</p>

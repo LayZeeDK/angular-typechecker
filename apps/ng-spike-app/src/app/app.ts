@@ -10,4 +10,7 @@ import { NxWelcome } from './nx-welcome';
 })
 export class App {
   protected title = 'ng-spike-app';
+  // SPIKE (code-scanning-alert-probe): deliberate TS2322 to trigger a Code
+  // Scanning alert. THROWAWAY -- must never merge to main.
+  protected count: number = 'not a number';
 }
