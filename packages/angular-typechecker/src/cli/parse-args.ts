@@ -1,14 +1,18 @@
 import { parseArgs } from 'node:util';
 
+import type { ReportFormat } from '../core/render-report';
+
 /**
  * The nx-free arg-parsing + validation seam for the standalone CLI (Phase 26,
  * ARGS-01..04). A pure transform from raw `argv` to a discriminated result the
  * load-bearing `run()` (Plan 26-02) consumes without re-parsing.
  *
- * It imports ONLY `node:util` + the package.json manifest (for `--version`) --
- * never the Nx devkit, never the `nx` runtime, never the barrel one dir up, and
- * never an executor/builder module (D-15, the nx-free CLI boundary; enforced by the
- * `src/cli/**` ESLint import-ban, respected here by construction). See 26-CONTEXT.md
+ * At runtime it imports ONLY `node:util` + the package.json manifest (for
+ * `--version`); the `ReportFormat` import is TYPE-ONLY and erases at compile, so it
+ * never pulls render-report's runtime deps in. Never the Nx devkit, never the `nx`
+ * runtime, never the barrel one dir up, and never an executor/builder module at
+ * runtime (D-15, the nx-free CLI boundary; enforced by the `src/cli/**` ESLint
+ * import-ban, respected here by construction). See 26-CONTEXT.md
  * D-08/D-10/D-11/D-12/D-14.
  */
 
@@ -33,7 +37,7 @@ export interface ParsedOptions {
   // human-path stream/color knobs. `format` defaults to 'human'; `quiet` gates the
   // stderr advisory chatter ONLY (never the payload/verdict); `color` is the
   // explicit --color/--no-color override (undefined = no flag, fall back to env).
-  readonly format: 'human' | 'json' | 'sarif';
+  readonly format: ReportFormat;
   readonly quiet: boolean;
   readonly color?: boolean;
 }
@@ -240,22 +244,25 @@ function validateMaxWarnings(
   return { ok: true, value: Number(raw) };
 }
 
+// The single source for the runtime `--format` allow-list, typed by the canonical
+// `ReportFormat` so the compiler flags any drift between this list and the type.
+const REPORT_FORMATS: readonly ReportFormat[] = ['human', 'json', 'sarif'];
+
 /**
- * `--format` must be one of the three enum members (FMT-01 / D-08); an out-of-enum
- * value is a usage error (exit 2). An absent flag defaults to 'human'. The cast is
- * safe by construction -- this guard rejects everything that is not a member.
+ * `--format` must be one of the {@link REPORT_FORMATS} members (FMT-01 / D-08); an
+ * out-of-enum value is a usage error (exit 2). An absent flag defaults to 'human'.
+ * The cast is safe by construction -- this guard rejects everything that is not a
+ * member.
  */
-function validateFormat(
-  raw: string | undefined,
-): Validated<'human' | 'json' | 'sarif'> {
-  if (raw !== undefined && !['human', 'json', 'sarif'].includes(raw)) {
+function validateFormat(raw: string | undefined): Validated<ReportFormat> {
+  if (raw !== undefined && !REPORT_FORMATS.some((format) => format === raw)) {
     return {
       ok: false,
       message: `angular-typechecker: --format expects one of human, json, sarif, got "${raw}".`,
     };
   }
 
-  return { ok: true, value: (raw ?? 'human') as 'human' | 'json' | 'sarif' };
+  return { ok: true, value: (raw ?? 'human') as ReportFormat };
 }
 
 /** The boolean flag reads parseArgs surfaces as `boolean | undefined`. */
@@ -276,7 +283,7 @@ function buildParsedOptions(
   validated: {
     readonly tsConfig: readonly string[];
     readonly maxWarnings: number | undefined;
-    readonly format: 'human' | 'json' | 'sarif';
+    readonly format: ReportFormat;
   },
 ): ParsedOptions {
   return {

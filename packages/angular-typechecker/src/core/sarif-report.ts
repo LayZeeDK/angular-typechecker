@@ -24,9 +24,10 @@ import type { CoreResult } from './run-typecheck';
  * and never re-derives `success`; `evaluateResult` stays the sole verdict owner and
  * a reporter throw propagates as infra (exit 2), never a swallowed pass. No `\x1b`
  * byte can appear -- every message is the ANSI-free flattened text from the
- * projection. `node-sarif-builder` bakes `version: "2.1.0"` + `$schema` and owns the
- * `ruleIndex` linkage; each of the 18 NG rules is added ONCE and results set only
- * `ruleId` (D-05/D-06).
+ * projection. `node-sarif-builder` bakes `version: "2.1.0"` + `$schema`; each of the
+ * 18 NG rules is added ONCE and every result references its rule by `ruleId` only --
+ * no `ruleIndex` is emitted, which is valid SARIF (GitHub Code Scanning links a
+ * result's `ruleId` to `rules[].id`) (D-05/D-06).
  */
 
 // D-04: node-sarif-builder is CommonJS; `import type` erases at compile so neither
@@ -72,9 +73,11 @@ export async function formatSarifReport(
     url: INFORMATION_URI,
   });
 
-  // D-06: add the 18-NG8xxx catalog rules ONCE. The builder computes ruleIndex when
-  // a result's ruleId matches a rule id; TS#### / ATC9000x results reference their
-  // rule by ruleId without a catalog entry. NEVER hand-compute ruleIndex.
+  // D-06: add the 18-NG8xxx catalog rules ONCE. Every result references its rule by
+  // `ruleId` only -- node-sarif-builder's addResult() never sets `ruleIndex`, and a
+  // result with a `ruleId` and no `ruleIndex` is valid SARIF (GitHub Code Scanning
+  // links `ruleId` to `rules[].id`). TS#### / ATC9000x results carry a `ruleId`
+  // without a catalog entry, which is fine.
   for (const entry of EXTENDED_DIAGNOSTIC_CATALOG) {
     runBuilder.addRule(
       new SarifRuleBuilder().initSimple({
