@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: quick-260717-htw
 plan: 01
 subsystem: standalone-cli

@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: quick-260717-p9r
 plan: 01
 subsystem: test-util / cli-e2e
