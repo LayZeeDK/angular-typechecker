@@ -351,6 +351,37 @@ jobs:
         env:
           FALLOW_AUDIT_BASE: origin/main
 
+  # Dependency vulnerability gate (quick-260720-wso). Runs OWASP cve-lite-cli's
+  # lockfile scan against OSV and FAILS the PR on any high-or-critical advisory
+  # (`npm run cve-lite` = `cve-lite . --fail-on high`). Unlike the ADDITIVE
+  # `code-scanning` job below, this IS a required merge gate (listed in the `ci`
+  # aggregate's needs) at the maintainer's request -- it INTENTIONALLY diverges
+  # from the code-scanning "never a merge gate" stance. Accepted tradeoffs on the
+  # PR-only, empty-bypass `main`: (1) an OSV.dev outage or a newly-published
+  # high/critical advisory with no available fix can block the merge button --
+  # recover by toggling the branch ruleset enforcement (AGENTS.md "Lockout
+  # recovery"). (2) cve-lite-cli is pinned EXACTLY as a devDependency so a future
+  # upstream publish cannot silently enter CI; updates arrive via reviewed
+  # dependency PRs. --fail-on high (not the default `critical`) so the high-severity
+  # transitive-dep class that motivated this gate (e.g. brace-expansion ReDoS) is
+  # caught; moderate/low stay non-blocking and are covered by Dependabot's own PRs.
+  # Path-gated (D-08) with the SAME NEGATIVE if: form as test/e2e/fallow -- skips a
+  # planning/docs-only PR yet stays in the `act -n` plan under the empty filter.
+  cve-lite:
+    needs: changes
+    if: ${{ needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run cve-lite
+
   # Format + lint quality gate (QUAL-02). OS-independent, Linux-only, single Node
   # (Prettier/ESLint verdicts do not vary by OS or Node minor). nrwl/nx-set-shas
   # derives the base/head SHAs so `nx format:check` inspects ONLY the files this
@@ -594,6 +625,7 @@ jobs:
         e2e,
         e2e-windows,
         fallow,
+        cve-lite,
         format-lint,
         act-compat,
         lint-workflows,
