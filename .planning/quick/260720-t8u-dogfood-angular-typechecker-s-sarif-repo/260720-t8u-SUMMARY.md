@@ -60,11 +60,21 @@ Local (all green):
 - Both SARIFs regenerate as valid SARIF 2.1.0 (drivers `angular-typechecker` /
   `fallow`), then deleted (never committed).
 
-Real CI (authoritative -- to confirm on the PR run): the `code-scanning` job runs
-on this same-repo PR branch (not a fork), uploads both SARIFs, and both analyses
-appear in Code Scanning. Verified via
-`gh api repos/LayZeeDK/angular-typechecker/code-scanning/analyses?tool_name=angular-typechecker`
-and `?tool_name=fallow` on the PR ref.
+Real CI (authoritative -- CONFIRMED on PR #49):
+
+- First run (`feaf750`): `Upload angular-typechecker SARIF` succeeded (analysis live,
+  category `angular-typechecker`); `Upload fallow SARIF` FAILED with "The CodeQL
+  Action does not support uploading multiple SARIF runs with the same category"
+  (GitHub 2025-07-21 change). Local gates could not catch this -- only a real
+  upload surfaces GitHub's SARIF-ingestion rules. This is exactly what the
+  "verify in a real CI run" requirement exists to catch.
+- Fix (`b3f83ff`): fallow emits two runs (dead-code + complexity) in one file;
+  tag each with a distinct `automationDetails.id` and upload WITHOUT a `category`
+  input (angular-typechecker's single-run upload keeps its explicit category).
+- Second run (`29772901045`, `b3f83ff`): `code-scanning` job fully green -- BOTH
+  `Upload angular-typechecker SARIF` and `Upload fallow SARIF` succeeded, and
+  `gh api .../code-scanning/analyses?tool_name=angular-typechecker` AND
+  `?tool_name=fallow` both return analyses on PR #49's ref. BOTH SUBMITTED (PASS).
 
 ## Notes
 
