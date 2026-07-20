@@ -12,7 +12,6 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
-  ADVISORY_NOTICE_PREFIX,
   buildCleanEnv,
   extractJsonPayload,
   findWorkspaceRoot,
@@ -193,14 +192,13 @@ describe('TEST-05: a clean install of the packed tarball resolves + runs the exe
       expect(parsedJson.formatVersion).toBe(1);
       expect(Array.isArray(parsedJson.diagnostics)).toBe(true);
       expect(parsedJson.summary).toBeDefined();
-      expect(jsonPayload).not.toContain(ADVISORY_NOTICE_PREFIX);
 
-      // sarif payload: schema-valid SARIF 2.1.0 (shared dev-only validateSarif); no
-      // Nx chrome / advisory text inside the payload.
+      // sarif payload: schema-valid SARIF 2.1.0 (shared dev-only validateSarif). The
+      // extractJsonPayload + validateSarif slice is the structural proof no Nx chrome
+      // bled inside the payload boundary.
       const sarifPayload = extractJsonPayload(cleanSarif.stdout);
       const sarif = validateSarif(sarifPayload);
       expect(sarif.valid, sarif.errors).toBe(true);
-      expect(sarifPayload).not.toContain(ADVISORY_NOTICE_PREFIX);
 
       // Inject a known TS2322 into the TMP copy's component source. Because the
       // tmp workspace is discarded via rmSync, mutating the copy is inherently

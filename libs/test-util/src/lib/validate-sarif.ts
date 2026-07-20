@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import Ajv from 'ajv';
+import Ajv, { type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 
 /**
@@ -15,7 +15,9 @@ import addFormats from 'ajv-formats';
  * `$id`, so plain `ajv@^8` (draft-07 is its default) handles it -- NOT `ajv-draft-04`.
  * The schema references the `uri` / `uri-reference` / `date-time` string formats, so
  * `ajv-formats` MUST register them; `strict: false` keeps the ~109 KB schema from
- * tripping ajv strict-mode complaints. The schema is compiled ONCE at module load.
+ * tripping ajv strict-mode complaints. The schema is read + compiled lazily on the
+ * first `validateSarif()` call and memoized (NOT at module load), so importing
+ * `@workspace/test-util` for an unrelated helper never parses the ~109 KB schema.
  *
  * The fixture lives beside this validator under `libs/test-util` (path-aliased,
  * never published) -- NOT under the plugin `src/`, where the `files: ["src"]`
@@ -23,13 +25,21 @@ import addFormats from 'ajv-formats';
  * (Pitfall 4). `__dirname` (not `import.meta.url`) is the resolver because the lib
  * builds under `module: commonjs`, where `import.meta` is forbidden.
  */
-const schema: unknown = JSON.parse(
-  readFileSync(join(__dirname, 'sarif-2.1.0.schema.json'), 'utf8'),
-);
+let compiled: ValidateFunction | undefined;
 
-const ajv = new Ajv({ strict: false, allErrors: true });
-addFormats(ajv);
-const validateSarifSchema = ajv.compile(schema as object);
+function getValidator(): ValidateFunction {
+  if (compiled === undefined) {
+    const schema: unknown = JSON.parse(
+      readFileSync(join(__dirname, 'sarif-2.1.0.schema.json'), 'utf8'),
+    );
+
+    const ajv = new Ajv({ strict: false, allErrors: true });
+    addFormats(ajv);
+    compiled = ajv.compile(schema as object);
+  }
+
+  return compiled;
+}
 
 /**
  * Validates a raw SARIF JSON STRING against the committed SARIF 2.1.0 schema.
@@ -44,6 +54,7 @@ export function validateSarif(sarifJson: string): {
   valid: boolean;
   errors: string;
 } {
+  const validateSarifSchema = getValidator();
   const data: unknown = JSON.parse(sarifJson);
   const valid = validateSarifSchema(data) === true;
 

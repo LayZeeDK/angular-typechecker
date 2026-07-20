@@ -38,7 +38,6 @@ export {
   type TypecheckArchitectTarget,
 } from './lib/ng-cli-e2e';
 export {
-  ADVISORY_NOTICE_PREFIX,
   assertMachineFormatParity,
   assertShippedBinExitCodes,
   runShim,

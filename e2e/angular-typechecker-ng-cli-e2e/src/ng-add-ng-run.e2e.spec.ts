@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, inject, it } from 'vitest';
 import {
-  ADVISORY_NOTICE_PREFIX,
   APP_COMPONENT_ANCHOR,
   APP_COMPONENT_INJECTION,
   APP_PROJECT,
@@ -183,14 +182,13 @@ describe('ACV-02: `ng add` auto-wires every project and `ng run <project>:typech
       expect(parsedJson.formatVersion).toBe(1);
       expect(Array.isArray(parsedJson.diagnostics)).toBe(true);
       expect(parsedJson.summary).toBeDefined();
-      expect(jsonPayload).not.toContain(ADVISORY_NOTICE_PREFIX);
 
-      // sarif payload: schema-valid SARIF 2.1.0 (shared dev-only validateSarif); no
-      // advisory text inside the payload.
+      // sarif payload: schema-valid SARIF 2.1.0 (shared dev-only validateSarif). The
+      // extractJsonPayload + validateSarif slice is the structural proof no framing
+      // bled inside the payload boundary.
       const sarifPayload = extractJsonPayload(appSarif.stdout);
       const sarif = validateSarif(sarifPayload);
       expect(sarif.valid, sarif.errors).toBe(true);
-      expect(sarifPayload).not.toContain(ADVISORY_NOTICE_PREFIX);
 
       // exit-code parity under a planted verdict-fail: plant the app-component TS2322
       // and assert the code is IDENTICAL and non-zero across all three formats (the

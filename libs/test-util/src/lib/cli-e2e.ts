@@ -243,15 +243,6 @@ export function assertShippedBinExitCodes(
 // anti-false-pass: a reporter must never change the verdict.
 const FORMATS = ['human', 'json', 'sarif'] as const;
 
-// The advisory-notice prefix every `emitAdvisoryNotices` message carries. It belongs
-// on stderr (the shipped bin routes notices to stderr and the machine payload to
-// stdout), so its presence INSIDE a parsed `--format json|sarif` payload would mean a
-// stream leaked. The JSON/SARIF payloads name the tool as `"angular-typechecker"`
-// (no trailing colon), so this colon-suffixed token discriminates the notice prefix
-// from the legitimate tool name. Exported so the `ng run` / Nx executor e2e adapters
-// assert the same payload-purity needle.
-export const ADVISORY_NOTICE_PREFIX = 'angular-typechecker:';
-
 /**
  * VER-03 (standalone-CLI adapter): over the already-installed `cli-consumer` fixture,
  * prove the SHIPPED bin emits a parseable JSON + schema-valid SARIF payload with PURE
@@ -259,6 +250,12 @@ export const ADVISORY_NOTICE_PREFIX = 'angular-typechecker:';
  * for the same input -- both the clean run (0) and a planted TS2322 (1). Reuses the
  * `runShimSplit` stream-split (parse ONLY `.stdout`) and the shared `validateSarif`
  * dev-only 2.1.0 validator (`@workspace/test-util`, created in 32-01).
+ *
+ * Stdout purity is proven STRUCTURALLY by the whole-stream JSON.parse / validateSarif:
+ * any leading `> nx run` echo or trailing advisory text would break the parse, so the
+ * parse succeeding IS the proof stdout is exactly one JSON/SARIF object. This means a
+ * payload legitimately carrying an ATC-synthesized `angular-typechecker:`-prefixed
+ * diagnostic message (the 90001 / 90002 guards) never false-fails.
  *
  * The planted source is restored in a `finally`, so the fixture is committed-clean on
  * return (mirrors {@link assertShippedBinExitCodes}); call this ALONGSIDE that helper,
@@ -283,13 +280,11 @@ export function assertMachineFormatParity(
       // stdout-purity: parses from `.stdout` alone (the stream-merged runShim would
       // fail here if any advisory chatter were present on stderr).
       expect(() => JSON.parse(clean.stdout) as unknown).not.toThrow();
-      expect(clean.stdout).not.toContain(ADVISORY_NOTICE_PREFIX);
     }
 
     if (format === 'sarif') {
       const { valid, errors } = validateSarif(clean.stdout);
       expect(valid, errors).toBe(true);
-      expect(clean.stdout).not.toContain(ADVISORY_NOTICE_PREFIX);
     }
   }
 
@@ -316,13 +311,11 @@ export function assertMachineFormatParity(
           summary: { success: boolean };
         };
         expect(payload.summary.success).toBe(false);
-        expect(red.stdout).not.toContain(ADVISORY_NOTICE_PREFIX);
       }
 
       if (format === 'sarif') {
         const { valid, errors } = validateSarif(red.stdout);
         expect(valid, errors).toBe(true);
-        expect(red.stdout).not.toContain(ADVISORY_NOTICE_PREFIX);
       }
     }
   } finally {
