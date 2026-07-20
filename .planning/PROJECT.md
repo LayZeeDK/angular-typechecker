@@ -219,7 +219,17 @@ The remaining deferred families carried from v0.0.1 (inferred targets INF, the `
 
 Full detail with outcomes: `.planning/milestones/v0.2.1-REQUIREMENTS.md`. Audit: `.planning/milestones/v0.2.1-MILESTONE-AUDIT.md`.
 
-(The v0.2.2 Standalone-CLI requirements are recorded in full in `.planning/milestones/v0.2.2-REQUIREMENTS.md` and summarized in the "Shipped Milestone: v0.2.2" section above; they are not re-listed here.)
+### Validated (v0.2.2 -- Standalone CLI -- closed 2026-07-17, audit PASSED 21/21; RELEASED -- published to npm 2026-07-17 as `angular-typechecker@0.2.2`)
+
+- [x] Standalone `angular-typechecker` / `atc` CLI binary: a third thin adapter over `runTypecheck`, two `bin` names -> one `src/cli/bin.js`, runnable via `npx` with no Nx / Angular CLI workspace. -- v0.2.2 (CLI-01)
+- [x] Pure `run(argv, env)` core mirroring the executor compose order; the CLI path imports ONLY the pure core, never `@nx/devkit`/`nx` at runtime (nx-free import-ban + a static require-graph guard over the built `bin.js`). -- v0.2.2 (CLI-02/03/04)
+- [x] Args via Node stdlib `util.parseArgs` (zero new deps): `-p/--tsConfig` (repeatable), `--max-warnings`, `--strict`, `--include-deps`, `--help`, `--version`. -- v0.2.2 (ARGS-01..05)
+- [x] Literal OS exit codes 0/1/2 (clean / type-error / infrastructure|usage), wiring the pure `toExitCode` policy (reserved since v0.0.3) to `process.exitCode`; coverage-incomplete (`errorCount === 0`, `success === false`) correctly returns 1. -- v0.2.2 (EXIT-01/02)
+- [x] Cross-platform packaging: deterministic LF shebang; the `await import()` ESM bridge preserved (not downleveled); additive-only vs `@0.2.1`. -- v0.2.2 (PKG-01/02/03, ADD-01)
+- [x] Shipped-tarball e2e proving literal 0/1/2 through the real `.bin` shim across npm + yarn (flat + workspace) + pnpm on Linux AND Windows + a runtime nx-free `require.cache` probe (VER-01..04); real-clone UAT across both workspace kinds on-stack Angular 22 (VER-05). -- v0.2.2
+- [x] README `## Standalone CLI` section + the 0/1/2 exit-code contract + curated CHANGELOG. -- v0.2.2 (DOC-01)
+
+Full detail with outcomes: `.planning/milestones/v0.2.2-REQUIREMENTS.md`. Audit: `.planning/milestones/v0.2.2-MILESTONE-AUDIT.md`.
 
 ### Validated (v0.2.3 -- Machine-readable reporters -- closed 2026-07-20, audit PASSED 13/13; RELEASED -- published to npm 2026-07-20 as `angular-typechecker@0.2.3`)
 

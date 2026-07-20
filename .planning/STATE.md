@@ -304,7 +304,7 @@ Completed the two teed-up autonomous tasks:
 
 ## Operator Next Steps
 
-- **Backfill the two forgotten milestone closes** -- v0.2.1 and v0.2.2 were structurally archived during the OpenGSD migration but `/gsd-complete-milestone` was never run for them, so `RETROSPECTIVE.md` has no v0.2.1 / v0.2.2 sections (it jumps v0.2.0 -> v0.2.3). MILESTONES.md entries and phase-dir archives DO exist for both. Add the missing RETROSPECTIVE sections (and optionally a PROJECT.md `### Validated (v0.2.2)` block) to close the bookkeeping gap.
+- **DONE 2026-07-21 -- backfilled the two forgotten milestone closes** -- v0.2.1 and v0.2.2 were structurally archived during the OpenGSD migration but `/gsd-complete-milestone` was never run for them. Added the missing `RETROSPECTIVE.md` v0.2.1 + v0.2.2 sections (chronological, before v0.2.3) and the PROJECT.md `### Validated (v0.2.2)` block. RETROSPECTIVE now runs v0.2.0 -> v0.2.1 -> v0.2.2 -> v0.2.3 with no gap; PROJECT.md Validated covers every shipped milestone.
 - **Start v0.2.4** -- `/gsd-new-milestone v0.2.4` "Enhanced SARIF reporting for GitHub Code Scanning" (5-area scope, spike-locked). Do it on a kickoff branch off `main` (PR-only) -> PR; name the branch yourself (don't trust GSD auto-derivation). SKIP the 4-researcher round (the empirical spike + prior SARIF research answered the unknowns). `.planning/HANDOFF.json` + `.planning/.continue-here.md` hold the full v0.2.4 scope + anti-patterns -- read them first. `.planning/phases/` is now empty, so `new-milestone`'s `phases.clear` is safe.
 - One non-blocking human action pending: enable the GitHub "Require code scanning results" ruleset (v0.2.4 area 4).
 
