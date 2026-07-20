@@ -128,6 +128,41 @@ describe('run() VER-02: REAL coverage-incomplete (errorCount 0, success false) -
   });
 });
 
+// FIX 3 -- the MACHINE-format half of the coverage-incomplete proof above. The
+// sibling case asserts that verdict through the rendered HUMAN report; this one
+// drives the SAME real cold-compiler run through `--format json` so the payload's
+// own `summary` -- not just the exit code -- is proven to carry it. This is the one
+// case in this file that parses stdout as JSON instead of reading the rendered
+// string (the file's rendered-code discipline gains exactly one JSON-parsing case
+// BY DESIGN), because here the machine payload IS the contract under test.
+interface CoverageIncompleteJsonPayload {
+  summary: { success: boolean; outcome: string };
+}
+
+describe('run() VER-01/VER-02: REAL coverage-incomplete through --format json -> exit 1 + machine verdict', () => {
+  it('carries summary.success false + summary.outcome coverage-incomplete in the JSON payload', async () => {
+    const result = await run(
+      ['-c', cleanTsConfig, '-c', emptyLeafTsConfig, '--format', 'json'],
+      NO_COLOR_ENV,
+    );
+
+    expect(result.exitCode).toBe(1);
+
+    // stdout MUST be a clean parseable payload: were an advisory notice to leak
+    // onto stdout (the corruption the executor's human-format gate prevents), the
+    // zero-root-names advisory from the empty leaf would break this parse.
+    expect(() => JSON.parse(result.stdout)).not.toThrow();
+
+    const payload = JSON.parse(result.stdout) as CoverageIncompleteJsonPayload;
+
+    // The verdict no unit stub can fake: errorCount stays 0 (the empty leaf is a
+    // zero-root-names SKIP, never a counted error), yet the machine payload still
+    // reports failure -- evaluateResult owns the verdict and json DELEGATES to it.
+    expect(payload.summary.success).toBe(false);
+    expect(payload.summary.outcome).toBe('coverage-incomplete');
+  });
+});
+
 describe('run() VER-02: warning-gate fixtures (--max-warnings / --strict)', () => {
   it('a REPORTED NG8xxx warning alone (no gate) does NOT fail -> exit 0', async () => {
     // Establishes the fixture is a WARNING (not an error): with no gate, warnings

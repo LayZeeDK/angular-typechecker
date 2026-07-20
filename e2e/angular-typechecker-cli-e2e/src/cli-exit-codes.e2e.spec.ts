@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, inject, it } from 'vitest';
 import {
+  assertMachineFormatParity,
   assertShippedBinExitCodes,
   buildCleanEnv,
   findWorkspaceRoot,
@@ -124,6 +125,12 @@ describe('VER-04 (npm): the shipped angular-typechecker / atc bins return litera
       // TS2322) for BOTH bin names. The helper restores the committed-clean fixture in
       // its finally, so the npm-only extras below run against a clean tree again.
       assertShippedBinExitCodes(tmp, npmEnv);
+
+      // VER-03 (standalone-CLI adapter): the shipped bin emits a parseable JSON +
+      // schema-valid SARIF payload with PURE stdout, and returns the IDENTICAL exit
+      // code across --format human|json|sarif for the same input (0 clean / 1 planted
+      // TS2322). Restores the committed-clean fixture in its own finally.
+      assertMachineFormatParity(tmp, npmEnv);
 
       // npm-only extras (kept inline). The safe `npx angular-typechecker` path for the
       // clean (0) and infrastructure (2) cases: `npx angular-typechecker` resolves the

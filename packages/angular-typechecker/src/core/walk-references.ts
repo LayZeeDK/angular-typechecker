@@ -71,6 +71,11 @@ export interface WalkResult {
   // when every reference walked cleanly; `runTypecheck` maps `[]` -> `undefined`
   // on `CoreResult` so the adapter's presence check is sufficient.
   skippedReferences: readonly SkippedReference[];
+  // OBS-01 (Phase 30, D-11): the count of DISTINCT non-declaration source files
+  // across all walked (surviving) leaves -- `acc.sourceFileNames.size`, name-deduped
+  // so a source shared by two leaves counts ONCE. `finalizeUnion` (run-typecheck.ts)
+  // threads it onto CoreResult.totalFilesCount. 0 when no leaf survives.
+  totalFilesCount: number;
 }
 
 /**
@@ -113,6 +118,34 @@ export interface LeafAccumulator {
   rootNamePaths: string[];
   notTypeCheckedDeclaredFiles: string[];
   rootNamesCount: number;
+  // OBS-01 (Phase 30, D-11): the NON-declaration source-file names gathered across
+  // every surviving leaf, deduped BY NAME. A source file compiled in two leaves
+  // (e.g. a shared component both leaves import) is therefore counted ONCE.
+  // `set.size` is threaded onto CoreResult.totalFilesCount via finalizeUnion. Dedupe
+  // by NAME (a `fileName` string), NOT object identity: two leaves' Programs return
+  // DISTINCT SourceFile objects for the same path, so an object-keyed Set would
+  // double-count the shared file (RESEARCH A3).
+  sourceFileNames: Set<string>;
+}
+
+/**
+ * WR-01: the SINGLE authored-source predicate, shared by both `totalFilesCount`
+ * (OBS-01) capture sites -- this leaf loop (`gatherLeafInto`) and the direct-path
+ * count (run-typecheck.ts). A source file counts as authored iff it is NOT a `.d.ts`
+ * declaration file AND NOT an Angular-generated `.ngtypecheck.ts` TCB shim. The
+ * compiler injects one `.ngtypecheck.ts` shim per component -- they are
+ * non-declaration `.ts` files but NOT authored source, so counting them inflates the
+ * "files checked" metric and drifts across Angular versions. (The bare
+ * `!isDeclarationFile` parity in gather-diagnostics.ts is a DIFFERENT predicate for
+ * DIAGNOSTIC iteration; this observability count wants authored files only.)
+ *
+ * Exported for reuse by run-typecheck.ts; NOT added to the public barrel (`index.ts`).
+ */
+export function isAuthoredSourceFile(sourceFile: ts.SourceFile): boolean {
+  return (
+    !sourceFile.isDeclarationFile &&
+    !sourceFile.fileName.endsWith('.ngtypecheck.ts')
+  );
 }
 
 /**
@@ -158,6 +191,35 @@ export function gatherLeafInto(
   acc.notTypeCheckedDeclaredFiles.push(
     ...detectUncheckedDeclaredFiles(ts, parsed, entryPath),
   );
+
+  // PR47-F1: a leaf that crashes DURING Program construction returns
+  // `{ program: undefined }` alongside its diagnostics (which carry the 500 that is
+  // ALREADY unioned into `acc.rawDiagnostics` above). Guard BEFORE the OBS-01
+  // source-file deref -- else `result.program.getTsProgram()` throws a RAW TypeError
+  // that escapes before the caller can re-classify the 500. Mirrors the direct
+  // path's `result.program === undefined` guard shape (run-typecheck.ts), but here we
+  // only `return` (void): walk-references stays pure and free of the run-typecheck
+  // import cycle, so the caller's post-walk / post-loop throwIfInfrastructureFailure
+  // (handleSolutionWalk / handleMultiTsConfig) classifies the unioned 500. The
+  // crashed leaf contributes 0 authored files -- verdict-neutral for totalFilesCount.
+  if (result.program === undefined) {
+    return;
+  }
+
+  // OBS-01 (Phase 30, D-11): accumulate this leaf's authored source files by NAME off
+  // the live Program (the authored-source rule -- skip `.d.ts` + `.ngtypecheck.ts`
+  // shims -- lives in isAuthoredSourceFile), so `lib.d.ts` and node_modules types are
+  // excluded. The Set dedupes across leaves, so a source file both leaves compile is
+  // counted once. `result.program` is proven defined by the PR47-F1 guard above
+  // (as on the direct path; the caller re-throws any per-leaf infra-500 over the
+  // union afterwards).
+  for (const sourceFile of result.program.getTsProgram().getSourceFiles()) {
+    if (!isAuthoredSourceFile(sourceFile)) {
+      continue;
+    }
+
+    acc.sourceFileNames.add(sourceFile.fileName);
+  }
 }
 
 /**
@@ -196,6 +258,7 @@ export async function walkReferences(
     rootNamePaths: [],
     notTypeCheckedDeclaredFiles: [],
     rootNamesCount: 0,
+    sourceFileNames: new Set(),
   };
   const skippedReferences: SkippedReference[] = [];
   const seenCanonicalLeaves = new Set<string>();
@@ -341,6 +404,9 @@ export async function walkReferences(
     // union stays raw -- `finalize` owns diagnostic dedupe -- this is the advisory
     // display set only.
     notTypeCheckedDeclaredFiles: [...new Set(acc.notTypeCheckedDeclaredFiles)],
+    // OBS-01 (Phase 30, D-11): the name-deduped non-declaration source-file count
+    // across every surviving leaf (a source shared by two leaves counts once).
+    totalFilesCount: acc.sourceFileNames.size,
   };
 }
 

@@ -1,19 +1,24 @@
-import { cpSync, mkdtempSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, inject, it } from 'vitest';
 import {
+  APP_COMPONENT_ANCHOR,
+  APP_COMPONENT_INJECTION,
   APP_PROJECT,
   LIB_PROJECT,
   assertPerProjectScoping,
   buildCleanEnv,
   createNgRun,
+  extractJsonPayload,
   findWorkspaceRoot,
+  plant,
   removeTmpDir,
   sh,
   typecheckTarget,
+  validateSarif,
   writeVerdaccioNpmrc,
 } from '@workspace/test-util';
 
@@ -133,6 +138,90 @@ describe('ACV-02: `ng add` auto-wires every project and `ng run <project>:typech
       expect(appClean.code, appClean.stdout).toBe(0);
       const libClean = ngRun(tmp, `${LIB_PROJECT}:typecheck`, npmEnv);
       expect(libClean.code, libClean.stdout).toBe(0);
+
+      // VER-03 (ng run adapter): the shipped builder emits a parseable JSON +
+      // schema-valid SARIF payload and returns the IDENTICAL exit code across
+      // --format human|json|sarif for the SAME input. Unlike the standalone `.bin`
+      // shim (the guaranteed-pure stdout proof), `ng run` frames the executor's
+      // stdout, so extractJsonPayload isolates the single JSON object and we assert
+      // no advisory text is INSIDE the payload boundary (the executor gates advisory
+      // notices to the human format, so json/sarif never emit them).
+      const appHuman = ngRun(
+        tmp,
+        `${APP_PROJECT}:typecheck --format human`,
+        npmEnv,
+      );
+      const appJson = ngRun(
+        tmp,
+        `${APP_PROJECT}:typecheck --format json`,
+        npmEnv,
+      );
+      const appSarif = ngRun(
+        tmp,
+        `${APP_PROJECT}:typecheck --format sarif`,
+        npmEnv,
+      );
+
+      // exit-code parity: every format exits 0 on the clean app project.
+      expect(appHuman.code, appHuman.stdout).toBe(0);
+      expect(appJson.code, appJson.stdout).toBe(0);
+      expect(appSarif.code, appSarif.stdout).toBe(0);
+
+      // Observed framing (Angular CLI 22 `ng run <project>:typecheck --format json`):
+      // stdout is PURE -- the executor's process.stdout.write(payload) passes straight
+      // through and `ng` chrome goes to stderr (leading="" trailing=""). extractJsonPayload
+      // stays as a defensive isolation of the single JSON object regardless.
+      // json payload: parseable + shaped (formatVersion + diagnostics[] + summary);
+      // no advisory text bled into the payload boundary.
+      const jsonPayload = extractJsonPayload(appJson.stdout);
+      const parsedJson = JSON.parse(jsonPayload) as {
+        formatVersion: number;
+        summary: unknown;
+        diagnostics: unknown[];
+      };
+      expect(parsedJson.formatVersion).toBe(1);
+      expect(Array.isArray(parsedJson.diagnostics)).toBe(true);
+      expect(parsedJson.summary).toBeDefined();
+
+      // sarif payload: schema-valid SARIF 2.1.0 (shared dev-only validateSarif). The
+      // extractJsonPayload + validateSarif slice is the structural proof no framing
+      // bled inside the payload boundary.
+      const sarifPayload = extractJsonPayload(appSarif.stdout);
+      const sarif = validateSarif(sarifPayload);
+      expect(sarif.valid, sarif.errors).toBe(true);
+
+      // exit-code parity under a planted verdict-fail: plant the app-component TS2322
+      // and assert the code is IDENTICAL and non-zero across all three formats (the
+      // anti-false-pass -- a machine format must never mask the verdict). Restore in
+      // a finally so assertPerProjectScoping below runs on the committed-clean tree.
+      const appComponentPath = join(tmp, 'src', 'app', 'app.ts');
+      const appComponentOriginal = readFileSync(appComponentPath, 'utf8');
+
+      try {
+        plant(appComponentPath, APP_COMPONENT_ANCHOR, APP_COMPONENT_INJECTION);
+
+        const redHuman = ngRun(
+          tmp,
+          `${APP_PROJECT}:typecheck --format human`,
+          npmEnv,
+        );
+        const redJson = ngRun(
+          tmp,
+          `${APP_PROJECT}:typecheck --format json`,
+          npmEnv,
+        );
+        const redSarif = ngRun(
+          tmp,
+          `${APP_PROJECT}:typecheck --format sarif`,
+          npmEnv,
+        );
+
+        expect(redHuman.code, redHuman.stdout).not.toBe(0);
+        expect(redJson.code, redJson.stdout).toBe(redHuman.code);
+        expect(redSarif.code, redSarif.stdout).toBe(redHuman.code);
+      } finally {
+        writeFileSync(appComponentPath, appComponentOriginal);
+      }
 
       // Plant DISTINCT per-leaf errors and prove per-project scoping (app catches
       // TS2322 + TS2345 and not TS2554; lib catches TS2554 and neither app code;

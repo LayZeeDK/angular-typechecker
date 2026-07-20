@@ -145,19 +145,31 @@ export async function run(
     includeDeps: parsed.includeDeps,
     pathBase,
   };
-  const color = colorFromEnv(env);
+  // D-10: the explicit --color/--no-color flag WINS over the env precedence
+  // (NO_COLOR > FORCE_COLOR > TTY); colorFromEnv stays the fallback when no flag
+  // is passed. Human path only -- machine formats are unconditionally plain.
+  const color = parsed.color ?? colorFromEnv(env);
 
   try {
     const result = await runTypecheck(coreOptions);
 
     // Notices BEFORE the report so they cannot be lost below a long codeframe dump.
     // A clean run stays silent (each helper self-gates on its own guard).
-    emitAdvisoryNotices(result, logger);
+    // D-09: --quiet gates the stderr advisory chatter ONLY -- never the stdout
+    // payload, never the verdict/exit code (the never-silent charter).
+    if (!parsed.quiet) {
+      emitAdvisoryNotices(result, logger);
+    }
 
     const report = await renderReport(result, {
       pathBase,
       color,
       failFast: parsed.failFast,
+      // D-08/FMT-01: select the reporter; maxWarnings/strict let the json
+      // summary DELEGATE its verdict to evaluateResult (never re-derive counts).
+      format: parsed.format,
+      maxWarnings: parsed.maxWarnings,
+      strict: parsed.strict,
     });
 
     // D-01 branch 3: the 0-vs-1 split comes from evaluateResult(...).success ONLY --

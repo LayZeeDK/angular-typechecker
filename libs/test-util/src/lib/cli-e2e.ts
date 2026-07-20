@@ -1,10 +1,11 @@
-import { spawnSync } from 'node:child_process';
+import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { expect } from 'vitest';
 
 import { plant } from './ng-cli-e2e';
+import { validateSarif } from './validate-sarif';
 
 // Shared building block for the standalone-CLI tarball-e2e specs
 // (angular-typechecker-cli-e2e). Derived from ng-cli-e2e.ts's createNgRun: where
@@ -23,24 +24,38 @@ export interface ShimResult {
   readonly stdout: string;
 }
 
+export interface ShimResultSplit {
+  readonly code: number;
+  // SEPARATE streams (never concatenated). The `--format json|sarif` stdout-purity
+  // proof (VER-03) parses ONLY `.stdout`: the shipped bin writes the machine payload
+  // to stdout and every advisory notice to stderr, so a stream-merged `stdout` (see
+  // {@link runShim}) would glue advisory chatter onto the payload and break
+  // `JSON.parse` / `validateSarif`.
+  readonly stdout: string;
+  readonly stderr: string;
+}
+
 /**
- * Spawn the installed `.bin/<binName>` shim in `consumerDir` and capture its literal
- * exit code + combined output. Cross-platform: on Windows the shim is `<binName>.cmd`
- * and `shell: true` is REQUIRED (Node's CVE-2024-27980 fix refuses to spawn a .cmd
- * without a shell) -- safe here because `args` are FIXED (a tsconfig path + flags,
- * never user input). On POSIX the extensionless shim runs directly. `maxBuffer` is
- * 20 MB so a large diagnostic dump never ENOBUFS-truncates the tail `TSxxxx` code
- * (matches createNgRun / bin.ts is flush-safe by not calling process.exit).
+ * Spawn the installed `.bin/<binName>` shim in `consumerDir` ONCE and return the raw
+ * spawnSync result. Shared by {@link runShim} (stream-merged) and {@link runShimSplit}
+ * (streams kept separate) so the spawn options are declared in exactly one place.
+ * Cross-platform: on Windows the shim is `<binName>.cmd` and `shell: true` is REQUIRED
+ * (Node's CVE-2024-27980 fix refuses to spawn a .cmd without a shell) -- safe here
+ * because `args` are FIXED (a tsconfig path + flags, never user input). On POSIX the
+ * extensionless shim runs directly. `maxBuffer` is 20 MB so a large diagnostic dump
+ * never ENOBUFS-truncates the tail `TSxxxx` code.
  *
  * `binName` is intentionally the union `'angular-typechecker' | 'atc'`: the shipped
  * package maps BOTH names to one `./src/cli/bin.js`, and both must be exercised.
+ * `label` names the caller in the spawn-failure message.
  */
-export function runShim(
+function spawnShim(
+  label: string,
   consumerDir: string,
   binName: 'angular-typechecker' | 'atc',
   args: string[],
   env: NodeJS.ProcessEnv,
-): ShimResult {
+): SpawnSyncReturns<string> {
   const isWin = process.platform === 'win32';
   const shim = join(
     consumerDir,
@@ -70,15 +85,55 @@ export function runShim(
   // type-error verdict) with empty output.
   if (result.error) {
     throw new Error(
-      `runShim: failed to spawn '${command}': ${result.error.message}`,
+      `${label}: failed to spawn '${command}': ${result.error.message}`,
     );
   }
+
+  return result;
+}
+
+/**
+ * Spawn the shipped shim and return its exit code + STREAM-MERGED output. The merged
+ * `stdout` is correct for the exit-code + diagnostic-CODE (toContain('TS2322')) +
+ * ERR_REQUIRE_ESM / infrastructure-error assertions, which want the full output; use
+ * {@link runShimSplit} when the machine payload must be parsed in isolation.
+ */
+export function runShim(
+  consumerDir: string,
+  binName: 'angular-typechecker' | 'atc',
+  args: string[],
+  env: NodeJS.ProcessEnv,
+): ShimResult {
+  const result = spawnShim('runShim', consumerDir, binName, args, env);
 
   return {
     // `?? 2` (never 1): a null status with no error means the process was killed
     // by a signal -- infrastructure-class for a type-checker, not a type-error.
     code: result.status ?? 2,
     stdout: `${result.stdout ?? ''}${result.stderr ?? ''}`,
+  };
+}
+
+/**
+ * Spawn the shipped shim and return its exit code with `stdout` and `stderr` kept
+ * SEPARATE. `spawnSync` already separates the streams (runShim merely concatenates
+ * them), so this exposes them for the `--format json|sarif` stdout-purity proof:
+ * `JSON.parse(runShimSplit(...).stdout)` / `validateSarif(runShimSplit(...).stdout)`
+ * succeed because the shipped bin writes the machine payload to stdout and advisory
+ * notices to stderr, where the stream-merged {@link runShim} would fail.
+ */
+export function runShimSplit(
+  consumerDir: string,
+  binName: 'angular-typechecker' | 'atc',
+  args: string[],
+  env: NodeJS.ProcessEnv,
+): ShimResultSplit {
+  const result = spawnShim('runShimSplit', consumerDir, binName, args, env);
+
+  return {
+    code: result.status ?? 2,
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
   };
 }
 
@@ -178,6 +233,91 @@ export function assertShippedBinExitCodes(
     expect(atcRed.stdout).toContain(PLANTED_CODE);
     expect(atcRed.stdout).not.toMatch(/ERR_REQUIRE_ESM/);
     expect(atcRed.stdout).not.toContain('infrastructure error');
+  } finally {
+    writeFileSync(componentPath, original);
+  }
+}
+
+// The three output formats the shipped CLI accepts (`--format <value>`, default
+// `human`). Exit-code PARITY across them for the same input is VER-03's cardinal
+// anti-false-pass: a reporter must never change the verdict.
+const FORMATS = ['human', 'json', 'sarif'] as const;
+
+/**
+ * VER-03 (standalone-CLI adapter): over the already-installed `cli-consumer` fixture,
+ * prove the SHIPPED bin emits a parseable JSON + schema-valid SARIF payload with PURE
+ * stdout, and returns the IDENTICAL literal exit code across `--format human|json|sarif`
+ * for the same input -- both the clean run (0) and a planted TS2322 (1). Reuses the
+ * `runShimSplit` stream-split (parse ONLY `.stdout`) and the shared `validateSarif`
+ * dev-only 2.1.0 validator (`@workspace/test-util`, created in 32-01).
+ *
+ * Stdout purity is proven STRUCTURALLY by the whole-stream JSON.parse / validateSarif:
+ * any leading `> nx run` echo or trailing advisory text would break the parse, so the
+ * parse succeeding IS the proof stdout is exactly one JSON/SARIF object. This means a
+ * payload legitimately carrying an ATC-synthesized `angular-typechecker:`-prefixed
+ * diagnostic message (the 90001 / 90002 guards) never false-fails.
+ *
+ * The planted source is restored in a `finally`, so the fixture is committed-clean on
+ * return (mirrors {@link assertShippedBinExitCodes}); call this ALONGSIDE that helper,
+ * do not fork it.
+ */
+export function assertMachineFormatParity(
+  tmp: string,
+  env: NodeJS.ProcessEnv,
+): void {
+  // CLEAN fixture: exit-code parity 0 across all three formats; the machine payloads
+  // parse cleanly from stdout ALONE (purity) and the SARIF is schema-valid.
+  for (const format of FORMATS) {
+    const clean = runShimSplit(
+      tmp,
+      'angular-typechecker',
+      ['-c', 'tsconfig.json', '--format', format],
+      env,
+    );
+    expect(clean.code, `clean --format ${format}: ${clean.stderr}`).toBe(0);
+
+    if (format === 'json') {
+      // stdout-purity: parses from `.stdout` alone (the stream-merged runShim would
+      // fail here if any advisory chatter were present on stderr).
+      expect(() => JSON.parse(clean.stdout) as unknown).not.toThrow();
+    }
+
+    if (format === 'sarif') {
+      const { valid, errors } = validateSarif(clean.stdout);
+      expect(valid, errors).toBe(true);
+    }
+  }
+
+  // PLANTED TS2322: exit-code parity 1 across all three formats (the anti-false-pass
+  // -- a machine format must never mask a verdict-fail), and the payloads still
+  // parse/validate with a `success: false` verdict carried as DATA.
+  const componentPath = join(tmp, 'src', 'app.component.ts');
+  const original = readFileSync(componentPath, 'utf8');
+
+  try {
+    plant(componentPath, COMPONENT_ANCHOR, COMPONENT_INJECTION);
+
+    for (const format of FORMATS) {
+      const red = runShimSplit(
+        tmp,
+        'angular-typechecker',
+        ['-c', 'tsconfig.json', '--format', format],
+        env,
+      );
+      expect(red.code, `planted --format ${format}: ${red.stderr}`).toBe(1);
+
+      if (format === 'json') {
+        const payload = JSON.parse(red.stdout) as {
+          summary: { success: boolean };
+        };
+        expect(payload.summary.success).toBe(false);
+      }
+
+      if (format === 'sarif') {
+        const { valid, errors } = validateSarif(red.stdout);
+        expect(valid, errors).toBe(true);
+      }
+    }
   } finally {
     writeFileSync(componentPath, original);
   }

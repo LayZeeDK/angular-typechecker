@@ -15,7 +15,11 @@ import { filterDiagnostics } from './filter-diagnostics';
 import { runNoEmitCompilation } from './gather-diagnostics';
 import { loadTypescript } from './load-typescript';
 import type { LeafAccumulator, SkippedReference } from './walk-references';
-import { gatherLeafInto, walkReferences } from './walk-references';
+import {
+  gatherLeafInto,
+  isAuthoredSourceFile,
+  walkReferences,
+} from './walk-references';
 
 export interface CoreOptions {
   // ENG-01 (D-06): a single ABSOLUTE tsconfig path (the unchanged direct path), OR a
@@ -137,6 +141,19 @@ export interface CoreResult {
   // is deliberately NOT read by `evaluateResult` (D-05), so it NEVER flips the
   // verdict. Additive/non-breaking (0.x semver).
   bundlerQueryImports?: readonly string[];
+  // OBS-01 (Phase 30, D-11): the count of NON-declaration source files the
+  // type-check actually processed -- the meaningful "files checked" number for
+  // agents/CI, surfaced by the JSON reporter as `summary.totalFilesCount` (30-02).
+  // Captured off the live `Program` on the direct single-leaf path and via a
+  // name-deduped `Set<string>` across walked leaves (walk-references.ts ->
+  // finalizeUnion), always excluding `.d.ts` declaration files (so `lib.d.ts` and
+  // node_modules types are never counted). OPTIONAL + additive via the
+  // value-presence spread idiom -- a required field would break CoreResult under the
+  // 0.2.2 -> 0.2.3 patch bump (Pitfall 14). VERDICT-NEUTRAL: `evaluateResult`'s
+  // EvaluateInput Pick deliberately OMITS it, so the verdict is byte-identical with
+  // or without it present (D-11); a negative test locks that omission. `undefined`
+  // on the no-Program guard paths (empty / none-in-project), where nothing ran.
+  totalFilesCount?: number;
 }
 
 /**
@@ -268,7 +285,8 @@ function presentIfNonEmpty<K extends keyof CoreResult, T>(
  * combined raw union with `buildFinalizeFilter` keyed on the combined `rootNamePaths`
  * (input-set membership, `ts.sys` case-fold -- no per-leaf Program survives either
  * path), then attaches `skippedReferences` + `notTypeCheckedDeclaredFiles` via the
- * `presentIfNonEmpty` presence idiom. The two callers differ ONLY in what they feed in
+ * `presentIfNonEmpty` presence idiom and the OBS-01 `totalFilesCount` (the walked
+ * name-deduped non-declaration source-file count) via the value-presence spread. The two callers differ ONLY in what they feed in
  * (`handleSolutionWalk` prepends `configDiagnostics`; `handleMultiTsConfig`'s union is
  * already complete) and in the representative `parsed`/`tsConfigPath` for the basePath
  * fallback; BOTH pass an ALREADY-deduped notTypeChecked set. Module-private -- both
@@ -286,6 +304,7 @@ function finalizeUnion(
   start: number,
   skippedReferences: readonly SkippedReference[],
   notTypeCheckedDeclaredFiles: readonly string[],
+  totalFilesCount: number,
 ): CoreResult {
   const result = finalize(
     ts,
@@ -309,6 +328,11 @@ function finalizeUnion(
       'notTypeCheckedDeclaredFiles',
       notTypeCheckedDeclaredFiles,
     ),
+    // OBS-01 (Phase 30, D-11): thread the walked name-deduped authored source-file
+    // count onto CoreResult. Both walk callers pass a Set size (always a number), so
+    // it is emitted as a plain property; the guard paths (no surviving leaf) never
+    // reach here.
+    totalFilesCount,
   };
 }
 
@@ -494,12 +518,24 @@ export async function runTypecheck(options: CoreOptions): Promise<CoreResult> {
     options.tsConfigPath,
   );
 
+  // OBS-01 (Phase 30, D-11): capture the authored source-file count off the live
+  // Program (so `lib.d.ts`, node_modules types, and `.ngtypecheck.ts` shims are
+  // excluded -- the authored-source rule lives in isAuthoredSourceFile). The Program
+  // is proven defined here by the `result.program === undefined` guard above.
+  // VERDICT-NEUTRAL: evaluateResult never reads it (D-11). Always a number here, so it
+  // is emitted as a plain property.
+  const totalFilesCount = result.program
+    .getTsProgram()
+    .getSourceFiles()
+    .filter(isAuthoredSourceFile).length;
+
   return {
     ...directResult,
     ...presentIfNonEmpty(
       'notTypeCheckedDeclaredFiles',
       notTypeCheckedDeclaredFiles,
     ),
+    totalFilesCount,
   };
 }
 
@@ -570,6 +606,7 @@ async function handleSolutionWalk(
       start,
       walk.skippedReferences,
       walk.notTypeCheckedDeclaredFiles,
+      walk.totalFilesCount,
     );
   }
 
@@ -652,6 +689,7 @@ async function handleMultiTsConfig(
     rootNamePaths: [],
     notTypeCheckedDeclaredFiles: [],
     rootNamesCount: 0,
+    sourceFileNames: new Set(),
   };
   const skippedReferences: SkippedReference[] = [];
   let firstParsed: ParsedConfiguration | undefined;
@@ -726,6 +764,7 @@ async function handleMultiTsConfig(
     start,
     skippedReferences,
     [...new Set(acc.notTypeCheckedDeclaredFiles)],
+    acc.sourceFileNames.size,
   );
 }
 

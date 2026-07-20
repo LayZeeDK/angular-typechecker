@@ -102,6 +102,27 @@ describe('normalizeOptions (D-01/D-03)', () => {
     expect(normalized.strict).toBe(true);
   });
 
+  it('forwards a provided format to the reporter layer (FMT-01)', () => {
+    const options: TypecheckExecutorOptions = {
+      tsConfig: 'libs/x/tsconfig.lib.json',
+      format: 'json',
+    };
+
+    const normalized = normalizeOptions(options, contextWithRoot('/ws'));
+
+    expect(normalized.format).toBe('json');
+  });
+
+  it('defaults format to human when absent (FMT-01)', () => {
+    const options: TypecheckExecutorOptions = {
+      tsConfig: 'libs/x/tsconfig.lib.json',
+    };
+
+    const normalized = normalizeOptions(options, contextWithRoot('/ws'));
+
+    expect(normalized.format).toBe('human');
+  });
+
   it('sets pathBase to the workspace root (D-08)', () => {
     const options: TypecheckExecutorOptions = {
       tsConfig: 'libs/x/tsconfig.lib.json',

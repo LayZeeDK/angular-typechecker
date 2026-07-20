@@ -17,7 +17,8 @@
           {
             "input": "./packages/angular-typechecker/src",
             "glob": "**/!(*.ts)",
-            "output": "./src"
+            "output": "./src",
+            "ignore": ["**/__snapshots__/**"]
           },
           {
             "input": "./packages/angular-typechecker/src",

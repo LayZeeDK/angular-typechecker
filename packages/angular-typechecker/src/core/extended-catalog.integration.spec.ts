@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { findWorkspaceRoot } from '@workspace/test-util';
 
 import { NG } from './diagnostic-codes';
+import { EXTENDED_DIAGNOSTIC_CATALOG } from './extended-catalog';
 import { EXTENDED_DIAGNOSTIC_MEMBERS } from './extended-catalog.members';
 import { runTypecheck } from './run-typecheck';
 
@@ -78,13 +79,14 @@ interface CatalogRow {
   skipReason?: string;
 }
 
+type CatalogBaseRow = Omit<CatalogRow, 'ngCode'>;
+
 // One row per member, in EXTENDED_DIAGNOSTIC_MEMBERS (enum declaration) order.
 // Every expectedCount + expectedCategory was proven by a real `runTypecheck` run
 // against the committed fixture before this table was committed (RESEARCH A1).
-const CATALOG: readonly CatalogRow[] = [
+const CATALOG_BASE: readonly CatalogBaseRow[] = [
   {
     member: 'invalidBananaInBox',
-    ngCode: 8101,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v13',
@@ -92,7 +94,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'nullishCoalescingNotNullable',
-    ngCode: 8102,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v13',
@@ -100,7 +101,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'optionalChainNotNullable',
-    ngCode: 8107,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v14',
@@ -108,7 +108,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'missingControlFlowDirective',
-    ngCode: 8103,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v14',
@@ -116,7 +115,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'missingStructuralDirective',
-    ngCode: 8116,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v19',
@@ -124,7 +122,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'textAttributeNotBinding',
-    ngCode: 8104,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v14',
@@ -132,7 +129,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'uninvokedFunctionInEventBinding',
-    ngCode: 8111,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v18',
@@ -140,7 +136,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'missingNgForOfLet',
-    ngCode: 8105,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v14',
@@ -150,7 +145,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'suffixNotSupported',
-    ngCode: 8106,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v14',
@@ -158,7 +152,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'skipHydrationNotStatic',
-    ngCode: 8108,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v16',
@@ -166,7 +159,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'interpolatedSignalNotInvoked',
-    ngCode: 8109,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v17',
@@ -176,7 +168,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'controlFlowPreventingContentProjection',
-    ngCode: 8011,
     // CORRECTNESS GUARD (D-09): a NORMAL promotable Warning-default member. NOT
     // skipped, NOT "not promotable".
     expectedCategory: ts.DiagnosticCategory.Warning,
@@ -186,7 +177,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'unusedLetDeclaration',
-    ngCode: 8112,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v18',
@@ -194,7 +184,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'uninvokedTrackFunction',
-    ngCode: 8115,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v20',
@@ -202,7 +191,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'unusedStandaloneImports',
-    ngCode: 8113,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v19',
@@ -210,7 +198,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'unparenthesizedNullishCoalescing',
-    ngCode: 8114,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v20',
@@ -218,7 +205,6 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'uninvokedFunctionInTextInterpolation',
-    ngCode: 8117,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v20',
@@ -226,13 +212,39 @@ const CATALOG: readonly CatalogRow[] = [
   },
   {
     member: 'deferTriggerMisconfiguration',
-    ngCode: 8021,
     expectedCategory: ts.DiagnosticCategory.Warning,
     expectedCount: 1,
     introVersion: 'v21',
     fixtureTsConfig: fixtureTsConfig('extended-defer-trigger'),
   },
 ];
+
+// D-06: ngCode now has ONE source -- the production EXTENDED_DIAGNOSTIC_CATALOG.
+// Build the member -> ngCode map from it and ENRICH each base row so the rows
+// handed to describe.each still CARRY ngCode (the $ngCode label, the
+// NG(row.ngCode) filter lookups, and the count assertions all stay
+// behavior-identical). ENRICH, do NOT strip: a row without ngCode would render
+// the label NGundefined and make NG(row.ngCode) NaN, breaking all 18 assertions.
+const ngCodeByMember = new Map<CatalogRow['member'], number>(
+  EXTENDED_DIAGNOSTIC_CATALOG.map((entry) => [entry.member, entry.ngCode]),
+);
+
+function ngCodeForMember(member: CatalogRow['member']): number {
+  const ngCode = ngCodeByMember.get(member);
+
+  if (ngCode === undefined) {
+    throw new Error(
+      `extended-catalog.integration.spec: no ngCode for member "${member}"`,
+    );
+  }
+
+  return ngCode;
+}
+
+const CATALOG: readonly CatalogRow[] = CATALOG_BASE.map((baseRow) => ({
+  ...baseRow,
+  ngCode: ngCodeForMember(baseRow.member),
+}));
 
 // A build-time guard that the table stays in lockstep with the source-of-truth
 // list: exactly one row per member, and every member present. This is the runtime

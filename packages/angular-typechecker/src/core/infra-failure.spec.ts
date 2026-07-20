@@ -109,12 +109,15 @@ function fileDiagnostic(code: number, fileName: string): ts.Diagnostic {
 
 // Minimal fake Program for the non-infra-failure path: a real `performCompilation`
 // always returns a `program` whose `getTsProgram().useCaseSensitiveFileNames()`
-// the Phase-3 boundary filter reads. The diagnostics here are file-less, so the
-// filter keeps them regardless -- this stub just satisfies the host access.
+// the Phase-3 boundary filter reads and whose `getTsProgram().getSourceFiles()` the
+// OBS-01 direct-path `totalFilesCount` capture (Phase 30) iterates. The diagnostics
+// here are file-less, so the filter keeps them regardless, and an empty source-file
+// list yields totalFilesCount 0 -- this stub just satisfies both host accesses.
 function fakeProgram(): unknown {
   return {
     getTsProgram: () => ({
       useCaseSensitiveFileNames: () => true,
+      getSourceFiles: () => [],
     }),
   };
 }
@@ -319,6 +322,29 @@ describe('runTypecheck infrastructure-failure handling (D-06)', () => {
     await expect(
       runTypecheck({ tsConfigPath: '/virtual/tsconfig.json' }),
     ).rejects.toThrow(/returned no Program/);
+  });
+
+  // PR47-F1 (multi-tsconfig parity): an ARRAY tsConfigPath whose surviving entry's
+  // performCompilation returns { program: undefined } + a 500 must REJECT with a
+  // TypecheckInfrastructureError, never a raw TypeError off gatherLeafInto's
+  // source-file deref. The guard leaves the 500 in the union;
+  // handleMultiTsConfig's post-loop throwIfInfrastructureFailure classifies it,
+  // exactly as the solution-walk path does.
+  it('PR47-F1: an ARRAY tsConfigPath entry returning program:undefined + a 500 REJECTS as TypecheckInfrastructureError, not a raw TypeError', async () => {
+    compilerCliStub.performCompilation.mockReturnValue({
+      diagnostics: [
+        errorDiagnostic(UNKNOWN_ERROR_CODE, 'simulated internal crash'),
+      ],
+      program: undefined,
+    });
+
+    const { runTypecheck, TypecheckInfrastructureError } = await import(
+      './run-typecheck'
+    );
+
+    await expect(
+      runTypecheck({ tsConfigPath: ['/virtual/a.json', '/virtual/b.json'] }),
+    ).rejects.toBeInstanceOf(TypecheckInfrastructureError);
   });
 });
 

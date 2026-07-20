@@ -1,0 +1,66 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`formatJsonReport (REP-01 / D-02..D-07 / FMT-02/FMT-03) > serializes the full payload shape (snapshot, version redacted for release-stability) 1`] = `
+{
+  "diagnostics": [
+    {
+      "code": "TS2322",
+      "column": 5,
+      "endColumn": 20,
+      "endLine": 12,
+      "file": "src/y.component.ts",
+      "line": 12,
+      "message": "Type X is not assignable to type Y.",
+      "rawCode": 2322,
+      "severity": "error",
+    },
+    {
+      "code": "ATC90001",
+      "column": null,
+      "endColumn": null,
+      "endLine": null,
+      "file": null,
+      "line": null,
+      "message": "a references-only config resolved zero root names",
+      "rawCode": 90001,
+      "severity": "error",
+    },
+  ],
+  "formatVersion": 1,
+  "summary": {
+    "advisories": {
+      "bundlerQueryImports": [
+        "./logo.svg?raw",
+      ],
+      "notTypeCheckedDeclaredFiles": [
+        "libs/x/doc.mdx",
+      ],
+      "skippedReferences": [
+        {
+          "reason": "out-of-project",
+          "referencePath": "other/tsconfig.json",
+        },
+      ],
+      "suppressedInGraphFiles": [
+        "libs/x/src/y.ts",
+      ],
+      "templateCheckAborted": {
+        "fileName": "src/broken.component.ts",
+      },
+    },
+    "diagnosticCount": 2,
+    "errorCount": 2,
+    "outcome": "type-error",
+    "rootNamesCount": 3,
+    "success": false,
+    "suppressedInGraphErrorCount": 1,
+    "suppressedInGraphWarningCount": 2,
+    "suppressedThirdParty": 0,
+    "totalFilesCount": 9,
+    "warningCount": 0,
+  },
+  "tool": "angular-typechecker",
+  "tsConfigPath": "libs/x/tsconfig.lib.json",
+  "version": "[version]",
+}
+`;

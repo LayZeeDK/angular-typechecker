@@ -93,6 +93,12 @@ function lastColor(): boolean | undefined {
   return mocks.renderReport.mock.calls.at(-1)?.[1].color;
 }
 
+// The `format` option run() actually handed the stubbed renderReport on the last
+// call (FMT-01).
+function lastFormat(): string | undefined {
+  return mocks.renderReport.mock.calls.at(-1)?.[1].format;
+}
+
 // The `includeDeps` option run() actually handed the stubbed runTypecheck.
 function lastIncludeDeps(): boolean | undefined {
   return mocks.runTypecheck.mock.calls.at(-1)?.[0].includeDeps;
@@ -202,6 +208,54 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
     });
   });
 
+  describe('FMT-02 / D-07: exit-code parity across --format human, json and sarif', () => {
+    it('yields the IDENTICAL exit code for the same CoreResult under human, json and sarif (type-error -> 1)', async () => {
+      mocks.runTypecheck.mockResolvedValue(coreResult(2));
+      mocks.evaluateResult.mockReturnValue({
+        success: false,
+        outcome: 'type-error',
+      });
+
+      const human = await run(['-c', 'tsconfig.app.json', '--format', 'human']);
+      const json = await run(['-c', 'tsconfig.app.json', '--format', 'json']);
+      const sarif = await run(['-c', 'tsconfig.app.json', '--format', 'sarif']);
+
+      expect(human.exitCode).toBe(json.exitCode);
+      expect(sarif.exitCode).toBe(human.exitCode);
+      expect(sarif.exitCode).toBe(json.exitCode);
+      expect(json.exitCode).toBe(1);
+    });
+
+    // The cardinal anti-false-pass MUST hold under sarif too: errorCount === 0 but
+    // success === false still exits 1, because the verdict is evaluateResult's, not
+    // the reporter's -- the format never changes the exit code (D-07 / VER-01).
+    it('keeps the coverage-incomplete anti-false-pass (errorCount 0, success false -> 1) under ALL THREE formats', async () => {
+      mocks.runTypecheck.mockResolvedValue(coreResult(0));
+      mocks.evaluateResult.mockReturnValue({
+        success: false,
+        outcome: 'coverage-incomplete',
+      });
+
+      const human = await run(['-c', 'tsconfig.app.json', '--format', 'human']);
+      const json = await run(['-c', 'tsconfig.app.json', '--format', 'json']);
+      const sarif = await run(['-c', 'tsconfig.app.json', '--format', 'sarif']);
+
+      expect(human.exitCode).toBe(1);
+      expect(json.exitCode).toBe(1);
+      expect(sarif.exitCode).toBe(1);
+    });
+
+    it('threads the selected --format into renderReport, defaulting to human (wiring guard)', async () => {
+      await run(['-c', 'tsconfig.app.json', '--format', 'json']);
+
+      expect(lastFormat()).toBe('json');
+
+      await run(['-c', 'tsconfig.app.json']);
+
+      expect(lastFormat()).toBe('human');
+    });
+  });
+
   describe('ARGS-04 / D-11: --help and --version short-circuit to stdout, exit 0', () => {
     it('run([--version]) returns exitCode 0 and stdout equal to the real package.json version (drift-lock)', async () => {
       const result = await run(['--version']);
@@ -254,6 +308,34 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
       // ...and stdout stays EXCLUSIVELY the byte-deterministic report.
       expect(result.stdout).toBe(SENTINEL_REPORT);
       expect(result.stdout).not.toContain('NG3004');
+    });
+
+    it('CLIX-02 / D-09: --quiet silences the stderr advisory ONLY -- stdout payload + exit code unchanged', async () => {
+      // The SAME advisory-bearing run, once loud and once with --quiet.
+      const stubResult = {
+        ...coreResult(1),
+        templateCheckAborted: {
+          code: -993004,
+          fileName: '/ws/libs/x/poison.component.ts',
+        },
+      };
+      mocks.runTypecheck.mockResolvedValue(stubResult);
+      mocks.evaluateResult.mockReturnValue({
+        success: false,
+        outcome: 'coverage-incomplete',
+      });
+
+      const loud = await run(['-c', 'tsconfig.app.json']);
+      const quiet = await run(['-c', 'tsconfig.app.json', '--quiet']);
+
+      // Baseline: the advisory reaches stderr without --quiet...
+      expect(loud.stderr).toContain('NG3004');
+      // ...and --quiet gates the stderr chatter, nothing else.
+      expect(quiet.stderr).not.toContain('NG3004');
+      // The never-silent charter: the payload and the verdict/exit code are unchanged.
+      expect(quiet.stdout).toBe(SENTINEL_REPORT);
+      expect(quiet.exitCode).toBe(loud.exitCode);
+      expect(quiet.exitCode).toBe(1);
     });
   });
 
@@ -322,6 +404,22 @@ describe('run() (VER-01: exit compose, routing, purity, color, drift-lock)', () 
       await run(['-c', 'tsconfig.app.json'], {});
 
       expect(lastColor()).toBe(process.stdout.isTTY === true);
+    });
+
+    // D-10: the explicit --color/--no-color flag is layered ABOVE the env
+    // precedence (NO_COLOR > FORCE_COLOR > TTY) and WINS -- human path only.
+    it('--no-color wins over FORCE_COLOR=1 (flag overrides env)', async () => {
+      await run(['-c', 'tsconfig.app.json', '--no-color'], {
+        FORCE_COLOR: '1',
+      });
+
+      expect(lastColor()).toBe(false);
+    });
+
+    it('--color wins over NO_COLOR (flag overrides env)', async () => {
+      await run(['-c', 'tsconfig.app.json', '--color'], { NO_COLOR: '1' });
+
+      expect(lastColor()).toBe(true);
     });
   });
 

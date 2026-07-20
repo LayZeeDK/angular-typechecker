@@ -7,4 +7,7 @@ export interface TypecheckExecutorOptions {
   maxWarnings?: number;
   failFast?: boolean;
   strict?: boolean;
+  // FMT-01: output format selector, shared by the executor and (via the same
+  // interface) the Angular CLI builder. Defaults to 'human' in normalize-options.
+  format?: 'human' | 'json' | 'sarif';
 }

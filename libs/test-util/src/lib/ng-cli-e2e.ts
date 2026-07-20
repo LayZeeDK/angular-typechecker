@@ -1,10 +1,9 @@
-import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { expect } from 'vitest';
 
-import type { RunResult } from './e2e-process';
+import { execToRunResult, type RunResult } from './e2e-process';
 
 // Shared building blocks for the Angular CLI (`ng`) e2e specs
 // (angular-typechecker-ng-cli-e2e). The four specs -- npm/flat (ACV-02), pnpm
@@ -84,32 +83,15 @@ export function typecheckTarget(
 export function createNgRun(
   commandPrefix: string,
 ): (cwd: string, target: string, runEnv: NodeJS.ProcessEnv) => RunResult {
-  return (cwd, target, runEnv) => {
-    try {
-      const stdout = execSync(`${commandPrefix} ng run ${target}`, {
-        cwd,
-        env: runEnv,
-        encoding: 'utf8',
-        // IN-02: a large failing `ng run` can exceed the default 1 MB buffer and
-        // truncate stdout BEFORE the asserted TSxxxx code -> ENOBUFS + a flaky
-        // `toContain`. 20 MB is ample headroom for a diagnostic dump.
-        maxBuffer: 20 * 1024 * 1024,
-      });
-
-      return { stdout, code: 0 };
-    } catch (error) {
-      const execError = error as {
-        stdout?: string;
-        stderr?: string;
-        status?: number;
-      };
-
-      return {
-        stdout: `${execError.stdout ?? ''}${execError.stderr ?? ''}`,
-        code: execError.status ?? 1,
-      };
-    }
-  };
+  return (cwd, target, runEnv) =>
+    execToRunResult(`${commandPrefix} ng run ${target}`, {
+      cwd,
+      env: runEnv,
+      // IN-02: a large failing `ng run` can exceed the default 1 MB buffer and
+      // truncate stdout BEFORE the asserted TSxxxx code -> ENOBUFS + a flaky
+      // `toContain`. 20 MB is ample headroom for a diagnostic dump.
+      maxBuffer: 20 * 1024 * 1024,
+    });
 }
 
 // Apply an anchor -> replacement injection, asserting the anchor was actually found

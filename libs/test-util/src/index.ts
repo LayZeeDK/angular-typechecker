@@ -2,6 +2,7 @@ export { findWorkspaceRoot } from './lib/find-workspace-root';
 export {
   buildCleanEnv,
   commandSucceeds,
+  extractJsonPayload,
   run,
   sh,
   removeTmpDir,
@@ -37,7 +38,12 @@ export {
   type TypecheckArchitectTarget,
 } from './lib/ng-cli-e2e';
 export {
+  assertMachineFormatParity,
   assertShippedBinExitCodes,
   runShim,
+  runShimSplit,
   type ShimResult,
+  type ShimResultSplit,
 } from './lib/cli-e2e';
+export { validateSarif } from './lib/validate-sarif';
+export { redactVolatile } from './lib/redact-volatile';

@@ -3,6 +3,7 @@ import type tsType from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 import { renderReport } from './render-report';
+import type { CoreResult } from './run-typecheck';
 
 // ESC (0x1b) built from a char code so no literal control char lives in source
 // (CLAUDE.md ASCII rule). Used to assert the D-04/D-10 ANSI strip / keep behavior.
@@ -48,11 +49,28 @@ function diag(
 const ERROR = 1 as tsType.DiagnosticCategory;
 const WARNING = 0 as tsType.DiagnosticCategory;
 
+// renderReport now takes the FULL CoreResult (D-12). The human branch reads only
+// `diagnostics`; the rest are inert defaults so the widened signature type-checks.
+function coreResultOf(diagnostics: readonly tsType.Diagnostic[]): CoreResult {
+  return {
+    tsConfigPath: 'D:/ws/proj/tsconfig.json',
+    rootNamesCount: diagnostics.length,
+    diagnostics,
+    errorCount: 0,
+    warningCount: 0,
+    suppressedThirdParty: 0,
+    suppressedInGraphErrorCount: 0,
+    suppressedInGraphWarningCount: 0,
+    suppressedInGraphFiles: [],
+    durationMs: 1,
+  };
+}
+
 describe('renderReport (D-02 seam)', () => {
   it('keeps ANSI when color is true (D-04/D-10)', async () => {
     const out = await renderReport(
-      { diagnostics: [diag(ERROR, 'D:/ws/proj/src/a.component.ts')] },
-      { color: true },
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts')]),
+      { format: 'human', color: true },
     );
 
     expect(out).toContain('a.component.ts');
@@ -63,8 +81,8 @@ describe('renderReport (D-02 seam)', () => {
 
   it('strips ANSI when color is false (D-04/D-10)', async () => {
     const out = await renderReport(
-      { diagnostics: [diag(ERROR, 'D:/ws/proj/src/a.component.ts')] },
-      { color: false },
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts')]),
+      { format: 'human', color: false },
     );
 
     expect(out).not.toContain(ESC);
@@ -73,8 +91,8 @@ describe('renderReport (D-02 seam)', () => {
 
   it('forwards an NG-encoded diagnostic code through to formatReport output', async () => {
     const out = await renderReport(
-      { diagnostics: [diag(ERROR, 'D:/ws/proj/src/a.component.ts', NG8109)] },
-      { color: false },
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts', NG8109)]),
+      { format: 'human', color: false },
     );
 
     expect(out).toContain('NG8109');
@@ -83,10 +101,11 @@ describe('renderReport (D-02 seam)', () => {
   it('forwards pathBase to relativize "/"-normalized paths (D-08)', async () => {
     const absolute = 'D:/ws/proj/src/a.component.ts';
 
-    const out = await renderReport(
-      { diagnostics: [diag(ERROR, absolute)] },
-      { color: false, pathBase: 'D:/ws/proj' },
-    );
+    const out = await renderReport(coreResultOf([diag(ERROR, absolute)]), {
+      format: 'human',
+      color: false,
+      pathBase: 'D:/ws/proj',
+    });
 
     expect(out).toContain('src/a.component.ts');
     expect(out).not.toContain(absolute);
@@ -100,10 +119,11 @@ describe('renderReport (D-02 seam)', () => {
       diag(ERROR, 'D:/ws/proj/src/c.component.ts'),
     ];
 
-    const out = await renderReport(
-      { diagnostics },
-      { color: false, failFast: true },
-    );
+    const out = await renderReport(coreResultOf(diagnostics), {
+      format: 'human',
+      color: false,
+      failFast: true,
+    });
 
     // The reporter truncates AT the first error (inclusive): a.ts (warning) and
     // b.ts (first error) render; c.ts (the second error) does not.
@@ -119,10 +139,53 @@ describe('renderReport (D-02 seam)', () => {
       diag(ERROR, 'D:/ws/proj/src/c.component.ts'),
     ];
 
-    const out = await renderReport({ diagnostics }, { color: false });
+    const out = await renderReport(coreResultOf(diagnostics), {
+      format: 'human',
+      color: false,
+    });
 
     expect(out).toContain('a.component.ts');
     expect(out).toContain('b.component.ts');
     expect(out).toContain('c.component.ts');
+  });
+
+  it('defaults to the human format when format is omitted (D-12 -- callers compile unchanged)', async () => {
+    const out = await renderReport(
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts')]),
+      { color: false },
+    );
+
+    // The human codeframe carries the file name and is NOT valid JSON -- proving
+    // the omitted format resolved to the human branch, not a machine payload.
+    expect(out).toContain('a.component.ts');
+    expect(() => JSON.parse(out)).toThrow();
+  });
+
+  it('dispatches format:json to formatJsonReport (parseable, ANSI-free payload)', async () => {
+    const out = await renderReport(
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts')]),
+      { format: 'json', color: false, pathBase: 'D:/ws/proj' },
+    );
+
+    const payload = JSON.parse(out);
+
+    expect(payload.formatVersion).toBe(1);
+    expect(payload.diagnostics).toHaveLength(1);
+    expect(payload.diagnostics[0].file).toBe('src/a.component.ts');
+    expect(out).not.toContain(ESC);
+  });
+
+  it('dispatches format:sarif to formatSarifReport (parseable SARIF 2.1.0, ANSI-free)', async () => {
+    const out = await renderReport(
+      coreResultOf([diag(ERROR, 'D:/ws/proj/src/a.component.ts')]),
+      { format: 'sarif', color: false, pathBase: 'D:/ws/proj' },
+    );
+
+    const log = JSON.parse(out);
+
+    expect(log.version).toBe('2.1.0');
+    expect(log.runs[0].results).toHaveLength(1);
+    expect(log.runs[0].results[0].ruleId).toBe('TS2322');
+    expect(out).not.toContain(ESC);
   });
 });

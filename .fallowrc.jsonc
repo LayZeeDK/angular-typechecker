@@ -147,6 +147,14 @@
     // (If a future fallow ever ignores the rule toggle for this dep, the surgical
     // fallback is to also add @angular-devkit/architect to ignoreDependencies.)
     "test-only-dependencies": "off",
+    // FAL-13 (quick-260719-kbj, Fallow 3 migration): the v3.1.0 `dev-dependencies-in-production`
+    // rule (warn) flags a ROOT devDependency imported by a runtime-reachable (non-test) file. Our
+    // 6 hits (@angular/common, @angular/platform-browser, @angular/router, @nx/js, ajv, ajv-formats)
+    // are all dev-only imports from the NON-PUBLISHED apps/**, fixtures/**, tooling, and libs/**
+    // test-harness -- the SAME false-positive class as @angular/core (FAL-01) and the sibling
+    // `unused-dev-dependencies` / `test-only-dependencies` rules above. The published package's
+    // dependency hygiene is owned by @nx/dependency-checks (D-06/D-07), not fallow. Off.
+    "dev-dependencies-in-production": "off",
   },
 
   // FAL-02 (v0.1.0 milestone-integration gate): complexity analysis is scoped OFF

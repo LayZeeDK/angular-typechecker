@@ -17,6 +17,8 @@ const schemaPath = join(dirname(fileURLToPath(import.meta.url)), 'schema.json');
 interface SchemaProperty {
   type?: string;
   default?: unknown;
+  // FMT-01: format is a string enum property.
+  enum?: readonly string[];
   // ENG-01: tsConfig widens from a bare `type: string` to a `oneOf` string|array.
   oneOf?: readonly {
     type?: string;
@@ -38,6 +40,7 @@ const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as ExecutorSchema;
 // The exact TypecheckExecutorOptions key set (schema.d.ts), sorted.
 const EXPECTED_KEYS = [
   'failFast',
+  'format',
   'includeDeps',
   'maxWarnings',
   'strict',
@@ -70,6 +73,11 @@ describe('schema.json <-> schema.d.ts parity (D-06)', () => {
 
   it('defaults strict to false (D-19-01: opt-in; absent => current behavior)', () => {
     expect(schema.properties.strict.default).toBe(false);
+  });
+
+  it('declares format as a human|json|sarif enum defaulting to human (FMT-01)', () => {
+    expect(schema.properties.format.default).toBe('human');
+    expect(schema.properties.format.enum).toEqual(['human', 'json', 'sarif']);
   });
 
   it('ENG-01: widens tsConfig to a oneOf accepting a string OR a non-empty array of strings', () => {

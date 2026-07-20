@@ -61,10 +61,7 @@ describe('TS-99 leak regression (HARD-05 / D-11)', () => {
 
     // Render through the REAL `cli.formatDiagnostics` (the renderReport seam loads
     // it); `color: false` is the ANSI-strip output path agents / CI / pipes use.
-    const out = await renderReport(
-      { diagnostics: result.diagnostics },
-      { color: false },
-    );
+    const out = await renderReport(result, { color: false });
 
     // Positive: an NG#### label rendered (proves the rewrite ran, not a vacuous
     // pass on empty output).

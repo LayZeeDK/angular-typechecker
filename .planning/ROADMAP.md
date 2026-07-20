@@ -7,7 +7,8 @@
 - [SHIPPED] **v0.1.0** -- Phases 12-15 (incl. inserted 13.1) -- shipped 2026-07-02. Reference-walking engine, the typecheck executor rename, and the configuration + init generator suite. Full detail: `.planning/milestones/v0.1.0-ROADMAP.md`.
 - [SHIPPED] **v0.2.0** -- Phases 16-20 -- shipped 2026-07-07. Storybook story type-checking via one boundary-filter correctness fix (directory-containment -> compiler input-set membership), across both Nx-official layouts, with no silent false pass. Full detail: `.planning/milestones/v0.2.0-ROADMAP.md`.
 - [SHIPPED] **v0.2.1** -- Phases 21-24 -- shipped 2026-07-16. Angular CLI (`angular.json`) workspace support: `ng add`/`ng generate`/`ng run` for the typecheck target, additive-only beside the existing Nx surface, proven against real OSS Angular 22 workspaces. Full detail: `.planning/milestones/v0.2.1-ROADMAP.md`.
-- [CURRENT] **v0.2.2** -- Phases 25-29 -- Standalone CLI. A standalone `angular-typechecker` / `atc` command-line binary that runs the complete Angular type-check (TypeScript + template + extended NG8xxx, no emit) outside Nx and the Angular CLI -- a third thin adapter over the same `runTypecheck` core -- finally owning the literal OS exit codes `0`/`1`/`2`. Additive-only patch bump (`0.2.1 -> 0.2.2`).
+- [SHIPPED] **v0.2.2** -- Phases 25-29 -- shipped 2026-07-17. Standalone `angular-typechecker` / `atc` CLI binary: a third thin adapter over the same `runTypecheck` core that runs the complete Angular type-check outside Nx and the Angular CLI, owning the literal OS exit codes `0`/`1`/`2`. Additive-only patch bump (`0.2.1 -> 0.2.2`). Full detail: `.planning/milestones/v0.2.2-ROADMAP.md`.
+- [CURRENT] **v0.2.3** -- Phases 30-32 -- Machine-readable reporters. Machine-readable output -- JSON (agent-parseable) and SARIF 2.1.0 (GitHub Code Scanning `upload-sarif`) -- across all three adapters (Nx executor, Angular CLI builder, standalone CLI) over the one shared `runTypecheck` core, so AI coding agents and CI can consume the complete diagnostic set as data. Additive-only patch bump (`0.2.2 -> 0.2.3`).
 
 ## Phases
 
@@ -77,87 +78,108 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 
 </details>
 
-<details open>
-<summary>[CURRENT] v0.2.2 -- Standalone CLI (Phases 25-29)</summary>
+<details>
+<summary>[SHIPPED] v0.2.2 -- Standalone CLI (Phases 25-29) -- SHIPPED 2026-07-17</summary>
 
-- [x] Phase 25: Extract the advisory-notice seam (CLI-04) (1/1 plans) -- completed 2026-07-16
-- [x] Phase 26: Pure CLI core + exit-code wiring (3/3 plans) (CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02) -- completed 2026-07-16
-- [x] Phase 27: Bin shell + cross-platform packaging (3/3 plans) (CLI-01, PKG-01/02, VER-03, ADD-01) -- completed 2026-07-16
-- [x] Phase 28: Shipped-tarball e2e + real-clone UAT (4/4 plans) (VER-04, VER-05) -- completed 2026-07-17
-- [x] Phase 29: Docs (1/1 plans) (DOC-01) -- completed 2026-07-17
+- [x] Phase 25: Extract the advisory-notice seam (1/1 plans) -- completed 2026-07-16 -- CLI-04
+- [x] Phase 26: Pure CLI core + exit-code wiring (3/3 plans) -- completed 2026-07-16 -- CLI-02/03, ARGS-01..05, EXIT-01/02, PKG-03, VER-01/02
+- [x] Phase 27: Bin shell + cross-platform packaging (3/3 plans) -- completed 2026-07-16 -- CLI-01, PKG-01/02, VER-03, ADD-01
+- [x] Phase 28: Shipped-tarball e2e + real-clone UAT (4/4 plans) -- completed 2026-07-17 -- VER-04, VER-05
+- [x] Phase 29: Docs (1/1 plans) -- completed 2026-07-17 -- DOC-01
+
+Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0.2.2-ROADMAP.md`
 
 </details>
 
-## Phase Details (v0.2.2 -- current milestone)
+<details open>
+<summary>[CURRENT] v0.2.3 -- Machine-readable reporters (Phases 30-32)</summary>
 
-### Phase 25: Extract the advisory-notice seam
+- [x] **Phase 30: Reporter seam + JSON reporter + `--format` threading + observability** - Widen the `renderReport` seam with a `format` discriminator, add the zero-dependency JSON reporter, thread `--format`/`--quiet`/`--color` through all three adapters, and capture the optional `totalFilesCount`. (FMT-01/02/03, REP-01, OBS-01, CLIX-02, VER-01) (completed 2026-07-18)
+- [x] **Phase 31: SARIF reporter** - The lazy-`import()`ed `node-sarif-builder` SARIF 2.1.0 reporter with repo-relative URIs, partialFingerprints, file-less fallback, the 18-NG8xxx rules catalog, plus the nx-free require-graph guard and CJS-under-`import()` interop test. (REP-02, VER-04) (completed 2026-07-18)
+- [ ] **Phase 32: Verification + docs + additive audit** - Integration + shipped-tarball e2e across all three adapters, SARIF schema validation, cross-OS determinism, the additive-only git-diff audit vs `@0.2.2`, and the README/CHANGELOG. (VER-02, VER-03, ADD-01, DOC-01)
 
-**Goal**: The five advisory notices emit through one shared, logger-injected core module that the Nx executor drives with byte-identical observable behavior -- a reusable seam ready for the CLI adapter, so the CLI never has to import `executor.ts` (which would drag `@nx/devkit`/`chalk` -- the 24-06 crash class) or duplicate five message helpers.
-**Depends on**: v0.2.1 (shipped)
-**Requirements**: CLI-04
+</details>
+
+## Phase Details (v0.2.3 -- Machine-readable reporters)
+
+### Phase 30: Reporter seam + JSON reporter + `--format` threading + observability
+
+**Goal**: A user selects machine-readable JSON (or the default human) output via one `--format` flag threaded identically through all three adapters, and gets a stable, documented, agent-parseable JSON payload on stdout -- while the verdict and exit code stay owned by the engine, never re-derived by the reporter. This establishes the widened seam + full three-adapter plumbing that the SARIF reporter reuses.
+**Depends on**: v0.2.2 (shipped)
+**Requirements**: FMT-01, FMT-02, FMT-03, REP-01, OBS-01, CLIX-02, VER-01
 **Success Criteria** (what must be TRUE):
-  1. A new pure `core/emit-advisory-notices.ts` renders every advisory (coverage-incomplete, TCB-abort, not-type-checked, bundler-query-imports, and the remaining `warn*` helper) through an injected structural `Logger` (`info`/`warn`/`error`), importing no `nx`/`@nx/devkit`, no `console`, no `process` -- enforced by the existing `core/**` lint boundary.
-  2. The Nx executor injects its own logger via `emitAdvisoryNotices(result, logger)` and its notice output is byte-identical to `angular-typechecker@0.2.1` -- all existing executor and builder tests stay green with no behavioral diff.
-  3. A unit spec drives `emit-advisory-notices` against a mock `Logger` and asserts each notice's message text and stream routing (advisories/errors via `warn`/`error`).
-**Plans**:
-- [x] 25-01-PLAN.md -- Extract the advisory-notice seam: new core/logger.ts Logger interface + pure core/emit-advisory-notices.ts (five helpers moved verbatim) + executor swap to one emitAdvisoryNotices(result, logger) call + byte-exact unit spec (CLI-04)
 
-### Phase 26: Pure CLI core + exit-code wiring
+  1. `atc -c tsconfig.json --format json` (and the matching Nx executor `format` option + Angular CLI builder `format` option) prints ONE parseable JSON payload to stdout: a flat `diagnostics[]` (each carrying a repo-relative `file` or `null` for file-less, 1-based `line`/`column`/`endLine`/`endColumn`, a humanized `code` string [`TS####`/`NG8xxx`/`ATC9000x`] plus the raw `rawCode` int, `severity`, `message`) and a `summary` (the discriminated `outcome`, category counts, `totalFilesCount`, and the structured suppression/advisory fields), with a `formatVersion` marker + tool version and drift-locked keys.
+  2. The exit code for a given project is IDENTICAL across `--format human` and `--format json` (and the omitted default) -- including a coverage-incomplete run where `errorCount === 0` but the run still fails -- proving the reporter is a pure function over `CoreResult` that never re-decides `success` from counts (`evaluateResult`/`toExitCode` stay the sole owners).
+  3. The machine payload contains NO ANSI escape byte even under `FORCE_COLOR=1` and goes to stdout ONLY, while every advisory/notice/error goes to stderr via the injected `Logger`; `--quiet` silences the stderr chatter without touching the payload or the verdict; `--color`/`--no-color` are explicit overrides layered above the `NO_COLOR` > `FORCE_COLOR` > TTY precedence and affect the human path only.
+  4. With `--format` omitted, human output is byte-identical to `angular-typechecker@0.2.2` -- the widened `renderReport` seam, the new `CoreResult.totalFilesCount` field (captured from the live `Program` on the direct path and a deduped source-file `Set` across walked leaves), and the enum on the three adapter schemas + both schema-parity specs are all additive; `builder.ts` is unchanged.
 
-**Goal**: A pure `run(argv, env)` resolves flags, runs the SAME `runTypecheck` core, and returns the correct `{ exitCode, stdout, stderr }` -- with the two-step exit-code compose that owns literal `2` for infra/usage and derives the `0`-vs-`1` split from `evaluateResult().success`, never from raw error counts. All load-bearing correctness lives here, fully unit- and integration-testable in-process with no packaging.
-**Depends on**: Phase 25
-**Requirements**: CLI-02, CLI-03, ARGS-01, ARGS-02, ARGS-03, ARGS-04, ARGS-05, EXIT-01, EXIT-02, PKG-03, VER-01, VER-02
-**Success Criteria** (what must be TRUE):
-  1. `run(argv, env)` parses `--tsConfig`/`-c` (repeatable, required), `--max-warnings`, `--fail-fast`, `--include-deps`, `--strict`, `--help`/`-h`, `--version` via Node stdlib `util.parseArgs` with ZERO new runtime or dev dependencies, and produces the SAME diagnostics and verdict as the Nx executor by composing `runTypecheck` (complete TS + template + extended NG8xxx set, no emit).
-  2. A clean project returns exit code `0`; a completed run with type errors OR warnings-exceeded OR coverage-incomplete returns `1` (via `evaluateResult(...).success`, even when `errorCount === 0`); a `TypecheckInfrastructureError` returns `2` via `toExitCode` (its first live consumer); an unknown flag, a missing required `--tsConfig`, or a non-integer `--max-warnings` returns usage `2` with a clear message.
-  3. `--help`/`-h` and `--version` print and return `0`; a single `--tsConfig` takes the string (direct / solution-walk) path while two or more take the `string[]` union path -- a single input is never passed as a one-element array.
-  4. The CLI entrypoint imports ONLY pure-core modules (never `@nx/devkit`/`nx` at runtime); `run()` never calls `process.exit` and never writes a stream; a console logger routes the report to stdout and advisory notices/errors to stderr, color auto-detects honoring `NO_COLOR`/`FORCE_COLOR`/TTY, and tsconfig paths resolve from an arbitrary CWD via nx-free `node:path` + `realpathSync.native`-normalization before the boundary filter.
-  5. In-process `*.spec.ts` on the 6-cell OS x Node matrix cover the pure logic against a STUBBED core (VER-01: parse mapping, exit-code composition incl. the `errorCount === 0` / `success === false` cases, console logger, `emit-advisory-notices`) AND exercise `run(argv)` end-to-end against committed real-cold-compiler fixtures (VER-02: clean->0, planted TS/template/NG8xxx->1, real coverage-incomplete->1, `--max-warnings 0` and `--strict`->1, multi- and single-`--tsConfig` paths, malformed/nonexistent tsconfig->2), exercising the CJS->ESM `await import()` bridge and Windows path normalization.
-**Plans**: 3 plans
-- [x] 26-01-PLAN.md -- parse-args.ts (util.parseArgs wrapper + validation + help/version) + console-logger.ts (BufferingLogger) + parse-args unit spec (ARGS-01/02/04, CLI-03, VER-01)
-- [x] 26-02-PLAN.md -- main.ts run() compose + two-step exit-code + nx-free path resolution + color, with the stubbed-core unit spec (CLI-02/03, ARGS-03/05, EXIT-01/02, PKG-03, VER-01)
-- [x] 26-03-PLAN.md -- main.integration.spec.ts end-to-end run(argv) against real fixtures (CLI-02, EXIT-01, PKG-03, VER-02)
-
-### Phase 27: Bin shell + cross-platform packaging
-
-**Goal**: A thin, cross-platform `bin.ts` shell ships the CLI under two `bin` names, with the shebang and the CJS->ESM bridge surviving the build into the PUBLISHED artifact, an nx-free import boundary enforced by lint + a static build guard, and the whole milestone proven additive-only vs `angular-typechecker@0.2.1`.
-**Depends on**: Phase 26
-**Requirements**: CLI-01, PKG-01, PKG-02, VER-03, ADD-01
-**Success Criteria** (what must be TRUE):
-  1. A user can run the complete Angular type-check with NO Nx or Angular CLI workspace present via two `bin` names (`angular-typechecker` primary + `atc` alias) that resolve to one compiled `src/cli/bin.js`; `bin.ts` is the ONLY site that touches `process.exit` / stream writes and is flush-safe on large buffered output.
-  2. The source shebang (`#!/usr/bin/env node`, LF) survives `@nx/js:tsc` into the BUILT and PUBLISHED `bin.js` (`newLine: lf` + a `.gitattributes` rule guard against CRLF corruption); the bin compiles under the same `module: nodenext` config so the `await import('@angular/compiler-cli')` bridge is never downleveled to `require()` (no `ERR_REQUIRE_ESM`), validated by the tarball `publint` bin audit.
-  3. A `bin-static.spec.ts` (`test` tier, `dependsOn: build`, modeled on `gate-a-static.spec.ts`) asserts the BUILT `bin.js` starts with a `\r`-free `#!/usr/bin/env node` shebang and that its `require` graph never reaches `@nx/devkit`/`nx`; a `src/cli/**` ESLint import-ban enforces the nx-free boundary.
-  4. A git-diff / barrel-drift audit proves the milestone is additive-only vs `angular-typechecker@0.2.1` -- no breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API, the Angular CLI builder, or the generator schemas (the `executor.ts` logger swap is internal + observably identical; the `bin` field and `src/cli/**` are net-new) -- and the `v0.3.0` escape hatch stays untriggered.
-**Plans**: 3 plans
-- [x] 27-01-PLAN.md -- bin.ts flush-safe shell + two-name bin field + newLine:lf/.gitattributes LF guards + src/cli/** nx-free ESLint import-ban (CLI-01, PKG-01, PKG-02, VER-03)
-- [x] 27-02-PLAN.md -- bin-static.spec.ts (built bin.js shebang + nx-free require walk) + tarball-audit.e2e.spec.ts publint bin audit (VER-03, PKG-01, CLI-01)
-- [x] 27-03-PLAN.md -- additive-only audit vs angular-typechecker@0.2.1 (barrel drift + git-diff) -> 27-ADDITIVE-AUDIT.md (ADD-01)
-
-### Phase 28: Shipped-tarball e2e + real-clone UAT
-
-**Goal**: The shipped `bin`s, installed from the packed tarball across the package-manager matrix on Linux AND Windows, return literal OS exit codes `0`/`1`/`2` through the real package-manager `.bin` shim, and the same shipped `bin`s prove correct against real on-stack Angular 22 OSS workspaces of both kinds (a real Nx workspace and a real Angular CLI workspace).
-**Depends on**: Phase 27
-**Requirements**: VER-04, VER-05
-**Success Criteria** (what must be TRUE):
-  1. A DEDICATED `angular-typechecker-cli-e2e` project (auto-covered by the dynamic per-project CI matrix) proves the SHIPPED `angular-typechecker` + `atc` `bin`s and `npx angular-typechecker` return literal process exit codes `0`/`1`/`2` through the real PM-generated `.bin` shim across npm + yarn (flat + workspace) + pnpm -- net-new coverage vs the existing Nx/ng `{success}` (0/1) harness being literal exit `2` (infra + usage) and the shim path.
-  2. The e2e CI job gains an OS axis for THIS project so the tarball e2e runs on BOTH Linux AND Windows (Node 24), and the Windows leg handles the known Windows-Verdaccio robustness issues (127.0.0.1 bind / ECONNREFUSED retry) that motivate the repo's Linux-only heavy-e2e default -- accepted deliberately because the `.cmd`/`.ps1` bin shim is the one genuinely Windows-divergent CLI surface (RISK: this is a departure from the Linux-only default and must be surfaced in the plan).
-  3. Output never matches `/ERR_REQUIRE_ESM/`, and a module-graph probe confirms the installed bin's `require` cache never reaches `@nx/*`/`nx/`.
-  4. Manual real-clone UAT runs the shipped `bin`s at real project tsconfigs in on-stack Angular 22 clones of both kinds -- a real Nx workspace (`radix-ng/primitives` primary, `analogjs/analog` alt) AND a real Angular CLI (`angular.json`) workspace (`bluehalo/ngx-leaflet`, `realworld-angular`) -- asserting planted-error RED / clean GREEN / bad-path -> `2` (ACV-01 pattern; uncommitted clones pinned by URL + SHA).
-**Plans**: TBD
-
-### Phase 29: Docs
-
-**Goal**: The README documents the standalone CLI -- installation, the flag set, and the `0`/`1`/`2` exit-code contract -- steering users to `npx angular-typechecker` (never `npx atc`, which would fetch the unrelated `atc@0.0.6`), with a curated end-user-language CHANGELOG entry.
-**Depends on**: Phase 28
-**Requirements**: DOC-01
-**Success Criteria** (what must be TRUE):
-  1. A README `## Standalone CLI` section documents installation, the full flag set, and the exit-code contract table (`0` clean / `1` verdict-fail / `2` infra-or-usage).
-  2. The canonical uninstalled invocation documented is `npx angular-typechecker`; `atc` appears ONLY as a post-install PATH shorthand -- docs never instruct `npx atc` (supply-chain hazard: `atc@0.0.6` is an unrelated published package).
-  3. A curated public CHANGELOG entry is written in end-user language with no internal ids/scopes (per the repo's changelog-hygiene rule).
-**Plans**: 1 plan
+**Plans**: 3/3 plans complete
 
 Plans:
-- [x] 29-01-PLAN.md -- README `## Standalone CLI` section + ToC anchor, curated `## 0.2.2` CHANGELOG entry, and a doc-tripwire spec (drift-lock + supply-chain guard)
+**Wave 1**
+
+- [x] 30-01-PLAN.md (Wave 1) -- Observability: capture the OPTIONAL `CoreResult.totalFilesCount` (non-declaration source files) off the live `Program` on the direct path and a name-deduped `Set` across walked leaves via `finalizeUnion`; `evaluateResult` never reads it (negative test) + a real-compiler integration proof. (OBS-01, VER-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 30-02-PLAN.md (Wave 2, depends 30-01) -- The reporter seam + JSON reporter: a shared pure `core/diagnostic-record.ts` projection (1-based off-by-one helper, `TS####`/`NG8xxx`/`ATC9000x` code strings + `rawCode`, category severity, repo-relative paths); pure `core/json-report.ts` (`formatJsonReport`) with flat `diagnostics[]` + rich `summary` (outcome DELEGATED to `evaluateResult`, `formatVersion:1`, tool version) via `JSON.stringify` only; widen `core/render-report.ts` to dispatch on an optional `format` (default human), moving `loadCompilerCli()` into the human branch (sarif throws "Phase 31") + VER-01 JSON shape/snapshot/no-ANSI/key-drift specs. (FMT-01, FMT-02, FMT-03, REP-01, VER-01)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 30-03-PLAN.md (Wave 3, depends 30-02) -- Thread the `--format` (+ `--quiet`, `--color`/`--no-color` via `allowNegative`) enum through the CLI `parse-args`/`main`, the executor `schema.json`/`schema.d.ts`/`normalize-options`/`executor.ts`, and the builder `schema.json` (builder.ts UNCHANGED); add `'format'` to both `schema-parity` specs + README `### Options` rows (HELP_TEXT drift-lock); add the exit-code-parity (incl. coverage-incomplete), `--quiet`-gates-stderr-only, and `--color`/`--no-color` override unit specs. (FMT-01, FMT-03, CLIX-02, VER-01)
+
+### Phase 31: SARIF reporter
+
+**Goal**: A user selects `--format sarif` and gets valid SARIF 2.1.0 ready for GitHub Code Scanning `upload-sarif`, built with the one deliberate new dependency (`node-sarif-builder`) that is lazy-`import()`ed ONLY on the SARIF path -- the human / JSON / `--help` / CLI-boot paths never load it. The reporter reuses Phase 30's shared normalized-record projection so JSON and SARIF cannot drift on positions/codes/paths.
+**Depends on**: Phase 30
+**Requirements**: REP-02, VER-04
+**Success Criteria** (what must be TRUE):
+
+  1. `atc -c tsconfig.json --format sarif` (and the executor/builder `format: sarif`) emits schema-valid SARIF 2.1.0 to stdout: `runs[].tool.driver` (name / version / informationUri + a `rules[]` catalog for the 18 NG8xxx extended diagnostics) and `results[]` with a humanized `ruleId`, a mapped `level`, `message.text`, and `locations[]` carrying a repo-relative forward-slash `artifactLocation.uri` + a 1-based `region` + self-computed `partialFingerprints`, in deterministic order.
+  2. File-less diagnostics (synthesized 90001/90002, global TS) are represented as no-location results and never dropped; the verdict/exit code -- not the SARIF -- is the authoritative fail signal for them, and the exit code stays identical to the human/JSON runs for the same input.
+  3. A require-graph guard proves the human / JSON / `--help` / CLI-boot paths never load `node-sarif-builder` (nor its transitive `fs-extra`); a REAL-import (not mocked) integration test proves the `node-sarif-builder` CJS-under-`await import()` interop resolves via `(mod.default ?? mod)`, and `@nx/dependency-checks` sees `node-sarif-builder` as a `dependency` (or it is added to `ignoredDependencies` with a one-line comment).
+  4. The `'sarif'` enum member is threaded across all three adapter schemas and both schema-parity specs, and no ANSI byte appears in the SARIF payload regardless of `FORCE_COLOR` / TTY.
+
+**Plans**: 2/2 plans complete
+
+Plans:
+**Wave 1**
+
+- [x] 31-01-PLAN.md (Wave 1) -- Add `node-sarif-builder@^4.1.0` as a `dependency`; promote the 18-NG8xxx catalog to ONE enum-driven production module (`core/extended-catalog.ts`, single member->ngCode source); implement `core/sarif-report.ts` (`formatSarifReport`) reached ONLY via `await import('./sarif-report')`, REUSING the shipped `toDiagnosticRecord` projection (D-13 -- repo-relative URIs / 1-based regions / humanized codes come from the record, NOT a fresh `path.relative`), with `partialFingerprints` (`atcFingerprint/v1` sha256 recipe), the file-less no-location fallback, and the 18-rule catalog; replace the `renderReport` sarif throw + SARIF-shape unit specs (VER-01 slice). The `'sarif'` enum value was already threaded in Phase 30. (REP-02, VER-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 31-02-PLAN.md (Wave 2, depends 31-01) -- The require-graph guard proving human / JSON / `--help` / CLI-boot never load `node-sarif-builder` (nor transitive `fs-extra`) + the REAL-import CJS-under-`await import()` interop test + resolve the `@nx/dependency-checks` lazy-only-`import()` visibility against the real `nx lint`. (VER-04)
+
+### Phase 32: Verification + docs + additive audit
+
+**Goal**: The SHIPPED tarball emits valid JSON + schema-valid SARIF across all three adapters, the payloads are byte-stable across the OS/Node matrix, the whole milestone is proven additive-only vs `angular-typechecker@0.2.2`, and the README/CHANGELOG document the feature in end-user language. Proof + docs land after both reporters work.
+**Depends on**: Phase 31
+**Requirements**: VER-02, VER-03, ADD-01, DOC-01
+**Success Criteria** (what must be TRUE):
+
+  1. An integration tier runs `run()` + the Nx executor over committed real-cold-compiler fixtures emitting JSON + SARIF; the SARIF validates against the 2.1.0 schema (dev-only validator) and both payloads are byte-stable across the OS/Node cells after redacting volatile fields (tool version, any duration), including the Windows path -> forward-slash URI conversion (VER-02).
+  2. A shipped-tarball e2e proves the installed package emits valid JSON + schema-valid SARIF through ALL three adapters (Nx executor, `ng run`, CLI `--format`), asserting the stdout payload parses cleanly (stdout-purity) and the exit code is identical across `human`/`json`/`sarif` (VER-03).
+  3. A git-diff / `index.drift.ts` barrel audit proves additive-only vs `angular-typechecker@0.2.2` -- NO breaking change to the Nx executor id (`angular-typechecker:typecheck`), the `runTypecheck`/`CoreResult`/`CoreOptions` public API (only the new `format` option + the optional `totalFilesCount`), the Angular CLI builder, the CLI flag set, or the generator schemas; `node-sarif-builder` is classified as a `dependency` with the lazy-import visibility resolved; the `v0.3.0` escape hatch stays untriggered (ADD-01).
+  4. A README `## Machine-readable output` section documents the `--format` flag, the JSON payload schema, and the SARIF `upload-sarif` recipe -- including the "run from the repo root so `artifactLocation.uri` stays repo-relative" caveat -- alongside a curated public CHANGELOG entry in end-user language with no internal ids (DOC-01).
+
+**Plans**: 4/4 plans complete
+
+Plans:
+
+**Wave 1** *(parallel; no file overlap)*
+
+- [x] 32-01-PLAN.md (Wave 1) -- VER-02 integration tier + shared dev-only infra: `ajv`/`ajv-formats` root devDeps + committed SARIF 2.1.0 schema fixture + `validateSarif`/`redactVolatile` in `@workspace/test-util`; two `*.integration.spec.ts` driving `run()` + the executor over `layout-b-host` (mixed TS+NG8xxx) and `global-diagnostics` (file-less) emitting JSON + SARIF; true schema validation; redacted byte-stability across the 6-cell matrix incl. the Windows path -> forward-slash URI (VER-02).
+- [x] 32-04-PLAN.md (Wave 1) -- DOC-01 docs: README `## Machine-readable output` section (`--format`, JSON payload schema, SARIF `upload-sarif` recipe, run-from-repo-root caveat) + curated UNDATED end-user-language CHANGELOG `0.2.3` entry (version stays `0.2.2`) + a `machine-readable-docs.spec.ts` tripwire (DOC-01).
+
+**Wave 2** *(blocked on 32-01)*
+
+- [x] 32-02-PLAN.md (Wave 2, depends 32-01) -- VER-03 shipped-tarball e2e across all three adapters (standalone CLI, `ng run`, Nx executor): `runShimSplit` (separate streams) + `--format` parity/purity assertions extended into the cli/ng-cli/install e2e projects; stdout-purity (payload parses), schema-valid SARIF (reusing 32-01's `validateSarif`), exit-code parity across `human`/`json`/`sarif` incl. the coverage-incomplete case (VER-03).
+
+**Wave 3** *(blocked on 32-01 + 32-02)*
+
+- [x] 32-03-PLAN.md (Wave 3, depends 32-01, 32-02) -- ADD-01 additive-only audit vs `angular-typechecker@0.2.2`: `git diff` per published path + `index.drift.ts` barrel tsc + the dependency proof (ONLY `node-sarif-builder` added; `ajv`/`ajv-formats` root devDeps only) + `nx lint` dependency-checks re-confirmation -> `32-ADDITIVE-AUDIT.md` (ADDITIVE-ONLY, v0.3.0 untriggered) (ADD-01).
 
 ## Progress
 
@@ -189,11 +211,14 @@ Plans:
 | 22. Configuration schematic -- the angular.json write-fork | v0.2.1 | 2/2 | Complete | 2026-07-11 |
 | 23. Init schematic parity + first-party ng-add | v0.2.1 | 3/3 | Complete | 2026-07-12 |
 | 24. Real-OSS + scaffolded e2e, additive-only audit, docs | v0.2.1 | 6/6 | Complete | 2026-07-15 |
-| 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete    | 2026-07-16 |
-| 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
-| 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete    | 2026-07-16 |
-| 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete   | 2026-07-16 |
-| 29. Docs | v0.2.2 | 1/1 | Complete    | 2026-07-17 |
+| 25. Extract the advisory-notice seam | v0.2.2 | 1/1 | Complete | 2026-07-16 |
+| 26. Pure CLI core + exit-code wiring | v0.2.2 | 3/3 | Complete | 2026-07-16 |
+| 27. Bin shell + cross-platform packaging | v0.2.2 | 3/3 | Complete | 2026-07-16 |
+| 28. Shipped-tarball e2e + real-clone UAT | v0.2.2 | 4/4 | Complete | 2026-07-17 |
+| 29. Docs | v0.2.2 | 1/1 | Complete | 2026-07-17 |
+| 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
+| 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
+| 32. Verification + docs + additive audit | v0.2.3 | 4/4 | Complete   | 2026-07-19 |
 
 ## Backlog
 

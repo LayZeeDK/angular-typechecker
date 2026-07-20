@@ -22,6 +22,9 @@ const mocks = vi.hoisted(() => {
       failFast: false,
       color: false,
       strict: false,
+      // Default to the human format (matches normalizeOptions' real default) so the
+      // advisory-notice specs below exercise the format that emits them (CR-01 gate).
+      format: 'human',
     })),
     loggerError: vi.fn(),
     loggerInfo: vi.fn(),
@@ -166,6 +169,7 @@ describe('typecheckExecutor (D-01/D-04)', () => {
       failFast: false,
       color: false,
       strict: false,
+      format: 'human',
     });
   });
 
@@ -550,6 +554,74 @@ describe('typecheckExecutor (D-01/D-04)', () => {
     await executor(options, context);
 
     expect(mocks.loggerWarn).not.toHaveBeenCalled();
+  });
+
+  // CR-01 / D-08 / T-30-07: on a MACHINE format the advisory notices must be gated
+  // OFF. @nx/devkit's logger.info routes to STDOUT in a task process, so an advisory
+  // firing on the json path would prepend text to the raw JSON payload and break
+  // JSON.parse / jq. The existing advisory specs above mock renderReport + the logger,
+  // so they cannot catch stdout contamination -- these pin the gate directly.
+  it('CR-01: does NOT emit advisory notices on --format json (stdout stays a single JSON payload)', async () => {
+    // suppressedThirdParty > 0 would make warnSuppressed call logger.info -- the exact
+    // stdout-corrupting path. renderReport returns a real JSON payload here.
+    const jsonPayload =
+      '{"formatVersion":1,"summary":{"suppressedThirdParty":3}}\n';
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({ suppressedThirdParty: 3 }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+    mocks.renderReport.mockResolvedValue(jsonPayload);
+    mocks.normalizeOptions.mockReturnValue({
+      coreOptions: {
+        tsConfigPath: '/ws/libs/x/tsconfig.lib.json',
+        includeDeps: false,
+        pathBase: '/ws',
+      },
+      maxWarnings: undefined,
+      failFast: false,
+      color: false,
+      strict: false,
+      format: 'json',
+    });
+
+    const writes: string[] = [];
+    const writeSpy = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation((chunk: string | Uint8Array) => {
+        writes.push(String(chunk));
+
+        return true;
+      });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    // No advisory ever touched stdout: logger.info (-> console.info -> stdout on the
+    // real Nx logger) was not called, and stdout carries exactly one payload that is
+    // the JSON report -- JSON.parse succeeds with no advisory text prepended.
+    expect(mocks.loggerInfo).not.toHaveBeenCalled();
+    expect(mocks.loggerWarn).not.toHaveBeenCalled();
+    expect(writes).toEqual([jsonPayload]);
+    expect(() => JSON.parse(writes.join(''))).not.toThrow();
+
+    writeSpy.mockRestore();
+  });
+
+  it('CR-01: STILL emits the advisory on --format human (byte-identical to v0.2.2)', async () => {
+    // Same suppressed result, but the default human format keeps the advisory notice
+    // exactly as before the gate was added.
+    mocks.runTypecheck.mockResolvedValue(
+      suppressedCoreResult({ suppressedThirdParty: 3 }),
+    );
+    mocks.evaluateResult.mockReturnValue({ success: true });
+
+    const { default: executor } = await import('./executor');
+    await executor(options, context);
+
+    expect(mocks.loggerInfo).toHaveBeenCalledOnce();
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      expect.stringContaining('node_modules'),
+    );
   });
 
   it('catches a TypecheckInfrastructureError -> logger.error + { success: false } (D-01)', async () => {

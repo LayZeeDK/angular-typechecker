@@ -4,6 +4,61 @@ A historical record of shipped versions. For current work see `.planning/ROADMAP
 
 ---
 
+## v0.2.2 -- Standalone CLI
+
+**Closed:** 2026-07-17 (phases complete + milestone audit PASSED)
+**Phases:** 25-29 (5) | **Plans:** 12 | **Commits:** 150 (since the `angular-typechecker@0.2.1` tag)
+**Timeline:** 2026-07-16 -> 2026-07-17 (2 days)
+**Published:** `angular-typechecker@0.2.2` (npm, live, `latest`, tag on the release merge commit dated 2026-07-17, tokenless OIDC + SLSA v1 provenance).
+
+### Delivered
+
+A standalone `angular-typechecker` / `atc` command-line binary that runs the *complete*
+Angular type-check (TypeScript + template type-check + extended NG8xxx, no emit) outside Nx
+and the Angular CLI -- a third thin adapter over the same `runTypecheck` core -- and the
+first surface to own the literal OS exit code `2` for infrastructure/usage errors. Two `bin`
+names resolve to one compiled `src/cli/bin.js`; args via Node stdlib `util.parseArgs` (zero
+new dependencies); the CLI path imports ONLY the pure core (never `@nx/devkit`/`nx` at
+runtime). Purely additive beside the existing Nx executor + Angular CLI builder -- patch bump
+`0.2.1 -> 0.2.2`, `v0.3.0` escape hatch never triggered.
+
+### Key Accomplishments
+
+1. **Advisory-notice seam extracted (Phase 25, CLI-04)** -- the five executor `warn*` helpers moved VERBATIM into a pure `core/emit-advisory-notices.ts` behind an injected structural `Logger`; the Nx executor emits every advisory through one `emitAdvisoryNotices(result, logger)` call with byte-identical behavior, so the CLI can drive advisories without importing `executor.ts` (dodging the `@nx/devkit`/chalk 24-06 crash class).
+2. **Pure `run(argv, env)` CLI core + two-step exit-code compose (Phase 26, CLI-02/03, ARGS-01..05, EXIT-01/02, VER-01/02, PKG-03, VER-01)** -- the third thin adapter mirrors the executor compose order; usage -> `2`, `TypecheckInfrastructureError` -> `toExitCode` = `2` (its first live consumer), completed -> `evaluateResult(...).success ? 0 : 1` (coverage-incomplete/warnings-exceeded with `errorCount === 0` correctly returns `1`, the anti-false-pass). Single `--tsConfig` collapses to a string (solution-walk), 2+ stay `string[]`. Pure: no `process.exit`/stream writes.
+3. **Flush-safe `bin.ts` shell + cross-platform packaging (Phase 27, CLI-01, PKG-01/02, VER-03, ADD-01)** -- two `bin` names -> one `./src/cli/bin.js`; `newLine: lf` + `.gitattributes` pin the deterministic LF shebang through `@nx/js:tsc`; no separate bin tsconfig so the `await import()` ESM bridge is never downleveled; `src/cli/**` nx-free import-ban + a static require-graph guard; additive-only audit vs `0.2.1`.
+4. **Shipped-tarball e2e + real-clone UAT (Phase 28, VER-04/05)** -- a dedicated `angular-typechecker-cli-e2e` project proves the shipped `bin`s return literal `0`/`1`/`2` through the real package-manager `.bin` shim across npm + yarn (flat + workspace) + pnpm on Linux AND Windows (dedicated `e2e-windows` CI job), plus a runtime nx-free `require.cache` probe; real-clone UAT across both workspace kinds on-stack Angular 22.
+5. **Docs (Phase 29, DOC-01)** -- README `## Standalone CLI` section (install, 7-flag reference, `0`/`1`/`2` exit-code table, `npx angular-typechecker` canonical / never `npx atc`) + curated undated `## 0.2.2` CHANGELOG entry + a `standalone-cli-docs.spec.ts` HELP_TEXT/README drift-lock.
+
+### Audit
+
+PASSED (`.planning/milestones/v0.2.2-MILESTONE-AUDIT.md`): 21/21 requirements SATISFIED,
+5/5 phases verified `passed`, 2/2 E2E flows proven (VER-04 CI-authoritative exit-code
+contract; VER-05 real-clone assertions -- human sign-off accepted, backstopped by VER-04),
+Nyquist COMPLIANT, security threats_open 0. Additive-only vs `angular-typechecker@0.2.1`
+HOLDS -- the milestone stayed on the `0.2.x` line.
+
+### Known deferred items at close
+
+Recorded as Future Requirements (out of scope, not debt): **REP-01/REP-02** (machine-readable
+`--format json` / `--format sarif` reporters), **CLIX-01** (`--watch`, needs the deferred
+`NgtscProgram` incremental engine), **CLIX-02** (`--quiet` / explicit `--color`), plus the
+carried-forward `createNodesV2` inference (WALK-FUT-01), `NgtscProgram` incremental
+(WALK-FUT-02), `totalFilesCount` (OBS-01), and the GitHub-backed Nx remote cache.
+
+**Migration note:** archived retroactively during the GSD1 -> OpenGSD migration cleanup
+(2026-07-18) -- the milestone shipped under GSD1 but its artifacts were not moved into
+`.planning/milestones/` at close; done here before starting v0.2.3.
+
+### Archives
+
+- `.planning/milestones/v0.2.2-ROADMAP.md` -- full phase detail
+- `.planning/milestones/v0.2.2-REQUIREMENTS.md` -- requirements with outcomes
+- `.planning/milestones/v0.2.2-MILESTONE-AUDIT.md` -- audit report
+- `.planning/milestones/v0.2.2-phases/` -- phase execution history (PLANs, SUMMARYs, VERIFICATIONs, etc.)
+
+---
+
 ## v0.2.1 -- Angular CLI workspace support
 
 **Closed:** 2026-07-16 (phases complete + milestone audit PASSED)
