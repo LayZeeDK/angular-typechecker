@@ -17,9 +17,12 @@ every format.
 - JSON output for agents and scripts. `--format json` prints a single JSON object
   with a flat `diagnostics` array (1-based positions, repo-relative paths, and a
   stable code string per diagnostic) and a `summary` carrying the verdict and the
-  counts. It is written to standard output on its own, with progress and advisory
-  notices kept on standard error, so a script can capture the payload and parse it
-  directly.
+  counts. From the standalone CLI and `ng run <project>:typecheck` it is written to
+  standard output on its own, with progress and advisory notices kept on standard
+  error, so a script can capture and parse it directly; from the Nx executor
+  (`nx typecheck`) that same payload shares standard output with Nx's own
+  task-runner output, so strip that framing (or use the standalone CLI or `ng run`)
+  for a clean capture.
 - SARIF for GitHub Code Scanning. `--format sarif` prints SARIF 2.1.0. Redirect it
   to a file and upload it with the `upload-sarif` action to see each diagnostic as
   a Code Scanning alert, including the Angular extended (NG8xxx) template checks.

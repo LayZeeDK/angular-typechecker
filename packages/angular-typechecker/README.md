@@ -542,6 +542,10 @@ run. There is deliberately no `-p` / `--project` flag -- it would collide with t
 Nx and Angular CLI notion of a workspace project -- so passing one is an unknown
 flag and exits `2` (see below).
 
+`--fail-fast` affects the human report only: it stops printing after the first
+error so the output stays short. The `json` and `sarif` formats always carry every
+diagnostic, so a machine consumer never loses one to `--fail-fast`.
+
 ### Exit codes
 
 Unlike the Nx executor and the Angular CLI builder, which return a `{ success }`
@@ -610,10 +614,16 @@ through a `format` option (`human` by default), so `nx typecheck` and
 }
 ```
 
-The machine payload is written to stdout, and nothing else goes there: advisory
-and progress notices stay on stderr, and no ANSI color ever appears in a machine
-payload, whatever the terminal. So `... --format json > report.json` captures a
-clean payload while the notices stay visible on your terminal. The exit code is
+With the standalone CLI (`npx angular-typechecker`) and `ng run <project>:typecheck`,
+the machine payload is written to stdout on its own: advisory and progress notices
+stay on stderr, and no ANSI color ever appears in a machine payload, whatever the
+terminal. So `npx angular-typechecker -c tsconfig.json --format json > report.json`
+captures a clean payload while the notices stay visible on your terminal. The Nx
+executor (`nx typecheck`) is the exception: Nx's task runner wraps the executor's
+stdout with its own framing -- a leading `> nx run ...` line and a trailing
+`NX  Successfully ran target ...` summary -- so redirecting there captures that
+framing too. For a byte-pure payload, capture it through the standalone CLI or
+`ng run`, or strip Nx's `> nx run` and `NX ` framing lines. The exit code is
 identical across `human`, `json`, and `sarif` for the same input, so switching
 format never changes pass or fail.
 
@@ -621,13 +631,14 @@ format never changes pass or fail.
 
 `--format json` emits a single JSON object with a flat `diagnostics` array and a
 `summary`. Positions are 1-based, paths are repo-relative, and a file-less
-diagnostic carries `null` for its file and positions:
+diagnostic carries `null` for its file and positions. The `version` field carries
+the installed tool version (shown as the `x.y.z` placeholder below):
 
 ```json
 {
   "formatVersion": 1,
   "tool": "angular-typechecker",
-  "version": "0.2.2",
+  "version": "x.y.z",
   "tsConfigPath": "apps/my-app/tsconfig.json",
   "summary": {
     "outcome": "type-error",
