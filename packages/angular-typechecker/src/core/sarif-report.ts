@@ -6,6 +6,7 @@ import {
 } from './diagnostic-codes';
 import { familyOf, type Family } from './diagnostic-family';
 import {
+  relativizePath,
   toDiagnosticRecord,
   toolVersion,
   type DiagnosticRecord,
@@ -25,8 +26,10 @@ import type { CoreResult } from './run-typecheck';
  * `flattenDiagnosticMessageText` itself.
  *
  * The verdict is NOT this module's job (D-07): it emits ONE result per diagnostic
- * (a file-less record becomes a no-location result and is NEVER dropped -- D-01)
- * and never re-derives `success`; `evaluateResult` stays the sole verdict owner and
+ * (a file-less record carries a whole-file fallback location on the relativized
+ * `tsConfigPath` -- its always-present owner -- and is NEVER dropped, so GitHub Code
+ * Scanning ingests it -- D-01/D5/D6) and never re-derives `success`; `evaluateResult`
+ * stays the sole verdict owner and
  * a reporter throw propagates as infra (exit 2), never a swallowed pass. No `\x1b`
  * byte can appear -- every message is the ANSI-free flattened text from the
  * projection. `node-sarif-builder` bakes `version: "2.1.0"` + `$schema`.
@@ -199,7 +202,12 @@ export async function formatSarifReport(
       level: toSarifLevel(record.severity),
       messageText: record.message,
       ruleId: record.code,
-      // D-01: a file-less record omits fileUri + positions -> no `locations` key.
+      // D-01 (revised -- D1/D5/D6): a located record keeps its precise region; a
+      // file-less record (record.file === null) carries a whole-file fallback
+      // location on the relativized `tsConfigPath` -- its always-present owner --
+      // with NO region (node-sarif-builder omits the region when no startLine is
+      // passed). This reverses the old no-location emission so GitHub Code Scanning
+      // ingests file-less results; every diagnostic is STILL never dropped.
       ...(record.file !== null
         ? {
             fileUri: record.file,
@@ -208,7 +216,7 @@ export async function formatSarifReport(
             endLine: record.endLine ?? undefined,
             endColumn: record.endColumn ?? undefined,
           }
-        : {}),
+        : { fileUri: relativizePath(result.tsConfigPath, pathBase) }),
     });
     // D-02: self-computed fingerprint (node-sarif-builder has no initSimple param
     // for it) written before addResult; a file-less record still gets one.
