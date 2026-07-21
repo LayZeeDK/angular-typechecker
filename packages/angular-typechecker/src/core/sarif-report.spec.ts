@@ -72,7 +72,9 @@ function diagAtColumn(character: number): ts.Diagnostic {
 }
 
 // A synthesized guard shape (diagnostic-codes.ts:122-135): file/start/length are
-// undefined BY CONSTRUCTION -> a no-location SARIF result (D-01).
+// undefined BY CONSTRUCTION. The diagnostic stays file-less; the reporter attaches a
+// whole-file fallback location on the tsconfig, so SARIF emits it as a LOCATED
+// (region-less) result rather than dropping it (D1/D5/D6).
 function filelessDiag(code = ATC90001): ts.Diagnostic {
   return {
     category: ERROR,
@@ -358,7 +360,7 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
     expect(physical?.region.endColumn).toBe(20);
   });
 
-  it('never drops a file-less diagnostic -- emits it as a no-location result, length one-to-one (D-01)', async () => {
+  it('never drops a file-less diagnostic -- emits it as a whole-file located result on the tsconfig with no region, length one-to-one (D1/D5/D6)', async () => {
     const result = coreResult({
       diagnostics: [positionedDiag(), filelessDiag()],
       errorCount: 2,
@@ -370,7 +372,15 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
     const fileless = log.runs[0].results[1];
 
     expect(fileless.ruleId).toBe('ATC90001');
-    expect('locations' in fileless).toBe(false);
+
+    const physical = fileless.locations?.[0].physicalLocation;
+
+    // The file-less result is now LOCATED on the relativized tsConfigPath (the
+    // fixture 'D:/ws/proj/libs/x/tsconfig.lib.json' against the sarifOf pathBase
+    // 'D:/ws/proj') with NO region -- ingestible by GitHub Code Scanning, still
+    // never dropped.
+    expect(physical?.artifactLocation.uri).toBe('libs/x/tsconfig.lib.json');
+    expect(physical?.region).toBeUndefined();
   });
 
   it('emits a file-SET but position-ABSENT diagnostic as a LOCATED result with NO region, length one-to-one, schema-valid (FIX 4 / REP-02)', async () => {

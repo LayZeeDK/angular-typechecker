@@ -12,6 +12,12 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
           },
           "sourceLanguage": "TypeScript",
         },
+        {
+          "location": {
+            "uri": "libs/x/tsconfig.lib.json",
+          },
+          "sourceLanguage": "JSON",
+        },
       ],
       "results": [
         {
@@ -43,6 +49,16 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 1,
+                  "uri": "libs/x/tsconfig.lib.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "a references-only config resolved zero root names",
           },
