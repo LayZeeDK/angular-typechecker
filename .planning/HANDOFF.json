@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-21T21:11:12.145Z",
+  "phase": "35",
+  "phase_name": "automated-code-scanning-proof",
+  "phase_dir": ".planning/phases/35-automated-code-scanning-proof",
+  "plan": 3,
+  "task": null,
+  "total_tasks": 3,
+  "status": "paused",
+  "branch": "gsd/v0.2.4-enhanced-sarif-reporting-for-github-code-scanning",
+  "head": "f89bcb4",
+  "pr": 55,
+  "phase_status": "executed-but-not-complete (gap G-35-01 open; verification = human_needed)",
+  "completed_tasks": [
+    {"id": 1, "name": "Execute 35-02 (assert-code-scanning.mjs gh-api poll/set-membership + subprocess spec)", "status": "done", "commit": "0006ecf"},
+    {"id": 2, "name": "Execute 35-03 (PR-only code-scanning-proof CI job + act-compat trigger fidelity)", "status": "done", "commit": "4822717"},
+    {"id": 3, "name": "Deep code review (12 files) + fix CR-01 (trailing-slash categoryMatches) + WR-01 (--paginate)", "status": "done", "commit": "5218c2d"},
+    {"id": 4, "name": "verify_phase_goal via gsd-verifier -> human_needed (real-CI Nyquist point); persisted 35-VERIFICATION.md + 35-UAT.md", "status": "done", "commit": "faa41e8"},
+    {"id": 5, "name": "Autonomous real-CI UAT on PR #55 -> code-scanning-proof job RED; found gap G-35-01; recorded in 35-UAT.md (status: issues)", "status": "done", "commit": "7140278"},
+    {"id": 6, "name": "Fix red CI fallow complexity blocker (quick 260721-vm1: split buildRuleMeta into per-family builders) -> fallow GREEN in real CI", "status": "done", "commit": "f89bcb4"}
+  ],
+  "remaining_tasks": [
+    {"id": 7, "name": "Fix svgo@4.0.1 HIGH cve-lite vuln (blocks required ci aggregate)", "status": "not_started", "resume_command": "/gsd-core:quick --full Address the svgo@4.0.1 High severity vulnerability", "fix": "npm update svgo (cve-lite reports a safe version is already permitted within range; lockfile-only, dev-scope transitive, NO overrides/major-bump -> no npm 10/11 override-portability trap). Verify: npm run cve-lite (exit 0) + npm ci still resolves + npm run fallow. See .claude/skills/atc-use-cve-lite-cli/."},
+    {"id": 8, "name": "Gap-close G-35-01: SARIF reporter emits file-less (tool/project-level) diagnostics with NO locations, which GitHub Code Scanning REJECTS (whole-file). Reverses locked decision D-01.", "status": "not_started", "resume_command": "/gsd-core:plan-phase 35 --gaps", "note": "G-35-01 is recorded in 35-UAT.md (## Gaps), NOT in 35-VERIFICATION.md gaps_found -- feed it to the planner explicitly. Candidate fix: attach a synthetic fallback location (artifactLocation -> project tsconfig or the referenced missing file, region line 1) to file-less diagnostics in formatSarifReport PASS-2 (sarif-report.ts:196-219), so they are ingestible while still never dropped. This reverses D-01 (sarif-report.ts:28/202) -- a published-SARIF-output change; discuss the reversal + confirm the drift-lock integration spec is updated to expect the new location."},
+    {"id": 9, "name": "Execute the G-35-01 gap plan", "status": "not_started", "resume_command": "/gsd-core:execute-phase 35 --gaps-only"},
+    {"id": 10, "name": "After G-35-01 lands: re-push, confirm the code-scanning-proof job GREEN in real CI (the only place the ingestion round-trip is proven), then close the 3 UAT items via /gsd-core:verify-work 35", "status": "not_started", "resume_command": "/gsd-core:verify-work 35"},
+    {"id": 11, "name": "Post-completion (only once the phase genuinely closes): /gsd-core:secure-phase 35, /gsd-core:validate-phase 35 (fills the draft 35-VALIDATION.md), /gsd-core:extract-learnings 35", "status": "not_started"}
+  ],
+  "blockers": [
+    {"description": "G-35-01: GitHub Code Scanning rejects the whole SARIF with 'locationFromSarifResult: expected at least one location' because the fixture's tool family (ATC90002, inherently file-less) is emitted as a no-location result per D-01. Blocks phase completion AND the code-scanning-proof job.", "type": "technical", "workaround": "None yet; fix is the G-35-01 gap plan (synthetic fallback location, reverses D-01)."},
+    {"description": "cve-lite HIGH svgo@4.0.1 (transitive, dev) fails the required ci aggregate on PR #55. Newly-published OSV advisory (green 1.5h earlier at 411aa78; no dep change this session).", "type": "external", "workaround": "npm update svgo (safe version already in range)."}
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {"action": "PR #55 (draft) stays draft until the milestone is complete; do NOT self-merge without explicit user OK (main is PR-only, empty-bypass ruleset).", "context": "Milestone-ships-as-single-PR; release cut separately after merge.", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Ran 35-02/35-03 and the fallow fix on the MAIN working tree (no worktree isolation).", "rationale": "Single-plan waves + dependency-heavy verification (nx test/build, fallow, lint) need real node_modules; worktrees start without them (AGENTS.md 'single-plan wave: skip worktrees').", "phase": "35"},
+    {"decision": "CR-01 fix is defensive: categoryMatches() accepts CATEGORY OR CATEGORY+'/'.", "rationale": "upload-sarif's category INPUT can surface as 'angular-typecheck-proof/' (synthesized automationDetails.id trailing slash) in the analyses/alerts API; the real string is real-CI-only and still unobserved (the upload never processed).", "phase": "35"},
+    {"decision": "Fallow blocker fixed by extracting buildRuleMeta into 4 per-family builders (NOT a .fallowrc threshold bump).", "rationale": "Behavior-preserving (drift-lock unchanged), honestly reduces cyclomatic complexity; fallow exit 0 confirmed locally + in real CI.", "phase": "35"},
+    {"decision": "G-35-01 routed to gap-closure as a deliberate D-01 REVERSAL, not an inline patch.", "rationale": "It changes published SARIF output and reopens a locked design decision spanning phases 33-35; high-impact, needs deliberate handling.", "phase": "35"},
+    {"decision": "cve-lite svgo handled as a separate /gsd-core:quick --full task (per user), ordered FIRST in the resume sequence.", "rationale": "Newly-surfaced, unrelated to phase 35; trivial safe lockfile fix; clears the required ci gate.", "phase": "35"}
+  ],
+  "uncommitted_files": [".planning/config.json (workflow._auto_chain_active flip; ephemeral GSD orchestration state, intentionally left uncommitted)"],
+  "next_action": "Run the resume sequence in order: (1) /gsd-core:quick --full Address the svgo@4.0.1 High severity vulnerability; (2) /gsd-core:plan-phase 35 --gaps (feed it G-35-01 from 35-UAT.md); (3) /gsd-core:execute-phase 35 --gaps-only. Then re-run the real-CI UAT and close via verify-work.",
+  "context_notes": "Phase 35 is a PROOF HARNESS and it worked: the autonomous real-CI UAT caught G-35-01, a genuine SARIF->Code-Scanning contract defect (file-less no-location tool results) that every local gate + the dogfood job missed. The phase's local deliverables (fixture, assert, CI job) are all correct and sound; the blocker is a REPORTER defect (production code) surfaced by the fixture. fallow is now green in real CI; only cve-lite/svgo (required, trivial) + code-scanning-proof/G-35-01 (non-required aggregate, real fix) remain red on PR #55. Do NOT trust the passive LSP feed on sarif-report.ts (it went stale mid-edit this session -- disproven against nx test + the compiler); the authoritative signals are nx test / tsc / fallow audit."
+}
