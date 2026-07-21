@@ -707,10 +707,11 @@ across runs. Write the SARIF to a file and hand it to the `upload-sarif` action:
     sarif_file: results.sarif
 ```
 
-A file-less diagnostic (a whole-program error with no source location) is emitted
-as a result with no location rather than being dropped. GitHub cannot pin a
-no-location result to a line, so treat the run's exit code / `success`, not the
-SARIF alert, as the authoritative fail signal for those.
+A file-less diagnostic (a whole-program error with no source location -- for
+example a missing global type, or a references-only or missing-reference config
+error) is anchored to the `tsconfig` being checked and emitted as a whole-file
+alert (the whole file, no specific line) rather than being dropped. GitHub Code
+Scanning ingests it and surfaces it as an alert against that `tsconfig`.
 
 #### Run from the repository root
 
