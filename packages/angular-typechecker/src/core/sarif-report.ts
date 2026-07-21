@@ -155,15 +155,21 @@ export async function formatSarifReport(
     }
 
     // D-04 (any-.html-occurrence-wins): only a `typescript` entry can ever upgrade,
-    // and only to `template-type-check`, so the fold is order-independent. The level
-    // is NEVER overwritten -- first observed wins (D-06); a code normally carries one
+    // and only to `template-type-check`. Rebuild the FULL metadata from the template
+    // occurrence so the tag AND the shortDescription / helpUri / help.text all describe
+    // the template family -- flipping only the tag would leave the rule tagged
+    // `template-type-check` while still carrying the TypeScript description and URL. The
+    // level is preserved as first-observed (D-06); a code normally carries one
     // configured severity per compilation, so mixed severities in one run are a rare
-    // edge.
+    // edge. `typescript` -> `template-type-check` is the only transition and it never
+    // reverses, so the emitted rule is order-independent.
     if (
       family === 'template-type-check' &&
       existing.family !== 'template-type-check'
     ) {
-      existing.family = 'template-type-check';
+      const upgraded = buildRuleMeta(record, 'template-type-check');
+      upgraded.level = existing.level;
+      catalog.set(ruleId, upgraded);
     }
   }
 

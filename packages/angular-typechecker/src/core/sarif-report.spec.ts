@@ -261,7 +261,7 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
     expect(tool?.help?.text).toContain('resolved zero root names');
   });
 
-  it('resolves a ruleId seen in both a .ts and a .html file to template-type-check, in either order (D-04 any-.html-wins)', async () => {
+  it('resolves a ruleId seen in both a .ts and a .html file to template-type-check -- tag AND description/help/URI -- in either order (D-04 any-.html-wins)', async () => {
     const orders: ts.Diagnostic[][] = [
       [positionedDiag(), tsInHtml()],
       [tsInHtml(), positionedDiag()],
@@ -274,6 +274,17 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
       expect(rules).toHaveLength(1);
       expect(rules[0].id).toBe('TS2322');
       expect(rules[0].properties?.tags).toEqual(['template-type-check']);
+      // WR-01 regression guard: the upgrade must rebuild the FULL metadata, not just
+      // flip the tag. A .ts-first run would otherwise keep the TypeScript
+      // shortDescription and typescriptlang.org helpUri on a template-tagged rule --
+      // contradictory, order-dependent metadata for the same rule.
+      expect(rules[0].shortDescription?.text).toBe(
+        'Angular template type-check diagnostic TS2322',
+      );
+      expect(rules[0].helpUri).toBe(
+        'https://angular.dev/tools/cli/template-typecheck',
+      );
+      expect(rules[0].help?.text).toContain('template type-check');
     }
   });
 
