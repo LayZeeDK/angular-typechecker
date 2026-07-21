@@ -126,6 +126,25 @@ describe('PROOF-02: assert-code-scanning.mjs set-membership + fail-loud (local s
     );
   });
 
+  it('GREEN: accepts the trailing-slash category form upload-sarif synthesizes from the category input (CR-01)', () => {
+    // upload-sarif appends a trailing '/' to the synthesized automationDetails.id
+    // when the category input has no slash, so GitHub can report
+    // most_recent_instance.category as `angular-typecheck-proof/`. categoryMatches
+    // must accept it, else the proof permanently false-REDs in real CI.
+    const trailingSlashCategory = `${CATEGORY}/`;
+    const result = runAssert([
+      alert('typescript', 'error', trailingSlashCategory),
+      alert('template-type-check', 'error', trailingSlashCategory),
+      alert('extended-diagnostics', 'warning', trailingSlashCategory),
+      alert('tool', 'error', trailingSlashCategory),
+    ]);
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain(
+      'all expected (family tag, severity) tuples',
+    );
+  });
+
   it('RED: exits non-zero naming the missing family when a family alert is absent (PROOF-02)', () => {
     // Drop the tool-family alert -> its tuple is unsatisfiable -> fail loud.
     const missingTool = allFourFamilies().filter(

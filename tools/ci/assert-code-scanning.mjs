@@ -61,6 +61,22 @@ const ALERTS_ATTEMPTS = 20;
 const POLL_INTERVAL_MS = 6000;
 
 /**
+ * Category match tolerant of upload-sarif's trailing-slash normalization. This job
+ * uploads with a `category:` INPUT and the CLI's single-run SARIF carries NO
+ * runs[].automationDetails.id, so github/codeql-action/upload-sarif synthesizes the
+ * id from the category and appends a trailing '/' when it doesn't already end in one.
+ * GitHub's analyses.category / alerts[].most_recent_instance.category can therefore
+ * report EITHER `angular-typecheck-proof` OR `angular-typecheck-proof/` -- accept both
+ * so the proof never permanently false-REDs on the exact string GitHub returns.
+ *
+ * @param {string | undefined} value
+ * @returns {boolean}
+ */
+function categoryMatches(value) {
+  return value === CATEGORY || value === `${CATEGORY}/`;
+}
+
+/**
  * The PURE set-membership matcher (no I/O, no spawn). Returns the expected tuples
  * for which NO alert carries the family tag AND matching severity. Empty => every
  * expected family landed. The CLI entry filters alerts by category BEFORE calling
@@ -92,10 +108,21 @@ function formatTuples(tuples) {
  * alert payloads (mirrors merge-sarif.mjs).
  *
  * @param {string} pathAndQuery e.g. `repos/OWNER/REPO/code-scanning/alerts?ref=...`
+ * @param {{ paginate?: boolean }} [options] paginate follows all pages of an array
+ *   endpoint (gh concatenates them into one JSON array). `--paginate` is a fixed
+ *   literal arg -- no PR data is interpolated, so injection safety is preserved.
  * @returns {any} The parsed JSON response.
  */
-function ghApi(pathAndQuery) {
-  const out = execFileSync('gh', ['api', pathAndQuery], {
+function ghApi(pathAndQuery, { paginate = false } = {}) {
+  const args = ['api'];
+
+  if (paginate) {
+    args.push('--paginate');
+  }
+
+  args.push(pathAndQuery);
+
+  const out = execFileSync('gh', args, {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
@@ -143,7 +170,7 @@ function assertAnalysisCategory(ref, sarifId) {
     `repos/${REPO}/code-scanning/analyses?ref=${ref}&tool_name=${TOOL}&sarif_id=${sarifId}`,
   );
 
-  if (!analyses.some((analysis) => analysis.category === CATEGORY)) {
+  if (!analyses.some((analysis) => categoryMatches(analysis.category))) {
     throw new Error(
       `no analysis with category ${CATEGORY} for sarif_id ${sarifId} on ${ref}`,
     );
@@ -162,8 +189,9 @@ async function assertAlerts(ref) {
 
   for (let attempt = 0; attempt < ALERTS_ATTEMPTS; attempt++) {
     const alerts = ghApi(
-      `repos/${REPO}/code-scanning/alerts?ref=${ref}&tool_name=${TOOL}&per_page=100`,
-    ).filter((alert) => alert.most_recent_instance?.category === CATEGORY);
+      `repos/${REPO}/code-scanning/alerts?ref=${ref}&tool_name=${TOOL}&state=open&per_page=100`,
+      { paginate: true },
+    ).filter((alert) => categoryMatches(alert.most_recent_instance?.category));
     stillMissing = missingTuples(alerts, EXPECTED);
 
     if (stillMissing.length === 0) {
@@ -188,8 +216,8 @@ async function assertAlerts(ref) {
  * @param {string} file
  */
 function assertFromFile(file) {
-  const alerts = JSON.parse(readFileSync(file, 'utf8')).filter(
-    (alert) => alert.most_recent_instance?.category === CATEGORY,
+  const alerts = JSON.parse(readFileSync(file, 'utf8')).filter((alert) =>
+    categoryMatches(alert.most_recent_instance?.category),
   );
   const missing = missingTuples(alerts, EXPECTED);
 
