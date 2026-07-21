@@ -5,10 +5,9 @@ milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 35
 current_phase_name: automated-code-scanning-proof
 status: executing
-stopped_at: G-35-01 PROVEN in real CI (run 29875173270 -- code-scanning-proof GREEN, SARIF ingested with no locationFromSarifResult rejection, all proof tuples present on refs/pull/55/merge; region-less D6 location accepted) + fast-uri HIGH cve cleared. PROOF-01/02 achieved. Next: verify_phase_goal -> verify-work UAT -> secure/validate/extract -> milestone close.
-last_updated: "2026-07-21T23:05:00.000Z"
-last_activity: 2026-07-21
-last_activity_desc: Executed 35-04 + fast-uri cve fix; pushed to PR #55; awaiting code-scanning-proof CI
+stopped_at: "G-35-01 PROVEN in real CI (run 29875173270 -- code-scanning-proof GREEN, SARIF ingested with no locationFromSarifResult rejection, all proof tuples present on refs/pull/55/merge; region-less D6 location accepted) + fast-uri HIGH cve cleared. PROOF-01/02 achieved. Next: verify_phase_goal -> verify-work UAT -> secure/validate/extract -> milestone close."
+last_updated: "2026-07-21T23:37:26.608Z"
+last_activity: 2026-07-22
 progress:
   total_phases: 4
   completed_phases: 3
@@ -31,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 Phase: 35 (automated-code-scanning-proof) — EXECUTING
 Plan: 3 of 3
 Status: Ready to execute
-Last activity: 2026-07-21 — Phase 35 executed (35-02/35-03) + code-reviewed (CR-01/WR-01 fixed); real-CI UAT surfaced gap G-35-01 (GitHub rejects file-less tool diagnostic: no `locations`) — G-35-01 routed to gap-closure; quick 260721-vm1 cleared the fallow CI complexity blocker; quick 260721-wda cleared the HIGH svgo cve-lite blocker (npm update svgo 4.0.1 -> 4.0.2)
+Last activity: 2026-07-22
 
 ## Accumulated Context
 
