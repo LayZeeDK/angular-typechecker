@@ -210,3 +210,64 @@ describe('listTypecheckProjects: tolerates a stray subdir + a falsy project name
     }
   });
 });
+
+// WR-01 regression guard: a project with MORE THAN ONE target using the
+// executor (the exact shape libs/local-lib's fixture already uses --
+// `typecheck` + `typecheck-spec`) must contribute the UNION of every matching
+// target's tsConfig, not just the first target's. `.find()` would silently
+// drop the second target's tsConfig with no error and no failing test.
+describe('listTypecheckProjects: unions tsConfig across multiple executor targets in one project', () => {
+  it('collects tsConfig from every target using the executor, not just the first', () => {
+    const script = join(
+      workspaceRoot,
+      'tools',
+      'ci',
+      'list-typecheck-projects.mjs',
+    );
+    const tempRoot = mkdtempSync(
+      join(tmpdir(), 'list-typecheck-projects-multi-target-'),
+    );
+
+    try {
+      const libDir = join(tempRoot, 'libs', 'multi-target-lib');
+      mkdirSync(libDir, { recursive: true });
+      writeFileSync(
+        join(libDir, 'project.json'),
+        JSON.stringify({
+          name: 'multi-target-lib',
+          targets: {
+            typecheck: {
+              executor: 'angular-typechecker:typecheck',
+              options: { tsConfig: 'libs/multi-target-lib/tsconfig.lib.json' },
+            },
+            'typecheck-spec': {
+              executor: 'angular-typechecker:typecheck',
+              options: {
+                tsConfig: 'libs/multi-target-lib/tsconfig.spec.json',
+              },
+            },
+          },
+        }),
+      );
+
+      const output = execFileSync('node', [script], {
+        cwd: tempRoot,
+        encoding: 'utf8',
+      });
+
+      expect(
+        JSON.parse(output) as { name: string; tsConfig: string[] }[],
+      ).toEqual([
+        {
+          name: 'multi-target-lib',
+          tsConfig: [
+            'libs/multi-target-lib/tsconfig.lib.json',
+            'libs/multi-target-lib/tsconfig.spec.json',
+          ],
+        },
+      ]);
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+});

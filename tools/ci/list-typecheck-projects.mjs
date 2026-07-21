@@ -1,11 +1,13 @@
 // Enumerate the workspace projects that use the angular-typechecker:typecheck
 // executor, for the CI `code-scanning` job's per-project SARIF merge (MULTI-02).
 //
-// Scans `apps/<dir>/project.json` + `libs/<dir>/project.json` and keeps the
-// target whose `executor === 'angular-typechecker:typecheck'`, emitting a sorted
-// JSON array of `{ name, tsConfig[] }`. `tsConfig` is normalized to an array from
-// the target's `options.tsConfig` (the executor schema is `string | string[]`
-// since v0.2.1).
+// Scans `apps/<dir>/project.json` + `libs/<dir>/project.json` and keeps EVERY
+// target whose `executor === 'angular-typechecker:typecheck'` (a project may
+// declare more than one, e.g. `typecheck` + `typecheck-spec` -- see
+// libs/local-lib's fixture), emitting a sorted JSON array of `{ name,
+// tsConfig[] }` per project. `tsConfig` is the deduped union of every matching
+// target's `options.tsConfig`, each normalized from `string | string[]` (the
+// executor schema shape since v0.2.1).
 //
 // Filter by the EXECUTOR id, NOT a `typecheck` target-NAME match: a name match
 // over-matches the plugin's own nx:run-commands `typecheck`, libs/test-util, and
@@ -53,16 +55,23 @@ export function listTypecheckProjects(workspaceRoot) {
       }
 
       const projectJson = JSON.parse(readFileSync(projectJsonPath, 'utf8'));
-      const target = Object.values(projectJson.targets ?? {}).find(
+      // Collect EVERY matching target, not just the first: `.find()` would
+      // silently drop a second target's tsConfig (e.g. a project with both a
+      // `typecheck` and a `typecheck-spec` target using this executor).
+      const matchingTargets = Object.values(projectJson.targets ?? {}).filter(
         (candidate) => candidate?.executor === EXECUTOR,
       );
 
-      // Push only a TRUTHY name that also carries the executor target. A
-      // missing/empty name would inject a null/undefined project into the merge.
-      if (projectJson.name && target) {
-        const raw = target.options?.tsConfig;
-        const tsConfig = Array.isArray(raw) ? raw : raw ? [raw] : [];
-        out.push({ name: projectJson.name, tsConfig });
+      // Push only a TRUTHY name that also carries at least one executor target.
+      // A missing/empty name would inject a null/undefined project into the merge.
+      if (projectJson.name && matchingTargets.length > 0) {
+        const merged = matchingTargets.flatMap((target) => {
+          const raw = target.options?.tsConfig;
+          return Array.isArray(raw) ? raw : raw ? [raw] : [];
+        });
+        // Dedup (order-stable) in case two targets happen to name the same
+        // tsConfig, so it isn't type-checked twice for one project.
+        out.push({ name: projectJson.name, tsConfig: [...new Set(merged)] });
       }
     }
   }
