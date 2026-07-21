@@ -74,7 +74,9 @@ function writeConsumer(root: string, name: string): void {
 }
 
 // Write the stub CLI where merge-sarif.mjs spawns it (relative to the temp cwd).
-function writeStubBin(root: string): void {
+// Accepts a custom script body so a test can exercise a stub shape other than
+// the default STUB_BIN (e.g. a doc that parses but contributes zero runs).
+function writeStubBin(root: string, script: string = STUB_BIN): void {
   const binDir = join(
     root,
     'dist',
@@ -84,8 +86,36 @@ function writeStubBin(root: string): void {
     'cli',
   );
   mkdirSync(binDir, { recursive: true });
-  writeFileSync(join(binDir, 'bin.js'), STUB_BIN);
+  writeFileSync(join(binDir, 'bin.js'), script);
 }
+
+// A second stub: the FIRST-discovered project (alphabetically) parses to valid
+// JSON with a non-empty envelope but a ZERO-length `runs` array (as opposed to
+// empty stdout) -- the "doc parses but contributes no run" path inside
+// mergeSarifRuns's `if (!run) continue;` branch, distinct from the CLI-level
+// empty-stdout skip the other two tests already prove.
+const NO_RUN_FIRST_STUB = `const args = process.argv.slice(2);
+
+if (args.some((arg) => arg.includes('aaa-no-run'))) {
+  process.stdout.write(
+    JSON.stringify({
+      version: 'no-run-version',
+      $schema: 'no-run-schema',
+      runs: [],
+    }),
+  );
+} else {
+  process.stdout.write(
+    JSON.stringify({
+      version: 'has-run-version',
+      $schema: 'has-run-schema',
+      runs: [
+        { tool: { driver: { name: 'angular-typechecker' } }, results: [] },
+      ],
+    }),
+  );
+}
+`;
 
 describe('MULTI-01: merge-sarif.mjs assembles a multi-run SARIF', () => {
   it('merges one run per non-empty consumer, stamps angular-typecheck/<name>, skips the empty project, preserves the envelope', () => {
@@ -137,6 +167,41 @@ describe('MULTI-01: merge-sarif.mjs assembles a multi-run SARIF', () => {
       expect(existsSync(join(tempRoot, 'angular-typechecker.sarif'))).toBe(
         false,
       );
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves the envelope from the first entry that contributes a run, not merely the first entry discovered', () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'merge-sarif-envelope-order-'));
+
+    try {
+      // 'aaa-no-run' sorts BEFORE 'zzz-has-run' in discovery's alphabetical
+      // order, but its doc parses to valid JSON with a ZERO-length `runs`
+      // array -- it must contribute NEITHER a run NOR the envelope. A merge
+      // implementation that grabbed the envelope from the first ENTRY
+      // (regardless of whether that entry had a run) rather than the first
+      // VALID run would leak 'no-run-version'/'no-run-schema' here.
+      writeConsumer(tempRoot, 'aaa-no-run');
+      writeConsumer(tempRoot, 'zzz-has-run');
+      writeStubBin(tempRoot, NO_RUN_FIRST_STUB);
+
+      execFileSync('node', [mergeScript], { cwd: tempRoot, encoding: 'utf8' });
+
+      const merged = JSON.parse(
+        readFileSync(join(tempRoot, 'angular-typechecker.sarif'), 'utf8'),
+      ) as {
+        version: string;
+        $schema: string;
+        runs: { automationDetails?: { id?: string } }[];
+      };
+
+      expect(merged.runs).toHaveLength(1);
+      expect(merged.runs[0].automationDetails?.id).toBe(
+        'angular-typecheck/zzz-has-run',
+      );
+      expect(merged.version).toBe('has-run-version');
+      expect(merged.$schema).toBe('has-run-schema');
     } finally {
       rmSync(tempRoot, { recursive: true, force: true });
     }
