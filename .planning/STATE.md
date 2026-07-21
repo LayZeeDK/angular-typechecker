@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 35
-current_phase_name: Automated Code Scanning proof
+current_phase_name: automated-code-scanning-proof
 status: executing
 stopped_at: Phase 35 context gathered
-last_updated: "2026-07-21T19:10:35.180Z"
+last_updated: "2026-07-21T19:31:52.850Z"
 last_activity: 2026-07-21
 last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 50
 ---
 
@@ -24,11 +24,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archived: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 35 — Automated Code Scanning proof
+**Current focus:** Phase 35 — automated-code-scanning-proof
 
 ## Current Position
 
-Phase: 35 (Automated Code Scanning proof) — EXECUTING
+Phase: 35 (automated-code-scanning-proof) — EXECUTING
 Plan: 2 of 3
 Status: Ready to execute
 Last activity: 2026-07-21 — Phase 35 execution started
@@ -109,6 +109,7 @@ archives under `.planning/milestones/`.
 - [Phase 34]: 34-01: CI-side per-project multi-run SARIF (MULTI-01/02, no release). Design B merge-sarif.mjs spawns the shipped dist CLI per discovered project from repo root, stamps per-run automationDetails.id=angular-typecheck/<project>, merges to one file, writes nothing on zero runs; single upload-sarif with NO category. Discovery list-typecheck-projects.mjs filters apps/+libs/ by executor id (excludes root @angular-typechecker/source dogfood + e2e fixtures by root-scoping). Drift guard subtracts BOTH root project.json AND e2e/ (root uses the executor on clean fixtures -> unfiltered enum 5 vs discovery 4). D-06 additive-only HELD: only tools/ci/*.mjs + 2 specs + ci.yml; core/**, src/cli/**, package.json byte-unchanged; version 0.2.3. MULTI-01 GitHub ingestion is real-CI-only (Phase 35 proves).
 - [Phase 35]: 35-01: isolated SARIF proof fixture at tools/sarif-proof-fixture/ (NO project.json -> outside the nx typecheck gate + explicit-allowlist tsconfig.tools.json) fires all four families in ONE solution-tsconfig CLI run: surviving leaf (TS2322 typescript/error + external-.html NG8002 template-type-check/error + NG8101 banana-in-box extended-diagnostics/warning) UNIONed with a synthesized ATC90002 (tool/error) from one deliberately-missing reference -- no 2nd CLI invocation, no merge (Pattern 1). NG8101 (<input ([value])>) coexists with NG8002 on a separate element with NO interference (exactly 4 rules, empirically confirmed via the drift-lock); ATC90002 not ATC90001 (co-exists with surviving leaves)
 - [Phase 35]: 35-01: two CI-gate landmines pre-empted -- new .fallowrc.jsonc overrides entry for tools/sarif-proof-fixture/** (tools/** was only in health.ignore) + .prettierignore the diagnostic-sensitive proof.component.html (prettier --file-info => ignored:true). Local drift-lock = 5th describe in machine-reporters-sarif.integration.spec.ts asserting the SET of four (family tag, level) tuples + exactly one rule per family (extended code discretionary; TS2322/NG8002/ATC90002 pinned); runs under nx integration (156 pass). D-04 holds: package.json byte-unchanged, only a spec under src/**, no bump; PROOF-01 stays Pending (CI job/assert = 35-02/03). Pre-existing fallow health finding on sarif-report.ts (Phase 33) makes fallow exit 1 -- out of scope, logged in deferred-items.md
+- [Phase 35]: 35-02: tools/ci/assert-code-scanning.mjs -- exported pure missingTuples(alerts,expected) + a bounded gh-api poll/assert CLI entry (poll code-scanning/sarifs/{id} to processing_status complete -> analyses category cross-check -> set-membership over code-scanning/alerts?ref=refs/pull/<n>/merge CLIENT-FILTERED to most_recent_instance.category===angular-typecheck-proof), fail-loud exit 1 on any missing tuple/timeout/processing-failed (PROOF-02). Injection-safe execFileSync gh arg array (no shell); PR_NUMBER/SARIF_ID from env, GH_TOKEN read by gh; flush-safe process.exitCode=1 (bin.ts D-02), NOT uncaught TLA. ASSERT_ALERTS_FILE env seam makes the set-membership decision + RED exit unit-testable WITHOUT GitHub; plugin-side subprocess spec (execFileSync node, NO cross-project static import -- module-boundary+vitest-runner block it) proves GREEN(0)/RED(1 naming tool/error)/category-isolation(wrong-category alert filtered out -> tuple missing -> 1). EXPECTED (typescript/error, template-type-check/error, extended-diagnostics/warning, tool/error) cross-referenced to the 35-01 drift-lock + diagnostic-family.ts (no drift). D-04 additive-only: only tools/ci/*.mjs + 1 src spec; no prod/schema/manifest/dep/version change. PROOF-01/02 stay Pending -- real-CI ingestion is 35-03 (phase Nyquist point).
 
 ### Roadmap Evolution
 
@@ -274,7 +275,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Phase 35 context gathered
 **Resume file:** .planning/phases/35-automated-code-scanning-proof/35-CONTEXT.md
 
-Last session: 2026-07-21T19:09:08.161Z
+Last session: 2026-07-21T19:29:50.343Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -328,3 +329,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 33 P02 | 22min | 2 tasks | 3 files |
 | Phase 34 P01 | 12 min | 3 tasks | 5 files |
 | Phase 35 P01 | ~58m | 3 tasks | 8 files |
+| Phase 35 P02 | ~10m | 2 tasks | 2 files |
