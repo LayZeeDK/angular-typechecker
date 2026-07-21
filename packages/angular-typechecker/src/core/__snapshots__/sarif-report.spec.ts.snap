@@ -39,6 +39,7 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
             "atcFingerprint/v1": "b48cd85e66c220994c36c958ec69ce1e33d5b80a74036e7f4fb5f1a9b8f0857d",
           },
           "ruleId": "TS2322",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
@@ -49,6 +50,7 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
             "atcFingerprint/v1": "02b8de2056417eaeea4135cd878d59ed98905723e62912535c75464f45ea6045",
           },
           "ruleId": "ATC90001",
+          "ruleIndex": 1,
         },
       ],
       "tool": {
@@ -57,129 +59,39 @@ exports[`formatSarifReport (REP-02 / D-01..D-06 / VER-01) > serializes the full 
           "name": "angular-typechecker",
           "rules": [
             {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8101",
-              "id": "NG8101",
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "help": {
+                "text": "A TypeScript compiler diagnostic (TS2322). See the TypeScript error reference for the meaning of this code and how to resolve it.",
+              },
+              "helpUri": "https://www.typescriptlang.org/docs/handbook/2/understanding-errors.html",
+              "id": "TS2322",
+              "properties": {
+                "tags": [
+                  "typescript",
+                ],
+              },
               "shortDescription": {
-                "text": "Inverted banana-in-a-box binding: use [(...)] rather than ([...])",
+                "text": "TypeScript diagnostic TS2322",
               },
             },
             {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8102",
-              "id": "NG8102",
-              "shortDescription": {
-                "text": "Nullish coalescing (??) applied to a value that is not nullable",
+              "defaultConfiguration": {
+                "level": "error",
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8107",
-              "id": "NG8107",
-              "shortDescription": {
-                "text": "Optional chaining (?.) applied to a value that is not nullable",
+              "help": {
+                "text": "angular-typechecker resolved zero root names for this tsconfig. A references-only (solution-style) or empty tsconfig has nothing to check directly -- point the check at a tsconfig with real files, or check the referenced projects.",
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8103",
-              "id": "NG8103",
-              "shortDescription": {
-                "text": "A control-flow directive is used without importing the directive that defines it",
+              "helpUri": "https://github.com/LayZeeDK/angular-typechecker",
+              "id": "ATC90001",
+              "properties": {
+                "tags": [
+                  "tool",
+                ],
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8116",
-              "id": "NG8116",
               "shortDescription": {
-                "text": "Unknown structural directive (a required import is missing)",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8104",
-              "id": "NG8104",
-              "shortDescription": {
-                "text": "A static text attribute where a property binding was likely intended",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8111",
-              "id": "NG8111",
-              "shortDescription": {
-                "text": "A function is referenced but not invoked in an event binding",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8105",
-              "id": "NG8105",
-              "shortDescription": {
-                "text": "ngFor is used without the let keyword",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8106",
-              "id": "NG8106",
-              "shortDescription": {
-                "text": "The unit suffix is not supported on this binding",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8108",
-              "id": "NG8108",
-              "shortDescription": {
-                "text": "ngSkipHydration is bound dynamically instead of as a static attribute",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8109",
-              "id": "NG8109",
-              "shortDescription": {
-                "text": "A signal read in a template interpolation is not invoked",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8011",
-              "id": "NG8011",
-              "shortDescription": {
-                "text": "Control flow prevents an element from being content-projected",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8112",
-              "id": "NG8112",
-              "shortDescription": {
-                "text": "An @let declaration in the template is never used",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8115",
-              "id": "NG8115",
-              "shortDescription": {
-                "text": "A track function is referenced but not invoked in a control-flow block",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8113",
-              "id": "NG8113",
-              "shortDescription": {
-                "text": "A standalone component declares imports it never uses",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8114",
-              "id": "NG8114",
-              "shortDescription": {
-                "text": "Nullish coalescing mixed with || or && without parentheses",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8117",
-              "id": "NG8117",
-              "shortDescription": {
-                "text": "A function is referenced but not invoked in a text interpolation",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8021",
-              "id": "NG8021",
-              "shortDescription": {
-                "text": "A @defer block trigger is misconfigured",
+                "text": "No files to type-check (empty or references-only tsconfig)",
               },
             },
           ],
