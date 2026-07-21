@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
-current_phase: 33
-current_phase_name: diagnostic-family-sarif-rule-metadata
+current_phase: 34
+current_phase_name: Per-project SARIF categories in CI
 status: verifying
 stopped_at: Phase 33 complete (33-02 executed); ready for verification
-last_updated: "2026-07-21T08:36:59.207Z"
+last_updated: "2026-07-21T09:02:02.695Z"
 last_activity: 2026-07-21
-last_activity_desc: Phase 33 execution started
+last_activity_desc: Phase 33 complete, transitioned to Phase 34
 progress:
   total_phases: 4
   completed_phases: 1
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 
 ## Current Position
 
-Phase: 33 (diagnostic-family-sarif-rule-metadata) -- VERIFYING
-Plan: 2 of 2
+Phase: 34 — Per-project SARIF categories in CI
+Plan: Not started
 Status: Phase complete -- ready for verification
-Last activity: 2026-07-21 -- Phase 33 executed (plans 33-01 + 33-02 complete)
+Last activity: 2026-07-21 — Phase 33 complete, transitioned to Phase 34
 
 ## Accumulated Context
 

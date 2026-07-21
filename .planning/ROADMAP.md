@@ -15,7 +15,7 @@
 
 ### v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning (Phases 33-36, IN PROGRESS)
 
-- [ ] **Phase 33: Diagnostic-family SARIF rule metadata** -- catalog one rule per fired ruleId across all families with `properties.tags` + `defaultConfiguration.level` + `help` text (the sole release-bearing SARIF change; additive patch bump)
+- [x] **Phase 33: Diagnostic-family SARIF rule metadata** -- catalog one rule per fired ruleId across all families with `properties.tags` + `defaultConfiguration.level` + `help` text (the sole release-bearing SARIF change; additive patch bump) (completed 2026-07-21)
 - [ ] **Phase 34: Per-project SARIF categories in CI** -- discover executor-using projects, run the CLI per project, merge to one multi-run file with per-run `automationDetails.id`, single `upload-sarif` (CI-only, no release)
 - [ ] **Phase 35: Automated Code Scanning proof** -- isolated one-per-family fixture outside the Nx graph + a `gh api` poll/assert that expected alerts land with the expected category/tags/severity (CI-only, no release)
 - [ ] **Phase 36: Code Scanning gating + Scanned-files documentation** -- promote `code-scanning` (+ proof) to the required `ci` aggregate + enable the "Require code scanning results" ruleset with the planning-only/fork-PR deadlock mitigation, and document the CodeQL-only "Scanned files" limitation
@@ -214,7 +214,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
 | 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
 | 32. Verification + docs + additive audit | v0.2.3 | 4/4 | Complete   | 2026-07-19 |
-| 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 2/2 | Complete   | 2026-07-21 |
+| 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 2/2 | Complete    | 2026-07-21 |
 | 34. Per-project SARIF categories in CI | v0.2.4 | 0/? | Not started | - |
 | 35. Automated Code Scanning proof | v0.2.4 | 0/? | Not started | - |
 | 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 0/? | Not started | - |
