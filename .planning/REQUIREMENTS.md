@@ -14,10 +14,10 @@ Scope empirically de-risked by the 2026-07-20 spike (closed PR #53): the SARIF->
 
 ### Rule metadata (RULE) -- the release-bearing SARIF change
 
-- [ ] **RULE-01**: Every emitted diagnostic references a cataloged SARIF rule across ALL families (TypeScript `TSxxxx`, template type-check, extended `NG8xxx`, tool `ATC900x`), so no Code Scanning alert shows a blank rule description (today only the 18 NG8xxx are cataloged).
-- [ ] **RULE-02**: Each rule carries a diagnostic-family tag in `properties.tags` (`typescript` / `template-type-check` / `extended-diagnostics` / `tool`) so GitHub `tag:` filters group alerts by family.
-- [ ] **RULE-03**: Each rule carries `defaultConfiguration.level` consistent with the diagnostic severity so GitHub `severity:` filtering and default alert severity are correct.
-- [ ] **RULE-04**: Each rule carries SARIF `help` text (not only `helpUri`) so the alert detail page's rule-help panel renders instead of "No rule help available".
+- [x] **RULE-01**: Every emitted diagnostic references a cataloged SARIF rule across ALL families (TypeScript `TSxxxx`, template type-check, extended `NG8xxx`, tool `ATC900x`), so no Code Scanning alert shows a blank rule description (today only the 18 NG8xxx are cataloged).
+- [x] **RULE-02**: Each rule carries a diagnostic-family tag in `properties.tags` (`typescript` / `template-type-check` / `extended-diagnostics` / `tool`) so GitHub `tag:` filters group alerts by family.
+- [x] **RULE-03**: Each rule carries `defaultConfiguration.level` consistent with the diagnostic severity so GitHub `severity:` filtering and default alert severity are correct.
+- [x] **RULE-04**: Each rule carries SARIF `help` text (not only `helpUri`) so the alert detail page's rule-help panel renders instead of "No rule help available".
 
 ### Gating (GATE)
 
@@ -53,10 +53,10 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RULE-01 | Phase 33 | Pending |
-| RULE-02 | Phase 33 | Pending |
-| RULE-03 | Phase 33 | Pending |
-| RULE-04 | Phase 33 | Pending |
+| RULE-01 | Phase 33 | Complete |
+| RULE-02 | Phase 33 | Complete |
+| RULE-03 | Phase 33 | Complete |
+| RULE-04 | Phase 33 | Complete |
 | MULTI-01 | Phase 34 | Pending |
 | MULTI-02 | Phase 34 | Pending |
 | PROOF-01 | Phase 35 | Pending |
@@ -66,6 +66,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DOC-01 | Phase 36 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 11 total
 - Mapped to phases: 11 (Phase 33: RULE-01..04; Phase 34: MULTI-01/02; Phase 35: PROOF-01/02; Phase 36: GATE-01/02 + DOC-01)
 - Unmapped: 0
