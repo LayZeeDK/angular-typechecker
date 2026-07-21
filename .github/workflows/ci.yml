@@ -504,11 +504,13 @@ jobs:
   # only the upload is skipped. This keeps the job safe under the SAFE pull_request
   # trigger the rest of this file uses (no PR-metadata is interpolated into any shell
   # command; the fork check is evaluated by the Actions expression engine, not a
-  # shell). angular-typechecker (a single SARIF run) uploads under an explicit
-  # `category`; fallow emits multiple runs in one file, so it is tagged per-run with
-  # distinct `automationDetails.id`s and uploaded WITHOUT a `category` (see the
-  # fallow steps below) -- so the two tools, and fallow's own sub-analyses, are all
-  # tracked separately and never overwrite each other.
+  # shell). angular-typechecker now emits ONE run per workspace project that uses
+  # its typecheck executor, merged into a single multi-run file and tagged per-run
+  # with a distinct `automationDetails.id` (angular-typecheck/<project>); fallow
+  # likewise emits multiple runs in one file tagged per-run. Both upload WITHOUT a
+  # `category` (see the steps below) -- so the two tools, every angular-typechecker
+  # project, and fallow's own sub-analyses are all tracked separately and never
+  # overwrite each other.
   #
   # SARIF-generation vs upload semantics (MED-01). A verdict-fail exit
   # (angular-typechecker exit 1 on a type error, fallow exit 1 on an introduced
@@ -556,14 +558,18 @@ jobs:
       # Build the plugin so the standalone CLI is runnable from dist
       # (bin -> dist/packages/angular-typechecker/src/cli/bin.js). Small @nx/js:tsc lib.
       - run: npx nx build angular-typechecker
-      # Dogfood: run angular-typechecker on this repo's own Angular app. The
-      # standalone CLI writes a byte-pure SARIF payload to stdout (advisories stay on
-      # stderr) -- unlike `nx typecheck`, which frames the executor's stdout. `|| true`
-      # tolerates a verdict-fail exit; `produced` is true only when a NON-EMPTY SARIF
-      # exists, so exit 2 (empty stdout) is not uploaded as an invalid file.
+      # Dogfood: run angular-typechecker on every workspace project that uses its
+      # typecheck executor. tools/ci/merge-sarif.mjs discovers those projects (via
+      # tools/ci/list-typecheck-projects.mjs), runs the shipped standalone CLI
+      # (--format sarif, byte-pure SARIF to stdout) once per project from the repo
+      # root, and merges the single-run files into ONE multi-run file, stamping each
+      # run's automationDetails.id = angular-typecheck/<project>. It tolerates a
+      # per-project verdict-fail/exit-2 (empty stdout is skipped) and writes NOTHING
+      # when zero runs are collected, so `produced` is true only when a NON-EMPTY
+      # multi-run SARIF exists (exit 2 across every project is not uploaded).
       - id: atc-sarif
         run: |
-          node dist/packages/angular-typechecker/src/cli/bin.js -c apps/ng-spike-app/tsconfig.app.json --format sarif > angular-typechecker.sarif || true
+          node tools/ci/merge-sarif.mjs
           if [ -s angular-typechecker.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
       # fallow's SARIF report. `--format sarif -o` always writes a valid file (even a
       # clean / zero-changed-files run); the authoritative fallow gate is the separate
@@ -585,12 +591,17 @@ jobs:
           else
             echo "produced=false" >> "$GITHUB_OUTPUT"
           fi
+      # No `category:` here on purpose -- the merged file is now multi-run (one run
+      # per executor-using project), each carrying a distinct automationDetails.id
+      # (angular-typecheck/<project>, set by merge-sarif.mjs), which the action uses
+      # as the per-run category. Passing a single `category` would override all runs
+      # to one value and re-trigger the "multiple runs with the same category"
+      # rejection (mirrors the fallow upload below).
       - name: Upload angular-typechecker SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.atc-sarif.outputs.produced == 'true' }}
         uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           sarif_file: angular-typechecker.sarif
-          category: angular-typechecker
       # No `category:` here on purpose -- the multi-run fallow file carries a distinct
       # automationDetails.id per run (set above), which the action uses as the
       # per-run category. Passing a single `category` would override all runs to one
