@@ -5,16 +5,16 @@ milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 35
 current_phase_name: automated-code-scanning-proof
 status: executing
-stopped_at: Phase 35 context gathered
-last_updated: "2026-07-21T19:31:52.850Z"
+stopped_at: Completed 35-03-PLAN.md (code-scanning-proof CI job)
+last_updated: "2026-07-21T19:47:10.350Z"
 last_activity: 2026-07-21
 last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
-  percent: 50
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 ## Current Position
 
 Phase: 35 (automated-code-scanning-proof) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-21 — Phase 35 execution started
 
@@ -110,6 +110,8 @@ archives under `.planning/milestones/`.
 - [Phase 35]: 35-01: isolated SARIF proof fixture at tools/sarif-proof-fixture/ (NO project.json -> outside the nx typecheck gate + explicit-allowlist tsconfig.tools.json) fires all four families in ONE solution-tsconfig CLI run: surviving leaf (TS2322 typescript/error + external-.html NG8002 template-type-check/error + NG8101 banana-in-box extended-diagnostics/warning) UNIONed with a synthesized ATC90002 (tool/error) from one deliberately-missing reference -- no 2nd CLI invocation, no merge (Pattern 1). NG8101 (<input ([value])>) coexists with NG8002 on a separate element with NO interference (exactly 4 rules, empirically confirmed via the drift-lock); ATC90002 not ATC90001 (co-exists with surviving leaves)
 - [Phase 35]: 35-01: two CI-gate landmines pre-empted -- new .fallowrc.jsonc overrides entry for tools/sarif-proof-fixture/** (tools/** was only in health.ignore) + .prettierignore the diagnostic-sensitive proof.component.html (prettier --file-info => ignored:true). Local drift-lock = 5th describe in machine-reporters-sarif.integration.spec.ts asserting the SET of four (family tag, level) tuples + exactly one rule per family (extended code discretionary; TS2322/NG8002/ATC90002 pinned); runs under nx integration (156 pass). D-04 holds: package.json byte-unchanged, only a spec under src/**, no bump; PROOF-01 stays Pending (CI job/assert = 35-02/03). Pre-existing fallow health finding on sarif-report.ts (Phase 33) makes fallow exit 1 -- out of scope, logged in deferred-items.md
 - [Phase 35]: 35-02: tools/ci/assert-code-scanning.mjs -- exported pure missingTuples(alerts,expected) + a bounded gh-api poll/assert CLI entry (poll code-scanning/sarifs/{id} to processing_status complete -> analyses category cross-check -> set-membership over code-scanning/alerts?ref=refs/pull/<n>/merge CLIENT-FILTERED to most_recent_instance.category===angular-typecheck-proof), fail-loud exit 1 on any missing tuple/timeout/processing-failed (PROOF-02). Injection-safe execFileSync gh arg array (no shell); PR_NUMBER/SARIF_ID from env, GH_TOKEN read by gh; flush-safe process.exitCode=1 (bin.ts D-02), NOT uncaught TLA. ASSERT_ALERTS_FILE env seam makes the set-membership decision + RED exit unit-testable WITHOUT GitHub; plugin-side subprocess spec (execFileSync node, NO cross-project static import -- module-boundary+vitest-runner block it) proves GREEN(0)/RED(1 naming tool/error)/category-isolation(wrong-category alert filtered out -> tuple missing -> 1). EXPECTED (typescript/error, template-type-check/error, extended-diagnostics/warning, tool/error) cross-referenced to the 35-01 drift-lock + diagnostic-family.ts (no drift). D-04 additive-only: only tools/ci/*.mjs + 1 src spec; no prod/schema/manifest/dep/version change. PROOF-01/02 stay Pending -- real-CI ingestion is 35-03 (phase Nyquist point).
+- [Phase 35]: code-scanning-proof job (35-03) fork gate uses the simple head.repo.fork == false since the job is already PR-only via its if:, avoiding the dogfood push-to-main compound form
+- [Phase 35]: PROOF-01/02 stay Pending after 35-03 -- the SARIF->Code Scanning ingestion is real-CI-only (Nyquist point); they close at phase verification when the code-scanning-proof job is green on a real PR
 
 ### Roadmap Evolution
 
@@ -272,10 +274,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 35 context gathered
-**Resume file:** .planning/phases/35-automated-code-scanning-proof/35-CONTEXT.md
+**Stopped at:** Completed 35-03-PLAN.md (code-scanning-proof CI job)
+**Resume file:** None
 
-Last session: 2026-07-21T19:29:50.343Z
+Last session: 2026-07-21T19:47:10.341Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -330,3 +332,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 34 P01 | 12 min | 3 tasks | 5 files |
 | Phase 35 P01 | ~58m | 3 tasks | 8 files |
 | Phase 35 P02 | ~10m | 2 tasks | 2 files |
+| Phase 35 P03 | ~7m | 1 tasks | 2 files |
