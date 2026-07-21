@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.2.3
-milestone_name: Machine-readable reporters
-current_phase: 32
-status: Awaiting next milestone (v0.2.3 closed + archived)
-stopped_at: "v0.2.3 milestone CLOSED + archived via /gsd-complete-milestone (phases 30-32 -> milestones/v0.2.3-phases/, ROADMAP collapsed, REQUIREMENTS/audit archived, PROJECT.md evolved, RETROSPECTIVE v0.2.3 added, MILESTONES entry finalized). angular-typechecker@0.2.3 was already released to npm 2026-07-20. Next: /gsd-new-milestone v0.2.4 (Enhanced SARIF reporting for GitHub Code Scanning). OUTSTANDING: v0.2.1 + v0.2.2 complete-milestone ceremonies were never run (structurally archived during the OpenGSD migration) -- their RETROSPECTIVE sections still need backfilling."
-last_updated: "2026-07-20T23:36:09.612Z"
-last_activity: 2026-07-20
-last_activity_desc: Milestone v0.2.3 completed and archived
+milestone: v0.2.4
+milestone_name: Enhanced SARIF reporting for GitHub Code Scanning
+status: planning
+last_updated: "2026-07-21T00:22:15.905Z"
+last_activity: 2026-07-21
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
-current_phase_name: Verification + docs + additive audit
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -28,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 
 ## Current Position
 
-Phase: Milestone v0.2.3 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-20 — Milestone v0.2.3 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-21 — Milestone v0.2.4 started
 
 ## Accumulated Context
 
