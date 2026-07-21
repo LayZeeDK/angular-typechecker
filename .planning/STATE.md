@@ -5,10 +5,10 @@ milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 35
 current_phase_name: automated-code-scanning-proof
 status: executing
-stopped_at: Completed 35-03-PLAN.md (code-scanning-proof CI job)
-last_updated: "2026-07-21T19:47:10.350Z"
+stopped_at: Planned gap 35-04 (G-35-01 SARIF file-less fallback location); ready to execute --gaps-only
+last_updated: "2026-07-21T22:01:29.000Z"
 last_activity: 2026-07-21
-last_activity_desc: Phase 35 execution started
+last_activity_desc: Planned G-35-01 gap closure (35-04)
 progress:
   total_phases: 4
   completed_phases: 3
@@ -112,6 +112,7 @@ archives under `.planning/milestones/`.
 - [Phase 35]: 35-02: tools/ci/assert-code-scanning.mjs -- exported pure missingTuples(alerts,expected) + a bounded gh-api poll/assert CLI entry (poll code-scanning/sarifs/{id} to processing_status complete -> analyses category cross-check -> set-membership over code-scanning/alerts?ref=refs/pull/<n>/merge CLIENT-FILTERED to most_recent_instance.category===angular-typecheck-proof), fail-loud exit 1 on any missing tuple/timeout/processing-failed (PROOF-02). Injection-safe execFileSync gh arg array (no shell); PR_NUMBER/SARIF_ID from env, GH_TOKEN read by gh; flush-safe process.exitCode=1 (bin.ts D-02), NOT uncaught TLA. ASSERT_ALERTS_FILE env seam makes the set-membership decision + RED exit unit-testable WITHOUT GitHub; plugin-side subprocess spec (execFileSync node, NO cross-project static import -- module-boundary+vitest-runner block it) proves GREEN(0)/RED(1 naming tool/error)/category-isolation(wrong-category alert filtered out -> tuple missing -> 1). EXPECTED (typescript/error, template-type-check/error, extended-diagnostics/warning, tool/error) cross-referenced to the 35-01 drift-lock + diagnostic-family.ts (no drift). D-04 additive-only: only tools/ci/*.mjs + 1 src spec; no prod/schema/manifest/dep/version change. PROOF-01/02 stay Pending -- real-CI ingestion is 35-03 (phase Nyquist point).
 - [Phase 35]: code-scanning-proof job (35-03) fork gate uses the simple head.repo.fork == false since the job is already PR-only via its if:, avoiding the dogfood push-to-main compound form
 - [Phase 35]: PROOF-01/02 stay Pending after 35-03 -- the SARIF->Code Scanning ingestion is real-CI-only (Nyquist point); they close at phase verification when the code-scanning-proof job is green on a real PR
+- [Phase 35]: 35-04 (gap G-35-01, PLANNED not yet executed) -- deliberate D-01 REVERSAL after auto-locked discussion (35-G-35-01-CONTEXT.md, D1-D7): file-less SARIF results (ATC90001/90002 + file-less global TS like TS2318) gain a REGION-LESS whole-file fallback location whose artifactLocation.uri = relativizePath(result.tsConfigPath, pathBase) [always-present CoreResult.tsConfigPath], so GitHub Code Scanning stops rejecting the whole file (locationFromSarifResult: expected at least one location) while every diagnostic is still NEVER dropped. SARIF-ONLY (D2): json-report/DiagnosticRecord/fingerprintOf/barrel byte-unchanged; region-less chosen over synthetic line-1 (user-confirmed, honest whole-file); stays 0.2.4 patch (D7, the old file-less SARIF was rejected by its consumer -> a fix not a breaking change). 3 code tasks (sarif-report.ts PASS-2 + comments; unit spec + snap; integration spec + snap) + Task 4 README fix (plan-checker warning: README:710-713 told consumers to ignore file-less alerts -- now stale). Plan-checker: 0 blockers, 1 warning (incorporated). Decision-coverage 14/14. Real-CI code-scanning-proof green is the authoritative proof.
 
 ### Roadmap Evolution
 
