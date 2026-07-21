@@ -113,50 +113,67 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 ## Phase Details (v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning)
 
 ### Phase 33: Diagnostic-family SARIF rule metadata
+
 **Goal**: Every GitHub Code Scanning alert from angular-typechecker shows a rich, filterable rule -- a diagnostic-family tag, the correct default severity, and inline help text -- across ALL diagnostic families (TypeScript `TSxxxx`, template type-check, extended `NG8xxx`, tool `ATC900x`), shipped as an additive patch bump. This is the SOLE release-bearing change in the milestone.
 **Depends on**: Nothing (first v0.2.4 phase; builds on the shipped v0.2.3 SARIF reporter)
 **Requirements**: RULE-01, RULE-02, RULE-03, RULE-04
 **Success Criteria** (what must be TRUE):
+
   1. A SARIF report from a run that fires a TypeScript, an external-template, an NG8xxx, and a tool (ATC) diagnostic catalogs one rule per distinct fired `ruleId`, so no Code Scanning alert shows a blank rule description (RULE-01).
   2. Each rule carries a `properties.tags` family tag (`typescript` / `template-type-check` / `extended-diagnostics` / `tool`) so GitHub `tag:` filters group alerts by family (RULE-02).
   3. Each rule carries a `defaultConfiguration.level` matching the observed diagnostic severity so GitHub `severity:` filtering and default alert severity are correct (RULE-03).
   4. Each rule carries SARIF `help.text` (not only `helpUri`) so the alert detail page renders rule help instead of "No rule help available" (RULE-04).
   5. The JSON and human reporter outputs, `DiagnosticRecord`, and the barrel are byte-unchanged (family is derived inside the SARIF path only), and the additive-only audit vs `@0.2.3` passes -- patch bump `0.2.3 -> 0.2.4`, `v0.3.0` escape hatch untriggered.
+
 **Plans**: 2 plans
+**Wave 1**
+
 - [ ] 33-01-PLAN.md -- diagnostic-family classifier + on-demand SARIF rule catalog with tags/level/help (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 33-02-PLAN.md -- four-family integration proof over real fixtures + additive-only audit vs `@0.2.3` (wave 2)
 
 ### Phase 34: Per-project SARIF categories in CI
+
 **Goal**: angular-typechecker's CI SARIF upload reports one Code Scanning analysis per workspace project that uses the `typecheck` executor -- auto-discovered so the set cannot silently drift -- with zero change to the published package (the reporter stays single-run per invocation; the multi-run merge is assembled CI-side).
 **Depends on**: Phase 33
 **Requirements**: MULTI-01, MULTI-02
 **Success Criteria** (what must be TRUE):
+
   1. The `code-scanning` CI job uploads ONE merged SARIF file whose runs each carry `automationDetails.id = angular-typecheck/<project>`, landing as distinct per-project analyses in Code Scanning -- single `upload-sarif`, no `category` input (distinct per-run ids avoid GitHub's multi-run-same-category rejection) (MULTI-01).
   2. The reported project set is discovered by filtering for the `angular-typechecker:typecheck` executor (not a plain `--with-target` over-match), so a project that adds or drops the target is covered/dropped with no CI edit (MULTI-02).
   3. An in-plugin drift-guard spec fails loudly if the discovery script's output diverges from an independent enumeration of executor-using projects (mirrors GUARD-01b) (MULTI-02).
   4. The published package is unchanged -- no new dependency, no reporter/API/schema change -- so no version bump.
+
 **Plans**: TBD
 
 ### Phase 35: Automated Code Scanning proof
+
 **Goal**: A CI check continuously PROVES the SARIF -> Code Scanning contract end-to-end -- one known diagnostic per family from an isolated fixture lands as a Code Scanning alert with the expected category, tags, and severity -- and fails red the moment any part of that contract regresses.
 **Depends on**: Phase 33, Phase 34
 **Requirements**: PROOF-01, PROOF-02
 **Success Criteria** (what must be TRUE):
+
   1. An isolated fixture lives OUTSIDE the Nx project graph (under `tools/`, no `project.json`) emitting exactly one diagnostic per family (typescript; template-type-check via an external `.html`; extended `NG8xxx`; tool `ATC`), so the normal `nx typecheck` gate never touches it (PROOF-01).
   2. A CI job runs the standalone CLI on the fixture, uploads under a dedicated `angular-typecheck-proof` category, and asserts via bounded `gh api` polling on the PR merge-ref (`code-scanning/analyses` + `code-scanning/alerts`) that each expected alert is present -- set-membership of category/tag/severity, not counts (PROOF-01).
   3. The proof check turns red if any expected alert, category, or tag is missing, so a broken SARIF->Code Scanning contract is caught automatically, not manually (PROOF-02).
   4. Proof alerts query on the PR ref and do not pollute the `main` alerts view.
+
 **Plans**: TBD
 
 ### Phase 36: Code Scanning gating + Scanned-files documentation
+
 **Goal**: Make a successful Code Scanning upload part of the merge gate -- both via the required `ci` aggregate and GitHub's "Require code scanning results" ruleset -- WITHOUT deadlocking planning-only or fork PRs, and document the CodeQL-only "Scanned files" limitation as a known GitHub product gap. Enabling the ruleset on `main` is a real-CI-only, spike-gated step verified on a throwaway PR first.
 **Depends on**: Phase 33, Phase 34, Phase 35
 **Requirements**: GATE-01, GATE-02, DOC-01
 **Success Criteria** (what must be TRUE):
+
   1. The `code-scanning` job (and the proof job) are members of the required `ci` aggregate's `needs[]`; this reverses the deliberate prior exclusion (kept out so an outage could not deadlock merges) and that reversal is documented as acceptable, precedented by `cve-lite` (GATE-01).
   2. The `code-scanning` job is un-path-gated so every PR to `main` -- including a `.planning/`-only PR -- produces a Code Scanning analysis, so the "Require code scanning results" ruleset cannot deadlock a planning-only PR (the status-check path-skip trick alone does NOT satisfy this GitHub-side "analysis exists" check) (GATE-02).
   3. The "Require code scanning results" ruleset for angular-typechecker + fallow is verified live in "Evaluate" mode first and on a throwaway PR before enabling on `main`, the `enforcement: disabled` recovery toggle is documented, and the fork-PR deadlock (read-only token -> upload skipped) is documented (GATE-02).
   4. The README documents that GitHub's tool-status "Scanned files" panel is CodeQL-only telemetry that third-party SARIF cannot populate (with the spike evidence that `run.artifacts` is inert), so the empty panel is a known GitHub limitation, not a defect -- no GitHub Issue filed (DOC-01).
+
 **Plans**: TBD
 
 ## Progress
