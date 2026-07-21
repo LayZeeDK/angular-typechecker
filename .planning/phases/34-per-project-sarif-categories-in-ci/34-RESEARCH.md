@@ -461,18 +461,18 @@ expect(discovered).toEqual(independentTypecheckProjects(workspaceRoot));
 | A2 | Per-target options (`includeDeps` etc.) are intentionally NOT threaded into the CI SARIF loop. | Pitfall 5 | If option-fidelity is required, `typecheck-consumer`'s node_modules diagnostics would be under-reported vs its Nx target. Deliberate per MULTI scope + parity with today's step; flag in the plan. |
 | A3 | A clean project emits a valid single-run SARIF (run present, empty `results[]`), so all 4 clean consumers produce mergeable runs and steady-state uploads 4 analyses with 0 alerts each. | Pattern 3 | If a clean run emitted no file, clean projects would be skipped. Strongly supported (the current single-run dogfood uploads clean ng-spike-app), but only fully provable in real CI. |
 
-## Open Questions
+## Open Questions (RESOLVED -- all three recommendations adopted in 34-01-PLAN.md)
 
-1. **Include the workspace-root project as a 5th analysis, or exclude it?**
+1. **Include the workspace-root project as a 5th analysis, or exclude it?** (RESOLVED: EXCLUDE)
    - What we know: `@angular-typechecker/source` genuinely uses the executor (on clean fixtures); CONTEXT/ROADMAP lock "the four consumers."
    - What's unclear: whether an always-empty root analysis is wanted.
    - Recommendation: EXCLUDE (A1). Keeps the 4-consumer scope, avoids a scoped/slash-bearing category and a filename-sanitization problem. Encode the exclusion in the guard (Pitfall 1) and note it in the plan so a future reviewer understands the guard's root subtraction is intentional, not a hack.
 
-2. **Design A vs Design B for the generate+merge wiring?**
+2. **Design A vs Design B for the generate+merge wiring?** (RESOLVED: Design B)
    - What we know: both produce identical output; D-05 makes the shell wiring Claude's Discretion.
    - Recommendation: Design B (fold loop+merge into `merge-sarif.mjs` via `spawnSync`) -- injection-free, unit-testable, no bash-JSON (CLAUDE.md footgun). Use Design A only if the plan insists `merge-sarif.mjs` strictly read pre-written files.
 
-3. **`cache: false` dedicated target vs a plain spec riding `test` for the drift guard?**
+3. **`cache: false` dedicated target vs a plain spec riding `test` for the drift guard?** (RESOLVED: plain spec riding `test`)
    - What we know: `ci-e2e-coverage-guard.spec.ts` (the stated analogue) is a PLAIN spec on the cached `test` target and is correct in CI because CI runs cold (no cross-runner `.nx/cache` restore -- `unknown-local-cache`). `scoped-name-guard` uses a dedicated `cache: false` `nx:run-commands` target ONLY because it must run on docs-only PRs where `test` is path-gated off.
    - What's unclear: CONTEXT D-04 says "cache: false", but the discovery + `code-scanning` job are BOTH path-gated together, so the guard does not need to run on planning-only PRs.
    - Recommendation: a PLAIN spec beside `ci-e2e-coverage-guard.spec.ts`, riding `test` (matches the closest precedent; CI's cold cache makes it re-run on every code PR). If the planner wants the strict always-fresh guarantee, add it to `scoped-name-guard`'s `cache: false` glob or give it its own `cache: false` target -- but that is optional hardening, not required for MULTI-02.
