@@ -5,8 +5,8 @@ milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 35
 current_phase_name: Automated Code Scanning proof
 status: verifying
-stopped_at: Phase 34 context gathered
-last_updated: "2026-07-21T16:10:13.566Z"
+stopped_at: Phase 35 context gathered
+last_updated: "2026-07-21T16:23:01.984Z"
 last_activity: 2026-07-21
 progress:
   total_phases: 4
@@ -268,10 +268,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 34 context gathered
-**Resume file:** .planning/phases/34-per-project-sarif-categories-in-ci/34-CONTEXT.md
+**Stopped at:** Phase 35 context gathered
+**Resume file:** .planning/phases/35-automated-code-scanning-proof/35-CONTEXT.md
 
-Last session: 2026-07-21T14:10:44.945Z
+Last session: 2026-07-21T16:23:01.973Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
