@@ -4,17 +4,17 @@ milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 33
 current_phase_name: diagnostic-family-sarif-rule-metadata
-status: executing
-stopped_at: Phase 33 context gathered
-last_updated: "2026-07-21T08:07:55.383Z"
+status: verifying
+stopped_at: Phase 33 complete (33-02 executed); ready for verification
+last_updated: "2026-07-21T08:36:59.207Z"
 last_activity: 2026-07-21
 last_activity_desc: Phase 33 execution started
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 0
+  completed_plans: 2
+  percent: 25
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 
 ## Current Position
 
-Phase: 33 (diagnostic-family-sarif-rule-metadata) — EXECUTING
+Phase: 33 (diagnostic-family-sarif-rule-metadata) -- VERIFYING
 Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-07-21 — Phase 33 execution started
+Status: Phase complete -- ready for verification
+Last activity: 2026-07-21 -- Phase 33 executed (plans 33-01 + 33-02 complete)
 
 ## Accumulated Context
 
@@ -105,6 +105,7 @@ archives under `.planning/milestones/`.
 - [Phase 32]: 32-04: DOC-01 docs -- README ## Machine-readable output (--format json/sarif, JSON schema, SARIF upload-sarif recipe, run-from-repo-root artifactLocation.uri caveat) + curated UNDATED end-user CHANGELOG 0.2.3 (no ids, version held 0.2.2, no cut) + machine-readable-docs.spec.ts tripwire. Reconciled 3 now-false reporter passages (non-goal / 'lands in a later release'); tripwire absence-locks them. SARIF recipe uses npx angular-typechecker (atc not on PATH in GH Actions run:). Deferred: stale HELP_TEXT 'sarif lands in a later release' (parse-args.ts, out of scope).
 - [Phase 32]: 32-03: ADD-01 ADDITIVE-ONLY HOLDS vs angular-typechecker@0.2.2 -- barrel/builder/executor-id/generator-schemas byte-UNCHANGED; executor+builder schemas WIDEN-ONLY (optional format enum); CoreResult.totalFilesCount ADDITIVE; plugin deps gained ONLY node-sarif-builder (ajv/ajv-formats ROOT devDeps only); node-sarif-builder correctly classified (nx lint green, NOT in ignoredDependencies, A1); project.json asset-glob + schema/HELP_TEXT description edits recorded NON-BREAKING. v0.3.0 escape hatch UNTRIGGERED; version held at 0.2.2 (cut is the human-gated Release-PR). 32-ADDITIVE-AUDIT.md mirrors 27-ADDITIVE-AUDIT.md.
 - [Phase 33]: 33-01: SARIF rule metadata (RULE-01..04) unit tier -- NEW pure core/diagnostic-family.ts familyOf(record):Family reading only rawCode+file (rawCode-before-.html order locked by an .html-attributed catalog NG test; not barrel-exported; D-01/D-02/D-03). sarif-report.ts flips the fixed-18-NG catalog to ONE rule per DISTINCT fired ruleId (empty on a clean run, D-05), each carrying properties.tags(family)/defaultConfiguration.level(reused toSarifLevel)/help.text via the .rule mutation -- no cast, no new dependency (D-06/D-07/D-09); any-.html-wins family fold + first-observed level, both order-independent (D-04/D-06); corrected the stale header/comment to on-demand cataloging + completeRunFields sets result.ruleIndex (D-11). JSON/human/diagnostic-record/extended-catalog/barrel byte-unchanged; integration spec+snapshot untouched (owned by 33-02, runs under the separate integration target). TS+template helpUris verified 200, tool helpUri=repo info URI (no new README). Six-check battery green (test 565, typecheck, tsc-spec, lint maxWarnings:0, format:check, build); version held 0.2.3.
+- [Phase 33]: 33-02: SARIF rule metadata (RULE-01..04) integration tier + additive audit. Extended machine-reporters-sarif.integration.spec.ts to prove all four Family literals over REAL cold-compiler fixtures: layout-b-host (NG8002 template-type-check + TS2322 typescript, rules[] = exactly those two), global-diagnostics (one TS2318 typescript rule, 10 file-less results at ruleIndex 0), NEW extended-content-projection (real NG8011 extended-diagnostics keeping its angular.dev helpUri, warning level), NEW solution-style-all-missing (two file-less ATC90002 tool, error). Reused EXISTING per-family fixtures rather than a bespoke composite (research Open-Q1 recommendation; the 33-01 unit tier already locks D-02..D-04 authoritatively); confirmed the fired codes empirically by running the spec. Widened the local SARIF interfaces (rule tags/level/help + result ruleIndex) + added a loud rule-by-id lookup. Regenerated BOTH committed integration snapshots: rules[] collapsed from the fixed 18-NG catalog to only the fired ruleIds, each carrying tags/level/help, and every result gained a correct 0-based ruleIndex. The tool fixture is NOT snapshotted (the ATC90002 not-found message embeds the resolved absolute tsconfig path, which is neither cross-OS byte-stable nor drive-letter clean) -- explicit assertions + schema-validate + two-run stability instead. Task 1 touched NO production module (sarif-report.ts + diagnostic-family.ts diff empty). 33-ADDITIVE-AUDIT.md vs angular-typechecker@0.2.3: whole-package git-diff lists EXACTLY the 7 SARIF-path files; json-report.ts, format-report.ts, diagnostic-record.ts, extended-catalog.ts, src/index.ts, src/index.drift.ts + the manifest are byte-unchanged; published dependencies gained nothing (no ajv leak); FORMAT_VERSION stays 1; JSON + human snapshots unchanged; the unified nx release --dry-run derives a PATCH bump 0.2.3 -> 0.2.4; no breaking-change marker since the baseline tag; additive-only HOLDS, v0.3.0 escape hatch UNTRIGGERED. KEY: nx test EXCLUDES *.integration.spec.ts (the integration tier runs under the separate `integration` Nx target / vitest.integration.config.mts) -- the plan/orchestrator brief calling `nx test` unit+integration is inaccurate, so nx integration was run in addition. Full battery green: nx test 53/565, nx integration 24/152, typecheck (3 tsc), tsc-spec, lint maxWarnings:0, format:check (the repo gate; the plan's angular-typechecker:format:check target does not exist), build. Version held 0.2.3 (the cut is the human-gated Release-PR flow).
 
 ### Roadmap Evolution
 
@@ -267,10 +268,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 33 context gathered
-**Resume file:** .planning/phases/33-diagnostic-family-sarif-rule-metadata/33-CONTEXT.md
+**Stopped at:** Phase 33 complete (33-02 executed); ready for verification
+**Resume file:** None
 
-Last session: 2026-07-21T08:07:11.887Z
+Last session: 2026-07-21T08:36:59.197Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -321,3 +322,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 32 P02 | 33min | 3 tasks | 6 files |
 | Phase 32 P32-03 | 6min | 2 tasks | 1 files |
 | Phase 33 P01 | 17min | 2 tasks | 5 files |
+| Phase 33 P02 | 22min | 2 tasks | 3 files |
