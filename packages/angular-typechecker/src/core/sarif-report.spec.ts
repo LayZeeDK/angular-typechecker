@@ -233,7 +233,9 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
     expect(rules[0].id).toBe('TS2322');
     expect(rules[0].properties?.tags).toEqual(['typescript']);
     expect(rules[0].defaultConfiguration?.level).toBe('error');
-    expect(rules[0].shortDescription?.text).toBe('TypeScript diagnostic TS2322');
+    expect(rules[0].shortDescription?.text).toBe(
+      'TypeScript diagnostic TS2322',
+    );
     expect(rules[0].help?.text.length ?? 0).toBeGreaterThan(0);
     expect(rules[0].helpUri).toBeDefined();
   });
@@ -280,7 +282,10 @@ describe('formatSarifReport (REP-02 / D-01..D-06 / VER-01)', () => {
       ...positionedDiag(),
       category: WARNING,
     } as ts.Diagnostic;
-    const errorSecond = { ...positionedDiag(), category: ERROR } as ts.Diagnostic;
+    const errorSecond = {
+      ...positionedDiag(),
+      category: ERROR,
+    } as ts.Diagnostic;
     const log = await sarifOf(
       coreResult({
         diagnostics: [warningFirst, errorSecond],

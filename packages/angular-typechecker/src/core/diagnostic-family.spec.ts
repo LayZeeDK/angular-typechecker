@@ -32,9 +32,9 @@ const NON_CATALOG_NG_CODE = 8002;
 
 describe('familyOf (D-01 / D-02 / D-03)', () => {
   it('keeps the non-catalog NG code genuinely out of the extended catalog (desync guard)', () => {
-    expect(EXTENDED_DIAGNOSTIC_CATALOG.map((entry) => entry.ngCode)).not.toContain(
-      NON_CATALOG_NG_CODE,
-    );
+    expect(
+      EXTENDED_DIAGNOSTIC_CATALOG.map((entry) => entry.ngCode),
+    ).not.toContain(NON_CATALOG_NG_CODE);
   });
 
   it('classifies a positive TypeScript code in a .ts file as typescript', () => {
@@ -54,9 +54,9 @@ describe('familyOf (D-01 / D-02 / D-03)', () => {
   });
 
   it('classifies a negative non-catalog NG code as template-type-check', () => {
-    expect(familyOf(record(NG(NON_CATALOG_NG_CODE), 'src/y.component.ts'))).toBe(
-      'template-type-check',
-    );
+    expect(
+      familyOf(record(NG(NON_CATALOG_NG_CODE), 'src/y.component.ts')),
+    ).toBe('template-type-check');
   });
 
   it('classifies the synthesized tool codes 90001 and 90002 as tool', () => {
