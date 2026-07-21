@@ -146,7 +146,11 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. An in-plugin drift-guard spec fails loudly if the discovery script's output diverges from an independent enumeration of executor-using projects (mirrors GUARD-01b) (MULTI-02).
   4. The published package is unchanged -- no new dependency, no reporter/API/schema change -- so no version bump.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+**Wave 1**
+
+- [ ] 34-01-PLAN.md -- discovery script + generate/merge script + drift-guard/merge-shape specs + code-scanning job rewire (wave 1)
 
 ### Phase 35: Automated Code Scanning proof
 
