@@ -164,7 +164,16 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The proof check turns red if any expected alert, category, or tag is missing, so a broken SARIF->Code Scanning contract is caught automatically, not manually (PROOF-02).
   4. Proof alerts query on the PR ref and do not pollute the `main` alerts view.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+**Wave 1** *(parallel — disjoint files)*
+
+- [ ] 35-01-PLAN.md — isolated one-per-family fixture (outside the Nx graph, no `project.json`) + fallow/Prettier gate scoping + local drift-lock integration spec (wave 1)
+- [ ] 35-02-PLAN.md — `tools/ci/assert-code-scanning.mjs` (`gh api` bounded poll + set-membership matcher, fail-loud) + subprocess matcher unit test (wave 1)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 35-03-PLAN.md — PR-only, non-fork `code-scanning-proof` ci.yml job (dedicated `angular-typecheck-proof` category, reused SHA-pinned upload, assert step; deliberately absent from the required `ci` aggregate) (wave 2)
 
 ### Phase 36: Code Scanning gating + Scanned-files documentation
 
@@ -220,7 +229,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 32. Verification + docs + additive audit | v0.2.3 | 4/4 | Complete   | 2026-07-19 |
 | 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 2/2 | Complete    | 2026-07-21 |
 | 34. Per-project SARIF categories in CI | v0.2.4 | 1/1 | Complete    | 2026-07-21 |
-| 35. Automated Code Scanning proof | v0.2.4 | 0/? | Not started | - |
+| 35. Automated Code Scanning proof | v0.2.4 | 0/3 | Not started | - |
 | 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 0/? | Not started | - |
 
 ## Backlog
