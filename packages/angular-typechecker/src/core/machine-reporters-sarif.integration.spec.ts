@@ -21,12 +21,13 @@ import typecheckExecutor from '../executors/typecheck/executor';
 //   - layout-b-host: mixed TS2322 + NG8002 (external .html template) -- the
 //     Windows path -> forward-slash artifactLocation.uri conversion (VER-02), and
 //     the `typescript` + `template-type-check` family tags over a real fixture.
-//   - global-diagnostics: file-less TS2318 -- the SARIF no-`locations` result that
-//     is NEVER dropped (Phase-31 D-01), catalogued as a single `typescript` rule
-//     that all ten results resolve to by ruleIndex.
+//   - global-diagnostics: file-less TS2318 -- each result now carries a whole-file
+//     fallback location on the relativized tsconfig (still NEVER dropped), catalogued
+//     as a single `typescript` rule that all ten results resolve to by ruleIndex.
 //   - extended-content-projection: a real NG8011 extended diagnostic -- the
 //     `extended-diagnostics` family tag keeping its angular.dev helpUri (RULE-02/04).
-//   - solution-style-all-missing: two file-less ATC90002 not-found errors -- the
+//   - solution-style-all-missing: two file-less ATC90002 not-found errors, each now
+//     carrying a whole-file fallback location on the relativized tsconfig -- the
 //     `tool` family tag (RULE-02) over the fourth and final Family literal.
 //
 // Phase 33 (RULE-01..04): each cataloged rule now carries properties.tags (the
@@ -324,12 +325,25 @@ describe('SARIF reporter integration -- global-diagnostics (file-less TS2318)', 
     expect(valid, errors).toBe(true);
   });
 
-  it('keeps at least one file-less result with NO locations (never dropped)', () => {
-    expect(
-      payload.runs[0].results.some(
-        (result) => (result.locations?.length ?? 0) === 0,
-      ),
-    ).toBe(true);
+  it('gives every file-less result exactly one whole-file location on the tsconfig, never dropped', () => {
+    const results = payload.runs[0].results;
+
+    // All ten file-less TS2318 results are now LOCATED (one-to-one), never dropped.
+    expect(results).toHaveLength(10);
+
+    for (const result of results) {
+      expect(result.locations).toHaveLength(1);
+    }
+
+    // Each whole-file location anchors to the repo-relative, forward-slash tsconfig.
+    const uris = artifactUris(payload);
+
+    expect(uris).toHaveLength(10);
+
+    for (const uri of uris) {
+      expect(uri.endsWith('global-diagnostics/tsconfig.json')).toBe(true);
+      expect(uri).not.toMatch(/[\\:]/);
+    }
   });
 
   it('is byte-stable two-run (same process, redacted)', async () => {
@@ -428,7 +442,7 @@ describe('SARIF reporter integration -- solution-style-all-missing (tool ATC9000
     expect((tool.help?.text ?? '').length).toBeGreaterThan(0);
   });
 
-  it('resolves both file-less results to the single tool rule by ruleIndex 0 (RULE-01)', () => {
+  it('resolves both file-less results to the single tool rule by ruleIndex 0, each located on the tsconfig (RULE-01)', () => {
     const results = payload.runs[0].results;
 
     expect(results).toHaveLength(2);
@@ -436,7 +450,14 @@ describe('SARIF reporter integration -- solution-style-all-missing (tool ATC9000
     for (const result of results) {
       expect(result.ruleId).toBe('ATC90002');
       expect(result.ruleIndex).toBe(0);
-      expect(result.locations?.length ?? 0).toBe(0);
+      expect(result.locations?.length ?? 0).toBe(1);
+
+      const uri = result.locations?.[0].physicalLocation?.artifactLocation?.uri;
+
+      expect(uri?.endsWith('solution-style-all-missing/tsconfig.json')).toBe(
+        true,
+      );
+      expect(uri).not.toMatch(/[\\:]/);
     }
   });
 

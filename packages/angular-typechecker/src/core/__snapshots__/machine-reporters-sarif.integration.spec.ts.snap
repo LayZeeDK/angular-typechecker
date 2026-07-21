@@ -5,10 +5,27 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
   "$schema": "http://json.schemastore.org/sarif-2.1.0.json",
   "runs": [
     {
-      "artifacts": [],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "fixtures/global-diagnostics/tsconfig.json",
+          },
+          "sourceLanguage": "JSON",
+        },
+      ],
       "results": [
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Array'.",
           },
@@ -20,6 +37,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Boolean'.",
           },
@@ -31,6 +58,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'CallableFunction'.",
           },
@@ -42,6 +79,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Function'.",
           },
@@ -53,6 +100,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'IArguments'.",
           },
@@ -64,6 +121,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'NewableFunction'.",
           },
@@ -75,6 +142,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Number'.",
           },
@@ -86,6 +163,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Object'.",
           },
@@ -97,6 +184,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'RegExp'.",
           },
@@ -108,6 +205,16 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'String'.",
           },
