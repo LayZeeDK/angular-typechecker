@@ -463,7 +463,9 @@ const payload = JSON.parse(await runSarif(proofTsConfig));
 
 **If a claim proves wrong, the failure mode is a RED proof, never a silent pass** -- which is exactly the PROOF-02 charter.
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> RESOLVED: both questions below carry a recommendation that was incorporated into the phase plans (35-01 fixture template + drift-lock; 35-02 analyses-API category cross-check). No open blocker remains.
 
 1. **Exact extended NG8xxx code + whether NG8002 and the extended code coexist in one template.**
    - What we know: `familyOf` maps any 18-catalog member -> `extended-diagnostics` and `NG8002` -> `template-type-check`; both are proven individually (`extended-content-projection` NG8011; `layout-b-host` NG8002).
