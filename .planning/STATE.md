@@ -1,10 +1,13 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2.4
-milestone_name: Enhanced SARIF reporting for GitHub Code Scanning
+milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
+current_phase: 33
 status: planning
-last_updated: "2026-07-21T00:22:15.905Z"
+stopped_at: Phase 33 context gathered
+last_updated: "2026-07-21T01:08:04.284Z"
 last_activity: 2026-07-21
+last_activity_desc: v0.2.4 roadmap created (phases 33-36, 11/11 requirements mapped)
 progress:
   total_phases: 4
   completed_phases: 0
@@ -262,10 +265,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** v0.2.3 milestone CLOSED + archived (this session): resolved 19 stale `audit-open` bookkeeping flags (16+1 quick-task SUMMARYs missing a `status:` field + the two CI-observable Phase-32 statuses), then archived phases 30-32 to `milestones/v0.2.3-phases/`, collapsed ROADMAP, archived + `git rm`'d REQUIREMENTS.md, evolved PROJECT.md, added the RETROSPECTIVE v0.2.3 section, finalized the MILESTONES entry. `angular-typechecker@0.2.3` was already released to npm 2026-07-20 (this close is bookkeeping-only). Next: `/gsd-new-milestone v0.2.4`. OUTSTANDING: v0.2.1 + v0.2.2 never had `/gsd-complete-milestone` run (structurally archived during the OpenGSD migration) -- their RETROSPECTIVE.md sections still need backfilling.
-**Resume file:** HANDOFF.json + .continue-here.md (committed in the WIP pause) still describe the v0.2.4 kickoff at the milestone boundary -- consume them when starting v0.2.4.
+**Stopped at:** Phase 33 context gathered
+**Resume file:** .planning/phases/33-diagnostic-family-sarif-rule-metadata/33-CONTEXT.md
 
-Last session: 2026-07-19T02:21:17.061Z
+Last session: 2026-07-21T01:08:04.272Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
