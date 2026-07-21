@@ -163,5 +163,27 @@ no finding, cross-confirming the dependency classification.
 
 ---
 
+## 6. Post-review addendum (WR-01 fix)
+
+After this audit was written, the phase code review found WR-01: the PASS-1 family
+upgrade flipped only the `template-type-check` tag and kept the first occurrence's
+`shortDescription` / `helpUri` / `help.text`, so a ruleId seen in a `.ts` file then an
+external `.html` template emitted order-dependent rule metadata. Fixed in commit
+`029b45d` by rebuilding the full `RuleMeta` from the template occurrence on upgrade
+(preserving the first-observed level, D-06) and hardening the D-04 spec to assert the
+description/help/URI fields in both orders.
+
+The fix touches ONLY `src/core/sarif-report.ts` and `src/core/sarif-report.spec.ts` --
+both already inside the seven-file additive set of section 2a -- so it changes NO
+boundary this audit asserts. Re-confirmed after the fix: the whole-package diff vs
+`@0.2.3` still lists exactly those seven SARIF-path files; every do-not-touch surface
+(JSON reporter, human formatter, diagnostic record, extended catalog, public barrel,
+barrel drift tripwire, published manifest) is still byte-unchanged; no dependency was
+added; `version` stays `0.2.3`. **ADDITIVE-ONLY still HOLDS; the patch bump
+`0.2.3 -> 0.2.4` and the untriggered v0.3.0 escape hatch are unchanged.**
+
+---
+
 *Phase: 33-diagnostic-family-sarif-rule-metadata*
 *Audited: 2026-07-21 against `angular-typechecker@0.2.3` (baseline `f12775c`, HEAD `974524b`)*
+*Addendum: 2026-07-21 -- post-review WR-01 fix (`029b45d`), additive-only re-confirmed*

@@ -16,7 +16,10 @@ findings:
   warning: 1
   info: 1
   total: 2
-status: issues_found
+status: resolved
+resolution:
+  WR-01: fixed in commit 029b45d (full RuleMeta rebuilt on family upgrade; D-04 spec hardened)
+  IN-01: deferred -- a shared SYNTHESIZED_CODE_FLOOR const would require editing diagnostic-record.ts, which D-10/D-12 freeze byte-unchanged this phase; revisit in a phase allowed to touch that module
 ---
 
 # Phase 33: Code Review Report
@@ -24,7 +27,21 @@ status: issues_found
 **Reviewed:** 2026-07-21T08:50:21Z
 **Depth:** deep
 **Files Reviewed:** 7
-**Status:** issues_found
+**Status:** resolved (WR-01 fixed in 029b45d; IN-01 deferred -- see Resolution)
+
+## Resolution (orchestrator, 2026-07-21)
+
+- **WR-01 (warning) -- FIXED** in commit `029b45d`. The family upgrade now rebuilds the
+  full `RuleMeta` via `buildRuleMeta(record, 'template-type-check')` while preserving the
+  first-observed level (D-06), so the tag AND the description/help/URI all describe the
+  template family regardless of observation order. The D-04 spec was hardened to assert
+  `shortDescription` / `helpUri` / `help.text` in both orders (it previously asserted only
+  the tag, which is why it missed this).
+- **IN-01 (info) -- DEFERRED.** A shared `SYNTHESIZED_CODE_FLOOR` const would need
+  `diagnostic-record.ts` to reference it, but D-10/D-12 freeze that module byte-unchanged
+  for this phase (the additive-only audit depends on it). Introducing the const in only one
+  of the two sites would not achieve the single-source-of-truth goal and would arguably be
+  worse. Revisit when a future phase is allowed to touch `diagnostic-record.ts`.
 
 ## Summary
 
