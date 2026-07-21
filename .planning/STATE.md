@@ -6,14 +6,14 @@ current_phase: 35
 current_phase_name: Automated Code Scanning proof
 status: executing
 stopped_at: Phase 35 context gathered
-last_updated: "2026-07-21T18:01:36.616Z"
+last_updated: "2026-07-21T19:10:35.180Z"
 last_activity: 2026-07-21
-last_activity_desc: Phase 35 planning complete
+last_activity_desc: Phase 35 execution started
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 50
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archived: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 34 — Per-project SARIF categories in CI
+**Current focus:** Phase 35 — Automated Code Scanning proof
 
 ## Current Position
 
-Phase: 35 — Automated Code Scanning proof
-Plan: Not started
+Phase: 35 (Automated Code Scanning proof) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-07-21 — Phase 35 planning complete
+Last activity: 2026-07-21 — Phase 35 execution started
 
 ## Accumulated Context
 
@@ -107,6 +107,8 @@ archives under `.planning/milestones/`.
 - [Phase 33]: 33-01: SARIF rule metadata (RULE-01..04) unit tier -- NEW pure core/diagnostic-family.ts familyOf(record):Family reading only rawCode+file (rawCode-before-.html order locked by an .html-attributed catalog NG test; not barrel-exported; D-01/D-02/D-03). sarif-report.ts flips the fixed-18-NG catalog to ONE rule per DISTINCT fired ruleId (empty on a clean run, D-05), each carrying properties.tags(family)/defaultConfiguration.level(reused toSarifLevel)/help.text via the .rule mutation -- no cast, no new dependency (D-06/D-07/D-09); any-.html-wins family fold + first-observed level, both order-independent (D-04/D-06); corrected the stale header/comment to on-demand cataloging + completeRunFields sets result.ruleIndex (D-11). JSON/human/diagnostic-record/extended-catalog/barrel byte-unchanged; integration spec+snapshot untouched (owned by 33-02, runs under the separate integration target). TS+template helpUris verified 200, tool helpUri=repo info URI (no new README). Six-check battery green (test 565, typecheck, tsc-spec, lint maxWarnings:0, format:check, build); version held 0.2.3.
 - [Phase 33]: 33-02: SARIF rule metadata (RULE-01..04) integration tier + additive audit. Extended machine-reporters-sarif.integration.spec.ts to prove all four Family literals over REAL cold-compiler fixtures: layout-b-host (NG8002 template-type-check + TS2322 typescript, rules[] = exactly those two), global-diagnostics (one TS2318 typescript rule, 10 file-less results at ruleIndex 0), NEW extended-content-projection (real NG8011 extended-diagnostics keeping its angular.dev helpUri, warning level), NEW solution-style-all-missing (two file-less ATC90002 tool, error). Reused EXISTING per-family fixtures rather than a bespoke composite (research Open-Q1 recommendation; the 33-01 unit tier already locks D-02..D-04 authoritatively); confirmed the fired codes empirically by running the spec. Widened the local SARIF interfaces (rule tags/level/help + result ruleIndex) + added a loud rule-by-id lookup. Regenerated BOTH committed integration snapshots: rules[] collapsed from the fixed 18-NG catalog to only the fired ruleIds, each carrying tags/level/help, and every result gained a correct 0-based ruleIndex. The tool fixture is NOT snapshotted (the ATC90002 not-found message embeds the resolved absolute tsconfig path, which is neither cross-OS byte-stable nor drive-letter clean) -- explicit assertions + schema-validate + two-run stability instead. Task 1 touched NO production module (sarif-report.ts + diagnostic-family.ts diff empty). 33-ADDITIVE-AUDIT.md vs angular-typechecker@0.2.3: whole-package git-diff lists EXACTLY the 7 SARIF-path files; json-report.ts, format-report.ts, diagnostic-record.ts, extended-catalog.ts, src/index.ts, src/index.drift.ts + the manifest are byte-unchanged; published dependencies gained nothing (no ajv leak); FORMAT_VERSION stays 1; JSON + human snapshots unchanged; the unified nx release --dry-run derives a PATCH bump 0.2.3 -> 0.2.4; no breaking-change marker since the baseline tag; additive-only HOLDS, v0.3.0 escape hatch UNTRIGGERED. KEY: nx test EXCLUDES *.integration.spec.ts (the integration tier runs under the separate `integration` Nx target / vitest.integration.config.mts) -- the plan/orchestrator brief calling `nx test` unit+integration is inaccurate, so nx integration was run in addition. Full battery green: nx test 53/565, nx integration 24/152, typecheck (3 tsc), tsc-spec, lint maxWarnings:0, format:check (the repo gate; the plan's angular-typechecker:format:check target does not exist), build. Version held 0.2.3 (the cut is the human-gated Release-PR flow).
 - [Phase 34]: 34-01: CI-side per-project multi-run SARIF (MULTI-01/02, no release). Design B merge-sarif.mjs spawns the shipped dist CLI per discovered project from repo root, stamps per-run automationDetails.id=angular-typecheck/<project>, merges to one file, writes nothing on zero runs; single upload-sarif with NO category. Discovery list-typecheck-projects.mjs filters apps/+libs/ by executor id (excludes root @angular-typechecker/source dogfood + e2e fixtures by root-scoping). Drift guard subtracts BOTH root project.json AND e2e/ (root uses the executor on clean fixtures -> unfiltered enum 5 vs discovery 4). D-06 additive-only HELD: only tools/ci/*.mjs + 2 specs + ci.yml; core/**, src/cli/**, package.json byte-unchanged; version 0.2.3. MULTI-01 GitHub ingestion is real-CI-only (Phase 35 proves).
+- [Phase 35]: 35-01: isolated SARIF proof fixture at tools/sarif-proof-fixture/ (NO project.json -> outside the nx typecheck gate + explicit-allowlist tsconfig.tools.json) fires all four families in ONE solution-tsconfig CLI run: surviving leaf (TS2322 typescript/error + external-.html NG8002 template-type-check/error + NG8101 banana-in-box extended-diagnostics/warning) UNIONed with a synthesized ATC90002 (tool/error) from one deliberately-missing reference -- no 2nd CLI invocation, no merge (Pattern 1). NG8101 (<input ([value])>) coexists with NG8002 on a separate element with NO interference (exactly 4 rules, empirically confirmed via the drift-lock); ATC90002 not ATC90001 (co-exists with surviving leaves)
+- [Phase 35]: 35-01: two CI-gate landmines pre-empted -- new .fallowrc.jsonc overrides entry for tools/sarif-proof-fixture/** (tools/** was only in health.ignore) + .prettierignore the diagnostic-sensitive proof.component.html (prettier --file-info => ignored:true). Local drift-lock = 5th describe in machine-reporters-sarif.integration.spec.ts asserting the SET of four (family tag, level) tuples + exactly one rule per family (extended code discretionary; TS2322/NG8002/ATC90002 pinned); runs under nx integration (156 pass). D-04 holds: package.json byte-unchanged, only a spec under src/**, no bump; PROOF-01 stays Pending (CI job/assert = 35-02/03). Pre-existing fallow health finding on sarif-report.ts (Phase 33) makes fallow exit 1 -- out of scope, logged in deferred-items.md
 
 ### Roadmap Evolution
 
@@ -272,7 +274,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Phase 35 context gathered
 **Resume file:** .planning/phases/35-automated-code-scanning-proof/35-CONTEXT.md
 
-Last session: 2026-07-21T16:23:01.973Z
+Last session: 2026-07-21T19:09:08.161Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -325,3 +327,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 33 P01 | 17min | 2 tasks | 5 files |
 | Phase 33 P02 | 22min | 2 tasks | 3 files |
 | Phase 34 P01 | 12 min | 3 tasks | 5 files |
+| Phase 35 P01 | ~58m | 3 tasks | 8 files |
