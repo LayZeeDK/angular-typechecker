@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-07-21T00:22:15.905Z"
 last_activity: 2026-07-21
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 33 (not started) -- Diagnostic-family SARIF rule metadata
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-21 — Milestone v0.2.4 started
+Status: Roadmap created (4 phases, 33-36); ready to plan Phase 33
+Last activity: 2026-07-21 — v0.2.4 roadmap created (phases 33-36, 11/11 requirements mapped)
 
 ## Accumulated Context
 
@@ -103,6 +103,7 @@ archives under `.planning/milestones/`.
 
 ### Roadmap Evolution
 
+- v0.2.4 roadmap created 2026-07-21: 4 phases (33-36), numbering CONTINUED from v0.2.3's Phase 32 (never reset). All 11 v0.2.4 requirements (MULTI/RULE/GATE/PROOF/DOC) mapped to exactly one phase -- 100% coverage, 0 unmapped. Structure follows the namespaced milestone research build-order (`.planning/research/v0.2.4-enhanced-sarif-reporting/SUMMARY.md`, "Implications for Roadmap"): **Phase 33** = RULE-01..04 diagnostic-family rule metadata (`sarif-report.ts` + a new pure `diagnostic-family.ts`) -- the SOLE release-bearing SARIF change, additive patch bump `0.2.3 -> 0.2.4`; **Phase 34** = MULTI-01/02 per-project multi-run categories (CI-side merge + executor-filtered discovery + drift guard, NO release); **Phase 35** = PROOF-01/02 isolated one-per-family fixture OUTSIDE the Nx graph + bounded `gh api` poll/assert on the PR merge-ref (CI-only); **Phase 36** = GATE-01/02 + DOC-01 (promote `code-scanning` to the required `ci` aggregate, enable the spike-gated "Require code scanning results" ruleset with the planning-only/fork-PR deadlock mitigation -- un-path-gate `code-scanning` + Evaluate-mode-first + `enforcement: disabled` recovery -- and document the CodeQL-only "Scanned files" gap). Dependency-ordered: RULE ships the SARIF contract PROOF verifies; MULTI reshapes the same `code-scanning` job PROOF/GATE touch; GATE is last so the required-check surface only grows once the underlying jobs are green in real CI. ADDITIVE-ONLY charter: ONLY RULE bumps the version (`v0.3.0` escape hatch untriggered).
 - v0.2.3 roadmap created 2026-07-18: 3 phases (30-32), numbering CONTINUED from v0.2.2's Phase 29 (never reset). All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one phase -- 100% coverage, 0 unmapped. Structure follows the namespaced milestone research build-order (`.planning/research/v0.2.3-reporters/SUMMARY.md`, "Implications for Roadmap"), dependency-ordered because SARIF depends on Phase 30's widened `renderReport` seam + shared normalized-record projection + the threaded `--format` enum: **Phase 30** = the widened seam + the zero-dependency JSON reporter + `--format`/`--quiet`/`--color` through all three adapters + the optional `CoreResult.totalFilesCount` (FMT-01/02/03, REP-01, OBS-01, CLIX-02, VER-01); **Phase 31** = the lazy-`import()`ed `node-sarif-builder` SARIF 2.1.0 reporter + the nx-free require-graph guard + the CJS-under-`import()` interop test (REP-02, VER-04); **Phase 32** = integration + shipped-tarball e2e across all three adapters + SARIF schema validation + cross-OS determinism + the additive-only git-diff audit vs `@0.2.2` + README/CHANGELOG (VER-02, VER-03, ADD-01, DOC-01). VER-01 anchored to Phase 30 (Unit tier; SARIF-shape unit specs ride along in Phase 31, closed at phase verification). ADDITIVE-ONLY charter: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only if a breaking change proves unavoidable.
 - Phase 25 added 2026-07-15 (via /gsd-phase, current milestone v0.2.1): GitHub-backed self-hosted Nx remote cache -- a workspace-wide CI cache optimization deferred out of the e2e wall-clock quick task (quick-260715-050). Grounded by `260715-050-RESEARCH-3.md` (GitHub Actions Cache backend; CREEP-mitigated via the `pull_request` merge-ref scoping + a cache-miss-by-design release build; ~90-day retention TTL; read-write in CI, read-only from local). Lower priority: the e2e per-project split already banks the ~43% tier win cache-free, so this phase justifies itself on workspace-wide cross-run hits, not the e2e tier. Requires fixing the OS/Node hash landmine (`RUNNER_OS` + Node major as `env` named inputs) before any cache replay.
 - v0.2.1 roadmap created 2026-07-10: 4 phases (21-24), numbering continued from v0.2.0's Phase 20. All 16 v0.2.1 requirements (ENG/ACB/ACS/NGADD/COV/ACV/ACP/ACD) mapped to exactly one phase, 100% coverage, 0 unmapped. Structure follows the research build-order (`.planning/research/v0.2.1-angular-cli/SUMMARY.md`, CORRECTION & LOCKED DECISIONS): Phase 21 carries the GATE A' GO/NO-GO spike (ACB-02 -- the CJS->ESM `await import()` bridge surviving `convertNxExecutor` + a real `ng run`, on-stack Ng22 + off-stack Ng21) and gates the milestone; Phase 22 carries the highest design weight (the `angular.json` write-fork, Option A `tsConfig: [buildLeaf, specLeaf]`); Phase 23 is `ng-add` auto-wire-all + `init` parity + optional-peer classification; Phase 24 is the real-OSS + scaffolded e2e, the additive-only audit, and docs. ADDITIVE-ONLY charter: re-versions to v0.3.0 only if a breaking change proves unavoidable.

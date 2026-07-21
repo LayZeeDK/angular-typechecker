@@ -53,23 +53,23 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MULTI-01 | TBD | Pending |
-| MULTI-02 | TBD | Pending |
-| RULE-01 | TBD | Pending |
-| RULE-02 | TBD | Pending |
-| RULE-03 | TBD | Pending |
-| RULE-04 | TBD | Pending |
-| GATE-01 | TBD | Pending |
-| GATE-02 | TBD | Pending |
-| PROOF-01 | TBD | Pending |
-| PROOF-02 | TBD | Pending |
-| DOC-01 | TBD | Pending |
+| RULE-01 | Phase 33 | Pending |
+| RULE-02 | Phase 33 | Pending |
+| RULE-03 | Phase 33 | Pending |
+| RULE-04 | Phase 33 | Pending |
+| MULTI-01 | Phase 34 | Pending |
+| MULTI-02 | Phase 34 | Pending |
+| PROOF-01 | Phase 35 | Pending |
+| PROOF-02 | Phase 35 | Pending |
+| GATE-01 | Phase 36 | Pending |
+| GATE-02 | Phase 36 | Pending |
+| DOC-01 | Phase 36 | Pending |
 
 **Coverage:**
 - v1 requirements: 11 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 11
+- Mapped to phases: 11 (Phase 33: RULE-01..04; Phase 34: MULTI-01/02; Phase 35: PROOF-01/02; Phase 36: GATE-01/02 + DOC-01)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-21*
-*Last updated: 2026-07-21 at milestone v0.2.4 kickoff*
+*Last updated: 2026-07-21 at milestone v0.2.4 kickoff (roadmap created -- 11/11 mapped)*
