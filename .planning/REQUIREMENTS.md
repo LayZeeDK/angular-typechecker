@@ -9,8 +9,8 @@ Scope empirically de-risked by the 2026-07-20 spike (closed PR #53): the SARIF->
 
 ### Per-project analyses (MULTI)
 
-- [ ] **MULTI-01**: angular-typechecker's CI SARIF upload reports one SARIF run per workspace project that uses the executor, each landing in GitHub Code Scanning as its own analysis under a distinct category `angular-typecheck/<project>` (merged into one file, single `upload-sarif`, no `category` input -- per-run `automationDetails.id` avoids GitHub's multi-run-same-category rejection).
-- [ ] **MULTI-02**: The set of reported projects is auto-discovered from the workspace (a project that adds the `angular-typechecker:typecheck` target is covered with no CI edit; a project that drops it is dropped) -- with a guard so the discovered set cannot silently drift.
+- [x] **MULTI-01**: angular-typechecker's CI SARIF upload reports one SARIF run per workspace project that uses the executor, each landing in GitHub Code Scanning as its own analysis under a distinct category `angular-typecheck/<project>` (merged into one file, single `upload-sarif`, no `category` input -- per-run `automationDetails.id` avoids GitHub's multi-run-same-category rejection).
+- [x] **MULTI-02**: The set of reported projects is auto-discovered from the workspace (a project that adds the `angular-typechecker:typecheck` target is covered with no CI edit; a project that drops it is dropped) -- with a guard so the discovered set cannot silently drift.
 
 ### Rule metadata (RULE) -- the release-bearing SARIF change
 
@@ -57,8 +57,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | RULE-02 | Phase 33 | Complete |
 | RULE-03 | Phase 33 | Complete |
 | RULE-04 | Phase 33 | Complete |
-| MULTI-01 | Phase 34 | Pending |
-| MULTI-02 | Phase 34 | Pending |
+| MULTI-01 | Phase 34 | Complete |
+| MULTI-02 | Phase 34 | Complete |
 | PROOF-01 | Phase 35 | Pending |
 | PROOF-02 | Phase 35 | Pending |
 | GATE-01 | Phase 36 | Pending |

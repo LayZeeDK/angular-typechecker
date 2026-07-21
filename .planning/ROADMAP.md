@@ -146,11 +146,11 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. An in-plugin drift-guard spec fails loudly if the discovery script's output diverges from an independent enumeration of executor-using projects (mirrors GUARD-01b) (MULTI-02).
   4. The published package is unchanged -- no new dependency, no reporter/API/schema change -- so no version bump.
 
-**Plans**: 1 plan
+**Plans**: 1/1 plans complete
 
 **Wave 1**
 
-- [ ] 34-01-PLAN.md -- discovery script + generate/merge script + drift-guard/merge-shape specs + code-scanning job rewire (wave 1)
+- [x] 34-01-PLAN.md -- discovery script + generate/merge script + drift-guard/merge-shape specs + code-scanning job rewire (wave 1)
 
 ### Phase 35: Automated Code Scanning proof
 
@@ -219,7 +219,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
 | 32. Verification + docs + additive audit | v0.2.3 | 4/4 | Complete   | 2026-07-19 |
 | 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 2/2 | Complete    | 2026-07-21 |
-| 34. Per-project SARIF categories in CI | v0.2.4 | 0/? | Not started | - |
+| 34. Per-project SARIF categories in CI | v0.2.4 | 1/1 | Complete   | 2026-07-21 |
 | 35. Automated Code Scanning proof | v0.2.4 | 0/? | Not started | - |
 | 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 0/? | Not started | - |
 
