@@ -116,6 +116,10 @@ assert_selected "$PR_PLAN" "ci/format-lint" "pull_request"
 assert_selected "$PR_PLAN" "ci/act-compat" "pull_request"
 assert_selected "$PR_PLAN" "ci/lint-workflows" "pull_request"
 assert_selected "$PR_PLAN" "ci/code-scanning" "pull_request"
+# The PROOF job (Phase 35) is PR-only: its if: (github.event_name == 'pull_request'
+# && needs.changes.outputs.code != 'false') is true on a PR, and the NEGATIVE
+# != 'false' form keeps it in the plan under the empty act -n filter output.
+assert_selected "$PR_PLAN" "ci/code-scanning-proof" "pull_request"
 assert_selected "$PR_PLAN" "ci/ci" "pull_request"
 assert_absent "$PR_PLAN" "release/publish" "pull_request"
 
@@ -124,6 +128,10 @@ assert_absent "$PR_PLAN" "release/publish" "pull_request"
 PUSH_MAIN_PLAN="$(plan push -e "$EVENTS/push-main.json" --env GITHUB_REF=$BRANCH_REF)"
 assert_selected "$PUSH_MAIN_PLAN" "ci/test-" "push-main"
 assert_selected "$PUSH_MAIN_PLAN" "ci/code-scanning" "push-main"
+# The PROOF job's github.event_name == 'pull_request' if: gate is FALSE on a push
+# event, so act -n (which DOES evaluate if:) drops it from the push-to-main plan.
+# This is exactly what proves the fixture's deliberate errors never run on main (SC4).
+assert_absent "$PUSH_MAIN_PLAN" "ci/code-scanning-proof" "push-main"
 assert_selected "$PUSH_MAIN_PLAN" "ci/ci" "push-main"
 assert_absent "$PUSH_MAIN_PLAN" "release/publish" "push-main"
 
