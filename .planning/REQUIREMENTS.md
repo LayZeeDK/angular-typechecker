@@ -26,8 +26,8 @@ Scope empirically de-risked by the 2026-07-20 spike (closed PR #53): the SARIF->
 
 ### Automated proof (PROOF)
 
-- [ ] **PROOF-01**: A CI check emits one known diagnostic per family from an ISOLATED fixture (outside the normal `nx typecheck` gate) and asserts via the `gh` CLI (`code-scanning/analyses` + `code-scanning/alerts`) that each expected alert lands in Code Scanning with the expected category, tags, and severity.
-- [ ] **PROOF-02**: The proof fails loudly (red check) if any expected alert, category, or tag is missing -- so a regression in the SARIF->Code Scanning contract is caught automatically, not manually.
+- [x] **PROOF-01**: A CI check emits one known diagnostic per family from an ISOLATED fixture (outside the normal `nx typecheck` gate) and asserts via the `gh` CLI (`code-scanning/analyses` + `code-scanning/alerts`) that each expected alert lands in Code Scanning with the expected category, tags, and severity.
+- [x] **PROOF-02**: The proof fails loudly (red check) if any expected alert, category, or tag is missing -- so a regression in the SARIF->Code Scanning contract is caught automatically, not manually.
 
 ### Documentation (DOC)
 
@@ -59,8 +59,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | RULE-04 | Phase 33 | Complete |
 | MULTI-01 | Phase 34 | Complete |
 | MULTI-02 | Phase 34 | Complete |
-| PROOF-01 | Phase 35 | Pending |
-| PROOF-02 | Phase 35 | Pending |
+| PROOF-01 | Phase 35 | Complete |
+| PROOF-02 | Phase 35 | Complete |
 | GATE-01 | Phase 36 | Pending |
 | GATE-02 | Phase 36 | Pending |
 | DOC-01 | Phase 36 | Pending |
@@ -73,4 +73,4 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 ---
 *Requirements defined: 2026-07-21*
-*Last updated: 2026-07-21 at milestone v0.2.4 kickoff (roadmap created -- 11/11 mapped)*
+*Last updated: 2026-07-22 -- PROOF-01/02 flipped to Complete after Phase 35 verification (proven in real CI, run 29875173270)*
