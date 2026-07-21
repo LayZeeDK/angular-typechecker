@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.fixture.json" },
+    { "path": "./tsconfig.missing.json" }
+  ]
+}
