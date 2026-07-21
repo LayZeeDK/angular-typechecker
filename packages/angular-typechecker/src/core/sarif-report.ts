@@ -237,51 +237,91 @@ function buildRuleMeta(record: DiagnosticRecord, family: Family): RuleMeta {
   const ruleId = record.code;
 
   if (family === 'extended-diagnostics') {
-    const entry = EXTENDED_BY_RULE_ID.get(ruleId);
-    // family === 'extended-diagnostics' implies the ngCode is a catalog member, so
-    // `entry` is present in practice; the `??` keeps this total without a non-null
-    // assertion (banned by the maxWarnings:0 lint gate).
-    const shortDescription =
-      entry?.shortDescription ?? 'Angular extended diagnostic ' + ruleId;
-
-    return {
-      family,
-      level,
-      shortDescription,
-      helpUri:
-        entry !== undefined ? HELP_URI_BASE + entry.ngCode : INFORMATION_URI,
-      helpText: shortDescription,
-    };
+    return buildExtendedRuleMeta(level, ruleId);
   }
 
   if (family === 'tool') {
-    const curated = TOOL_RULE_TEXT[ruleId];
-
-    return {
-      family,
-      level,
-      shortDescription:
-        curated?.short ?? `An angular-typechecker diagnostic (${ruleId})`,
-      helpUri: INFORMATION_URI,
-      helpText:
-        curated?.help ??
-        `An angular-typechecker diagnostic (${ruleId}). See the project README for details.`,
-    };
+    return buildToolRuleMeta(level, ruleId);
   }
 
   if (family === 'template-type-check') {
-    return {
-      family,
-      level,
-      shortDescription: `Angular template type-check diagnostic ${ruleId}`,
-      helpUri: TEMPLATE_TYPE_CHECK_HELP_URI,
-      helpText: `An Angular template type-check diagnostic (${ruleId}) raised while type-checking a component template. See the Angular template type-checking guide.`,
-    };
+    return buildTemplateRuleMeta(level, ruleId);
   }
 
-  // 'typescript'
+  return buildTypeScriptRuleMeta(level, ruleId);
+}
+
+/**
+ * The `extended-diagnostics` (NG8xxx) family builder: resolves the shortDescription
+ * from the on-demand catalog (which also seeds help.text, D-07).
+ */
+function buildExtendedRuleMeta(
+  level: RuleMeta['level'],
+  ruleId: string,
+): RuleMeta {
+  const entry = EXTENDED_BY_RULE_ID.get(ruleId);
+  // family === 'extended-diagnostics' implies the ngCode is a catalog member, so
+  // `entry` is present in practice; the `??` keeps this total without a non-null
+  // assertion (banned by the maxWarnings:0 lint gate).
+  const shortDescription =
+    entry?.shortDescription ?? 'Angular extended diagnostic ' + ruleId;
+
   return {
-    family,
+    family: 'extended-diagnostics',
+    level,
+    shortDescription,
+    helpUri:
+      entry !== undefined ? HELP_URI_BASE + entry.ngCode : INFORMATION_URI,
+    helpText: shortDescription,
+  };
+}
+
+/**
+ * The `tool` family builder: the two synthesized ATC codes get curated per-code
+ * strings, everything else falls back to a generic README pointer (D-07/D-08).
+ */
+function buildToolRuleMeta(level: RuleMeta['level'], ruleId: string): RuleMeta {
+  const curated = TOOL_RULE_TEXT[ruleId];
+
+  return {
+    family: 'tool',
+    level,
+    shortDescription:
+      curated?.short ?? `An angular-typechecker diagnostic (${ruleId})`,
+    helpUri: INFORMATION_URI,
+    helpText:
+      curated?.help ??
+      `An angular-typechecker diagnostic (${ruleId}). See the project README for details.`,
+  };
+}
+
+/**
+ * The `template-type-check` family builder: per-FAMILY generic help (per-code help
+ * is an explicit anti-feature).
+ */
+function buildTemplateRuleMeta(
+  level: RuleMeta['level'],
+  ruleId: string,
+): RuleMeta {
+  return {
+    family: 'template-type-check',
+    level,
+    shortDescription: `Angular template type-check diagnostic ${ruleId}`,
+    helpUri: TEMPLATE_TYPE_CHECK_HELP_URI,
+    helpText: `An Angular template type-check diagnostic (${ruleId}) raised while type-checking a component template. See the Angular template type-checking guide.`,
+  };
+}
+
+/**
+ * The `typescript` family builder: per-FAMILY generic help (there are thousands of
+ * TS codes, so per-code help is an explicit anti-feature).
+ */
+function buildTypeScriptRuleMeta(
+  level: RuleMeta['level'],
+  ruleId: string,
+): RuleMeta {
+  return {
+    family: 'typescript',
     level,
     shortDescription: `TypeScript diagnostic ${ruleId}`,
     helpUri: TYPESCRIPT_HELP_URI,
