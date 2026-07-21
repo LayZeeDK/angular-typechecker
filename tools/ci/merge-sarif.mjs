@@ -94,8 +94,15 @@ function collectEntries(root) {
     });
     const stdout = (result.stdout ?? '').trim();
 
-    // Empty stdout (exit 2 / infra failure) -> skip (the `[ -s file ]` analogue).
+    // Empty stdout (exit 2 / infra failure) -> skip (the `[ -s file ]` analogue),
+    // but log a breadcrumb first: a silently-skipped project must leave a trace
+    // in the CI job log naming the project + why (status + first stderr line),
+    // so a dropped analysis stays diagnosable instead of vanishing without one.
     if (stdout.length === 0) {
+      const stderrLine = (result.stderr ?? '').trim().split('\n')[0];
+      console.error(
+        `merge-sarif: skipped ${name} -- empty stdout (status ${result.status}${stderrLine ? `: ${stderrLine}` : ''})`,
+      );
       continue;
     }
 
