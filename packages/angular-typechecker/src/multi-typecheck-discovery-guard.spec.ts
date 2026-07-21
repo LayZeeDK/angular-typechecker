@@ -212,10 +212,12 @@ describe('listTypecheckProjects: tolerates a stray subdir + a falsy project name
 });
 
 // WR-01 regression guard: a project with MORE THAN ONE target using the
-// executor (the exact shape libs/local-lib's fixture already uses --
-// `typecheck` + `typecheck-spec`) must contribute the UNION of every matching
-// target's tsConfig, not just the first target's. `.find()` would silently
-// drop the second target's tsConfig with no error and no failing test.
+// executor (`typecheck` + `typecheck-spec`) must contribute the UNION of every
+// matching target's tsConfig, not just the first target's. `.find()` would
+// silently drop the second target's tsConfig with no error and no failing test.
+// No DISCOVERED apps/+libs/ consumer has this shape (the only in-repo example,
+// libs/local-lib, lives under an excluded e2e/*/fixtures/ tree), so this test
+// proves the union behavior with the synthetic temp workspace below.
 describe('listTypecheckProjects: unions tsConfig across multiple executor targets in one project', () => {
   it('collects tsConfig from every target using the executor, not just the first', () => {
     const script = join(

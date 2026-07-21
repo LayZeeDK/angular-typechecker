@@ -3,11 +3,12 @@
 //
 // Scans `apps/<dir>/project.json` + `libs/<dir>/project.json` and keeps EVERY
 // target whose `executor === 'angular-typechecker:typecheck'` (a project may
-// declare more than one, e.g. `typecheck` + `typecheck-spec` -- see
-// libs/local-lib's fixture), emitting a sorted JSON array of `{ name,
-// tsConfig[] }` per project. `tsConfig` is the deduped union of every matching
-// target's `options.tsConfig`, each normalized from `string | string[]` (the
-// executor schema shape since v0.2.1).
+// declare more than one, e.g. `typecheck` + `typecheck-spec`; no current apps/+
+// libs/ consumer does, so the union is future-proofing -- the only in-repo
+// example of the two-target shape lives under an EXCLUDED e2e/*/fixtures/ tree),
+// emitting a sorted JSON array of `{ name, tsConfig[] }` per project. `tsConfig`
+// is the deduped union of every matching target's `options.tsConfig`, each
+// normalized from `string | string[]` (the executor schema shape since v0.2.1).
 //
 // Filter by the EXECUTOR id, NOT a `typecheck` target-NAME match: a name match
 // over-matches the plugin's own nx:run-commands `typecheck`, libs/test-util, and
