@@ -122,7 +122,9 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. Each rule carries a `defaultConfiguration.level` matching the observed diagnostic severity so GitHub `severity:` filtering and default alert severity are correct (RULE-03).
   4. Each rule carries SARIF `help.text` (not only `helpUri`) so the alert detail page renders rule help instead of "No rule help available" (RULE-04).
   5. The JSON and human reporter outputs, `DiagnosticRecord`, and the barrel are byte-unchanged (family is derived inside the SARIF path only), and the additive-only audit vs `@0.2.3` passes -- patch bump `0.2.3 -> 0.2.4`, `v0.3.0` escape hatch untriggered.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 33-01-PLAN.md -- diagnostic-family classifier + on-demand SARIF rule catalog with tags/level/help (wave 1)
+- [ ] 33-02-PLAN.md -- four-family integration proof over real fixtures + additive-only audit vs `@0.2.3` (wave 2)
 
 ### Phase 34: Per-project SARIF categories in CI
 **Goal**: angular-typechecker's CI SARIF upload reports one Code Scanning analysis per workspace project that uses the `typecheck` executor -- auto-discovered so the set cannot silently drift -- with zero change to the published package (the reporter stays single-run per invocation; the multi-run merge is assembled CI-side).
@@ -195,7 +197,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 30. Reporter seam + JSON reporter + `--format` threading + observability | v0.2.3 | 3/3 | Complete    | 2026-07-18 |
 | 31. SARIF reporter | v0.2.3 | 2/2 | Complete    | 2026-07-18 |
 | 32. Verification + docs + additive audit | v0.2.3 | 4/4 | Complete   | 2026-07-19 |
-| 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 0/? | Not started | - |
+| 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 0/2 | Planned | - |
 | 34. Per-project SARIF categories in CI | v0.2.4 | 0/? | Not started | - |
 | 35. Automated Code Scanning proof | v0.2.4 | 0/? | Not started | - |
 | 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 0/? | Not started | - |
