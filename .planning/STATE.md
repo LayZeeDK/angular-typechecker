@@ -1,36 +1,37 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2.3
-milestone_name: -- Machine-readable reporters)
+milestone_name: Machine-readable reporters
 current_phase: 32
-current_phase_name: Verification + docs + additive audit
-status: "Milestone v0.2.3 shipped -- PR #47"
-stopped_at: Phase 32 close-out complete (secure + validate + extract-learnings); milestone close + Release-PR are human-gated next
-last_updated: "2026-07-19T11:05:53.351Z"
-last_activity: 2026-07-19
+status: Awaiting next milestone (v0.2.3 closed + archived)
+stopped_at: "v0.2.3 milestone CLOSED + archived via /gsd-complete-milestone (phases 30-32 -> milestones/v0.2.3-phases/, ROADMAP collapsed, REQUIREMENTS/audit archived, PROJECT.md evolved, RETROSPECTIVE v0.2.3 added, MILESTONES entry finalized). angular-typechecker@0.2.3 was already released to npm 2026-07-20. Next: /gsd-new-milestone v0.2.4 (Enhanced SARIF reporting for GitHub Code Scanning). OUTSTANDING: v0.2.1 + v0.2.2 complete-milestone ceremonies were never run (structurally archived during the OpenGSD migration) -- their RETROSPECTIVE sections still need backfilling."
+last_updated: "2026-07-20T23:36:09.612Z"
+last_activity: 2026-07-20
+last_activity_desc: Milestone v0.2.3 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 9
   completed_plans: 9
   percent: 100
+current_phase_name: Verification + docs + additive audit
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-18 -- v0.2.3 milestone started: Machine-readable reporters)
+See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archived: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 32 — Verification + docs + additive audit
+**Current focus:** Planning the next milestone -- v0.2.4 (Enhanced SARIF reporting for GitHub Code Scanning); v0.2.3 shipped + archived
 
 ## Current Position
 
-Phase: 32 (Verification + docs + additive audit) — CLOSED (final phase of v0.2.3)
-Plan: 4 of 4
-Status: Milestone v0.2.3 shipped -- PR #47
-Last activity: 2026-07-20 - Completed quick task 260720-wso: added OWASP cve-lite-cli as a required CI vulnerability gate (npm run cve-lite, --fail-on high) + atc-use-cve-lite-cli agent skill
+Phase: Milestone v0.2.3 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-20 — Milestone v0.2.3 completed and archived
 
 ## Accumulated Context
 
@@ -264,8 +265,8 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 32 fully closed out -- secure (bc2780b, SECURED, threats_open:0), validate (ee05c89, nyquist_compliant, 4/4 covered + 1 CI-observable manual-only), extract-learnings (46f452f, 25 learnings bridged to the cross-project store). Milestone close + the human-gated v0.2.3 Release-PR are the only remaining work.
-**Resume file:** none (phase close-out complete; HANDOFF.json + .continue-here.md cleared)
+**Stopped at:** v0.2.3 milestone CLOSED + archived (this session): resolved 19 stale `audit-open` bookkeeping flags (16+1 quick-task SUMMARYs missing a `status:` field + the two CI-observable Phase-32 statuses), then archived phases 30-32 to `milestones/v0.2.3-phases/`, collapsed ROADMAP, archived + `git rm`'d REQUIREMENTS.md, evolved PROJECT.md, added the RETROSPECTIVE v0.2.3 section, finalized the MILESTONES entry. `angular-typechecker@0.2.3` was already released to npm 2026-07-20 (this close is bookkeeping-only). Next: `/gsd-new-milestone v0.2.4`. OUTSTANDING: v0.2.1 + v0.2.2 never had `/gsd-complete-milestone` run (structurally archived during the OpenGSD migration) -- their RETROSPECTIVE.md sections still need backfilling.
+**Resume file:** HANDOFF.json + .continue-here.md (committed in the WIP pause) still describe the v0.2.4 kickoff at the milestone boundary -- consume them when starting v0.2.4.
 
 Last session: 2026-07-19T02:21:17.061Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
@@ -303,28 +304,9 @@ Completed the two teed-up autonomous tasks:
 
 ## Operator Next Steps
 
-Phase 32 (final phase of v0.2.3) is fully closed out. All three milestone phases (30, 31, 32)
-are complete, verified, secured, and validated. Remaining is the milestone close + the
-human-gated Release-PR:
-
-- **Milestone audit** -- `/gsd-audit-milestone` audits v0.2.3 against original intent before
-  archiving, and produces + commits `v0.2.3-MILESTONE-AUDIT.md`. Note the 3-source cross-reference
-  will surface VER-02's one open `human_needed` item (CI cross-OS byte-stability) -- it resolves the
-  moment the branch is pushed for the Release-PR, so it is a known non-blocker, not a gap.
-
-- **Complete milestone** -- `/gsd-complete-milestone` archives the v0.2.3 phase dirs to
-  `.planning/milestones/v0.2.3-phases/` and updates MILESTONES.md. (Watch the OpenGSD-migration
-  archival + branch-name gotchas from prior milestone closes.)
-
-- **HUMAN-GATED v0.2.3 Release-PR** (do NOT auto-run): follow the AGENTS.md Release-PR flow --
-  branch `release/0.2.3` off main, `npx nx release --dry-run` then `--skip-publish` (patch bump
-  0.2.2 -> 0.2.3; curated CHANGELOG 0.2.3 already drafted, no tag/push), curate + amend, open the
-  PR, self-merge only on green `ci`, then tag `angular-typechecker@0.2.3` on the MERGE commit and
-  push to fire OIDC publish. `main` is PR-only; NEVER push it directly, NEVER approve the
-  npm-publish deployment (human-only). Pushing the branch is also what closes VER-02's CI item.
-
-- ADDITIVE-ONLY charter holds: patch bump `0.2.2 -> 0.2.3`; the `v0.3.0` escape hatch triggers only
-  if a breaking change proves unavoidable.
+- **DONE 2026-07-21 -- backfilled the two forgotten milestone closes** -- v0.2.1 and v0.2.2 were structurally archived during the OpenGSD migration but `/gsd-complete-milestone` was never run for them. Added the missing `RETROSPECTIVE.md` v0.2.1 + v0.2.2 sections (chronological, before v0.2.3) and the PROJECT.md `### Validated (v0.2.2)` block. RETROSPECTIVE now runs v0.2.0 -> v0.2.1 -> v0.2.2 -> v0.2.3 with no gap; PROJECT.md Validated covers every shipped milestone.
+- **Start v0.2.4** -- `/gsd-new-milestone v0.2.4` "Enhanced SARIF reporting for GitHub Code Scanning" (5-area scope, spike-locked). Do it on a kickoff branch off `main` (PR-only) -> PR; name the branch yourself (don't trust GSD auto-derivation). SKIP the 4-researcher round (the empirical spike + prior SARIF research answered the unknowns). `.planning/HANDOFF.json` + `.planning/.continue-here.md` hold the full v0.2.4 scope + anti-patterns -- read them first. `.planning/phases/` is now empty, so `new-milestone`'s `phases.clear` is safe.
+- One non-blocking human action pending: enable the GitHub "Require code scanning results" ruleset (v0.2.4 area 4).
 
 ## Performance Metrics
 

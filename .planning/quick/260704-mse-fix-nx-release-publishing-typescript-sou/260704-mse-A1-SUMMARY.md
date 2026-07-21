@@ -1,3 +1,7 @@
+---
+status: complete
+---
+
 # 260704-mse-A1 - Adopt @nx/js first-party Verdaccio local-registry (execution summary)
 
 **Executed:** 2026-07-04

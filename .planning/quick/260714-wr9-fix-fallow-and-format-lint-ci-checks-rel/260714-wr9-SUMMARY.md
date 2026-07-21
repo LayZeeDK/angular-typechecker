@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: 260714-wr9
 plan: 01
 subsystem: ci-config

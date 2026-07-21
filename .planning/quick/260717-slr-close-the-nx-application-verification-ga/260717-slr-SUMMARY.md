@@ -1,4 +1,5 @@
 ---
+status: complete
 task: quick-260717-slr
 title: Close the Nx application verification gap (VER-05 Nx-application addendum)
 type: uat-execution-docs

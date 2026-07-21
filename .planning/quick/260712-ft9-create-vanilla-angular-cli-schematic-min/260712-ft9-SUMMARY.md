@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: quick-260712-ft9
 plan: ft9
 subsystem: e2e / Angular CLI ng-add discrimination

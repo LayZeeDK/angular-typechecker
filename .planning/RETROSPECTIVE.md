@@ -193,6 +193,143 @@
 
 ---
 
+## Milestone: v0.2.1 -- Angular CLI workspace support
+
+**Closed:** 2026-07-16 (released 2026-07-16 -- `angular-typechecker@0.2.1` via the human-gated Release-PR flow, PR #38)
+**Phases:** 4 (21-24) | **Plans:** 14 (3 original + a 3-plan Phase-24 gap closure) | **Commits:** ~250 | **Timeline:** 2026-07-10 -> 2026-07-16 (6 days)
+
+> Retrospective backfilled 2026-07-21 -- `/gsd-complete-milestone` was never run for v0.2.1 at the time (the milestone shipped under GSD1 and was structurally archived during the OpenGSD migration); this section reconstructs it from the MILESTONES.md entry, the audit, and PROJECT.md.
+
+### What Was Built
+
+- Angular CLI (`angular.json`) workspace support with NO Nx: `ng add angular-typechecker` auto-wires a `typecheck` target into every application + library; `ng generate ...:configuration` wires one project; `ng run <project>:typecheck` runs the SAME complete Angular type-check as the Nx target -- via `convertNxExecutor` over the same core, purely additive.
+- `tsConfig` widened to `string | string[]` (ENG-01) so one target checks a project's full leaf set (build + spec) in one pass; the single-string path stays byte-unchanged.
+- An `angular.json` write-fork in the shared `configuration` generator (early `tree.exists('angular.json')`), writing `tsConfig: [buildLeaf, specLeaf]` per project with zero cross-project bleed; the Nx path untouched.
+- A first-party `ng-add` schematic + optional peers (`@angular-devkit/architect` + `rxjs`).
+- CI-authoritative e2e across npm + yarn (flat + workspace) + pnpm, a manual real-clone milestone-final gate, and a git-diff additive-only audit vs `@0.2.0`.
+
+### What Worked
+
+- **GATE A' de-risked the milestone up front (5th gated-spike win).** Phase 21 proved the CJS-executor-loads-ESM-`compiler-cli`-via-`await import()` bridge survives `convertNxExecutor` + a real `ng run` against a real cloned Angular 22 workspace (`bluehalo/ngx-leaflet`) BEFORE any builder code -- so the whole "re-export the executor as a builder" premise rested on evidence, and a NO-GO would never have fallen back to a hand-written architect builder.
+- **One framework-agnostic wiring core served both surfaces.** After the gap closure, the `ng-add` schematic and the Nx `configuration` generator share `src/core/angular-cli-wiring.ts` (pure, `node:path`-only, injected `exists()`), so wiring semantics can't drift between Nx and Angular CLI.
+- **Additive-only held under a byte-for-byte audit.** `24-ADDITIVE-AUDIT.md` proved the published surface additive vs `@0.2.0`, keeping the milestone on the `0.2.x` line.
+
+### What Was Inefficient
+
+- **Two yarn-specific defects escaped to post-verification.** Discovered only after the phase verified: (1) yarn does not auto-install the `@nx/devkit` peer `nx` (crashing `ng add`/`ng run` with `Cannot find module 'nx/src/devkit-exports'`), fixed by declaring `nx` a direct dependency; (2) Angular CLI's post-install `ng-add` probe crashed loading nx's `chalk` chain under yarn 4's hoist, fixed by rewriting `ng-add` as a vanilla nx-free schematic. Both required a 3-plan Phase-24 gap-closure loop (24-04/24-06) AFTER the milestone looked done -- the CI e2e originally exercised npm/pnpm but the yarn first-run auto-wire path wasn't proven until the defects surfaced.
+- **The `audit-open` quick-task false-positive recurred at close** (bare-`SUMMARY.md` mismatch under GSD1), plus an empty never-executed `260709-w96` stub dir removed at close.
+- **A cosmetically-stale `24-VERIFICATION.md` `human_needed`** lingered after its underlying item was already resolved by quick task 260715-ig5.
+
+### Patterns Established
+
+- **Framework-agnostic shared wiring core:** when the same target must be wired into two workspace formats (`nx.json` vs `angular.json`), extract one pure wiring module (injected `exists()`, `node:path` only) that both adapters import, so the two surfaces cannot diverge.
+- **Real-cloned-OSS gate for a cross-tool bridge:** prove a CJS->ESM / convert-adapter survival claim against a real external Angular 22 workspace, not just a synthetic fixture -- it caught the yarn realities synthetic scaffolds missed.
+
+### Key Lessons
+
+1. **Package-manager differences are a first-class test axis for an install-time tool.** yarn's non-auto-install of peers and its hoist order differ from npm/pnpm; an `ng add` tool must prove the FIRST-run auto-wire on EVERY PM (npm + yarn flat + yarn workspace + pnpm), not assume npm-parity.
+2. **"Verified" is not "released-proven" for install mechanics.** The engine verified green, but the real install/`ng add` behavior under yarn only surfaced against real workspaces -- budget a gap-closure loop for install-surface milestones.
+3. **A convert-adapter is only as nx-free as its transitive require graph.** The `chalk`-chain crash came from `@nx/devkit` loading eagerly in a schematic; that lesson is why the v0.2.2 CLI later mandated a structural nx-free import boundary.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for GSD planning / execution / verification agents.
+- Notable: the highest-leverage spend was the Phase-21 GATE A' spike (de-risked the whole builder premise); the least-anticipated was the post-verification yarn gap-closure loop, which a PM-complete e2e up front would have caught earlier.
+
+---
+
+## Milestone: v0.2.2 -- Standalone CLI
+
+**Closed:** 2026-07-17 (released 2026-07-17 -- `angular-typechecker@0.2.2` via the human-gated Release-PR flow)
+**Phases:** 5 (25-29) | **Plans:** 12 | **Commits:** ~150 | **Timeline:** 2026-07-16 -> 2026-07-17 (2 days)
+
+> Retrospective backfilled 2026-07-21 -- `/gsd-complete-milestone` was never run for v0.2.2 at the time (structurally archived during the OpenGSD migration); reconstructed from the MILESTONES.md entry, the audit, and PROJECT.md.
+
+### What Was Built
+
+- A standalone `angular-typechecker` / `atc` CLI binary -- a THIRD thin adapter over the same `runTypecheck` core -- that runs the complete Angular type-check outside Nx and the Angular CLI, and the first surface to own the literal OS exit codes 0/1/2.
+- A pure `run(argv, env)` core + a flush-safe `bin.ts` shell (two `bin` names -> one `src/cli/bin.js`); args via Node stdlib `util.parseArgs` (zero new deps); the CLI path imports ONLY the pure core (never `@nx/devkit`/`nx` at runtime).
+- The advisory-notice seam extracted into a pure `core/emit-advisory-notices.ts` behind an injected `Logger` (Phase 25), so the CLI drives advisories without importing `executor.ts`.
+- Cross-platform packaging: deterministic LF shebang (`newLine: lf` + `.gitattributes`); no separate bin tsconfig so the `await import()` ESM bridge isn't downleveled; a static nx-free require-graph guard.
+- Shipped-tarball e2e proving literal 0/1/2 through the real `.bin` shim across npm + yarn (flat + workspace) + pnpm on Linux AND Windows (dedicated `e2e-windows` job) + a runtime `require.cache` nx-free probe; real-clone UAT across both workspace kinds.
+
+### What Worked
+
+- **The thin-adapter architecture proved itself a THIRD time.** The CLI reused `runTypecheck` + `evaluateResult` + `toExitCode` verbatim -- exit codes + verdict identical to the Nx executor and Angular CLI builder -- so the surface was genuinely thin (parse args, inject a console `Logger`, map the verdict to a literal exit code).
+- **`toExitCode` finally got its first live consumer.** The 0/1/2 policy reserved since v0.0.3 (COR-04) as a dead scaffold became load-bearing in the CLI's two-step compose, and the coverage-incomplete case (`errorCount === 0` but `success === false` -> exit 1) proved the anti-false-pass end-to-end.
+- **The nx-free import boundary (learned from the v0.2.1 yarn `chalk` crash) was enforced structurally** -- `src/cli/**` has an nx-free import-ban + a static require-graph guard over the built `bin.js`, so the CLI can never regress into loading `@nx/devkit`.
+
+### What Was Inefficient
+
+- **The advisory seam had to be extracted first (Phase 25) before the CLI could exist** -- a pre-req refactor because the advisories lived inside `executor.ts` (which pulls `@nx/devkit`); necessary, but Phase 25 shipped no user-facing value on its own.
+- **A long review tail on the CLI PR (#42).** Multiple post-merge review passes (EPIPE-safe bin, `--version` trailing newline, shim-assertion dedup) each became a quick task -- all additive, but the review effort was large relative to the CLI's small surface.
+- **VER-05 real-clone UAT was human-run and initially incomplete** -- the Nx-application cell wasn't exercised until a follow-up quick task (260717-slr); the CI-authoritative VER-04 backstopped it.
+
+### Patterns Established
+
+- **Three-thin-adapters over one core:** Nx executor, Angular CLI builder (`convertNxExecutor`), and standalone CLI all compose the SAME order, swapping only the logger + the verdict->exit mapping. (This is exactly what let v0.2.3's reporters slot in behind one widened seam.)
+- **Static require-graph guard as a dependency-boundary enforcer:** walk the BUILT artifact's transitive `require`s and assert a forbidden package (`@nx/`, `nx`) never appears -- a test that catches an accidental heavy import a mock never would.
+- **Flush-safe process exit:** set `process.exitCode` + let streams drain naturally (never `process.exit()`), with an EPIPE-swallowing listener, so piping (`atc ... | head`) doesn't crash or corrupt the exit code.
+
+### Key Lessons
+
+1. **A "dead" policy scaffold pays off when its consumer finally lands.** Keeping `toExitCode` framework-agnostic since v0.0.3 meant the CLI just wired it -- reserving the seam early beat retrofitting exit-code policy under time pressure.
+2. **Enforce dependency boundaries with a guard over the BUILT artifact, not source.** The nx-free guarantee that matters is what the shipped `bin.js` transitively requires at runtime -- a source-level import-ban is necessary but not sufficient.
+3. **Cross-platform CLI behavior (shebang, EPIPE, Windows `.bin` shim) needs real-OS e2e.** The LF shebang and Windows shim only prove out on a real `windows-latest` runner -- hence the dedicated `e2e-windows` job.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for GSD planning / execution / verification agents.
+- Notable: a compact 2-day engine milestone with a disproportionately long PR-#42 review/verification tail (EPIPE, `--version` newline, shim dedup, plus the human VER-05 UAT gap-fill).
+
+---
+
+## Milestone: v0.2.3 -- Machine-readable reporters
+
+**Closed:** 2026-07-21 (released 2026-07-20 -- `angular-typechecker@0.2.3` published live to npm via the human-gated Release-PR flow)
+**Phases:** 3 (30-32) | **Plans:** 9 | **Tasks:** 25 | **Timeline:** 2026-07-18 -> 2026-07-20
+
+### What Was Built
+
+- A zero-dependency JSON reporter (`formatJsonReport`, `--format json`): a pure `JSON.stringify`-only function over `CoreResult` emitting a flat `diagnostics[]` (repo-relative file / 1-based positions / `TS####`/`NG8xxx`/`ATC9000x` code + raw int / severity / message) plus a rich `summary`, with the verdict DELEGATED to `evaluateResult` (never re-derived from counts).
+- A SARIF 2.1.0 reporter (`formatSarifReport`, `--format sarif`) built on `node-sarif-builder`, reached ONLY via `await import()` so the human / JSON / `--help` / CLI-boot paths never load it (nor its transitive `fs-extra`): repo-relative forward-slash URIs, 1-based regions, self-computed sha256 `partialFingerprints`, a file-less no-location fallback, and an enum-keyed 18-NG8xxx rules catalog.
+- ONE shared pure `toDiagnosticRecord` projection (positions / codes / paths) that BOTH reporters consume, so JSON and SARIF cannot drift.
+- A widened `renderReport` seam dispatching on an optional `format` (default human), threaded IDENTICALLY through all three adapters (standalone CLI flag + Nx executor + Angular CLI builder option) alongside `--quiet` and `--color`/`--no-color`; `builder.ts` byte-unchanged (`convertNxExecutor`).
+- An optional verdict-neutral `CoreResult.totalFilesCount` captured on both engine paths (live `Program` + name-deduped `Set` across walked leaves).
+- Dev-only cross-OS proof: an ajv SARIF-2.1.0 schema validator + a redaction helper + committed redacted snapshots locking byte-stability across the 6-cell OS/Node matrix; a shipped-tarball e2e emitting valid JSON + schema-valid SARIF through all three adapters; and an additive-only git-diff audit vs `@0.2.2`.
+
+### What Worked
+
+- **The three-thin-adapters architecture paid off again.** The reporters slotted in behind ONE widened `renderReport` seam, so the CLI / executor / builder all gained `--format` with `builder.ts` byte-unchanged, and the verdict stayed owned by `evaluateResult` across every format (exit-code parity incl. the coverage-incomplete case).
+- **The shared normalized-record projection prevented reporter drift by construction.** JSON and SARIF both read `toDiagnosticRecord`, so positions / codes / paths cannot diverge -- a single tripwire-locked source.
+- **The lazy-import dependency firewall was proven, not assumed.** A static require-graph guard (over the built `render-report.js` + `bin.js`) proves `node-sarif-builder`/`fs-extra` never reach the non-SARIF paths, and a REAL-import (not mocked) interop test proves the CJS-under-`await import()` shape resolves -- keeping startup lean and the JSON/human paths dependency-free.
+- **Additive-only held under audit.** `32-ADDITIVE-AUDIT.md` proved the published surface byte-additive vs `@0.2.2` (barrel / executor-id UNCHANGED; schemas WIDEN-ONLY), so the patch bump was safe and the `v0.3.0` escape hatch stayed untriggered.
+
+### What Was Inefficient
+
+- **The `audit-open` quick-task false-positive recurred a FOURTH close -- and its true root cause was only now pinned.** Prior closes blamed a bare-`SUMMARY.md` naming bug; the OpenGSD scanner actually reads the `status:` frontmatter FIELD, so 17 older quick tasks using the legacy `outcome:`/`completed:` convention flagged as `[unknown]`. Fixed at source this close (`status: complete`), which also prevents recurrence -- but four closes of manual workaround means the durable fix (emit `status:` in the `/gsd:quick` SUMMARY template) still belongs upstream.
+- **CI caught two defect classes local checks could not.** A macOS case-insensitive-FS `relativizePath` bug in the reporter path surfaced ONLY on the `macos-latest` cell (quick 260719-iib); and fallow's new-only complexity/duplication gate flagged regressions `nx lint` never runs -- which is why `npm run fallow` was added (260719-k2i) to mirror the CI gate locally.
+- **PR #47 absorbed an unusually long tail of review passes.** Five-plus separate review rounds (thermo-nuclear x2, built-in code-review, `/simplify`, a multi-agent review, plus Dependabot / cve-lite) each spawned a quick task; all landed additive / no-version-change, but the verification tail was long relative to the milestone's 3-phase engine scope.
+
+### Patterns Established
+
+- **Shared normalized-record projection for multi-format reporters:** when two output formats must agree on positions/codes/paths, project once and have every reporter consume it, tripwire-locked -- so a shape change is a compile/test error, not silent drift.
+- **Proven lazy-import dependency firewall:** gate a heavy/optional dependency behind `await import()` on exactly one path, and PROVE the isolation with a static require-graph guard over the BUILT artifact + a real-import interop test -- not just a mock.
+- **Dev-only cross-OS determinism harness:** validate machine output against its real schema (ajv) and lock byte-stability with redacted snapshots across the OS/Node matrix, keeping the validator/redactor in `test-util` (zero shipped-manifest impact).
+
+### Key Lessons
+
+1. **The `audit-open` scanner keys on the `status:` frontmatter field (OpenGSD), not a bare `SUMMARY.md`.** A quick task reads as complete ONLY when its SUMMARY frontmatter has `status: complete`; the legacy `outcome:`/`completed:` shape reads `[unknown]`. Fix stale statuses at source before a close, and emit `status:` in every quick-task SUMMARY.
+2. **Path handling must be tested cross-OS, not just on the dev machine.** A case-SENSITIVE `node:path` `relative()` over TS-canonicalized (lowercased) paths escaped repo-relative only on macOS's case-insensitive FS -- invisible locally on Windows/Linux; the fix (`stripBaseCaseInsensitive`) landed in the ONE shared projection so JSON + SARIF were corrected together.
+3. **A CI-only quality gate needs a local mirror.** fallow runs `--gate new-only` in CI but `nx lint` does not; adding `npm run fallow` closed the exact gap that let complexity/duplication regressions pass locally yet fail CI.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for GSD planning / execution / verification agents.
+- Notable: the engine work (3 phases, JSON + SARIF over one shared seam) was compact; the disproportionate spend was the verification/review tail on PR #47 (5+ review passes) and the two CI-only defect classes (macOS FS, fallow new-only) that only real CI surfaced.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

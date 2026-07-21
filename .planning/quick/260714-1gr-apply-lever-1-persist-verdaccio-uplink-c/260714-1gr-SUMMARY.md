@@ -1,4 +1,5 @@
 ---
+status: complete
 task: 260714-1gr
 title: Apply Lever 1 (persist Verdaccio uplink cache) + re-measure cold vs warm
 subsystem: e2e test harness

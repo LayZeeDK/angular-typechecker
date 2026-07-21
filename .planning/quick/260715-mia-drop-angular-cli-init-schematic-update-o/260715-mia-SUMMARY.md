@@ -1,4 +1,5 @@
 ---
+status: complete
 quick_id: 260715-mia
 plan: 01
 subsystem: schematics / Angular CLI surface

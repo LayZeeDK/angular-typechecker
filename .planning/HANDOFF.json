@@ -1,0 +1,67 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-20T23:16:01.276Z",
+  "phase": null,
+  "phase_name": "Milestone boundary: v0.2.3 shipped, v0.2.4 scoped (not started)",
+  "phase_dir": ".planning/",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "context": "milestone-boundary",
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "PR #49 MERGED to main: CI `code-scanning` job uploads angular-typechecker (ng-spike-app) + fallow SARIF to GitHub Code Scanning; verified in real CI (analyses land on PR ref + main baseline); upload-sarif pinned v4.37.1; fallow multi-run fixed via per-run automationDetails.id",
+      "status": "done",
+      "commit": "be2a730"
+    },
+    {
+      "id": 2,
+      "name": "Empirical spike (throwaway PR #53, now CLOSED + branch deleted): deliberate diagnostics (TS2322/TS2551/NG8107) proved the SARIF->alert pipeline and settled the v0.2.4 scope. Findings recorded in memory code-scanning-sarif-empirical-behavior.md",
+      "status": "done",
+      "commit": "n/a (throwaway, reverted)"
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": 1,
+      "name": "/gsd:complete-milestone v0.2.3 — archive v0.2.3: git mv phases 30/31/32 -> .planning/milestones/v0.2.3-phases/, add MILESTONES.md entry, produce the milestone audit. MUST happen before new-milestone's phases.clear or the phase dirs are wiped.",
+      "status": "not_started"
+    },
+    {
+      "id": 2,
+      "name": "/gsd:new-milestone v0.2.4 'Enhanced SARIF reporting for GitHub Code Scanning' — write PROJECT.md + REQUIREMENTS.md + ROADMAP.md on a kickoff branch (main is PR-only) -> PR. Skip the 4-researcher round (spike + prior research answered the unknowns). Include the spike findings in scope.",
+      "status": "not_started"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "main is PR-only (empty-bypass ruleset). Milestone-kickoff commits cannot be pushed to main; write artifacts on a branch and open a PR.",
+      "type": "external",
+      "workaround": "create gsd/v0.2.4-milestone branch off main; PR the kickoff artifacts"
+    },
+    {
+      "description": "v0.2.3 phases 30/31/32 still live in .planning/phases/ and are NOT archived. new-milestone step 6 runs phases.clear which would wipe them.",
+      "type": "technical",
+      "workaround": "run /gsd:complete-milestone v0.2.3 FIRST (archives them), or manually git mv to .planning/milestones/v0.2.3-phases/ before phases.clear"
+    }
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {
+      "action": "Enable GitHub 'Require code scanning results' ruleset for angular-typechecker + fallow (v0.2.4 area 4 gating) — repo Settings/ruleset change, done by the user",
+      "context": "with planning-only-PR deadlock mitigation; findings already gate via test/fallow",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {"decision": "v0.2.4 = 'Enhanced SARIF reporting for GitHub Code Scanning', 5 areas (see .continue-here.md)", "rationale": "user direction + empirical spike", "phase": "v0.2.4"},
+    {"decision": "Rule cataloging + family tags + defaultConfiguration.level + help.text is the ONLY release-bearing SARIF change; per-project categories, gating, and the proof harness are CI/ruleset-only (no release)", "rationale": "user rule: release only if the SARIF report changes; spike proved tags/catalog work in Code Scanning", "phase": "v0.2.4"},
+    {"decision": "'Scanned files' panel is a GitHub product gap (CodeQL-only telemetry); do NOT emit run.artifacts (proven inert) and do NOT file a GitHub issue — document the limitation in-repo", "rationale": "spike proved run.artifacts does not populate it; user: no GitHub Issues on their behalf", "phase": "v0.2.4"},
+    {"decision": "Automated proof = fixture-driven Actions+gh CLI check asserting per-family alerts land with expected category/tags/severity; fixture must live OUTSIDE the normal typecheck gate", "rationale": "user requires proving SARIF+Code Scanning works incl. categories + rule-tags", "phase": "v0.2.4"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Run /gsd:complete-milestone v0.2.3 to archive v0.2.3 (phases 30-32 -> milestones/, MILESTONES.md, audit), THEN /gsd:new-milestone v0.2.4. Read .planning/.continue-here.md and the two memory files first.",
+  "context_notes": "This session shipped PR #49 (CI dogfood of angular-typechecker + fallow SARIF to Code Scanning, real-CI verified) then ran an empirical spike to scope v0.2.4. The spike is the authority on what SARIF changes are worth building. All findings are in memory: code-scanning-sarif-empirical-behavior.md (what works/doesn't), ci-sarif-code-scanning-dogfood.md (the shipped wiring), no-github-issues-on-my-behalf.md (do not file issues). Working tree is clean on main."
+}

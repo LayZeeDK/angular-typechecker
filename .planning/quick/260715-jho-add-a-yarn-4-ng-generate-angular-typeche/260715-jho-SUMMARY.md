@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: quick-260715-jho
 plan: 01
 subsystem: angular-cli-schematics / e2e

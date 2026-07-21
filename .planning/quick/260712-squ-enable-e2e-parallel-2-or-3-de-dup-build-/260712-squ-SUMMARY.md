@@ -1,4 +1,5 @@
 ---
+status: complete
 phase: quick-260712-squ
 plan: squ
 subsystem: e2e-ci
