@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-07-21T22:14:00.172Z",
+  "phase": "35",
+  "phase_name": "automated-code-scanning-proof",
+  "phase_dir": ".planning/phases/35-automated-code-scanning-proof",
+  "plan": 4,
+  "task": null,
+  "total_tasks": 4,
+  "status": "paused",
+  "branch": "gsd/v0.2.4-enhanced-sarif-reporting-for-github-code-scanning",
+  "head": "298b1b8",
+  "pr": 55,
+  "phase_status": "gap 35-04 PLANNED, not yet executed (G-35-01 open; verification = human_needed until real-CI code-scanning-proof is green)",
+  "completed_tasks": [
+    {"id": 1, "name": "Resumed from prior handoff; consumed HANDOFF.json", "status": "done", "commit": "ca59856"},
+    {"id": 2, "name": "Quick 260721-wda: fix svgo HIGH cve (GHSA-2p49-hgcm-8545) via npm update svgo 4.0.1->4.0.2 (lockfile-only, no override). Local cve-lite exit 0, fallow exit 0, lockfile coherent.", "status": "done", "commit": "4c38ab7 (code) + ca59856 (docs)"},
+    {"id": 3, "name": "Discussed G-35-01 D-01 reversal with auto-decision-locking; wrote 35-G-35-01-CONTEXT.md (locked D1-D7). Region-less whole-file location user-confirmed over synthetic line-1.", "status": "done", "commit": "68a5137"},
+    {"id": 4, "name": "Planned gap 35-04: gsd-planner (opus) wrote 35-04-PLAN.md; gsd-plan-checker (sonnet) = 0 blockers, 1 warning (stale README:710-713) which I incorporated as Task 4. Decision-coverage 14/14. state.planned-phase + commit.", "status": "done", "commit": "298b1b8"}
+  ],
+  "remaining_tasks": [
+    {"id": 5, "name": "EXECUTE 35-04 (the gap plan, 4 tasks). Run on the MAIN working tree, NOT a worktree (single-plan wave; needs real node_modules for the 8 gates; no dependency change). NOTE: `worktree.base-check --pick shouldDegrade` returned false this session, so execute-phase will NOT auto-degrade -- consciously run on main (junction Pattern A is valid since no deps change, OR run the executor inline / --interactive on main). Precedent: 35-02/03 + svgo all ran on main.", "status": "not_started", "resume_command": "/gsd-core:execute-phase 35 --gaps-only"},
+    {"id": 6, "name": "After 35-04's tasks: run the 8 LOCAL gates from repo root and confirm ALL green: nx test angular-typechecker (unit + regenerated sarif-report snap), nx integration angular-typechecker (integration + regenerated machine-reporters-sarif snap + the sarif-proof-fixture drift-lock), nx typecheck angular-typechecker (3 tsc -- nx test does NOT type-check specs), nx run-many -t lint (maxWarnings:0), nx format:check, npm run fallow, npm run cve-lite, nx build angular-typechecker. Additive-only spot check: git diff shows ONLY the 6 files_modified (5 code/spec/snap + README.md); barrel/index.drift.ts/json-report.ts/diagnostic-record.ts/package.json byte-unchanged.", "status": "not_started"},
+    {"id": 7, "name": "PUSH the branch (user AUTHORIZED 'execute, then push once' this session -- push AFTER local gates are green). A single CI run then proves BOTH: (a) cve-lite + the required `ci` aggregate go GREEN (svgo fix), and (b) the code-scanning-proof job ingests the SARIF and its assert step exits 0 (G-35-01 fix). `git push origin gsd/v0.2.4-enhanced-sarif-reporting-for-github-code-scanning`.", "status": "not_started"},
+    {"id": 8, "name": "Verify in REAL CI on PR #55 (the ONLY authoritative proof for PROOF-01/02): rtk gh pr checks 55 -> cve-lite green, ci green, code-scanning-proof green. IF code-scanning-proof is STILL red with a locationFromSarifResult/ingestion error, GitHub rejected the region-less whole-file location -> fall back to the CONTEXT D6 rejected-alternative: add a synthetic region line 1, col 1 to the file-less fallback (pass startLine:1, startColumn:1 in sarif-report.ts PASS-2) and re-push. That is the only anticipated failure mode.", "status": "not_started", "resume_command": "rtk gh pr checks 55"},
+    {"id": 9, "name": "Once code-scanning-proof is green in real CI: close the 3 UAT items in 35-UAT.md via /gsd-core:verify-work 35 (they were all blocked on the ingestion round-trip).", "status": "not_started", "resume_command": "/gsd-core:verify-work 35"},
+    {"id": 10, "name": "Post-completion (ONLY once the phase genuinely closes -- code-scanning-proof green + UAT items closed): /gsd-core:secure-phase 35, /gsd-core:validate-phase 35 (fills the draft 35-VALIDATION.md), /gsd-core:extract-learnings 35 (LAST). Then the milestone-close sequence for v0.2.4.", "status": "not_started"}
+  ],
+  "blockers": [
+    {"description": "PR #55 required `ci` aggregate is RED because cve-lite is red -- the svgo fix (4c38ab7) is committed locally but NOT yet pushed. Pushing (task 7) clears it; local cve-lite already exits 0.", "type": "technical", "workaround": "Push the branch (task 7)."},
+    {"description": "code-scanning-proof job is RED on PR #55 (G-35-01: GitHub rejects the file-less no-location SARIF). The FIX is planned (35-04) but NOT executed. Executing 35-04 + pushing resolves it -- pending the real-CI ingestion proof.", "type": "technical", "workaround": "Execute 35-04 (task 5) + push (task 7); confirm in CI (task 8)."}
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {"action": "PR #55 (draft) stays draft until the v0.2.4 milestone is complete; do NOT self-merge without explicit user OK (main is PR-only, empty-bypass ruleset).", "context": "Milestone-ships-as-single-PR; release cut separately after merge.", "blocking": false},
+    {"action": "The branch PUSH (task 7) is user-authorized THIS session ('execute, then push once'). A fresh session inherits that authorization for THIS push only -- push after local gates are green. Re-confirm with the user if anything material changed.", "context": "Pushing is outward-facing but the user explicitly chose the batch-then-push path.", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "svgo HIGH handled lean-inline as quick 260721-wda (NOT the full --full subagent pipeline).", "rationale": "The atc-use-cve-lite-cli skill confirmed a trivial in-range patch bump (4.0.2 fixes GHSA-2p49-hgcm-8545, within postcss-svgo's ^4.0.1) -- no override needed (skill Rules 1/2 N/A), no npm 10/11 portability trap. User chose lean-inline once complexity was ruled out.", "phase": "35"},
+    {"decision": "G-35-01 fix = REGION-LESS whole-file fallback location on relativizePath(result.tsConfigPath, pathBase), SARIF-only (D1-D7 in 35-G-35-01-CONTEXT.md).", "rationale": "CoreResult.tsConfigPath is always present + is the honest owner of every file-less case (ATC90001/90002 + file-less global TS). Region-less is honest (project/config-level, not line-specific) + smallest diff + GitHub supports path-level alerts. User confirmed region-less over the conservative synthetic line-1 (line-1 is the documented fallback if GitHub rejects region-less -- real-CI-only-provable).", "phase": "35"},
+    {"decision": "Reversal confined to sarif-report.ts PASS-2; JSON reporter / DiagnosticRecord / fingerprintOf / barrel / package.json version all byte-unchanged (D2/D3/D4/D7).", "rationale": "JSON consumers aren't GitHub (file:null stays correct); fingerprint stays on the true record so alert identity doesn't churn; the old file-less SARIF was rejected by its consumer so making it ingestible is a FIX not a breaking change -> stays 0.2.4 patch, additive-only holds.", "phase": "35"},
+    {"decision": "Incorporated the plan-checker's 1 warning (stale README:710-713) as 35-04 Task 4 rather than deferring.", "rationale": "README ships with the npm package and currently tells consumers to IGNORE file-less SARIF alerts -- the fix makes that false. Leaving a stale shipped doc contradicts the fix; the addition is small.", "phase": "35"},
+    {"decision": "Run 35-04 on the MAIN tree, not a worktree.", "rationale": "Single-plan wave (AGENTS.md 'single-plan wave: skip worktrees') + the 8 gates need real node_modules + no dependency change. base-check shouldDegrade=false this session so the fresh session must choose main consciously.", "phase": "35"}
+  ],
+  "uncommitted_files": [".planning/config.json (workflow._auto_chain_active flip; ephemeral GSD orchestration state, intentionally left uncommitted -- do NOT commit)"],
+  "next_action": "Run /gsd-core:execute-phase 35 --gaps-only to execute the vetted gap plan 35-04 (the D-01 SARIF file-less fallback-location fix). Run it on the MAIN working tree. Then run the 8 local gates, push the branch, and confirm cve-lite/ci AND code-scanning-proof go green in real CI on PR #55.",
+  "context_notes": "Plan 35-04 is fully vetted (gsd-planner opus authored -> gsd-plan-checker sonnet 0-blockers -> decision-coverage 14/14 -> PROOF-01/02 in requirements) and committed at 298b1b8. The LOCKED design contract (D1-D7) lives in .planning/phases/35-automated-code-scanning-proof/35-G-35-01-CONTEXT.md -- it wins on any discrepancy; the plan cites it as source of truth. Two independent red checks on PR #55 both get cleared by this session's remaining work: cve-lite/ci by PUSHING the already-committed svgo fix, and code-scanning-proof by EXECUTING + pushing 35-04. The single genuine risk is whether GitHub accepts a region-less whole-file location; if not, the documented fallback is a synthetic line-1 region (see task 8 + CONTEXT D6). Do NOT trust the passive LSP feed on sarif-report.ts (it went stale mid-edit in the prior session); authoritative signals are nx test / nx integration / tsc / fallow. Phase 35 is a PROOF HARNESS that already did its job -- it caught G-35-01 on the first real CI run."
+}
