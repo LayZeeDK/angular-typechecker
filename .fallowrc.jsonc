@@ -273,6 +273,25 @@
         "unresolved-imports": "off",
       },
     },
+    {
+      // Phase 35 (PROOF-01): the SARIF proof fixture (tools/sarif-proof-fixture/**)
+      // is a CI proof asset (D-01) whose sources are INTENTIONALLY unimported,
+      // unrendered, and deliberately broken -- it exists only to drive the shipped
+      // engine to emit one diagnostic per SARIF family for the code-scanning proof.
+      // Its type-check contract is enforced by the local drift-lock integration spec
+      // + the CI proof, NOT by fallow. Unlike fixtures/**, `tools/**` is scoped only
+      // under `health.ignore` (complexity), so `unused-files` (error) would gate the
+      // new-only PR here; `unrendered-components` / `unused-component-inputs` are
+      // warn-tier but scoped off for a clean report (same shape as the fixtures/**
+      // block above). `unresolved-imports` is NOT scoped -- the fixture's only import
+      // (@angular/core) resolves, so it does not trip that rule.
+      "files": ["tools/sarif-proof-fixture/**"],
+      "rules": {
+        "unrendered-components": "off",
+        "unused-component-inputs": "off",
+        "unused-files": "off",
+      },
+    },
   ],
 
   // FAL-11 (quick-260714-wr9): suppress two INTENTIONAL clone groups by config, NOT by a
