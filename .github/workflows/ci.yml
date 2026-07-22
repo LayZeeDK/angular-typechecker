@@ -353,10 +353,10 @@ jobs:
 
   # Dependency vulnerability gate (quick-260720-wso). Runs OWASP cve-lite-cli's
   # lockfile scan against OSV and FAILS the PR on any high-or-critical advisory
-  # (`npm run cve-lite` = `cve-lite . --fail-on high`). Unlike the ADDITIVE
-  # `code-scanning` job below, this IS a required merge gate (listed in the `ci`
-  # aggregate's needs) at the maintainer's request -- it INTENTIONALLY diverges
-  # from the code-scanning "never a merge gate" stance. Accepted tradeoffs on the
+  # (`npm run cve-lite` = `cve-lite . --fail-on high`). Like the `code-scanning`
+  # job below (a required merge gate too since GATE-01 / Phase 36), this IS a
+  # required merge gate (listed in the `ci` aggregate's needs) at the maintainer's
+  # request. Accepted tradeoffs on the
   # PR-only, empty-bypass `main`: (1) an OSV.dev outage or a newly-published
   # high/critical advisory with no available fix can block the merge button --
   # recover by toggling the branch ruleset enforcement (AGENTS.md "Lockout
@@ -490,11 +490,20 @@ jobs:
   # (apps/ng-spike-app), and also emits fallow's SARIF, then uploads BOTH to GitHub
   # Code Scanning via the SHA-pinned upload-sarif action.
   #
-  # DELIBERATELY NOT in the `ci` aggregate's needs: SARIF upload is additive
-  # reporting, never a merge gate. The real gates stay put -- angular-typechecker's
-  # whole-repo type-check runs in `test`, fallow's new-only verdict gates in
-  # `fallow`. Keeping this job out of `ci` means a Code Scanning outage or a fork-PR
-  # upload skip can NEVER deadlock the PR-only merge button.
+  # NOW a required member of the `ci` aggregate's needs (GATE-01 / Phase 36),
+  # reversing the prior "SARIF upload is additive reporting, never a merge gate"
+  # exclusion at the maintainer's request -- the dogfood upload succeeding is part of
+  # the merge gate (SC1), mirroring the `cve-lite` divergence above. Safe on the
+  # PR-only, empty-bypass `main` because: (a) it is un-path-gated (below) so it runs
+  # on EVERY PR incl. planning-only, producing an analysis on the PR ref; (b) on a
+  # fork PR the upload steps skip but the JOB still returns success; (c) `|| true` on
+  # generation means only a real infra break (`npm ci` / `nx build`) fails the job --
+  # which SHOULD fail `ci`; (d) the D-03 `produced` assertions (below) fail the job on
+  # a silent empty SARIF on a non-fork PR. The real diagnostic gates stay put --
+  # angular-typechecker's whole-repo type-check runs in `test`, fallow's new-only
+  # verdict gates in `fallow`. Accepted tradeoff (as with cve-lite): a Code Scanning
+  # outage or infra break can block the merge button -- recover by toggling the branch
+  # ruleset enforcement (AGENTS.md "Lockout recovery").
   #
   # Least privilege: the top-level `contents: read` is untouched. `security-events:
   # write` is granted at the JOB level ONLY (job-level permissions REPLACE the
@@ -538,7 +547,6 @@ jobs:
   # only PR yet stays in the `act -n` plan under the empty filter output.
   code-scanning:
     needs: changes
-    if: ${{ needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -591,6 +599,28 @@ jobs:
           else
             echo "produced=false" >> "$GITHUB_OUTPUT"
           fi
+      # GATE-01 contract (D-03, closes RESEARCH PITFALLS P7): on a non-fork PR a silent
+      # empty/absent SARIF (produced=false) would (a) let the now-required `code-scanning`
+      # gate pass GREEN on a reporter regression and (b) leave the "Require code scanning
+      # results" ruleset with no analysis on the PR ref (deadlock). Fail loud instead.
+      # Exempt fork PRs (read-only token -> upload skipped by design) and push events (not
+      # merge-gated). NOT a findings gate: a real type error still writes a valid SARIF
+      # (exit 1 -> produced=true) -> uploads -> green; diagnostics gate in `test`. Gated by
+      # a pure `if:` expression with a STATIC run body -- no step output or PR metadata is
+      # interpolated into the shell (top-of-file no-command-injection invariant).
+      - name: Assert angular-typechecker SARIF was produced (non-fork PR)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && steps.atc-sarif.outputs.produced == 'false' }}
+        run: |
+          echo "::error::angular-typechecker produced no SARIF on a non-fork PR. A reporter regression (empty/invalid SARIF) would pass this required gate green AND leave the Code Scanning ruleset with no analysis on the PR ref. Failing loud."
+          exit 1
+      # fallow is ALSO a required tool of the GATE-02 ruleset, so a missing fallow analysis
+      # would deadlock the ref too. fallow's `--format sarif -o` always writes a valid file,
+      # so this is a cheap backstop against a fallow infra break, not an expected failure.
+      - name: Assert fallow SARIF was produced (non-fork PR)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && steps.fallow-sarif.outputs.produced == 'false' }}
+        run: |
+          echo "::error::fallow produced no SARIF on a non-fork PR. The 'Require code scanning results' ruleset lists fallow as a required tool, so a missing fallow analysis would deadlock the PR ref. Failing loud."
+          exit 1
       # No `category:` here on purpose -- the merged file is now multi-run (one run
       # per executor-using project), each carrying a distinct automationDetails.id
       # (angular-typecheck/<project>, set by merge-sarif.mjs), which the action uses
@@ -646,8 +676,11 @@ jobs:
   # `sarif-id` reach the assert via `env:`, NEVER interpolated into a `run:` shell (the
   # top-of-file no-command-injection invariant; mirrors the `e2e` job's PROJECT pattern).
   #
-  # DELIBERATELY NOT in the `ci` aggregate's needs (D-02d) -- exactly like the dogfood
-  # `code-scanning` job. Promoting it into the required merge gate is GATE-01 / Phase 36.
+  # NOW a member of the `ci` aggregate's needs (GATE-01 / Phase 36), exactly like the
+  # dogfood `code-scanning` job -- a real SARIF -> Code Scanning contract regression
+  # (PROOF-02) now fails the required `ci` check. It stays PR-only + path-gated (D-01a),
+  # so on a planning-only PR or a push it resolves to `skipped`, which the aggregate's
+  # `contains(needs.*.result, ...)` gate drops -- no deadlock.
   #
   # Path-gated (D-08), SAME NEGATIVE if: form (`!= 'false'`) as the other heavy jobs so it
   # stays in the `act -n` plan under the empty filter output.
@@ -740,6 +773,8 @@ jobs:
         act-compat,
         lint-workflows,
         scoped-name-guard,
+        code-scanning,
+        code-scanning-proof,
       ]
     runs-on: ubuntu-latest
     if: always()
