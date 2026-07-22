@@ -4,17 +4,17 @@ milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 36
 current_phase_name: code-scanning-gating-scanned-files-documentation
-status: executing
+status: verifying
 stopped_at: Completed 36-01-PLAN.md
-last_updated: "2026-07-22T01:22:11.529Z"
+last_updated: "2026-07-22T01:33:43.776Z"
 last_activity: 2026-07-22
 last_activity_desc: Phase 36 execution started
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
-  completed_plans: 8
-  percent: 75
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 
 Phase: 36 (code-scanning-gating-scanned-files-documentation) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-22 — Phase 36 execution started
 
 ## Accumulated Context
@@ -116,6 +116,7 @@ archives under `.planning/milestones/`.
 - [Phase 36]: 36-01: promoted code-scanning + code-scanning-proof into the required ci aggregate needs[] (GATE-01/D-02) + un-path-gated the dogfood code-scanning job (GATE-02/D-01) so every PR incl planning-only produces an analysis; proof stays PR-only+path-gated (skipped drops from the aggregate, no deadlock)
 - [Phase 36]: 36-01: two pure-if:-gated non-fork-PR produced=='false' fail-loud assert steps (atc + fallow twin) close the P7 fail-open (D-03), static echo/exit 1 body -> no shell interpolation; drift guard reuses extractJobLines with list-item-anchored membership (substring-trap-safe vs code-scanning-proof)
 - [Phase 36]: 36-01: GATE-01/GATE-02 left Pending -- required-aggregate red/green + GitHub ingestion is real-CI-only (phase Nyquist point); GATE-02 also needs 36-02 AGENTS.md runbook + a human ruleset toggle (D-04)
+- [Phase 36]: 36-02: shipped the human-run GATE-02 ruleset runbook (AGENTS.md -- Evaluate-first, probe .planning-only + code PRs, then Active; enforcement:disabled recovery; fork-PR deadlock accepted; agent NEVER flips main, D-04) + the DOC-01 README note that the empty Scanned-files panel is a CodeQL-only GitHub limitation (not a defect; run.artifacts inert) locked by a normalized-whitespace code-scanning-docs.spec.ts tripwire. DOC-01 marked complete; GATE-02 left Pending (human ruleset toggle + real-CI-only). Docs/test-only, additive, no version bump (D-06); README is the only changed tarball file; AGENTS.md queued for the code_review_gate (self-governance rule).
 
 ### Roadmap Evolution
 
@@ -283,7 +284,7 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 **Stopped at:** Completed 36-01-PLAN.md
 **Resume file:** .planning/phases/36-code-scanning-gating-scanned-files-documentation/36-CONTEXT.md
 
-Last session: 2026-07-22T01:22:10.624Z
+Last session: 2026-07-22T01:32:47.167Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -340,3 +341,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 35 P02 | ~10m | 2 tasks | 2 files |
 | Phase 35 P03 | ~7m | 1 tasks | 2 files |
 | Phase 36 P01 | 8min | 2 tasks | 2 files |
+| Phase 36 P02 | 5min | 3 tasks | 3 files |

@@ -31,7 +31,7 @@ Scope empirically de-risked by the 2026-07-20 spike (closed PR #53): the SARIF->
 
 ### Documentation (DOC)
 
-- [ ] **DOC-01**: The README/docs document that GitHub's tool-status "Scanned files" panel is a CodeQL-only telemetry surface that third-party SARIF cannot populate (with the spike evidence), so the empty panel is a known GitHub limitation, not a defect.
+- [x] **DOC-01**: The README/docs document that GitHub's tool-status "Scanned files" panel is a CodeQL-only telemetry surface that third-party SARIF cannot populate (with the spike evidence), so the empty panel is a known GitHub limitation, not a defect.
 
 ## v2 / Future Requirements
 
@@ -63,7 +63,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | PROOF-02 | Phase 35 | Complete |
 | GATE-01 | Phase 36 | Pending |
 | GATE-02 | Phase 36 | Pending |
-| DOC-01 | Phase 36 | Pending |
+| DOC-01 | Phase 36 | Complete |
 
 **Coverage:**
 

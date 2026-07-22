@@ -187,12 +187,12 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The "Require code scanning results" ruleset for angular-typechecker + fallow is verified live in "Evaluate" mode first and on a throwaway PR before enabling on `main`, the `enforcement: disabled` recovery toggle is documented, and the fork-PR deadlock (read-only token -> upload skipped) is documented (GATE-02).
   4. The README documents that GitHub's tool-status "Scanned files" panel is CodeQL-only telemetry that third-party SARIF cannot populate (with the spike evidence that `run.artifacts` is inert), so the empty panel is a known GitHub limitation, not a defect -- no GitHub Issue filed (DOC-01).
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans complete
 
 **Wave 1** *(parallel -- disjoint files)*
 
 - [x] 36-01-PLAN.md -- ci.yml aggregate membership (D-02) + un-path-gate (D-01) + D-03 produced assertion + comment rewrites (D-05) + GATE-01/02 drift guard (GATE-01, GATE-02) (wave 1)
-- [ ] 36-02-PLAN.md -- AGENTS.md human-run ruleset runbook (D-04) + README DOC-01 Scanned-files limitation note + docs tripwire (GATE-02, DOC-01) (wave 1)
+- [x] 36-02-PLAN.md -- AGENTS.md human-run ruleset runbook (D-04) + README DOC-01 Scanned-files limitation note + docs tripwire (GATE-02, DOC-01) (wave 1)
 
 ## Progress
 
@@ -235,7 +235,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 2/2 | Complete    | 2026-07-21 |
 | 34. Per-project SARIF categories in CI | v0.2.4 | 1/1 | Complete    | 2026-07-21 |
 | 35. Automated Code Scanning proof | v0.2.4 | 3/3 | Complete   | 2026-07-21 |
-| 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 1/2 | In Progress|  |
+| 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 2/2 | Complete   | 2026-07-22 |
 
 ## Backlog
 
