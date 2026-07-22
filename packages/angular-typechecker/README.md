@@ -721,6 +721,19 @@ repo-relative and GitHub Code Scanning can match each alert to the file in your
 source tree. Running from a subdirectory produces URIs relative to that
 subdirectory, which GitHub cannot line up with the repository.
 
+#### The "Scanned files" panel stays empty (a GitHub limitation)
+
+On an alert's detail page, GitHub shows a "Scanned files" tool-status panel. For
+angular-typechecker -- and for any third-party SARIF tool -- that panel stays
+empty. This is a GitHub limitation, not a defect in angular-typechecker or its
+SARIF output: GitHub fills "Scanned files" only from its own CodeQL analysis
+telemetry, and the SARIF format has no field a third-party tool can use to
+populate it. angular-typechecker's SARIF is well-formed and its alerts, rule
+descriptions, and file locations all appear normally -- only that one
+CodeQL-specific panel is blank. Emitting the optional SARIF `run.artifacts` list
+does not change it: the panel ignores it. So an empty "Scanned files" panel is
+expected and can be ignored.
+
 ## Storybook
 
 `nx typecheck` type-checks your Storybook stories with no extra setup. Storybook's
