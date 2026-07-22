@@ -11,17 +11,33 @@ import {
 import { run } from '../cli/main';
 import typecheckExecutor from '../executors/typecheck/executor';
 
-// VER-02 (D-01/D-02/D-03) -- the SARIF machine reporter proven over REAL
-// cold-compiler fixtures through BOTH run() and the Nx executor. Mirrors
-// machine-reporters-json.integration.spec.ts (cwd pin, same two fixtures, executor
-// dual) but for --format sarif, adding the TRUE 2.1.0 schema validation
-// (validateSarif = committed draft-07 schema + ajv + ajv-formats) that complements
-// Phase 31's golden snapshot.
+// VER-02 (D-01/D-02/D-03) + RULE-01..04 (Phase 33) -- the SARIF machine reporter
+// proven over REAL cold-compiler fixtures through BOTH run() and the Nx executor.
+// Mirrors machine-reporters-json.integration.spec.ts (cwd pin, executor dual) but
+// for --format sarif, adding the TRUE 2.1.0 schema validation (validateSarif =
+// committed draft-07 schema + ajv + ajv-formats) that complements Phase 31's golden
+// snapshot.
 //
 //   - layout-b-host: mixed TS2322 + NG8002 (external .html template) -- the
-//     Windows path -> forward-slash artifactLocation.uri conversion (VER-02).
-//   - global-diagnostics: file-less TS2318 -- the SARIF no-`locations` result that
-//     is NEVER dropped (Phase-31 D-01).
+//     Windows path -> forward-slash artifactLocation.uri conversion (VER-02), and
+//     the `typescript` + `template-type-check` family tags over a real fixture.
+//   - global-diagnostics: file-less TS2318 -- each result now carries a whole-file
+//     fallback location on the relativized tsconfig (still NEVER dropped), catalogued
+//     as a single `typescript` rule that all ten results resolve to by ruleIndex.
+//   - extended-content-projection: a real NG8011 extended diagnostic -- the
+//     `extended-diagnostics` family tag keeping its angular.dev helpUri (RULE-02/04).
+//   - solution-style-all-missing: two file-less ATC90002 not-found errors, each now
+//     carrying a whole-file fallback location on the relativized tsconfig -- the
+//     `tool` family tag (RULE-02) over the fourth and final Family literal.
+//
+// Phase 33 (RULE-01..04): each cataloged rule now carries properties.tags (the
+// family), defaultConfiguration.level, and help.text, and every result carries a
+// ruleIndex into the on-demand rules[] (one entry per DISTINCT fired ruleId). The
+// two committed redacted snapshots (layout-b-host + global-diagnostics) are the
+// release-bearing proof; the extended + tool blocks assert their family tag
+// EXPLICITLY rather than by snapshot -- the ATC90002 message embeds the resolved
+// (absolute) tsconfig path, which is neither cross-OS byte-stable nor drive-letter
+// clean, so that fixture is intentionally NOT snapshotted.
 //
 // The committed Windows-authored redacted snapshot reproducing byte-for-byte on
 // Linux/macOS IS the cross-OS artifactLocation.uri proof (partialFingerprints are
@@ -40,10 +56,31 @@ interface SarifLocation {
 }
 
 interface SarifResult {
+  ruleId?: string;
+  // Present once a result's ruleId matches a cataloged rule -- which, with
+  // on-demand cataloging (RULE-01), is every result (completeRunFields sets it).
+  ruleIndex?: number;
   locations?: SarifLocation[];
 }
 
+// The run tool driver's on-demand rule catalog (RULE-01..04): one reportingDescriptor
+// per DISTINCT fired ruleId, each carrying properties.tags (the family), a
+// defaultConfiguration level, and help text alongside its helpUri.
+interface SarifRule {
+  id: string;
+  shortDescription?: { text: string };
+  helpUri?: string;
+  properties?: { tags?: string[] };
+  defaultConfiguration?: { level?: string };
+  help?: { text: string };
+}
+
+interface SarifToolDriver {
+  rules?: SarifRule[];
+}
+
 interface SarifRun {
+  tool: { driver: SarifToolDriver };
   results: SarifResult[];
 }
 
@@ -65,6 +102,33 @@ const globalDiagnosticsTsConfig = join(
   workspaceRoot,
   'fixtures',
   'global-diagnostics',
+  'tsconfig.json',
+);
+// Phase 33 -- the extended-diagnostics family: a single real NG8011 warning (the
+// fixture's only diagnostic, locked by extended-catalog.integration.spec.ts).
+const extendedContentProjectionTsConfig = join(
+  workspaceRoot,
+  'fixtures',
+  'extended-content-projection',
+  'tsconfig.app.json',
+);
+// Phase 33 -- the tool family: two file-less ATC90002 not-found errors (the
+// fixture's only diagnostics, locked by walk-references.integration.spec.ts).
+const solutionStyleAllMissingTsConfig = join(
+  workspaceRoot,
+  'fixtures',
+  'solution-style-all-missing',
+  'tsconfig.json',
+);
+// Phase 35 (PROOF-01) -- the isolated proof fixture that fires ONE diagnostic per
+// SARIF family in a SINGLE CLI run: a surviving leaf (TS2322 + external-.html NG8002
+// + a warning extended NG8xxx) plus one deliberately-missing reference (ATC90002).
+// Lives at tools/sarif-proof-fixture/ with no project.json, so it is outside the
+// Nx typecheck gate.
+const proofFixtureTsConfig = join(
+  workspaceRoot,
+  'tools',
+  'sarif-proof-fixture',
   'tsconfig.json',
 );
 
@@ -126,6 +190,50 @@ function artifactUris(payload: SarifLog): string[] {
   return uris;
 }
 
+/** The on-demand rule catalog of the first (only) run. */
+function rulesOf(payload: SarifLog): SarifRule[] {
+  return payload.runs[0].tool.driver.rules ?? [];
+}
+
+/** The cataloged rule ids, sorted so assertions are catalog-order-independent. */
+function ruleIds(payload: SarifLog): string[] {
+  return rulesOf(payload)
+    .map((rule) => rule.id)
+    .sort();
+}
+
+/**
+ * Looks a cataloged rule up by id, failing LOUDLY (naming the ids that ARE present)
+ * when it is absent -- so a missing rule reads as a clear assertion failure rather
+ * than an undefined-property crash downstream.
+ */
+function ruleById(payload: SarifLog, id: string): SarifRule {
+  const rule = rulesOf(payload).find((candidate) => candidate.id === id);
+
+  if (rule === undefined) {
+    throw new Error(
+      `SARIF rule '${id}' is absent; cataloged rule ids: [${ruleIds(payload).join(', ')}]`,
+    );
+  }
+
+  return rule;
+}
+
+/**
+ * Asserts every result resolves to a cataloged rule: its ruleIndex is a number that
+ * indexes back to a rule whose id equals the result's ruleId (RULE-01, the
+ * completeRunFields ruleIndex wiring). A result whose ruleId should be cataloged but
+ * carries NO ruleIndex is a defect, not snapshot noise.
+ */
+function expectEveryResultResolvesToItsRule(payload: SarifLog): void {
+  const rules = rulesOf(payload);
+
+  for (const result of payload.runs[0].results) {
+    expect(result.ruleIndex).toBeTypeOf('number');
+    expect(rules[result.ruleIndex ?? -1]?.id).toBe(result.ruleId);
+  }
+}
+
 let originalCwd: string;
 
 beforeAll(() => {
@@ -172,6 +280,25 @@ describe('SARIF reporter integration -- layout-b-host (mixed TS2322 + NG8002)', 
     expect(redactVolatile(payload)).toMatchSnapshot();
   });
 
+  it('catalogs exactly the two fired ruleIds and resolves every result by ruleIndex (RULE-01)', () => {
+    expect(ruleIds(payload)).toEqual(['NG8002', 'TS2322']);
+
+    expectEveryResultResolvesToItsRule(payload);
+  });
+
+  it('tags the external-template NG8002 rule template-type-check and the TS2322 rule typescript, each at error level with help text (RULE-02/03/04)', () => {
+    const ng8002 = ruleById(payload, 'NG8002');
+    const ts2322 = ruleById(payload, 'TS2322');
+
+    expect(ng8002.properties?.tags).toEqual(['template-type-check']);
+    expect(ts2322.properties?.tags).toEqual(['typescript']);
+
+    for (const rule of [ng8002, ts2322]) {
+      expect(rule.defaultConfiguration?.level).toBe('error');
+      expect((rule.help?.text ?? '').length).toBeGreaterThan(0);
+    }
+  });
+
   it('the executor payload schema-validates and equals run() (same renderReport seam)', async () => {
     const executorStdout = await captureExecutorSarif(layoutBHostTsConfig);
     const { valid, errors } = validateSarif(executorStdout);
@@ -198,12 +325,25 @@ describe('SARIF reporter integration -- global-diagnostics (file-less TS2318)', 
     expect(valid, errors).toBe(true);
   });
 
-  it('keeps at least one file-less result with NO locations (never dropped)', () => {
-    expect(
-      payload.runs[0].results.some(
-        (result) => (result.locations?.length ?? 0) === 0,
-      ),
-    ).toBe(true);
+  it('gives every file-less result exactly one whole-file location on the tsconfig, never dropped', () => {
+    const results = payload.runs[0].results;
+
+    // All ten file-less TS2318 results are now LOCATED (one-to-one), never dropped.
+    expect(results).toHaveLength(10);
+
+    for (const result of results) {
+      expect(result.locations).toHaveLength(1);
+    }
+
+    // Each whole-file location anchors to the repo-relative, forward-slash tsconfig.
+    const uris = artifactUris(payload);
+
+    expect(uris).toHaveLength(10);
+
+    for (const uri of uris) {
+      expect(uri.endsWith('global-diagnostics/tsconfig.json')).toBe(true);
+      expect(uri).not.toMatch(/[\\:]/);
+    }
   });
 
   it('is byte-stable two-run (same process, redacted)', async () => {
@@ -214,5 +354,185 @@ describe('SARIF reporter integration -- global-diagnostics (file-less TS2318)', 
 
   it('matches the committed redacted snapshot (cross-OS/Node byte-stability)', () => {
     expect(redactVolatile(payload)).toMatchSnapshot();
+  });
+
+  it('catalogs exactly ONE TS2318 rule that all ten results resolve to by ruleIndex 0 (RULE-01)', () => {
+    expect(ruleIds(payload)).toEqual(['TS2318']);
+
+    const results = payload.runs[0].results;
+
+    expect(results).toHaveLength(10);
+
+    for (const result of results) {
+      expect(result.ruleId).toBe('TS2318');
+      expect(result.ruleIndex).toBe(0);
+    }
+  });
+
+  it('tags the TS2318 rule typescript at error level with help text (RULE-02/03/04)', () => {
+    const ts2318 = ruleById(payload, 'TS2318');
+
+    expect(ts2318.properties?.tags).toEqual(['typescript']);
+    expect(ts2318.defaultConfiguration?.level).toBe('error');
+    expect((ts2318.help?.text ?? '').length).toBeGreaterThan(0);
+  });
+});
+
+describe('SARIF reporter integration -- extended-content-projection (NG8011 extended diagnostic)', () => {
+  let stdout: string;
+  let payload: SarifLog;
+
+  beforeAll(async () => {
+    stdout = await runSarif(extendedContentProjectionTsConfig);
+    payload = JSON.parse(stdout) as SarifLog;
+  });
+
+  it('schema-validates against the committed SARIF 2.1.0 schema (real ajv, not shape-only)', () => {
+    const { valid, errors } = validateSarif(stdout);
+
+    expect(valid, errors).toBe(true);
+  });
+
+  it('tags the fired NG8011 rule extended-diagnostics, keeping its angular.dev helpUri, at warning level with help text (RULE-02/03/04)', () => {
+    expect(ruleIds(payload)).toEqual(['NG8011']);
+
+    const ng8011 = ruleById(payload, 'NG8011');
+
+    expect(ng8011.properties?.tags).toEqual(['extended-diagnostics']);
+    expect(ng8011.helpUri).toBe(
+      'https://angular.dev/extended-diagnostics/NG8011',
+    );
+    expect(ng8011.defaultConfiguration?.level).toBe('warning');
+    expect((ng8011.help?.text ?? '').length).toBeGreaterThan(0);
+  });
+
+  it('resolves every result to the cataloged rule by ruleIndex (RULE-01)', () => {
+    expectEveryResultResolvesToItsRule(payload);
+  });
+
+  it('is byte-stable two-run (same process, redacted)', async () => {
+    const second = await runSarif(extendedContentProjectionTsConfig);
+
+    expect(redactVolatile(JSON.parse(second))).toEqual(redactVolatile(payload));
+  });
+});
+
+describe('SARIF reporter integration -- solution-style-all-missing (tool ATC90002)', () => {
+  let stdout: string;
+  let payload: SarifLog;
+
+  beforeAll(async () => {
+    stdout = await runSarif(solutionStyleAllMissingTsConfig);
+    payload = JSON.parse(stdout) as SarifLog;
+  });
+
+  it('schema-validates against the committed SARIF 2.1.0 schema (real ajv, not shape-only)', () => {
+    const { valid, errors } = validateSarif(stdout);
+
+    expect(valid, errors).toBe(true);
+  });
+
+  it('tags the fired ATC90002 rule tool, at error level with help text (RULE-02/03/04)', () => {
+    expect(ruleIds(payload)).toEqual(['ATC90002']);
+
+    const tool = ruleById(payload, 'ATC90002');
+
+    expect(tool.properties?.tags).toEqual(['tool']);
+    expect(tool.defaultConfiguration?.level).toBe('error');
+    expect((tool.help?.text ?? '').length).toBeGreaterThan(0);
+  });
+
+  it('resolves both file-less results to the single tool rule by ruleIndex 0, each located on the tsconfig (RULE-01)', () => {
+    const results = payload.runs[0].results;
+
+    expect(results).toHaveLength(2);
+
+    for (const result of results) {
+      expect(result.ruleId).toBe('ATC90002');
+      expect(result.ruleIndex).toBe(0);
+      expect(result.locations?.length ?? 0).toBe(1);
+
+      const uri = result.locations?.[0].physicalLocation?.artifactLocation?.uri;
+
+      expect(uri?.endsWith('solution-style-all-missing/tsconfig.json')).toBe(
+        true,
+      );
+      expect(uri).not.toMatch(/[\\:]/);
+    }
+  });
+
+  it('is byte-stable two-run (same process, redacted)', async () => {
+    const second = await runSarif(solutionStyleAllMissingTsConfig);
+
+    expect(redactVolatile(JSON.parse(second))).toEqual(redactVolatile(payload));
+  });
+});
+
+// Phase 35 (PROOF-01) -- the LOCAL drift-lock half of the code-scanning proof. It
+// runs the shipped CLI ONCE over the isolated proof fixture and asserts the emitted
+// rules set-equal the four (family tag, SARIF level) tuples the CI proof (35-02)
+// asserts landed as Code Scanning alerts. If the fixture (or the reporter) ever
+// stops emitting exactly one diagnostic per family, THIS spec goes red locally --
+// so the CI assert's expected set cannot silently drift from what the reporter
+// actually emits. The GitHub-ingestion half is real-CI-only (the 35-03
+// code-scanning-red-proof job); this is the fast local tripwire.
+//
+// The exact extended NG8xxx code is Task-1 discretionary (NG8101 today), so this
+// block asserts the SET of (family tag, level) tuples + exactly one rule per family
+// rather than an exact extended ruleId. TS2322 / NG8002 / ATC90002 are the fixed
+// codes and are pinned to their family tag + level explicitly.
+describe('SARIF reporter integration -- sarif-proof-fixture (one rule per family, one run)', () => {
+  let stdout: string;
+  let payload: SarifLog;
+
+  beforeAll(async () => {
+    stdout = await runSarif(proofFixtureTsConfig);
+    payload = JSON.parse(stdout) as SarifLog;
+  });
+
+  it('schema-validates against the committed SARIF 2.1.0 schema (real ajv, not shape-only)', () => {
+    const { valid, errors } = validateSarif(stdout);
+
+    expect(valid, errors).toBe(true);
+  });
+
+  it('catalogs exactly one rule per SARIF family at the expected level, in ONE run (PROOF-01 / D-03d)', () => {
+    const rules = rulesOf(payload);
+
+    // Exactly one rule per family -- no family missing, no incidental extra
+    // diagnostic sneaking a second rule into any family.
+    expect(rules).toHaveLength(4);
+
+    const tuples = rules
+      .map((rule) => ({
+        tag: (rule.properties?.tags ?? [])[0],
+        level: rule.defaultConfiguration?.level,
+      }))
+      .sort((a, b) => (a.tag ?? '').localeCompare(b.tag ?? ''));
+
+    expect(tuples).toEqual([
+      { tag: 'extended-diagnostics', level: 'warning' },
+      { tag: 'template-type-check', level: 'error' },
+      { tag: 'tool', level: 'error' },
+      { tag: 'typescript', level: 'error' },
+    ]);
+  });
+
+  it('pins the three fixed family codes (TS2322 typescript, NG8002 template-type-check, ATC90002 tool) at error level (RULE-02/03)', () => {
+    const ts2322 = ruleById(payload, 'TS2322');
+    const ng8002 = ruleById(payload, 'NG8002');
+    const atc90002 = ruleById(payload, 'ATC90002');
+
+    expect(ts2322.properties?.tags).toEqual(['typescript']);
+    expect(ng8002.properties?.tags).toEqual(['template-type-check']);
+    expect(atc90002.properties?.tags).toEqual(['tool']);
+
+    for (const rule of [ts2322, ng8002, atc90002]) {
+      expect(rule.defaultConfiguration?.level).toBe('error');
+    }
+  });
+
+  it('resolves every result to its cataloged rule by ruleIndex (RULE-01)', () => {
+    expectEveryResultResolvesToItsRule(payload);
   });
 });

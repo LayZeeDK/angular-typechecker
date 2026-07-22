@@ -17,6 +17,7 @@
     "plan_check": true,
     "verifier": true,
     "nyquist_validation": true,
+    "security_enforcement": true,
     "auto_advance": false,
     "node_repair": true,
     "node_repair_budget": 2,

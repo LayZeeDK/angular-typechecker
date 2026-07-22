@@ -1,0 +1,8 @@
+<!-- NG8002 unknown property (template-type-check, error): bind an unknown property
+     on a native element -- the proven fixtures/layout-b-aggregated/card.component.html
+     shape. -->
+<div [nonExistentProp]="value"></div>
+<!-- NG8101 inverted banana-in-box (extended-diagnostics, warning): the ([...]) box is
+     the inverted two-way-binding syntax; it fires the invalidBananaInBox extended
+     diagnostic at warning level with no extra component wiring. -->
+<input ([value])="value" />

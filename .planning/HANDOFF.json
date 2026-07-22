@@ -1,67 +1,50 @@
 {
   "version": "1.0",
-  "timestamp": "2026-07-20T23:16:01.276Z",
-  "phase": null,
-  "phase_name": "Milestone boundary: v0.2.3 shipped, v0.2.4 scoped (not started)",
-  "phase_dir": ".planning/",
+  "timestamp": "2026-07-22T09:20:09.701Z",
+  "phase": "36",
+  "phase_name": "code-scanning-gating-scanned-files-documentation",
+  "phase_dir": ".planning/phases/36-code-scanning-gating-scanned-files-documentation",
   "plan": null,
   "task": null,
   "total_tasks": null,
   "status": "paused",
-  "context": "milestone-boundary",
+  "milestone": "v0.2.4",
+  "branch": "gsd/v0.2.4-enhanced-sarif-reporting-for-github-code-scanning",
+  "head": "4a8ac92",
+  "milestone_pr": 55,
+  "summary": "Phase 36 (last v0.2.4 phase) is executed, reviewed, secured, validated, and its UAT item 1 (real-CI RED/GREEN) is PASSED. Milestone PR #55 is marked ready but its merge is HARD-BLOCKED by GitHub code scanning protection on deliberate proof-fixture error alerts. Pausing to rework the proof so the intended-RED SARIF is a standalone job reporting under a SEPARATE Code Scanning tool, unconflated from the dogfood and from unintended reds.",
   "completed_tasks": [
-    {
-      "id": 1,
-      "name": "PR #49 MERGED to main: CI `code-scanning` job uploads angular-typechecker (ng-spike-app) + fallow SARIF to GitHub Code Scanning; verified in real CI (analyses land on PR ref + main baseline); upload-sarif pinned v4.37.1; fallow multi-run fixed via per-run automationDetails.id",
-      "status": "done",
-      "commit": "be2a730"
-    },
-    {
-      "id": 2,
-      "name": "Empirical spike (throwaway PR #53, now CLOSED + branch deleted): deliberate diagnostics (TS2322/TS2551/NG8107) proved the SARIF->alert pipeline and settled the v0.2.4 scope. Findings recorded in memory code-scanning-sarif-empirical-behavior.md",
-      "status": "done",
-      "commit": "n/a (throwaway, reverted)"
-    }
+    {"id": 1, "name": "Execute plans 36-01 + 36-02 (ci.yml aggregate membership + un-path-gate + D-03 assertions + drift guard; AGENTS.md ruleset runbook + README DOC-01 + docs tripwire)", "status": "done", "commit": "194920e..546c8a9"},
+    {"id": 2, "name": "Code review (deep, 5 files) + fix WR-01 stale path-gate comment", "status": "done", "commit": "5aff3a7"},
+    {"id": 3, "name": "Verify phase goal -> 36-VERIFICATION.md (human_needed: 2 real-CI/human items)", "status": "done", "commit": "a94d552"},
+    {"id": 4, "name": "Security audit -> 36-SECURITY.md (SECURED, 8/8 threats closed, 0 open; HIGH T-36-02 command-injection verified clean)", "status": "done", "commit": "60de2e5"},
+    {"id": 5, "name": "Nyquist validation -> 36-VALIDATION.md (compliant, wave-0 complete, 19/19 non-vacuity checks)", "status": "done", "commit": "b1e45d6"},
+    {"id": 6, "name": "UAT item 1 real-CI RED+GREEN verified. GREEN run 29898624245 (headSha 3e4fc6f, both jobs as ci members). RED chaos PR #56 run 29901279596 (D-03 empty-SARIF assertion fired -> code-scanning red -> ci red). Chaos PR #56 CLOSED, branch deleted, milestone branch byte-unchanged. Result recorded in 36-UAT.md.", "status": "done", "commit": "4a8ac92"},
+    {"id": 7, "name": "Push phase-36 commits to PR #55 (up to date with main, 0 behind); mark PR #55 ready for review", "status": "done"}
   ],
   "remaining_tasks": [
-    {
-      "id": 1,
-      "name": "/gsd:complete-milestone v0.2.3 — archive v0.2.3: git mv phases 30/31/32 -> .planning/milestones/v0.2.3-phases/, add MILESTONES.md entry, produce the milestone audit. MUST happen before new-milestone's phases.clear or the phase dirs are wiped.",
-      "status": "not_started"
-    },
-    {
-      "id": 2,
-      "name": "/gsd:new-milestone v0.2.4 'Enhanced SARIF reporting for GitHub Code Scanning' — write PROJECT.md + REQUIREMENTS.md + ROADMAP.md on a kickoff branch (main is PR-only) -> PR. Skip the 4-researcher round (spike + prior research answered the unknowns). Include the spike findings in scope.",
-      "status": "not_started"
-    }
+    {"id": 8, "name": "REWORK (NEXT, the paused task): make the intended-RED SARIF proof a STANDALONE job with a descriptive name, reporting under a SEPARATE GitHub Code Scanning tool (distinct SARIF driver.name), separated from the dogfood 'angular-typechecker' tool and from unintended reds. The proving job passes ONLY when the RED report is submitted AND confirmed via Code Scanning to be red for EXACTLY the expected diagnostics in the expected files.", "status": "not_started", "is_next": true},
+    {"id": 9, "name": "Confirm the rework unblocks PR #55: the dogfood 'angular-typechecker' Code Scanning check stays green (clean workspace); the separate proof tool's intentional red must NOT hard-block the merge. Verify on a throwaway/probe PR.", "status": "not_started"},
+    {"id": 10, "name": "Merge PR #55 as a merge commit once green + unblocked (allowed_merge_methods=[merge]; NEVER --admin; NEVER direct push to main)", "status": "blocked"},
+    {"id": 11, "name": "POST-MERGE HUMAN: UAT item 2 - run the AGENTS.md 'Require code scanning results' ruleset runbook on main (D-04, human-only, real-CI-only)", "status": "human_action"},
+    {"id": 12, "name": "Then wrap up: phase.complete 36; extract-learnings 36 (LAST) + global-learnings bridge; REQUIREMENTS.md flip GATE-01/02; milestone v0.2.4 close (audit-milestone -> complete-milestone); human-gated release cut (release/0.2.4, curate CHANGELOG, tag angular-typechecker@0.2.4, OIDC publish)", "status": "not_started"}
   ],
   "blockers": [
-    {
-      "description": "main is PR-only (empty-bypass ruleset). Milestone-kickoff commits cannot be pushed to main; write artifacts on a branch and open a PR.",
-      "type": "external",
-      "workaround": "create gsd/v0.2.4-milestone branch off main; PR the kickoff artifacts"
-    },
-    {
-      "description": "v0.2.3 phases 30/31/32 still live in .planning/phases/ and are NOT archived. new-milestone step 6 runs phases.clear which would wipe them.",
-      "type": "technical",
-      "workaround": "run /gsd:complete-milestone v0.2.3 FIRST (archives them), or manually git mv to .planning/milestones/v0.2.3-phases/ before phases.clear"
-    }
+    {"description": "PR #55 merge HARD-BLOCKED: GitHub code scanning merge protection prohibits the base-branch merge because the PR-only code-scanning-proof job uploads a SARIF with driver.name 'angular-typechecker' containing 4 DELIBERATE error alerts (TS2322, NG8002, NG8101, ATC90002) from tools/sarif-proof-fixture/. GitHub groups Code Scanning alerts by TOOL (driver.name), NOT by category (the job already uses a distinct category 'angular-typecheck-proof', which is insufficient) -- so the proof's deliberate errors appear under the SAME tool as the clean dogfood and fail the 'angular-typechecker' Code Scanning check. Proven empirically: 'gh pr merge 55 --merge' -> 'the base branch policy prohibits the merge'. All OTHER gates pass (required status checks Analyze x2 + ci GREEN; CodeQL 0 alerts; branch 0 behind main; 0 required reviews).", "type": "technical", "workaround": "The decided fix: give the proof SARIF a SEPARATE driver.name. Do NOT --admin (bypasses the empty-bypass PR-only ruleset). Rejected alternatives: dismiss the 4 proof alerts on the PR ref (user declined); human adjusts code scanning protection (main-protection change, human-only)."},
+    {"description": "EXACT block mechanism UNCONFIRMED and must be determined FIRST. The main ruleset (id 18229122) code_scanning rule lists ONLY CodeQL (threshold: errors / high_or_higher), which is satisfied (0 CodeQL alerts) -- yet the 'angular-typechecker' code-scanning check red STILL hard-blocks. Most likely a REPO-LEVEL code scanning 'pull request check failure' protection (repo Settings -> Code security -> Code scanning) that fails the PR check on error-severity results for ANY tool. If so, the SEPARATE proof tool's red may ALSO block -- in which case the rework must additionally auto-dismiss the proof alerts AFTER API confirmation (keeps the proof valid) OR a human must change the protection (ESCALATE; do not self-approve a main-protection change).", "type": "external", "workaround": "Query the repo code scanning protection config; probe with a throwaway PR before relying on the fix."}
   ],
   "async_jobs": [],
   "human_actions_pending": [
-    {
-      "action": "Enable GitHub 'Require code scanning results' ruleset for angular-typechecker + fallow (v0.2.4 area 4 gating) — repo Settings/ruleset change, done by the user",
-      "context": "with planning-only-PR deadlock mitigation; findings already gate via test/fallow",
-      "blocking": false
-    }
+    {"action": "UAT item 2: run the AGENTS.md 'Enabling the Require code scanning results ruleset' runbook on main (Evaluate -> probe a planning-only PR AND a code PR -> Active; enforcement:disabled recovery; fork-PR deadlock accepted)", "context": "GATE-02 D-04: human-only, real-CI-only, POST-MERGE. The agent NEVER flips the main ruleset.", "blocking": true},
+    {"action": "If unblocking the merge requires a code scanning protection / ruleset / repo-settings change, a HUMAN must make it", "context": "main protections are human-only per repo posture (empty-bypass ruleset). Escalate rather than self-approve.", "blocking": false},
+    {"action": "The eventual angular-typechecker@0.2.4 release goes through the human-gated Release-PR + OIDC flow (approve npm-publish environment). Requires explicit user go.", "context": "AGENTS.md release mechanics; CI holds only id-token:write, never contents:write.", "blocking": false}
   ],
   "decisions": [
-    {"decision": "v0.2.4 = 'Enhanced SARIF reporting for GitHub Code Scanning', 5 areas (see .continue-here.md)", "rationale": "user direction + empirical spike", "phase": "v0.2.4"},
-    {"decision": "Rule cataloging + family tags + defaultConfiguration.level + help.text is the ONLY release-bearing SARIF change; per-project categories, gating, and the proof harness are CI/ruleset-only (no release)", "rationale": "user rule: release only if the SARIF report changes; spike proved tags/catalog work in Code Scanning", "phase": "v0.2.4"},
-    {"decision": "'Scanned files' panel is a GitHub product gap (CodeQL-only telemetry); do NOT emit run.artifacts (proven inert) and do NOT file a GitHub issue — document the limitation in-repo", "rationale": "spike proved run.artifacts does not populate it; user: no GitHub Issues on their behalf", "phase": "v0.2.4"},
-    {"decision": "Automated proof = fixture-driven Actions+gh CLI check asserting per-family alerts land with expected category/tags/severity; fixture must live OUTSIDE the normal typecheck gate", "rationale": "user requires proving SARIF+Code Scanning works incl. categories + rule-tags", "phase": "v0.2.4"}
+    {"decision": "Rework the RED-SARIF proof (separate Code Scanning tool + standalone descriptively-named job) rather than dismiss the proof-fixture alerts or --admin bypass", "rationale": "User choice. Dismissing (declined) hides proof visibility and may recur on every code PR; --admin bypasses the PR-only guarantee (forbidden). A separate tool is the durable fix and generalizes: EVERY code PR triggers the PR-only proof job, so without the fix every code PR would be merge-blocked the same way.", "phase": "36"},
+    {"decision": "UAT item 1 verified via REAL CI (push + chaos PR), not just by-construction", "rationale": "GREEN run 29898624245 (both jobs as ci members) + RED chaos run 29901279596 (D-03 assertion fired). The earlier green run 29881837667 was on the PRE-change 42295c7 and did NOT count -- always confirm a CI run's headSha matches the changes.", "phase": "36"},
+    {"decision": "security_enforcement was enabled in .planning/config.json (commit 5ba7f82) during the session", "rationale": "Appeared in parallel (user/GSD); it makes the secure-phase gate unambiguously active. Correctly-authored (public gmail); touches only config.json.", "phase": "36"}
   ],
   "uncommitted_files": [],
-  "next_action": "Run /gsd:complete-milestone v0.2.3 to archive v0.2.3 (phases 30-32 -> milestones/, MILESTONES.md, audit), THEN /gsd:new-milestone v0.2.4. Read .planning/.continue-here.md and the two memory files first.",
-  "context_notes": "This session shipped PR #49 (CI dogfood of angular-typechecker + fallow SARIF to Code Scanning, real-CI verified) then ran an empirical spike to scope v0.2.4. The spike is the authority on what SARIF changes are worth building. All findings are in memory: code-scanning-sarif-empirical-behavior.md (what works/doesn't), ci-sarif-code-scanning-dogfood.md (the shipped wiring), no-github-issues-on-my-behalf.md (do not file issues). Working tree is clean on main."
+  "next_action": "In a fresh session run: /gsd-core:quick --full --auto Change our CI so that the job intended to report a RED SARIF report for GitHub Code Scanning is a standalone job with a descriptive name, separating it from unintended RED SARIF reports. The job that proves it explicitly passes when the RED SARIF report job successfully submits a RED report, confirmed via GitHub Code Scanning but ONLY RED for the expected diagnostics in the expected files. Maybe a separate GitHub Code Scanning tool for the expected RED SARIF report.",
+  "context_notes": "The fix centers on .github/workflows/ci.yml 'code-scanning-proof' job (~line 690). It currently: builds the plugin, runs the shipped CLI over tools/sarif-proof-fixture/tsconfig.json to produce proof.sarif (driver.name='angular-typechecker' -- the real CLI's tool name), uploads via upload-sarif with category 'angular-typecheck-proof', then an 'Assert proof alerts landed' step polls the Code Scanning API. The category is already distinct but Code Scanning groups by TOOL not category, so the proof conflates with the dogfood under 'angular-typechecker'. FIX DIRECTION: (1) rename the job to something descriptive (e.g. code-scanning-red-proof); (2) post-process proof.sarif to set a DISTINCT driver.name e.g. 'angular-typechecker-red-proof' (mirror how the fallow leg rewrites automationDetails via node at ci.yml:600) so the proof reports under its own tool; (3) make the assert step confirm via the Code Scanning alerts API (ref=refs/pull/<n>/merge, tool_name=<the new proof tool>) that EXACTLY the expected diagnostics {TS2322, NG8002, NG8101, ATC90002} in tools/sarif-proof-fixture/* are present -- no more, no less -- and fail the job otherwise. CRITICAL first step: determine whether the separate proof tool's red will ALSO hard-block the merge (query the repo code scanning protection; the ruleset gates only CodeQL, so a repo-level PR-check-failure protection is the likely culprit). If it would still block, either auto-dismiss the proof tool's alerts AFTER the API confirmation (proof stays valid because it was confirmed first) or ESCALATE a human-only main-protection change. Verify the whole thing on a throwaway/probe PR (the chaos-PR technique worked this session: branch off milestone HEAD, PR base = milestone branch since on: pull_request:{} has no branch filter, close + delete branch after). Interplay with UAT item 2: the future 'Require code scanning results' ruleset will list angular-typechecker + fallow as required tools -- the new proof tool must NOT be added to that required list (its red is intentional). After the rework unblocks + PR #55 merges, a human runs UAT item 2, then phase.complete 36 + extract-learnings 36 (+ global bridge) + milestone v0.2.4 close + release. Do NOT trust the passive LSP feed; nx test/build are authoritative. Windows arm64 + Git Bash: use git grep / rg, never grep/head."
 }

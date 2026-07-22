@@ -707,10 +707,11 @@ across runs. Write the SARIF to a file and hand it to the `upload-sarif` action:
     sarif_file: results.sarif
 ```
 
-A file-less diagnostic (a whole-program error with no source location) is emitted
-as a result with no location rather than being dropped. GitHub cannot pin a
-no-location result to a line, so treat the run's exit code / `success`, not the
-SARIF alert, as the authoritative fail signal for those.
+A file-less diagnostic (a whole-program error with no source location -- for
+example a missing global type, or a references-only or missing-reference config
+error) is anchored to the `tsconfig` being checked and emitted as a whole-file
+alert (the whole file, no specific line) rather than being dropped. GitHub Code
+Scanning ingests it and surfaces it as an alert against that `tsconfig`.
 
 #### Run from the repository root
 
@@ -719,6 +720,19 @@ runs in. Run angular-typechecker from the repository root so those URIs stay
 repo-relative and GitHub Code Scanning can match each alert to the file in your
 source tree. Running from a subdirectory produces URIs relative to that
 subdirectory, which GitHub cannot line up with the repository.
+
+#### The "Scanned files" panel stays empty (a GitHub limitation)
+
+On an alert's detail page, GitHub shows a "Scanned files" tool-status panel. For
+angular-typechecker -- and for any third-party SARIF tool -- that panel stays
+empty. This is a GitHub limitation, not a defect in angular-typechecker or its
+SARIF output: GitHub fills "Scanned files" only from its own CodeQL analysis
+telemetry, and the SARIF format has no field a third-party tool can use to
+populate it. angular-typechecker's SARIF is well-formed and its alerts, rule
+descriptions, and file locations all appear normally -- only that one
+CodeQL-specific panel is blank. Emitting the optional SARIF `run.artifacts` list
+does not change it: the panel ignores it. So an empty "Scanned files" panel is
+expected and can be ignored.
 
 ## Storybook
 

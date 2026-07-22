@@ -240,6 +240,44 @@ repo admins can edit a ruleset even though they cannot bypass it. Toggle the rul
 temporary enforcement toggle over adding a standing bypass actor (a standing bypass would
 permanently weaken the PR-only guarantee).
 
+### Enabling the "Require code scanning results" ruleset (human-run, real-CI-only)
+
+The agent NEVER flips the `main` "Require code scanning results" ruleset (or any
+`main` ruleset) via `gh api` or any automated call. Enabling this second hard gate is
+a human maintainer action performed in the GitHub UI AFTER this phase's PR merges --
+GitHub SARIF ingestion and ruleset evaluation are provable only on GitHub
+(real-CI-only), and flipping a `main` protection the owner cannot bypass is exactly
+the class of irreversible control this repo keeps human-only. The steps below are the
+runbook the maintainer follows; run them in this fixed order and do NOT skip Evaluate.
+
+1. **Add the rule.** Settings -> Rules -> Rulesets -> the `main` ruleset -> add
+   "Require code scanning results". Under "Required tools and alert thresholds", "Add
+   tool" for BOTH `angular-typechecker` AND `fallow`. Set each tool's alert threshold
+   conservatively so this is an ANALYSIS-EXISTENCE gate, not a second findings gate --
+   findings already gate via `ci`'s `test` (`nx run-many -t typecheck`) and the
+   `fallow` job. The load-bearing block is the MISSING-analysis block, which fires
+   whenever a required tool's analysis is missing / not-configured / in-progress,
+   regardless of the alert threshold.
+2. **Evaluate mode FIRST.** Enable the rule in Evaluate mode before Active -- Evaluate
+   records would-be blocks WITHOUT blocking (GitHub's recommended de-risking). Caveat
+   to confirm in the live UI: for repo-level rulesets, Evaluate availability may depend
+   on the GitHub plan tier; if it is unavailable, verify on a throwaway-branch-scoped
+   ruleset and lean on the `enforcement: disabled` recovery in step 5.
+3. **Probe both PR kinds.** Push a deliberate `.planning/`-only PR AND a code-touching
+   PR. In the ruleset's evaluation view (the "Ruleset Insights" view -- confirm the
+   exact label live), confirm NEITHER would be blocked: the planning-only PR now
+   produces an angular-typechecker analysis (the dogfood job is un-path-gated) plus
+   fallow; the code PR produces both plus the proof.
+4. **Flip to Active** only after step 3 confirms no would-be block.
+5. **Recovery.** If Active wedges the empty-bypass `main` merge button, toggle the
+   ruleset `enforcement` to `disabled`, merge the fix, then re-enable -- exactly as
+   "Lockout recovery" above. NEVER add a standing bypass actor.
+6. **Fork-PR deadlock (accepted limitation).** A fork PR gets a read-only token, so the
+   upload steps skip -> no analysis -> the ruleset blocks it. Low practical impact here
+   (no external contributors; the maintainer self-merges); a future external
+   contributor's PR needs a maintainer-side re-run or the `enforcement: disabled`
+   toggle. Un-path-gating the dogfood job cannot fix forks -- the token is read-only.
+
 ## Parallel execution in git worktrees: the `node_modules` junction
 
 When an agent runs phase plans in PARALLEL, each plan's executor works in an isolated git

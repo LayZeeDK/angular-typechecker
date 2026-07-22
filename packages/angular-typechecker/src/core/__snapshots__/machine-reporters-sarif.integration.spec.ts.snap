@@ -5,10 +5,27 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
   "$schema": "http://json.schemastore.org/sarif-2.1.0.json",
   "runs": [
     {
-      "artifacts": [],
+      "artifacts": [
+        {
+          "location": {
+            "uri": "fixtures/global-diagnostics/tsconfig.json",
+          },
+          "sourceLanguage": "JSON",
+        },
+      ],
       "results": [
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Array'.",
           },
@@ -16,9 +33,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "3f6e0babea27415df47bb1b39eb67e9185795658213b5c596ce663d5ea9f02a6",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Boolean'.",
           },
@@ -26,9 +54,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "012969762692971a085794d36785aa39346e6350f789df98ccae1e3acf2cc41d",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'CallableFunction'.",
           },
@@ -36,9 +75,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "236a8977fe6fb69c84f93651a64f75d53350be9e6b4731e4e8964224e9eded56",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Function'.",
           },
@@ -46,9 +96,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "8d5655dce69b2a9c1f8b74b4b91525e29763b7699c26a972778cf4e82be1c36b",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'IArguments'.",
           },
@@ -56,9 +117,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "8a3441c038adf52241db2dcc00f7c29445c3b6209c348484a710ef0b78ea43a8",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'NewableFunction'.",
           },
@@ -66,9 +138,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "8a93806ecf17fd9d54c8765ce5ec3e704e5e0fc51cff4051534161d294bb33e7",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Number'.",
           },
@@ -76,9 +159,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "7aff3009683a2b70a22e8f553a07f787baa0ab6078b1df8844686be552c48b0f",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'Object'.",
           },
@@ -86,9 +180,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "9a29001bedcc88f1b66e506cdd80df11895ce539610095906f8e127016ff643e",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'RegExp'.",
           },
@@ -96,9 +201,20 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "97b9cfaa5ed508509cbff372bc580fed46a46ec5432c401d1df251b8f5dac8c3",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "fixtures/global-diagnostics/tsconfig.json",
+                },
+              },
+            },
+          ],
           "message": {
             "text": "Cannot find global type 'String'.",
           },
@@ -106,6 +222,7 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
             "atcFingerprint/v1": "da8ff753a241bdeb3e9f10a492bf2812bef7f45fe5352c32519d6493aae15d35",
           },
           "ruleId": "TS2318",
+          "ruleIndex": 0,
         },
       ],
       "tool": {
@@ -114,129 +231,21 @@ exports[`SARIF reporter integration -- global-diagnostics (file-less TS2318) > m
           "name": "angular-typechecker",
           "rules": [
             {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8101",
-              "id": "NG8101",
-              "shortDescription": {
-                "text": "Inverted banana-in-a-box binding: use [(...)] rather than ([...])",
+              "defaultConfiguration": {
+                "level": "error",
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8102",
-              "id": "NG8102",
-              "shortDescription": {
-                "text": "Nullish coalescing (??) applied to a value that is not nullable",
+              "help": {
+                "text": "A TypeScript compiler diagnostic (TS2318). See the TypeScript error reference for the meaning of this code and how to resolve it.",
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8107",
-              "id": "NG8107",
-              "shortDescription": {
-                "text": "Optional chaining (?.) applied to a value that is not nullable",
+              "helpUri": "https://www.typescriptlang.org/docs/handbook/2/understanding-errors.html",
+              "id": "TS2318",
+              "properties": {
+                "tags": [
+                  "typescript",
+                ],
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8103",
-              "id": "NG8103",
               "shortDescription": {
-                "text": "A control-flow directive is used without importing the directive that defines it",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8116",
-              "id": "NG8116",
-              "shortDescription": {
-                "text": "Unknown structural directive (a required import is missing)",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8104",
-              "id": "NG8104",
-              "shortDescription": {
-                "text": "A static text attribute where a property binding was likely intended",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8111",
-              "id": "NG8111",
-              "shortDescription": {
-                "text": "A function is referenced but not invoked in an event binding",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8105",
-              "id": "NG8105",
-              "shortDescription": {
-                "text": "ngFor is used without the let keyword",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8106",
-              "id": "NG8106",
-              "shortDescription": {
-                "text": "The unit suffix is not supported on this binding",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8108",
-              "id": "NG8108",
-              "shortDescription": {
-                "text": "ngSkipHydration is bound dynamically instead of as a static attribute",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8109",
-              "id": "NG8109",
-              "shortDescription": {
-                "text": "A signal read in a template interpolation is not invoked",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8011",
-              "id": "NG8011",
-              "shortDescription": {
-                "text": "Control flow prevents an element from being content-projected",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8112",
-              "id": "NG8112",
-              "shortDescription": {
-                "text": "An @let declaration in the template is never used",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8115",
-              "id": "NG8115",
-              "shortDescription": {
-                "text": "A track function is referenced but not invoked in a control-flow block",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8113",
-              "id": "NG8113",
-              "shortDescription": {
-                "text": "A standalone component declares imports it never uses",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8114",
-              "id": "NG8114",
-              "shortDescription": {
-                "text": "Nullish coalescing mixed with || or && without parentheses",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8117",
-              "id": "NG8117",
-              "shortDescription": {
-                "text": "A function is referenced but not invoked in a text interpolation",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8021",
-              "id": "NG8021",
-              "shortDescription": {
-                "text": "A @defer block trigger is misconfigured",
+                "text": "TypeScript diagnostic TS2318",
               },
             },
           ],
@@ -294,6 +303,7 @@ exports[`SARIF reporter integration -- layout-b-host (mixed TS2322 + NG8002) > m
             "atcFingerprint/v1": "e20d71fa31526019abfc3417c83f508c7a63cdd1d3b475532cc1f8c760d03ced",
           },
           "ruleId": "NG8002",
+          "ruleIndex": 0,
         },
         {
           "level": "error",
@@ -320,6 +330,7 @@ exports[`SARIF reporter integration -- layout-b-host (mixed TS2322 + NG8002) > m
             "atcFingerprint/v1": "abb11752df760db295a32fe88bd730ee25a17d6d5621b23d675d656f16b17b7b",
           },
           "ruleId": "TS2322",
+          "ruleIndex": 1,
         },
       ],
       "tool": {
@@ -328,129 +339,39 @@ exports[`SARIF reporter integration -- layout-b-host (mixed TS2322 + NG8002) > m
           "name": "angular-typechecker",
           "rules": [
             {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8101",
-              "id": "NG8101",
+              "defaultConfiguration": {
+                "level": "error",
+              },
+              "help": {
+                "text": "An Angular template type-check diagnostic (NG8002) raised while type-checking a component template. See the Angular template type-checking guide.",
+              },
+              "helpUri": "https://angular.dev/tools/cli/template-typecheck",
+              "id": "NG8002",
+              "properties": {
+                "tags": [
+                  "template-type-check",
+                ],
+              },
               "shortDescription": {
-                "text": "Inverted banana-in-a-box binding: use [(...)] rather than ([...])",
+                "text": "Angular template type-check diagnostic NG8002",
               },
             },
             {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8102",
-              "id": "NG8102",
-              "shortDescription": {
-                "text": "Nullish coalescing (??) applied to a value that is not nullable",
+              "defaultConfiguration": {
+                "level": "error",
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8107",
-              "id": "NG8107",
-              "shortDescription": {
-                "text": "Optional chaining (?.) applied to a value that is not nullable",
+              "help": {
+                "text": "A TypeScript compiler diagnostic (TS2322). See the TypeScript error reference for the meaning of this code and how to resolve it.",
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8103",
-              "id": "NG8103",
-              "shortDescription": {
-                "text": "A control-flow directive is used without importing the directive that defines it",
+              "helpUri": "https://www.typescriptlang.org/docs/handbook/2/understanding-errors.html",
+              "id": "TS2322",
+              "properties": {
+                "tags": [
+                  "typescript",
+                ],
               },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8116",
-              "id": "NG8116",
               "shortDescription": {
-                "text": "Unknown structural directive (a required import is missing)",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8104",
-              "id": "NG8104",
-              "shortDescription": {
-                "text": "A static text attribute where a property binding was likely intended",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8111",
-              "id": "NG8111",
-              "shortDescription": {
-                "text": "A function is referenced but not invoked in an event binding",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8105",
-              "id": "NG8105",
-              "shortDescription": {
-                "text": "ngFor is used without the let keyword",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8106",
-              "id": "NG8106",
-              "shortDescription": {
-                "text": "The unit suffix is not supported on this binding",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8108",
-              "id": "NG8108",
-              "shortDescription": {
-                "text": "ngSkipHydration is bound dynamically instead of as a static attribute",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8109",
-              "id": "NG8109",
-              "shortDescription": {
-                "text": "A signal read in a template interpolation is not invoked",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8011",
-              "id": "NG8011",
-              "shortDescription": {
-                "text": "Control flow prevents an element from being content-projected",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8112",
-              "id": "NG8112",
-              "shortDescription": {
-                "text": "An @let declaration in the template is never used",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8115",
-              "id": "NG8115",
-              "shortDescription": {
-                "text": "A track function is referenced but not invoked in a control-flow block",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8113",
-              "id": "NG8113",
-              "shortDescription": {
-                "text": "A standalone component declares imports it never uses",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8114",
-              "id": "NG8114",
-              "shortDescription": {
-                "text": "Nullish coalescing mixed with || or && without parentheses",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8117",
-              "id": "NG8117",
-              "shortDescription": {
-                "text": "A function is referenced but not invoked in a text interpolation",
-              },
-            },
-            {
-              "helpUri": "https://angular.dev/extended-diagnostics/NG8021",
-              "id": "NG8021",
-              "shortDescription": {
-                "text": "A @defer block trigger is misconfigured",
+                "text": "TypeScript diagnostic TS2322",
               },
             },
           ],

@@ -686,3 +686,93 @@ describe('listE2eProjects: tolerates a stray subdir + a falsy project name (B3)'
     }
   });
 });
+
+// GATE-01/GATE-02 (Phase 36 Code Scanning gating drift guard). Phase 36 promotes the two
+// Code Scanning jobs into the required `ci` aggregate AND un-path-gates the dogfood job so
+// an analysis exists on every PR ref. Each fact fails SILENTLY if a future ci.yml refactor
+// regresses it: (GATE-01/D-02) dropping either job from `ci.needs[]` would let a real Code
+// Scanning upload/infra failure -- or a proof-contract regression -- pass the required
+// merge gate green; (GATE-02/D-01) re-adding a `needs.changes.outputs.code` path-gate to
+// the `code-scanning` job would skip it on a planning-only PR, leaving the PR ref with no
+// analysis and DEADLOCKING GitHub's separate "Require code scanning results" ruleset;
+// (GATE-01/D-03) dropping the non-fork-PR `produced == 'false'` assertion re-opens the P7
+// fail-open where a silent empty SARIF passes the now-required gate green. This guard locks
+// all three. It REUSES the private extractJobLines slicer directly (same module -- no
+// export, no new dependency) exactly as GUARD-01f does, and uses the same `^(?!\s*#)`
+// no-comment-line anchor so a block's own prose (which names these jobs) cannot
+// false-satisfy an assertion. A deleted `ci`/`code-scanning` job makes extractJobLines
+// throw -> loud failure, so no assertion is a tautology (anti-vacuous-green).
+describe('GATE-01/02: Code Scanning jobs are required + un-path-gated', () => {
+  const ci = readFileSync(
+    join(workspaceRoot, '.github', 'workflows', 'ci.yml'),
+    'utf8',
+  );
+
+  it('lists both `code-scanning` and `code-scanning-red-proof` as items in the `ci` aggregate `needs`', () => {
+    const ciBlock = extractJobLines(ci, 'ci').join('\n');
+
+    expect(
+      /^\s*code-scanning,\s*$/m.test(ciBlock),
+      'GATE-01/D-02: `code-scanning` must be a list item in the `ci` aggregate `needs[]`, so a real Code Scanning upload/infra failure (or the D-03 assertion firing) fails the required `ci` check. Anchored on the full list-item line -- a word-boundary regex would also match inside `code-scanning-red-proof` and pass even if only the proof job were listed (RESEARCH Pitfall 4).',
+    ).toBe(true);
+
+    expect(
+      /^\s*code-scanning-red-proof,\s*$/m.test(ciBlock),
+      'GATE-01/D-02: `code-scanning-red-proof` must be a list item in the `ci` aggregate `needs[]`, so a SARIF -> Code Scanning contract regression (PROOF-02) fails the required `ci` check. Membership survives the job rename -- the item must be present under the NEW id, not dropped. It stays PR-only + path-gated, so a planning-only PR or push resolves to skipped (which the aggregate drops) -- no deadlock.',
+    ).toBe(true);
+  });
+
+  it('the `code-scanning` job is un-path-gated (no needs.changes.outputs.code `if:`)', () => {
+    const codeScanningBlock = extractJobLines(ci, 'code-scanning').join('\n');
+
+    expect(
+      /^(?!\s*#).*if:\s*\$\{\{\s*needs\.changes\.outputs\.code/m.test(
+        codeScanningBlock,
+      ),
+      'GATE-02/D-01: the `code-scanning` job must NOT carry a `needs.changes.outputs.code` path-gate `if:` -- it must run on every PR (incl. a `.planning/`-only PR) so a Code Scanning analysis always exists on the PR ref (the ruleset blocks a missing analysis; the status-check path-skip trick does NOT satisfy it). Scoped to the `code-scanning` block via extractJobLines: `needs.changes.outputs.code` legitimately remains in `code-scanning-red-proof` and other jobs, so a file-wide check would be wrong.',
+    ).toBe(false);
+  });
+
+  it("keeps the non-fork-PR D-03 assertion gated on steps.atc-sarif.outputs.produced == 'false'", () => {
+    const codeScanningBlock = extractJobLines(ci, 'code-scanning').join('\n');
+
+    expect(
+      /^(?!\s*#).*github\.event\.pull_request\.head\.repo\.fork == false.*steps\.atc-sarif\.outputs\.produced == 'false'/m.test(
+        codeScanningBlock,
+      ),
+      "GATE-01/D-03: the `code-scanning` job must keep a non-fork-PR assertion step whose `if:` gates on `github.event.pull_request.head.repo.fork == false` AND `steps.atc-sarif.outputs.produced == 'false'`. Anchored on `produced == 'false'` (NOT the upload step's `produced == 'true'`), so it cannot false-match the upload gate. Dropping or weakening it re-opens the P7 fail-open: a silent empty SARIF passes the now-required gate green and deadlocks the ruleset with no analysis on the PR ref.",
+    ).toBe(true);
+  });
+
+  it('locks the D-02 proof driver name across ci.yml and tools/ci/assert-code-scanning.mjs', () => {
+    // The cross-file key link. GitHub groups Code Scanning alerts by the SARIF
+    // `tool.driver.name`, so the proof job rewrites it to a name of its own -- and
+    // the assert script filters on the SAME literal via `tool_name`. Two ways to
+    // break it, both silent in CI:
+    //   (a) drop the rewrite from ci.yml -> the fixture's DELIBERATE errors land back
+    //       under the dogfood `angular-typechecker` tool and redden its check again;
+    //   (b) change the literal on ONE side -> the assert's `tool_name` query matches
+    //       nothing and the proof polls to a permanent (false) RED.
+    // Anchoring the ci.yml side with the `^(?!\s*#)` no-comment-line rule keeps the
+    // job's own prose (which names the tool) from false-satisfying it.
+    const proofBlock = extractJobLines(ci, 'code-scanning-red-proof').join(
+      '\n',
+    );
+    const assertScript = readFileSync(
+      join(workspaceRoot, 'tools', 'ci', 'assert-code-scanning.mjs'),
+      'utf8',
+    );
+
+    expect(
+      /^(?!\s*#).*driver\.name\s*=\s*"angular-typechecker-red-proof"/m.test(
+        proofBlock,
+      ),
+      "D-02: the `code-scanning-red-proof` job must rewrite every SARIF run's `tool.driver.name` to `angular-typechecker-red-proof` before uploading. Without the rewrite the proof fixture re-conflates with the dogfood `angular-typechecker` tool, and its deliberate errors fail the dogfood Code Scanning check.",
+    ).toBe(true);
+
+    expect(
+      assertScript.includes("const TOOL = 'angular-typechecker-red-proof';"),
+      "D-02: tools/ci/assert-code-scanning.mjs must filter alerts on the SAME `angular-typechecker-red-proof` tool literal the ci.yml rewrite writes. If the two drift, the assert's `tool_name` query matches nothing and the proof is permanently RED.",
+    ).toBe(true);
+  });
+});
