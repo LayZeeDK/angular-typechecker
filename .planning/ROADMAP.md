@@ -187,7 +187,12 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
   3. The "Require code scanning results" ruleset for angular-typechecker + fallow is verified live in "Evaluate" mode first and on a throwaway PR before enabling on `main`, the `enforcement: disabled` recovery toggle is documented, and the fork-PR deadlock (read-only token -> upload skipped) is documented (GATE-02).
   4. The README documents that GitHub's tool-status "Scanned files" panel is CodeQL-only telemetry that third-party SARIF cannot populate (with the spike evidence that `run.artifacts` is inert), so the empty panel is a known GitHub limitation, not a defect -- no GitHub Issue filed (DOC-01).
 
-**Plans**: TBD
+**Plans**: 2 plans (both wave 1)
+
+**Wave 1** *(parallel -- disjoint files)*
+
+- [ ] 36-01-PLAN.md -- ci.yml aggregate membership (D-02) + un-path-gate (D-01) + D-03 produced assertion + comment rewrites (D-05) + GATE-01/02 drift guard (GATE-01, GATE-02) (wave 1)
+- [ ] 36-02-PLAN.md -- AGENTS.md human-run ruleset runbook (D-04) + README DOC-01 Scanned-files limitation note + docs tripwire (GATE-02, DOC-01) (wave 1)
 
 ## Progress
 
