@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
-current_phase: 35
-current_phase_name: automated-code-scanning-proof
+current_phase: 36
+current_phase_name: code-scanning-gating-scanned-files-documentation
 status: executing
-stopped_at: Phase 36 context gathered
-last_updated: "2026-07-22T00:56:30.335Z"
+stopped_at: Completed 36-01-PLAN.md
+last_updated: "2026-07-22T01:22:11.529Z"
 last_activity: 2026-07-22
-last_activity_desc: Phase 36 planning complete
+last_activity_desc: Phase 36 execution started
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
   percent: 75
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archived: Machine-readable reporters)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 35 — automated-code-scanning-proof
+**Current focus:** Phase 36 — code-scanning-gating-scanned-files-documentation
 
 ## Current Position
 
-Phase: 35 (automated-code-scanning-proof) — EXECUTING
-Plan: 3 of 3
+Phase: 36 (code-scanning-gating-scanned-files-documentation) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-07-22 — Phase 36 planning complete
+Last activity: 2026-07-22 — Phase 36 execution started
 
 ## Accumulated Context
 
@@ -113,6 +113,9 @@ archives under `.planning/milestones/`.
 - [Phase 35]: code-scanning-proof job (35-03) fork gate uses the simple head.repo.fork == false since the job is already PR-only via its if:, avoiding the dogfood push-to-main compound form
 - [Phase 35]: PROOF-01/02 stay Pending after 35-03 -- the SARIF->Code Scanning ingestion is real-CI-only (Nyquist point); they close at phase verification when the code-scanning-proof job is green on a real PR
 - [Phase 35]: 35-04 (gap G-35-01, PLANNED not yet executed) -- deliberate D-01 REVERSAL after auto-locked discussion (35-G-35-01-CONTEXT.md, D1-D7): file-less SARIF results (ATC90001/90002 + file-less global TS like TS2318) gain a REGION-LESS whole-file fallback location whose artifactLocation.uri = relativizePath(result.tsConfigPath, pathBase) [always-present CoreResult.tsConfigPath], so GitHub Code Scanning stops rejecting the whole file (locationFromSarifResult: expected at least one location) while every diagnostic is still NEVER dropped. SARIF-ONLY (D2): json-report/DiagnosticRecord/fingerprintOf/barrel byte-unchanged; region-less chosen over synthetic line-1 (user-confirmed, honest whole-file); stays 0.2.4 patch (D7, the old file-less SARIF was rejected by its consumer -> a fix not a breaking change). 3 code tasks (sarif-report.ts PASS-2 + comments; unit spec + snap; integration spec + snap) + Task 4 README fix (plan-checker warning: README:710-713 told consumers to ignore file-less alerts -- now stale). Plan-checker: 0 blockers, 1 warning (incorporated). Decision-coverage 14/14. Real-CI code-scanning-proof green is the authoritative proof.
+- [Phase 36]: 36-01: promoted code-scanning + code-scanning-proof into the required ci aggregate needs[] (GATE-01/D-02) + un-path-gated the dogfood code-scanning job (GATE-02/D-01) so every PR incl planning-only produces an analysis; proof stays PR-only+path-gated (skipped drops from the aggregate, no deadlock)
+- [Phase 36]: 36-01: two pure-if:-gated non-fork-PR produced=='false' fail-loud assert steps (atc + fallow twin) close the P7 fail-open (D-03), static echo/exit 1 body -> no shell interpolation; drift guard reuses extractJobLines with list-item-anchored membership (substring-trap-safe vs code-scanning-proof)
+- [Phase 36]: 36-01: GATE-01/GATE-02 left Pending -- required-aggregate red/green + GitHub ingestion is real-CI-only (phase Nyquist point); GATE-02 also needs 36-02 AGENTS.md runbook + a human ruleset toggle (D-04)
 
 ### Roadmap Evolution
 
@@ -277,10 +280,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Phase 36 context gathered
+**Stopped at:** Completed 36-01-PLAN.md
 **Resume file:** .planning/phases/36-code-scanning-gating-scanned-files-documentation/36-CONTEXT.md
 
-Last session: 2026-07-22T00:09:58.096Z
+Last session: 2026-07-22T01:22:10.624Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
@@ -336,3 +339,4 @@ Completed the two teed-up autonomous tasks:
 | Phase 35 P01 | ~58m | 3 tasks | 8 files |
 | Phase 35 P02 | ~10m | 2 tasks | 2 files |
 | Phase 35 P03 | ~7m | 1 tasks | 2 files |
+| Phase 36 P01 | 8min | 2 tasks | 2 files |
