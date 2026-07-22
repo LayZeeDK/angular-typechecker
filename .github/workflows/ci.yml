@@ -645,22 +645,38 @@ jobs:
         with:
           sarif_file: fallow.sarif
 
-  # Code Scanning PROOF gate (PROOF-01/02, Phase 35). Continuously proves the shipped
-  # SARIF -> GitHub Code Scanning contract end-to-end: it runs the shipped standalone
-  # CLI (--format sarif) over the ISOLATED tools/sarif-proof-fixture/ (a bare tsconfig
-  # with NO project.json -> outside the Nx graph, so its deliberate one-per-family
-  # errors never touch the real `nx run-many -t typecheck` gate that lives in `test`),
-  # uploads the single-run SARIF under a DEDICATED `category: angular-typecheck-proof`,
-  # then asserts via tools/ci/assert-code-scanning.mjs that one alert per diagnostic
-  # family (typescript/error, template-type-check/error, extended-diagnostics/warning,
-  # tool/error) landed on the PR merge-ref -- RED on any missing tuple or a poll timeout.
-  # This is the ONLY place the GitHub-ingestion half of the proof is exercised
-  # (real-CI-only; local gates prove the SARIF is well-formed but cannot prove ingestion).
+  # Code Scanning RED PROOF gate (PROOF-01/02, Phase 35). Continuously proves the
+  # shipped SARIF -> GitHub Code Scanning contract end-to-end: it runs the shipped
+  # standalone CLI (--format sarif) over the ISOLATED tools/sarif-proof-fixture/ (a bare
+  # tsconfig with NO project.json -> outside the Nx graph, so its deliberate
+  # one-per-family errors never touch the real `nx run-many -t typecheck` gate that lives
+  # in `test`), rewrites the SARIF's tool driver name, uploads the single-run SARIF under
+  # a DEDICATED `category: angular-typecheck-proof`, then asserts via
+  # tools/ci/assert-code-scanning.mjs that EXACTLY the four expected (rule id, file path)
+  # tuples landed on the PR merge-ref (D-03) -- RED on a missing tuple, an EXTRA tuple, a
+  # right-code-wrong-file attribution, or a poll timeout. This is the ONLY place the
+  # GitHub-ingestion half of the proof is exercised (real-CI-only; local gates prove the
+  # SARIF is well-formed but cannot prove ingestion).
   #
-  # SEPARATE job from the dogfood `code-scanning` job (D-02). The dedicated category
-  # (D-02a) -- distinct from the per-project `angular-typecheck/<project>` dogfood ids and
-  # the `fallow/<i>` ids -- keeps the fixture's deliberate errors from contaminating or
-  # overwriting the real analyses.
+  # SEPARATE Code Scanning TOOL (D-02). GitHub groups alerts -- and names the per-tool PR
+  # check -- by the SARIF `runs[].tool.driver.name`, NOT by category, so uploading the
+  # fixture under the shipped `angular-typechecker` name made the fixture's DELIBERATE
+  # errors redden the clean dogfood check. The `gen` step below rewrites driver.name to
+  # `angular-typechecker-red-proof`, giving the proof its own tool, its own alert
+  # grouping and its own (intentionally RED) check run. The dedicated category (D-02a)
+  # stays as the orthogonal second axis, keeping this analysis distinct from the
+  # per-project `angular-typecheck/<project>` dogfood ids and the `fallow/<i>` ids.
+  #
+  # This proof tool MUST NOT join the "Require code scanning results" required-tool list
+  # (see AGENTS.md) -- its RED is intentional. The required tools stay `angular-typechecker`
+  # + `fallow`, and this job's own check is not a required check, so it cannot block merge.
+  #
+  # After a PASSING assert the script dismisses exactly those alerts with
+  # `dismissed_reason: used in tests` (D-01), so the proof is self-healing: a later PR
+  # that touches the fixture does not re-post unresolved review threads. (Scope note: a
+  # review thread is posted only for an alert INSIDE the PR diff, so a PR that leaves
+  # tools/sarif-proof-fixture/ alone would post none regardless.) Dismissal needs exactly
+  # `security-events: write`, which this job already declares -- no permission widening.
   #
   # PR-only + non-fork (D-02b, SC4). Unlike the dogfood `code-scanning` job (which ALSO
   # runs on push-to-`main`), this job is gated `github.event_name == 'pull_request'`, so
@@ -687,7 +703,7 @@ jobs:
   #
   # Path-gated (D-08), SAME NEGATIVE if: form (`!= 'false'`) as the other heavy jobs so it
   # stays in the `act -n` plan under the empty filter output.
-  code-scanning-proof:
+  code-scanning-red-proof:
     needs: changes
     if: ${{ github.event_name == 'pull_request' && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
@@ -718,10 +734,25 @@ jobs:
       # (upload) from an infra/usage exit-2 empty file (skip). ONE CLI invocation -> ONE
       # SARIF run -> ONE upload under ONE category avoids the multi-run-same-category
       # rejection.
+      #
+      # Then rewrite every run's tool driver name to the D-02 proof tool, mirroring the
+      # dogfood job's fallow `automationDetails` rewrite verbatim in style (outer single
+      # quotes, inner double quotes, `function` expressions -- no backticks, no `$`, no PR
+      # data, so the top-of-file no-command-injection invariant is untouched and no new
+      # file or dependency is introduced). This is a CI-side post-process of the SARIF the
+      # shipped CLI already emits -- the CLI itself is NOT modified. The literal here MUST
+      # equal the TOOL constant in tools/ci/assert-code-scanning.mjs, or the assert's
+      # `tool_name` query matches nothing and the proof is permanently RED; the
+      # ci-e2e-coverage-guard spec locks the two together.
       - id: gen
         run: |
           node dist/packages/angular-typechecker/src/cli/bin.js -c tools/sarif-proof-fixture/tsconfig.json --format sarif > proof.sarif || true
-          if [ -s proof.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -s proof.sarif ]; then
+            node -e 'const fs=require("fs");const f="proof.sarif";const j=JSON.parse(fs.readFileSync(f,"utf8"));(j.runs||[]).forEach(function(r){r.tool.driver.name="angular-typechecker-red-proof"});fs.writeFileSync(f,JSON.stringify(j))'
+            echo "produced=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "produced=false" >> "$GITHUB_OUTPUT"
+          fi
       # Upload under the DEDICATED category (D-02a). `id: upload` exposes the `sarif-id`
       # output the assert polls on. REUSE the exact dogfood SHA pin (add no new action).
       # Fork gate + produced guard: skip cleanly on a fork PR (read-only token) or an empty
@@ -734,11 +765,14 @@ jobs:
         with:
           sarif_file: proof.sarif
           category: angular-typecheck-proof
-      # Assert the SARIF -> Code Scanning contract landed (real-CI-only). PR data reaches
-      # the script through `env:` values, NEVER interpolated into the `run:` shell (the
-      # top-of-file no-command-injection invariant; mirrors the `e2e` job's PROJECT). The
-      # `sarif-id` output is read with BRACKET syntax -- dot syntax would parse the hyphen
-      # as subtraction. Same fork + produced gate as the upload.
+      # Assert the SARIF -> Code Scanning contract landed, then dismiss exactly the alerts
+      # the assert matched (D-01; a failing assert dismisses nothing -- the script's
+      # dismissal consumes only what a PASSING assert returned). Real-CI-only. PR data
+      # reaches the script through `env:` values, NEVER interpolated into the `run:` shell
+      # (the top-of-file no-command-injection invariant; mirrors the `e2e` job's PROJECT).
+      # The `sarif-id` output is read with BRACKET syntax -- dot syntax would parse the
+      # hyphen as subtraction. Same fork + produced gate as the upload (a fork PR's
+      # read-only token touches no API).
       - name: Assert proof alerts landed
         if: ${{ github.event.pull_request.head.repo.fork == false && steps.gen.outputs.produced == 'true' }}
         env:
@@ -777,7 +811,7 @@ jobs:
         lint-workflows,
         scoped-name-guard,
         code-scanning,
-        code-scanning-proof,
+        code-scanning-red-proof,
       ]
     runs-on: ubuntu-latest
     if: always()

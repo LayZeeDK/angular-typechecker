@@ -475,7 +475,7 @@ describe('SARIF reporter integration -- solution-style-all-missing (tool ATC9000
 // stops emitting exactly one diagnostic per family, THIS spec goes red locally --
 // so the CI assert's expected set cannot silently drift from what the reporter
 // actually emits. The GitHub-ingestion half is real-CI-only (the 35-03
-// code-scanning-proof job); this is the fast local tripwire.
+// code-scanning-red-proof job); this is the fast local tripwire.
 //
 // The exact extended NG8xxx code is Task-1 discretionary (NG8101 today), so this
 // block asserts the SET of (family tag, level) tuples + exactly one rule per family
