@@ -5,14 +5,14 @@ milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 35
 current_phase_name: automated-code-scanning-proof
 status: executing
-stopped_at: "G-35-01 PROVEN in real CI (run 29875173270 -- code-scanning-proof GREEN, SARIF ingested with no locationFromSarifResult rejection, all proof tuples present on refs/pull/55/merge; region-less D6 location accepted) + fast-uri HIGH cve cleared. PROOF-01/02 achieved. Next: verify_phase_goal -> verify-work UAT -> secure/validate/extract -> milestone close."
-last_updated: "2026-07-21T23:37:26.608Z"
+stopped_at: Phase 36 context gathered
+last_updated: "2026-07-22T00:09:58.108Z"
 last_activity: 2026-07-22
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 7
+  completed_plans: 7
   percent: 75
 ---
 
@@ -276,10 +276,10 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 
 ## Session Continuity
 
-**Stopped at:** Executed gap 35-04 (G-35-01 SARIF file-less fallback location, 5 commits `89119a0`..`408c5f9`) + fixed a newly-surfaced fast-uri HIGH cve via a nested `ajv->fast-uri ^3.1.4` override (`afe1241`). All local gates green (7/8 at 408c5f9 + cve-lite now green + build/typecheck/lint re-confirmed post-override). Pushed to PR #55 (CI run 29875173270). **G-35-01 PROVEN in real CI**: the `code-scanning-proof` job is GREEN -- SARIF ingested (`Successfully uploaded results` + `Analysis upload status is complete`, NO `locationFromSarifResult` rejection) and the assert step reported `all expected (category, family tag, severity) tuples present on refs/pull/55/merge`. The region-less D6 location was accepted; the line-1 fallback was NOT needed. `cve-lite`/`ci`/full matrix/e2e/CodeQL all GREEN. PROOF-01/02 achieved. Remaining post-execution: verify_phase_goal (gsd-verifier) -> `/gsd-core:verify-work 35` (3 UAT items, all were blocked on ingestion) -> secure/validate/extract -> milestone close. PR #55 stays DRAFT until the milestone completes; NO self-merge without explicit user OK.
-**Resume file:** .planning/phases/35-automated-code-scanning-proof/.continue-here.md
+**Stopped at:** Phase 36 context gathered
+**Resume file:** .planning/phases/36-code-scanning-gating-scanned-files-documentation/36-CONTEXT.md
 
-Last session: 2026-07-21T22:52:31.000Z
+Last session: 2026-07-22T00:09:58.096Z
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
 phase (Phase 30: 7, Phase 31: 2, Phase 32: 4) -- 100% coverage, 0 unmapped; REQUIREMENTS.md Traceability
 populated. Dependency-ordered per `.planning/research/v0.2.3-reporters/SUMMARY.md`: Phase 30 (widened
