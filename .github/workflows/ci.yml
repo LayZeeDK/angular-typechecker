@@ -543,8 +543,11 @@ jobs:
   # ROOT so its SARIF artifactLocation URIs stay repo-relative and Code Scanning can
   # map each alert to a source file (README: "Run from the repository root").
   #
-  # Path-gated (D-08), SAME NEGATIVE if: form as test/e2e -- skips a planning/docs-
-  # only PR yet stays in the `act -n` plan under the empty filter output.
+  # Un-path-gated (D-01): unlike the path-gated test/e2e jobs, this job has NO
+  # `changes` if: -- it runs on EVERY PR (incl. planning/docs-only) so a Code
+  # Scanning analysis always exists on the PR ref for the "Require code scanning
+  # results" ruleset. `needs: changes` is retained only to serialize after the fast
+  # `changes` job (its output is no longer read here).
   code-scanning:
     needs: changes
     runs-on: ubuntu-latest
