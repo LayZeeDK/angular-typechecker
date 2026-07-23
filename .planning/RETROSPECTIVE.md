@@ -330,6 +330,45 @@
 
 ---
 
+## Milestone: v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning
+
+**Shipped:** 2026-07-23 (merged to `main` via PR #55; npm release pending)
+**Phases:** 4 (33-36) | **Plans:** 9
+
+### What Was Built
+
+Made the GitHub Code Scanning integration first-class and continuously PROVEN: diagnostic-family rule metadata (one rule per fired ruleId with tags/severity/help across TS / template / NG8xxx / ATC families -- the sole release-bearing SARIF change), per-project SARIF analyses in CI (auto-discovered + drift-guarded, one merged multi-run upload), an isolated one-per-family fixture + a `gh api` set-membership proof of the SARIF -> Code Scanning contract, a file-less-diagnostic whole-file fallback so uploads ingest, and a merge gate (`code-scanning` required in the `ci` aggregate + the "Require code scanning results" ruleset active on `main`) that does not deadlock planning-only or fork PRs.
+
+### What Worked
+
+- **The proof harness caught a real, unplanned defect on its first live run.** Phase 35's `code-scanning-proof` job went red automatically on G-35-01 (file-less results had no `locations`, so GitHub rejected the whole SARIF) -- stronger evidence for PROOF-02 than any synthetic drill, and it drove the 35-04 fix.
+- **The verifier refused to trust "landed GREEN" framing** and independently re-fetched real GitHub job logs before assigning status -- both for Phase 35 (vindicated by the live failure) and for the phase-36 re-verification this session.
+- **Drift guards as the standing lock for CI wiring:** list-item-anchored `ci.needs[]` membership + un-path-gate scope + `produced=='false'` assertions, all statically enforced in `nx test`, so the gate can't silently regress.
+
+### What Was Inefficient
+
+- **The GATE-02 diagnosis burned many probe PRs on red herrings.** Single-run-vs-multi-run SARIF, head-ref-vs-merge-ref upload, and a supposed "GitHub roadmap limitation" were each pursued and disproven before the real cause -- an ORPHANED `angular-typechecker`-category config on `main` from the Phase-34 category rename -- surfaced. The generic "1 configuration not found" message invited every wrong hypothesis. An experimental single-run change was even shipped to `main` (41ac49a) and then reverted (44e4306).
+- **A stale UAT status lingered:** the Phase-35 UAT sat at `issues` after 35-04 already closed the gap, only caught at milestone-close pre-audit.
+
+### Patterns Established
+
+- **File-less SARIF results get a region-less whole-file fallback location** (anchored to the always-present relativized `tsConfigPath`) rather than emitting no `locations` -- ingestible while still never-dropped.
+- **A `*-docs.spec.ts` content tripwire per shipped-README claim family** (now including code-scanning), each owning only its own claim.
+- **Human-only `main`-protection posture:** the agent authors the ruleset runbook but never flips a `main` ruleset; enablement is a documented, human-run, real-CI-only step.
+
+### Key Lessons
+
+- **"Configuration not found" is transient for a live config but PERMANENT for an orphaned one.** A category/analysis-key rename forks the gate's expected-tool set; delete the orphaned analyses via the Code Scanning API -- no workflow change needed.
+- **The merge gate matches `(analysis_key, category, environment)` tuples, not tool name** -- so renaming a Code Scanning category is not free.
+- **Credit a CI run only after confirming its `headSha`** -- a green run on a pre-change head evidences nothing.
+
+### Cost Observations
+
+- Model mix: quality profile (Opus) for GSD planning / execution / verification agents.
+- Notable: the disproportionate spend was the GATE-02 diagnosis loop (many probe PRs against red herrings) -- resolved not by more code but by two UI observations (the tuple comparison + the transient-vs-permanent "not found" insight) that pointed at the orphaned config.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

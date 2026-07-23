@@ -1,5 +1,24 @@
 # Milestones: angular-typechecker
 
+## v0.2.4 Enhanced SARIF reporting for GitHub Code Scanning (Shipped: 2026-07-23)
+
+**Phases completed:** 4 phases (33-36), 9 plans, 19 tasks. Code + planning merged to `main` via PR #55 (merge commit `966a7c6`, 2026-07-22).
+**Release:** PENDING (human-gated) -- Release PR + tag `angular-typechecker@0.2.4` on the merge commit + OIDC publish (approve `npm-publish` environment). The published version is currently held at `0.2.3`; the additive `0.2.3 -> 0.2.4` patch bump is cut separately after this close.
+**Closeout:** milestone audit PASSED 11/11 requirements, 4/4 phases verified `passed`, Nyquist 4/4 compliant, cross-phase integration + both E2E flows proven in live GitHub CI (green run 29898624245; RED chaos run 29901279596; ruleset clean on probe PRs #64/#65). Known verification overrides: 1 -- quick task `260714-nub` (optional CI actions/cache optimization; authored but never applied; predates v0.2.3; acknowledged-deferred, tracked in ROADMAP Backlog + STATE Deferred Items). Pre-close bookkeeping resolved: the Phase-35 UAT was stale at `issues` (the file-less SARIF upload gap G-35-01) -- that gap was closed in plan 35-04 and PROOF-01/02 verified in real CI (run 29875173270), so the UAT was flipped to `complete` before close. Two non-blocking tech-debt items tracked in `v0.2.4-MILESTONE-AUDIT.md` (fallow file-less SARIF upload; AGENTS.md GATE-02 runbook reconciliation).
+
+**Key accomplishments:**
+
+- Flipped the SARIF reporter from a fixed 18-NG catalog to one rule per distinct fired ruleId, each carrying a diagnostic-family tag, default severity level, and inline help text -- via a new pure `familyOf` classifier and a `.rule` mutation, with zero new dependency and JSON/human output byte-unchanged.
+- Proved all four diagnostic families carry the correct SARIF rule tag, level, and inline help when the REAL Angular and TypeScript cold compilers emit the diagnostics -- across four committed fixtures, schema-valid and snapshot-locked -- then proved the change is SARIF-path-only and ships as an additive `0.2.3 -> 0.2.4` patch bump via the standing additive audit.
+- CI code-scanning now merges one SARIF run per angular-typechecker:typecheck consumer (auto-discovered, drift-guarded) into a single multi-run file stamped angular-typecheck/<project>, uploaded with no category input -- no published-package change.
+- An isolated `tools/sarif-proof-fixture/` (no project.json) that drives the shipped CLI to emit TS2322 + NG8002 + NG8101 + ATC90002 -- one diagnostic per SARIF family -- in a SINGLE run, scoped out of the fallow/Prettier gates and locked by a local drift-lock integration spec.
+- A lean pure-node `tools/ci/assert-code-scanning.mjs` that polls `gh api` (sarifs/{id} -> analyses -> alerts on `refs/pull/<n>/merge`) and asserts SET-MEMBERSHIP of the four (family tag, severity) tuples under the dedicated `angular-typecheck-proof` category -- failing loud (exit 1) on any missing tuple or timeout -- plus a local, GitHub-free subprocess spec proving its GREEN / RED / category-isolation behavior via an `ASSERT_ALERTS_FILE` seam.
+- A new PR-only, non-fork `code-scanning-proof` job in `ci.yml` that runs the shipped standalone CLI over the isolated `tools/sarif-proof-fixture/`, uploads the single-run SARIF under the dedicated `category: angular-typecheck-proof`, and asserts via `tools/ci/assert-code-scanning.mjs` that one alert per diagnostic family landed on the PR merge-ref -- mirroring every dogfood CI security invariant verbatim, gated PR-only so the fixture's deliberate errors never reach `main`'s alerts view, and deliberately kept out of the required `ci` aggregate (GATE-01 is Phase 36); plus two `act-compat.sh` assertions locking the PR-only trigger fidelity.
+- File-less SARIF results now carry a region-less whole-file location on the relativized tsConfigPath -- reversing the old no-location emission so GitHub Code Scanning ingests the whole upload instead of rejecting it (locationFromSarifResult), with every diagnostic still never dropped.
+- Promoted both Code Scanning jobs into the required `ci` aggregate and un-path-gated the dogfood job so an analysis exists on every PR ref, with two pure-`if:`-gated non-fork-PR `produced=='false'` fail-loud assertions closing the P7 fail-open -- four surgical `ci.yml` edits plus a new `extractJobLines`-reusing drift guard that statically locks the wiring in `nx test`.
+
+---
+
 ## v0.2.3 Machine-readable reporters (Shipped: 2026-07-20)
 
 **Phases completed:** 3 phases, 9 plans, 25 tasks

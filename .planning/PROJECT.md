@@ -14,7 +14,9 @@ Distinct from Nx's built-in `@nx/js` `typecheck` target (plain `tsc`/`tsgo`): An
 
 ## Current State
 
-**Shipped v0.2.3 (2026-07-20)** -- the latest release, published live to npm as `angular-typechecker@0.2.3` (tokenless OIDC Trusted Publisher + SLSA v1 provenance): adds machine-readable output -- JSON (agent-parseable structured diagnostics) and SARIF 2.1.0 (GitHub Code Scanning `upload-sarif`) -- across all three adapters (Nx executor, Angular CLI builder, standalone CLI) over the one shared `runTypecheck` core, via a widened `renderReport` seam and a `--format <human|json|sarif>` flag (default stays human). `node-sarif-builder` is the one new dependency, lazy-`import()`ed ONLY on the SARIF path; the JSON and human paths stay dependency-free. Purely additive -- audited byte-for-byte vs `angular-typechecker@0.2.2` (`32-ADDITIVE-AUDIT.md`), patch bump `0.2.2 -> 0.2.3`, `v0.3.0` escape hatch untriggered.
+**Closed v0.2.4 (2026-07-23)** -- Enhanced SARIF reporting for GitHub Code Scanning: diagnostic-family rule metadata (tags/severity/help across all families -- the sole release-bearing SARIF change), per-project SARIF analyses in CI, an automated `gh` CLI proof of the SARIF -> Code Scanning contract, and a merge gate ("Require code scanning results" ruleset ACTIVE on `main` + `code-scanning` required in the `ci` aggregate) that does not deadlock planning-only or fork PRs. Additive `0.2.3 -> 0.2.4` patch bump. Code + planning merged to `main` (PR #55); the npm release cut is the pending human-gated step, so the latest PUBLISHED version remains `0.2.3`.
+
+**Shipped v0.2.3 (2026-07-20)** -- published live to npm as `angular-typechecker@0.2.3` (tokenless OIDC Trusted Publisher + SLSA v1 provenance): adds machine-readable output -- JSON (agent-parseable structured diagnostics) and SARIF 2.1.0 (GitHub Code Scanning `upload-sarif`) -- across all three adapters (Nx executor, Angular CLI builder, standalone CLI) over the one shared `runTypecheck` core, via a widened `renderReport` seam and a `--format <human|json|sarif>` flag (default stays human). `node-sarif-builder` is the one new dependency, lazy-`import()`ed ONLY on the SARIF path; the JSON and human paths stay dependency-free. Purely additive -- audited byte-for-byte vs `angular-typechecker@0.2.2` (`32-ADDITIVE-AUDIT.md`), patch bump `0.2.2 -> 0.2.3`, `v0.3.0` escape hatch untriggered.
 
 **Shipped v0.2.2 (2026-07-17)** -- the prior release, published live to npm as `angular-typechecker@0.2.2` (tokenless OIDC Trusted Publisher + SLSA v1 provenance): adds a standalone `angular-typechecker` / `atc` CLI binary (a third thin adapter over the same `runTypecheck` core, owning literal OS exit code 2). It follows **v0.2.1 (2026-07-16)** (Angular CLI `angular.json` workspace support), v0.2.0 (2026-07-07), v0.1.0 (2026-07-02), the v0.1.1 packaging hotfix, v0.0.3 (2026-06-30), and v0.0.1/v0.0.2 (2026-06-28/29).
 
@@ -37,7 +39,9 @@ The Nx executor is renamed `typecheck` (id `angular-typechecker:typecheck`, BREA
 
 v0.1.0 delivered in five phases (incl. inserted 13.1): **Phase 12** (Extended-diagnostic catalog + completeness tripwire, CAT-01..05/DRIFT-01) -- all 18 `ExtendedTemplateDiagnosticName` members + baseline TS/NG codes asserted by exact code/category/count in one enum-keyed `it.each` table, with an enum-vs-table completeness tripwire. **Phase 13** (Engine reference-walking, WALK-01/02) -- `runTypecheck` walks a solution tsconfig's in-project referenced leaves in one call, union + dedupe by value identity, module-boundary-guarded, coarse-cached. **Phase 13.1** (Executor rename, EXEC-01) -- the BREAKING rename `angular-typechecker:angular-typecheck` -> `angular-typechecker:typecheck`, driving the 0.0.3 -> 0.1.0 minor bump. **Phase 14** (`configuration` + `init` generators + `nx add`, GEN-01..09) -- config-edit-only generator suite wiring the walk-based target and seeding `nx.json` caching. **Phase 15** (Generator e2e + CI self-audit guard, GE2E-01..03/GUARD-01) -- both generator entry points proven against the real tarball, plus the `-p` set-equality CI guard.
 
-## Current Milestone: v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning
+## Shipped Milestone: v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning
+
+**Status: CLOSED (2026-07-23), release cut PENDING.** All four phases (33-36) executed + verified `passed`; milestone audit PASSED 11/11 requirements, Nyquist 4/4, cross-phase integration + both E2E flows proven in live GitHub CI (`.planning/milestones/v0.2.4-MILESTONE-AUDIT.md`). Code + planning merged to `main` via PR #55 (merge `966a7c6`). The GATE-02 "Require code scanning results" ruleset is ACTIVE on `main` (angular-typechecker + CodeQL). The `angular-typechecker@0.2.4` npm release (additive `0.2.3 -> 0.2.4` patch bump) is the pending human-gated step; published version is currently held at `0.2.3`. Full detail: `.planning/milestones/v0.2.4-ROADMAP.md` + `.planning/milestones/v0.2.4-REQUIREMENTS.md`.
 
 **Goal:** Make angular-typechecker's GitHub Code Scanning integration first-class and continuously PROVEN -- richer SARIF (per-project analyses + diagnostic-family rule metadata) plus an automated GitHub Actions + `gh` CLI check that the uploaded SARIF actually lands in Code Scanning with the expected categories, rule tags, and severities.
 
@@ -163,15 +167,21 @@ v0.0.3 delivered in four phases: **Phase 8** (Correctness & Completeness, COR-01
 
 ## Requirements
 
-### Active (v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning)
+### Active
 
-<!-- Current scope. Building toward these. REQ-IDs + scoping in .planning/REQUIREMENTS.md. -->
+<!-- No active milestone. v0.2.4 closed 2026-07-23; next scope defined via /gsd:new-milestone. -->
 
-- [ ] Per-project SARIF analyses in Code Scanning -- one category (`angular-typecheck/<project>`) per workspace project that uses the executor, auto-discovered, one merged multi-run upload
-- [ ] Diagnostic-family rule metadata -- catalog all families (TypeScript / template type-check / NG8xxx / ATC900x) with `properties.tags` + `defaultConfiguration.level` + `help` text (the sole release-bearing SARIF change)
-- [ ] Code Scanning result gating -- `code-scanning` in the required `ci` aggregate + GitHub "Require code scanning results" ruleset for angular-typechecker + fallow
-- [ ] Automated GitHub Actions + `gh` CLI proof -- fixture-driven check asserting alerts land in Code Scanning with the expected category, tags, and severity
-- [ ] "Scanned files" GitHub limitation documented in-repo (CodeQL-only panel; not SARIF-fixable; no Issue filed)
+(None -- awaiting next milestone. The `angular-typechecker@0.2.4` release cut is the pending human-gated step.)
+
+### Validated (v0.2.4 -- Enhanced SARIF reporting for GitHub Code Scanning -- closed 2026-07-23, audit PASSED 11/11; shipped to `main` via PR #55, npm release pending)
+
+- [x] Diagnostic-family rule metadata -- catalog one rule per fired ruleId across all families (TypeScript / template type-check / NG8xxx / ATC900x) with `properties.tags` + `defaultConfiguration.level` + `help` text (the sole release-bearing SARIF change; additive `0.2.3 -> 0.2.4` patch bump). -- v0.2.4 (RULE-01/02/03/04)
+- [x] Per-project SARIF analyses in Code Scanning -- one category (`angular-typecheck/<project>`) per workspace project that uses the executor, auto-discovered + drift-guarded, one merged multi-run upload; no published-package change. -- v0.2.4 (MULTI-01/02)
+- [x] Automated GitHub Actions + `gh` CLI proof -- isolated one-per-family fixture (outside the Nx graph) + `gh api` set-membership assert that alerts land with the expected category/tags/severity, fail-loud on any miss (proven live, incl. an unplanned real regression). -- v0.2.4 (PROOF-01/02)
+- [x] Code Scanning result gating -- `code-scanning` (+ proof) required members of the `ci` aggregate, dogfood job un-path-gated; GitHub "Require code scanning results" ruleset ACTIVE on `main` (angular-typechecker + CodeQL) with planning-only/fork-PR deadlock handling; a file-less SARIF fallback fix (35-04) so uploads ingest. -- v0.2.4 (GATE-01/02)
+- [x] "Scanned files" GitHub limitation documented in-repo (CodeQL-only panel; not SARIF-fixable; `run.artifacts` inert; no Issue filed) + docs tripwire. -- v0.2.4 (DOC-01)
+
+Full detail with outcomes: `.planning/milestones/v0.2.4-REQUIREMENTS.md`. Audit: `.planning/milestones/v0.2.4-MILESTONE-AUDIT.md`.
 
 ### Validated (v0.0.1 -- shipped and verified 2026-06-29)
 
@@ -362,6 +372,8 @@ Forward tailwind: TypeScript 7 (Go port, ~10x type-check target). Since `ngtsc` 
 | v0.2.1: off-stack Angular 21 verification DROPPED from every gate (GATE A', ACV-01) | User directive 2026-07-10; verification stays on-stack Angular 22 only, matching the locked stack | [OK] Validated v0.2.1 |
 | v0.2.3: machine-readable reporters (`--format json` + `--format sarif`) as pure functions over `CoreResult`, wired through all three adapters; default stays `formatDiagnostics` | The agent/CI core value; JSON/SARIF were deferred since v0.0.1; additive (new option + optional field) -> patch bump, no `v0.3.0` trigger | Scoped v0.2.3 |
 | v0.2.3: SARIF built with `node-sarif-builder` (MIT, CJS), lazy-`import()`ed ONLY on `--format sarif` | One deliberate new runtime dep earns its keep vs hand-maintaining SARIF 2.1.0; lazy-load keeps the JSON/human/CLI-flag paths dep-free (no `fs-extra` load) | Scoped v0.2.3 |
+| v0.2.4: GATE-02 enabled by DELETING orphaned Code Scanning configs, not by any `ci.yml` change; the "Require code scanning results" ruleset requires angular-typechecker + CodeQL (fallow + the red-proof tool kept OFF the required list) | The merge gate matches `(analysis_key, category, environment)` tuples; an orphaned category-rename config on `main` yields a permanent "configuration not found". Single-run/head-ref/"GitHub limitation" were all red herrings. Findings already gate via `test` + the `fallow` job, so the ruleset is an analysis-EXISTENCE gate | Good v0.2.4 |
+| v0.2.4: file-less (project/tool-level) SARIF diagnostics carry a region-less whole-file fallback location on the relativized `tsConfigPath` instead of no `locations` | GitHub Code Scanning rejects the WHOLE upload on any location-less result (`locationFromSarifResult`); a whole-file anchor is ingestible while the diagnostic is still never dropped | Good v0.2.4 (35-04) |
 
 ## Evolution
 
@@ -381,6 +393,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
+*Last updated: 2026-07-23 -- v0.2.4 MILESTONE CLOSED via `/gsd-complete-milestone`: milestone audit PASSED (11/11 requirements RULE/MULTI/PROOF/GATE/DOC, 4/4 phases verified `passed`, Nyquist 4/4, cross-phase integration + both E2E flows proven in live GitHub CI). All v0.2.4 requirements moved to Validated; `## Current Milestone: v0.2.4` relabeled Shipped/CLOSED; ROADMAP collapsed to a SHIPPED one-liner (Phase Details archived); phases 33-36 archived to `.planning/milestones/v0.2.4-phases/`; REQUIREMENTS/ROADMAP/audit archived to `.planning/milestones/v0.2.4-*`; REQUIREMENTS.md removed (fresh for next milestone); RETROSPECTIVE v0.2.4 section added. Code + planning already merged to `main` via PR #55 (merge `966a7c6`); GATE-02 "Require code scanning results" ruleset ACTIVE on `main`. This close is bookkeeping-only -- the `angular-typechecker@0.2.4` npm release (additive `0.2.3 -> 0.2.4` patch bump) is the pending human-gated step, so the published version is held at `0.2.3`. Pre-close `audit-open`: quick task 260714-nub acknowledged-deferred (Backlog) + the Phase-35 UAT stale `issues` status (G-35-01, fixed in 35-04, verified in real CI) flipped to `complete` before close. Two non-blocking tech-debt items tracked in the audit (fallow file-less SARIF upload; AGENTS.md GATE-02 runbook reconciliation). Next: the release cut, then `/gsd:new-milestone`.*
+
 *Last updated: 2026-07-21 -- v0.2.3 MILESTONE CLOSED via `/gsd-complete-milestone`: milestone audit PASSED (13/13 requirements FMT/REP/OBS/CLIX/VER/ADD/DOC, 3/3 phases, 13/13 cross-phase integration, 3/3 E2E flows). All v0.2.3 requirements moved to Validated; ROADMAP collapsed to a SHIPPED one-liner (Phase Details archived); phases 30-32 archived to `.planning/milestones/v0.2.3-phases/`; REQUIREMENTS/ROADMAP/audit archived to `.planning/milestones/v0.2.3-*`; REQUIREMENTS.md removed (fresh for next milestone); RETROSPECTIVE v0.2.3 section added. `angular-typechecker@0.2.3` already published live to npm 2026-07-20 (tag on the release merge commit, tokenless OIDC + SLSA v1 provenance) -- this close is bookkeeping-only, no version change. Pre-close `audit-open` flags were all stale bookkeeping (resolved before close) except quick task 260714-nub (optional CI actions/cache work, acknowledged-deferred to Backlog). Next: `/gsd-new-milestone v0.2.4`.*
 
 *Last updated: 2026-07-21 -- v0.2.4 milestone STARTED (Enhanced SARIF reporting for GitHub Code Scanning). Added `## Current Milestone: v0.2.4` + `### Active` requirements. Scope empirically de-risked by the 2026-07-20 spike (closed PR #53) and built on the merged v0.2.3 SARIF reporter + PR #49 CI dogfood wiring. Requirements + roadmap being defined this milestone-kickoff.*

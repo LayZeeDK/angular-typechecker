@@ -2,11 +2,12 @@
 gsd_state_version: 1.0
 milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
-current_phase: 36
-status: verifying
+current_phase: 2.4
+status: Awaiting next milestone
 stopped_at: "Quick task 260722-g6y complete (RED-SARIF proof separated onto its own Code Scanning tool). Rework pushed to PR #55 branch; PR #55 is now CLEAN/MERGEABLE (0 unresolved threads). MERGE + the human-only `main` ruleset toggle (UAT item 2) + the release cut are the remaining steps -- all gated on explicit user go."
-last_updated: "2026-07-23T17:35:45.210Z"
+last_updated: "2026-07-23T17:45:18.209Z"
 last_activity: 2026-07-23
+last_activity_desc: Milestone v0.2.4 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
@@ -20,17 +21,17 @@ current_phase_name: code-scanning-gating-scanned-files-documentation
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archived: Machine-readable reporters)
+See: .planning/PROJECT.md (updated 2026-07-23 -- v0.2.4 milestone closed + archived: Enhanced SARIF reporting for GitHub Code Scanning)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 36 — code-scanning-gating-scanned-files-documentation
+**Current focus:** Planning next milestone (v0.2.4 shipped to `main`; the `angular-typechecker@0.2.4` release cut is the pending human-gated step)
 
 ## Current Position
 
-Phase: 36
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-07-23
+Phase: Milestone v0.2.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-23 — Milestone v0.2.4 completed and archived
 
 ## Accumulated Context
 
@@ -279,10 +280,19 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 - **`24-ACV-01-UAT.md` (`executed-fail`) and `24-HUMAN-UAT.md`**: both refer to the ORIGINAL pre-24-06 ACV-01 execution, superseded by the 2026-07-15 re-run (quick task 260715-ig5, commit 895ee43) which PASSED against post-24-06 HEAD on both real-clone gates. The stale UAT file status is cosmetic.
 - **`24-VERIFICATION.md` (`human_needed`)**: the single flagged human item (re-run the ACV-01 real-clone gate post-24-06) was RESOLVED by the same 260715-ig5 re-run, one session before this close. The frontmatter `status: human_needed` was never re-flipped -- a cosmetic bookkeeping gap, not open work. Already recorded as a `bookkeeping` (non-blocking) item in `v0.2.1-MILESTONE-AUDIT.md`.
 
+### Acknowledged at v0.2.4 milestone close (2026-07-23)
+
+The `audit-open` pre-close scan flagged 2 items; both handled before close:
+
+| Category | Item | Status | Resolution |
+|----------|------|--------|------------|
+| quick_task | `260714-nub` (optional CI actions/cache Verdaccio-uplink optimization) | blocked | ACKNOWLEDGED-DEFERRED (override_closeout). Optional workspace-wide CI cache; authored + code-reviewed but never applied (throwaway probe surfaced an unrelated e2e regression, since fixed). Predates v0.2.3; already tracked in the ROADMAP Backlog + STATE Quick Tasks table. Carried forward, not open milestone work. |
+| uat_gap | Phase 35 `35-UAT.md` (`issues`) | resolved | The stale `issues` status captured the file-less SARIF upload gap G-35-01, which was CLOSED in plan 35-04 (region-less whole-file fallback location) and PROOF-01/02 verified in real CI (run 29875173270). Flipped `35-UAT.md` to `complete` (3/3 passed) with the resolution evidence before close -- not open work. |
+
 ## Session Continuity
 
-**Stopped at:** Quick task 260722-g6y complete (RED-SARIF proof separated onto its own Code Scanning tool). Rework pushed to PR #55 branch; PR #55 is now CLEAN/MERGEABLE (0 unresolved threads). MERGE + the human-only `main` ruleset toggle (UAT item 2) + the release cut are the remaining steps -- all gated on explicit user go.
-**Resume file:** .planning/quick/260722-g6y-separate-red-sarif-proof-into-its-own-co/260722-g6y-UAT.md
+**Stopped at:** Milestone v0.2.4 CLOSED + archived (audit PASSED 11/11; phases 33-36 -> `.planning/milestones/v0.2.4-phases/`; ROADMAP collapsed; REQUIREMENTS archived + removed). Phase 36 completed + learnings extracted + global bridge. All landing via the `chore/v0.2.4-phase36-completion` planning PR into `main` (main is PR-only). Remaining wrap-up: the AGENTS.md GATE-02 runbook reconciliation + spike-012 docs (same PR), then the human-gated `angular-typechecker@0.2.4` release cut and the low-urgency fallow file-less SARIF fix.
+**Resume file:** (none -- work is on branch `chore/v0.2.4-phase36-completion`)
 
 Last session: 2026-07-23
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
@@ -320,9 +330,7 @@ Completed the two teed-up autonomous tasks:
 
 ## Operator Next Steps
 
-- **DONE 2026-07-21 -- backfilled the two forgotten milestone closes** -- v0.2.1 and v0.2.2 were structurally archived during the OpenGSD migration but `/gsd-complete-milestone` was never run for them. Added the missing `RETROSPECTIVE.md` v0.2.1 + v0.2.2 sections (chronological, before v0.2.3) and the PROJECT.md `### Validated (v0.2.2)` block. RETROSPECTIVE now runs v0.2.0 -> v0.2.1 -> v0.2.2 -> v0.2.3 with no gap; PROJECT.md Validated covers every shipped milestone.
-- **Start v0.2.4** -- `/gsd-new-milestone v0.2.4` "Enhanced SARIF reporting for GitHub Code Scanning" (5-area scope, spike-locked). Do it on a kickoff branch off `main` (PR-only) -> PR; name the branch yourself (don't trust GSD auto-derivation). SKIP the 4-researcher round (the empirical spike + prior SARIF research answered the unknowns). `.planning/HANDOFF.json` + `.planning/.continue-here.md` hold the full v0.2.4 scope + anti-patterns -- read them first. `.planning/phases/` is now empty, so `new-milestone`'s `phases.clear` is safe.
-- One non-blocking human action pending: enable the GitHub "Require code scanning results" ruleset (v0.2.4 area 4).
+- Start the next milestone with /gsd-new-milestone
 
 ## Performance Metrics
 
