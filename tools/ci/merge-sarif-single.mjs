@@ -79,5 +79,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   // do NOT stamp automationDetails.id (it would override the input and showed
   // empty in the analyses API during the spike). CATEGORY kept for reference.
   void CATEGORY;
-  writeFileSync(OUTPUT, JSON.stringify({ version: doc.version, $schema: doc.$schema, runs: [run] }));
+  writeFileSync(
+    OUTPUT,
+    JSON.stringify({ version: doc.version, $schema: doc.$schema, runs: [run] }),
+  );
 }
