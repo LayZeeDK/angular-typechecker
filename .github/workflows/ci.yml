@@ -635,11 +635,19 @@ jobs:
         uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           sarif_file: angular-typechecker.sarif
+          # PROBE: associate the analysis with the PR HEAD (like CodeQL) instead of
+          # the default merge ref, so the "Require code scanning results" merge gate
+          # can find the configuration on the PR. ref+sha must be provided together.
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.ref }}
+          sha: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       # No `category:` here on purpose -- the multi-run fallow file carries a distinct
       # automationDetails.id per run (set above), which the action uses as the
       # per-run category. Passing a single `category` would override all runs to one
       # value and re-trigger the "multiple runs with the same category" rejection.
       - name: Upload fallow SARIF
+        # PROBE-ONLY: soft-fail so a fallow file-less-location rejection cannot redden
+        # the job and contaminate the atc head-ref gate test.
+        continue-on-error: true
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.fallow-sarif.outputs.produced == 'true' }}
         uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
