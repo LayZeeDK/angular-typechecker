@@ -18,7 +18,7 @@
 - [x] **Phase 33: Diagnostic-family SARIF rule metadata** -- catalog one rule per fired ruleId across all families with `properties.tags` + `defaultConfiguration.level` + `help` text (the sole release-bearing SARIF change; additive patch bump) (completed 2026-07-21)
 - [x] **Phase 34: Per-project SARIF categories in CI** -- discover executor-using projects, run the CLI per project, merge to one multi-run file with per-run `automationDetails.id`, single `upload-sarif` (CI-only, no release) (completed 2026-07-21)
 - [ ] **Phase 35: Automated Code Scanning proof** -- isolated one-per-family fixture outside the Nx graph + a `gh api` poll/assert that expected alerts land with the expected category/tags/severity (CI-only, no release)
-- [ ] **Phase 36: Code Scanning gating + Scanned-files documentation** -- promote `code-scanning` (+ proof) to the required `ci` aggregate + enable the "Require code scanning results" ruleset with the planning-only/fork-PR deadlock mitigation, and document the CodeQL-only "Scanned files" limitation
+- [x] **Phase 36: Code Scanning gating + Scanned-files documentation** -- promote `code-scanning` (+ proof) to the required `ci` aggregate + enable the "Require code scanning results" ruleset with the planning-only/fork-PR deadlock mitigation, and document the CodeQL-only "Scanned files" limitation (completed 2026-07-23)
 
 <details>
 <summary>[SHIPPED] v0.0.1 (Phases 1-7, incl. 5.1) -- SHIPPED 2026-06-29</summary>
@@ -235,7 +235,7 @@ Full phase detail (goals, success criteria, decisions): `.planning/milestones/v0
 | 33. Diagnostic-family SARIF rule metadata | v0.2.4 | 2/2 | Complete    | 2026-07-21 |
 | 34. Per-project SARIF categories in CI | v0.2.4 | 1/1 | Complete    | 2026-07-21 |
 | 35. Automated Code Scanning proof | v0.2.4 | 3/3 | Complete   | 2026-07-21 |
-| 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 2/2 | Complete   | 2026-07-22 |
+| 36. Code Scanning gating + Scanned-files documentation | v0.2.4 | 2/2 | Complete    | 2026-07-22 |
 
 ## Backlog
 

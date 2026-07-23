@@ -21,8 +21,8 @@ Scope empirically de-risked by the 2026-07-20 spike (closed PR #53): the SARIF->
 
 ### Gating (GATE)
 
-- [ ] **GATE-01**: The `code-scanning` CI job is a required member of the `ci` aggregate (so the dogfood upload running successfully is part of the merge gate).
-- [ ] **GATE-02**: GitHub "Require code scanning results" is enabled on `main` for angular-typechecker + fallow, configured so that planning-only PRs (where `code-scanning` is path-skipped) are NOT deadlocked.
+- [x] **GATE-01**: The `code-scanning` CI job is a required member of the `ci` aggregate (so the dogfood upload running successfully is part of the merge gate).
+- [x] **GATE-02**: GitHub "Require code scanning results" is enabled on `main` for angular-typechecker + fallow, configured so that planning-only PRs (where `code-scanning` is path-skipped) are NOT deadlocked.
 
 ### Automated proof (PROOF)
 
@@ -61,8 +61,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | MULTI-02 | Phase 34 | Complete |
 | PROOF-01 | Phase 35 | Complete |
 | PROOF-02 | Phase 35 | Complete |
-| GATE-01 | Phase 36 | Pending |
-| GATE-02 | Phase 36 | Pending |
+| GATE-01 | Phase 36 | Complete |
+| GATE-02 | Phase 36 | Complete |
 | DOC-01 | Phase 36 | Complete |
 
 **Coverage:**

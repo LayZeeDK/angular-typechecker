@@ -3,18 +3,17 @@ gsd_state_version: 1.0
 milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
 current_phase: 36
-current_phase_name: code-scanning-gating-scanned-files-documentation
 status: verifying
-stopped_at: Completed 36-01-PLAN.md
-last_updated: "2026-07-22T01:33:43.776Z"
-last_activity: 2026-07-22
-last_activity_desc: Phase 36 execution started
+stopped_at: "Quick task 260722-g6y complete (RED-SARIF proof separated onto its own Code Scanning tool). Rework pushed to PR #55 branch; PR #55 is now CLEAN/MERGEABLE (0 unresolved threads). MERGE + the human-only `main` ruleset toggle (UAT item 2) + the release cut are the remaining steps -- all gated on explicit user go."
+last_updated: "2026-07-23T17:35:45.210Z"
+last_activity: 2026-07-23
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 9
   completed_plans: 9
   percent: 100
+current_phase_name: code-scanning-gating-scanned-files-documentation
 ---
 
 # Project State
@@ -28,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archi
 
 ## Current Position
 
-Phase: 36 (code-scanning-gating-scanned-files-documentation) — EXECUTING
-Plan: 2 of 2
+Phase: 36
+Plan: Not started
 Status: Phase complete — ready for verification
-Last activity: 2026-07-22 — Phase 36 execution started
+Last activity: 2026-07-23
 
 ## Accumulated Context
 
