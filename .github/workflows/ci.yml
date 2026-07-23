@@ -561,6 +561,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+          # PROBE: check out the PR HEAD commit (not the default merge commit) so the
+          # uploaded analysis is keyed to the head sha, matching the ref=refs/pull/N/head
+          # upload and what CodeQL does -- required for the merge gate to find the config.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 24
