@@ -640,6 +640,9 @@ jobs:
       # per-run category. Passing a single `category` would override all runs to one
       # value and re-trigger the "multiple runs with the same category" rejection.
       - name: Upload fallow SARIF
+        # PROBE-ONLY (code-PR gate verification): soft-fail so a fallow file-less-location
+        # rejection cannot redden the job and mask the atc gate result. NOT for main.
+        continue-on-error: true
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.fallow-sarif.outputs.produced == 'true' }}
         uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
