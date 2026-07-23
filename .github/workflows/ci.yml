@@ -580,7 +580,7 @@ jobs:
       # multi-run SARIF exists (exit 2 across every project is not uploaded).
       - id: atc-sarif
         run: |
-          node tools/ci/merge-sarif.mjs || true
+          node tools/ci/merge-sarif-single.mjs || true
           if [ -s angular-typechecker.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
       # fallow's SARIF report. `--format sarif -o` always writes a valid file (even a
       # clean / zero-changed-files run); the authoritative fallow gate is the separate
