@@ -1,0 +1,43 @@
+# THROWAWAY experiment (probe/code-scanning-gate branch only -- never merged to main).
+# Proves whether GitHub's "Require code scanning results" merge gate passes an all-green PR
+# when the third-party analysis is a SINGLE run under a SINGLE stable category (as a typical
+# angular-typechecker consumer produces via `npx angular-typechecker --format sarif` on one
+# project), as opposed to the repo's dogfood multi-run/per-project merged SARIF.
+name: gate-probe
+on:
+  push:
+    branches: [probe/code-scanning-gate]
+  pull_request:
+jobs:
+  gate-probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      NX_DAEMON: false
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx nx build angular-typechecker
+      # Produce a SINGLE-run, SINGLE-category SARIF under a dedicated probe tool name so the
+      # gate experiment is isolated from the repo's real `angular-typechecker` multi-run upload.
+      # Take runs[0] of the dogfood SARIF (a clean project -> 0 results), relabel the driver
+      # name + pin one stable automationDetails.id (which overrides the category input).
+      - id: gen
+        run: |
+          node tools/ci/merge-sarif.mjs || true
+          node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("angular-typechecker.sarif","utf8"));const run=(j.runs||[])[0];run.tool.driver.name="atc-gate-probe";run.automationDetails={id:"atc-gate-probe"};fs.writeFileSync("gate.sarif",JSON.stringify({version:j.version,"$schema":j["$schema"],runs:[run]}))'
+          if [ -s gate.sarif ]; then echo "produced=true" >> "$GITHUB_OUTPUT"; else echo "produced=false" >> "$GITHUB_OUTPUT"; fi
+      - if: ${{ steps.gen.outputs.produced == 'true' }}
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          sarif_file: gate.sarif
+          category: atc-gate-probe
