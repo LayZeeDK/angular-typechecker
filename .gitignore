@@ -47,3 +47,10 @@ Thumbs.db
 vitest.config.*.timestamp*
 .angular
 .gsd-opengsd/
+
+# cve-lite-cli generated artifacts (keep the committed .cve-lite/baseline.json)
+cve-report/
+cve-lite-*.json
+cve-lite-*.sarif
+cve-lite-*.cdx.json
+cve-lite-*.log

@@ -18,6 +18,10 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
+# cve-lite-cli ratchet baseline -- machine-generated (cve-lite rewrites it in its
+# own format on every re-baseline), so Prettier does not own it.
+/.cve-lite/
+
 # Whitespace-sensitive diagnostic fixtures -- Angular templates whose exact
 # whitespace/reflow changes which NG diagnostics fire and HOW MANY, breaking the
 # exact-count assertions in extended-catalog.integration.spec.ts. ONLY the
