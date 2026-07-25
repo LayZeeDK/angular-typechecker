@@ -276,18 +276,27 @@ or Evaluate.
    can ever reproduce. That happened once here -- the dogfood category rename
    `angular-typechecker` -> `angular-typecheck` in an earlier phase, since cleaned up.
 
-   **An `analysis_key` change ALONE does NOT orphan the config -- PROVEN, and it is why the
-   category must be preserved across a setup migration.** The 2026-07-25 CodeQL
-   default -> advanced migration changed `analysis_key` from
-   `dynamic/github-code-scanning/codeql:analyze` to `.github/workflows/codeql.yml:analyze`
-   while deliberately keeping `category` byte-identical (`/language:actions`,
-   `/language:javascript-typescript`). GitHub RE-HOMED the configuration: probe PR #70, run
-   with CodeQL required again and with all 126 historical default-setup analyses still present
-   on `main`, passed the `CodeQL` tool check cleanly. No deletion was needed, and none was
-   done. So preserving the category is the MITIGATION -- an earlier draft of this runbook
-   claimed a setup migration orphans the config, and that claim was wrong. If you ever migrate
-   setups again, keep the category byte-identical and you will not need step 0 for CodeQL at
-   all. A required tool with a genuinely orphaned config blocks EVERY PR permanently with
+   **The 2026-07-25 CodeQL default -> advanced migration did NOT orphan its config, and no
+   cleanup was needed.** Scope this claim carefully -- it is ONE observation, not a general law:
+   - WHAT WAS OBSERVED (proven): the migration kept `category` byte-identical
+     (`/language:actions`, `/language:javascript-typescript`) while changing BOTH
+     `analysis_key` (`dynamic/github-code-scanning/codeql:analyze` ->
+     `.github/workflows/codeql.yml:analyze`) AND `environment` (default setup's carried
+     `category`/`language`/`runner`; the workflow's carries `build-mode`/`language`). Probe
+     PR #70 then ran with CodeQL required again, with all 126 historical default-setup
+     analyses STILL PRESENT on `main`, and the `CodeQL` tool check PASSED. Nothing was deleted.
+   - WHAT IS INFERRED (not proven): that preserving the category is WHY it carried over.
+     Competing explanations fit the same evidence and were not excluded -- disabling default
+     setup may itself retire its config (there is no equivalent "disable" signal for a
+     third-party tool or a renamed workflow), or the gate may simply expect the newest
+     configuration per (tool, category).
+   - THEREFORE, do NOT generalise this to the required `angular-typechecker` tool. Renaming
+     `ci.yml` or its `code-scanning` job would change that tool's `analysis_key` with no
+     accompanying "disable" signal, and n=1 on CodeQL says nothing about it. Treat any category
+     rename, and any analysis_key change to a NON-CodeQL required tool, as still orphaning
+     until proven otherwise -- and prove it on a throwaway probe PR before trusting it.
+
+   A required tool with a genuinely orphaned config blocks EVERY PR permanently with
    "1 configuration not found" -- the hardest-to-diagnose failure here (the red herrings
    single-run-vs-multi-run SARIF, head-ref-vs-merge-ref upload, and a supposed GitHub
    product limitation were ALL pursued and disproven before the orphan surfaced). KEY
@@ -351,7 +360,14 @@ typecheck`). The load-bearing block is the MISSING-analysis block, which fires w
    and the `pull_request` exemption governs upload PERMISSION, not run SCHEDULING, so it
    cannot by itself explain a run that was never created.
    The advanced-setup migration (`.github/workflows/codeql.yml`, quick task 260725-73m) moved
-   CodeQL onto `pull_request` and therefore REMOVED that cause -- it LANDED 2026-07-25 in
+   CodeQL onto `pull_request` and therefore REMOVED that cause. **This is now PROVEN by direct
+   observation, not inference:** Dependabot PR #68 (`app/dependabot`) was updated after the
+   migration landed, its `codeql` workflow ran on `event=pull_request`, and it received
+   `Analyze (actions)`, `Analyze (javascript-typescript)` and `CodeQL` -- all passing, with
+   analyses under `analysis_key: .github/workflows/codeql.yml:analyze`. A Dependabot PR opened
+   BEFORE the migration keeps its pre-migration run and shows no such checks until it is
+   updated (`gh pr update-branch <n>`), which is a stale run, not a regression. It LANDED
+   2026-07-25 in
    PR #69 (see STATUS), and item 7 owns the ordering that was used. It did NOT orphan the old
    default-setup config, because the category was kept byte-identical (step 0); no CodeQL
    cleanup was needed and none was done.
@@ -393,12 +409,16 @@ typecheck`). The load-bearing block is the MISSING-analysis block, which fires w
    merge. The push-to-`main` run produces the first advanced-setup analyses.
    (d) **Re-add `CodeQL` to the required-tool list** at its original thresholds
    (`errors` / `high_or_higher`), then verify on a throwaway probe PR.
-   NO orphan cleanup was needed -- see step 0: preserving the category meant GitHub re-homed
-   the configuration, and probe PR #70 passed the `CodeQL` tool check with all 126 historical
+   NO orphan cleanup was needed -- see step 0, and note the reason it carried over is INFERRED,
+   not proven. Probe PR #70 passed the `CodeQL` tool check with all 126 historical
    default-setup analyses still present. Do NOT delete them.
-   Disabling default setup and editing the ruleset are BOTH human-only per the prohibition
-   above, unless the maintainer explicitly authorizes an agent to perform them (as happened on
-   2026-07-25).
+
+   Disabling default setup and editing the ruleset remain HUMAN-ONLY, exactly as the
+   prohibition at the top of this section states. That rule is UNCHANGED. (Historical record,
+   not a carve-out: on 2026-07-25 the maintainer explicitly authorized an agent to perform
+   these two actions for this migration. That was a one-off instruction for one migration; it
+   grants no standing permission, and absent such an explicit instruction the answer is still
+   no.)
 
 ## Parallel execution in git worktrees: the `node_modules` junction
 

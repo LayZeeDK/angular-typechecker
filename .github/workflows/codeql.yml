@@ -1,13 +1,13 @@
 # CodeQL ADVANCED setup (quick task 260725-73m).
 #
-# WHY this file exists at all -- CodeQL runs here as GitHub's DEFAULT setup
-# TODAY (`code-scanning/default-setup` is still `state: configured`), and that
-# permanently deadlocks Dependabot PRs. This workflow is the committed
-# replacement; the migration is PENDING until a maintainer disables default
-# setup. See AGENTS.md item 7 for the ordering -- the disable must happen BEFORE
-# this file is pushed, because the unfiltered `pull_request:` trigger below
-# makes it run on the PR, not at merge, and both setups would upload the same
-# category on the same ref. The deadlock it removes:
+# WHY this file exists at all -- CodeQL used to run here as GitHub's DEFAULT
+# setup, which permanently deadlocked Dependabot PRs. This workflow REPLACED it:
+# the migration landed 2026-07-25 (PR #69) and default setup is now
+# `state: not-configured`. See AGENTS.md item 7 for the ordering that was used --
+# in particular, the disable had to happen BEFORE this file was pushed, because
+# the unfiltered `pull_request:` trigger below makes it run on the PR, not at
+# merge, and both setups would otherwise upload the same category on the same
+# ref. The deadlock it removes:
 #   - Code scanning "always allows the uploading of results when the
 #     `pull_request` event triggers the action run" (GitHub Docs, code scanning
 #     troubleshooting). Default setup runs as event `dynamic`, NOT
@@ -21,9 +21,13 @@
 #     #46/#59 received NEITHER. Both of those checks are REQUIRED by the `main`
 #     ruleset, so those PRs could never merge (#46 sat BLOCKED with `ci` green).
 #   - This workflow triggers on `pull_request`. That event IS scheduled on a
-#     Dependabot ref (ci.yml proves it) and is inside the upload exemption, so
-#     the required `Analyze (*)` checks are EXPECTED to report on those PRs once
-#     the migration lands. Not yet observed -- this workflow has never run.
+#     Dependabot ref and is inside the upload exemption, so the required
+#     `Analyze (*)` checks now DO report on those PRs. OBSERVED, not predicted:
+#     Dependabot PR #68 was updated after this landed, this workflow ran on
+#     `event=pull_request`, and the PR received `Analyze (actions)`,
+#     `Analyze (javascript-typescript)` and `CodeQL`, all passing. (A Dependabot
+#     PR opened BEFORE the migration keeps its stale pre-migration run and shows
+#     no such checks until `gh pr update-branch <n>`.)
 # Corroborated in the opposite direction in this repo: ci.yml's `code-scanning`
 # job runs on `pull_request` and DID upload its SARIF on Dependabot PR #46
 # despite the read-only token. That is the TOKEN half only -- #46 is NOT a fork
@@ -111,15 +115,19 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-      # The category is deliberately IDENTICAL to default setup's, so the
-      # `(analysis_key, category, environment)` tuple the "Require code scanning
-      # results" gate matches on differs ONLY in analysis_key
+      # The category is deliberately IDENTICAL to default setup's. Keeping it
+      # identical is what let the "Require code scanning results" gate carry over:
+      # the migration changed `analysis_key`
       # (`dynamic/github-code-scanning/codeql:analyze` ->
-      # `.github/workflows/codeql.yml:analyze`). Consequences, both handled by
-      # the human runbook in AGENTS.md: default setup must be disabled BEFORE
-      # this workflow runs on the same ref (identical categories collide), and
-      # the old default-setup analyses on `main` become ORPHANED and must be
-      # deleted via the Code Scanning API once a live analysis from HERE exists.
+      # `.github/workflows/codeql.yml:analyze`) and `environment`, but NOT the
+      # category, and the gate stayed green.
+      #
+      # DO NOT DELETE the old default-setup analyses on `main`. An earlier draft
+      # of this comment said they become orphaned and must be deleted once a live
+      # analysis from here exists -- that was WRONG and is now a destructive
+      # instruction. Probe PR #70 ran with CodeQL required and all 126 historical
+      # `dynamic/github-code-scanning/codeql:analyze` analyses still present, and
+      # the `CodeQL` tool check PASSED. Nothing was deleted. See AGENTS.md step 0.
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
