@@ -6,9 +6,12 @@
 # ever runs, so there is no nested Docker, no OIDC, no secrets.
 #
 # Two distinct guards (complementary -- neither subsumes the other):
-#   1. PARSEABILITY (Req 2): `act --validate` proves act can ingest BOTH
-#      workflows (ci.yml + release.yml). This is act's own ingest check, not the
-#      GitHub-spec check that actionlint runs in the lint-workflows job.
+#   1. PARSEABILITY (Req 2): `act --validate` proves act can ingest EVERY
+#      workflow in .github/workflows/ (currently ci.yml, codeql.yml,
+#      release.yml). It is invoked with no `-W`, so it validates whatever is in
+#      that directory -- adding a workflow needs no change here. This is act's
+#      own ingest check, not the GitHub-spec check that actionlint runs in the
+#      lint-workflows job.
 #   2. TRIGGER/CONDITION FIDELITY (Req 1): for each trigger, `act -n` produces a
 #      dry-run plan whose job selection we assert. act IGNORES `on:` filters
 #      (branches/tags/paths/types) -- only the event NAME matters -- but it DOES
@@ -96,7 +99,7 @@ act --version || true
 echo
 echo "--- Guard 1: parseability (act --validate) ---"
 if act --validate; then
-  pass "act --validate: both workflows parse"
+  pass "act --validate: all workflows parse"
 else
   fail "act --validate: a workflow failed to parse"
 fi
