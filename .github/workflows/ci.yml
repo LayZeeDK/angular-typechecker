@@ -616,13 +616,16 @@ jobs:
         run: |
           echo "::error::angular-typechecker produced no SARIF on a non-fork PR. A reporter regression (empty/invalid SARIF) would pass this required gate green AND leave the Code Scanning ruleset with no analysis on the PR ref. Failing loud."
           exit 1
-      # fallow is ALSO a required tool of the GATE-02 ruleset, so a missing fallow analysis
-      # would deadlock the ref too. fallow's `--format sarif -o` always writes a valid file,
-      # so this is a cheap backstop against a fallow infra break, not an expected failure.
+      # fallow is NOT a required tool of the GATE-02 ruleset (only angular-typechecker +
+      # CodeQL are -- see AGENTS.md; fallow's findings gate via the separate `fallow` job),
+      # so a missing fallow analysis does NOT deadlock the ref. fallow's `--format sarif -o`
+      # always writes a valid file, so this is a cheap backstop against a fallow infra break
+      # (a silently-missing analysis would hide fallow's Code Scanning alerts), not a gate
+      # requirement and not an expected failure.
       - name: Assert fallow SARIF was produced (non-fork PR)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && steps.fallow-sarif.outputs.produced == 'false' }}
         run: |
-          echo "::error::fallow produced no SARIF on a non-fork PR. The 'Require code scanning results' ruleset lists fallow as a required tool, so a missing fallow analysis would deadlock the PR ref. Failing loud."
+          echo "::error::fallow produced no SARIF on a non-fork PR. fallow's --format sarif -o normally always writes a file, so this signals a fallow infra break; a silently-missing analysis hides fallow's Code Scanning alerts. (fallow is not a required Code Scanning gate tool, so this does not deadlock the ruleset.) Failing loud."
           exit 1
       # No `category:` here on purpose -- the merged file is now multi-run (one run
       # per executor-using project), each carrying a distinct automationDetails.id
@@ -668,8 +671,9 @@ jobs:
   # per-project `angular-typecheck/<project>` dogfood ids and the `fallow/<i>` ids.
   #
   # This proof tool MUST NOT join the "Require code scanning results" required-tool list
-  # (see AGENTS.md) -- its RED is intentional. The required tools stay `angular-typechecker`
-  # + `fallow`, and this job's own check is not a required check, so it cannot block merge.
+  # (see AGENTS.md) -- its RED is intentional. The required Code Scanning tools are
+  # `angular-typechecker` + CodeQL (fallow is NOT required -- its findings gate via the
+  # `fallow` job), and this job's own check is not a required check, so it cannot block merge.
   #
   # After a PASSING assert the script dismisses exactly those alerts with
   # `dismissed_reason: used in tests` (D-01), so the proof is self-healing: a later PR
