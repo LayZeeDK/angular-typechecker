@@ -2,36 +2,36 @@
 gsd_state_version: 1.0
 milestone: v0.2.4
 milestone_name: -- Enhanced SARIF reporting for GitHub Code Scanning
-current_phase: 36
-current_phase_name: code-scanning-gating-scanned-files-documentation
-status: verifying
-stopped_at: Completed 36-01-PLAN.md
-last_updated: "2026-07-22T01:33:43.776Z"
-last_activity: 2026-07-22
-last_activity_desc: Phase 36 execution started
+current_phase: 2.4
+status: Awaiting next milestone
+stopped_at: "Quick task 260722-g6y complete (RED-SARIF proof separated onto its own Code Scanning tool). Rework pushed to PR #55 branch; PR #55 is now CLEAN/MERGEABLE (0 unresolved threads). MERGE + the human-only `main` ruleset toggle (UAT item 2) + the release cut are the remaining steps -- all gated on explicit user go."
+last_updated: "2026-07-23T17:45:18.209Z"
+last_activity: 2026-07-23
+last_activity_desc: Milestone v0.2.4 completed and archived
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 9
   completed_plans: 9
   percent: 100
+current_phase_name: code-scanning-gating-scanned-files-documentation
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-21 -- v0.2.3 milestone closed + archived: Machine-readable reporters)
+See: .planning/PROJECT.md (updated 2026-07-23 -- v0.2.4 milestone closed + archived: Enhanced SARIF reporting for GitHub Code Scanning)
 
 **Core value:** Deliver the complete Angular type-check (TypeScript + template type-check + extended NG8xxx) for any project type without building the app or running the tests -- faster, in isolation, and more completely than the build's coupled check or a bare `ngc --noEmit`.
-**Current focus:** Phase 36 — code-scanning-gating-scanned-files-documentation
+**Current focus:** Planning next milestone (v0.2.4 shipped to `main`; the `angular-typechecker@0.2.4` release cut is the pending human-gated step)
 
 ## Current Position
 
-Phase: 36 (code-scanning-gating-scanned-files-documentation) — EXECUTING
-Plan: 2 of 2
-Status: Phase complete — ready for verification
-Last activity: 2026-07-22 — Phase 36 execution started
+Phase: Milestone v0.2.4 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-25 — Quick task 260725-5yo: cleared cve-lite brace-expansion HIGH + ratcheted the gate to --fail-on medium (PR #66)
 
 ## Accumulated Context
 
@@ -252,6 +252,7 @@ v0.1.1 and its post-release quick tasks are recorded in the git history and the 
 | 260721-vm1 | Fix the red CI `fallow` job on the v0.2.4 branch (PR #55). The new-only complexity gate (`fallow audit --format human --base origin/main`) flagged ONE function -- `buildRuleMeta` in `packages/angular-typechecker/src/core/sarif-report.ts` (11 cyclomatic / CRAP 37.1) -- turning the required `ci` aggregate red. FIX (`refactor(core)`): split `buildRuleMeta` into four per-family metadata builders (`buildExtendedRuleMeta`/`buildToolRuleMeta`/`buildTemplateRuleMeta`/`buildTypeScriptRuleMeta`) behind a thin family dispatch; each helper is a byte-identical copy of its original branch (family literal, level, shortDescription, helpUri, helpText, all `??` fallbacks preserved). STRICTLY behavior-preserving -- the drift-lock `machine-reporters-sarif.integration.spec.ts` passes UNCHANGED (proves byte-identical SARIF). Independent of gap G-35-01 (which reworks `formatSarifReport`'s file-less-location handling). Verified: `nx test angular-typechecker`(575, drift-lock unchanged) / `nx run-many -t lint`(maxWarnings:0) / `nx format:check` / `fallow audit --format human --base origin/main` EXIT 0 ("No issues in 76 changed files") -- the sarif-report.ts complexity finding is gone (extraction alone cleared it; no `.fallowrc.jsonc` fallback needed). Only `sarif-report.ts` changed (+76/-36); `formatSarifReport` untouched. No version change (0.2.3 milestone branch, PR #55) | 2026-07-21 | 439532f | Verified | [260721-vm1-fix-red-ci-fallow-job-reduce-buildruleme](./quick/260721-vm1-fix-red-ci-fallow-job-reduce-buildruleme/) |
 | 260721-wda | Fix HIGH svgo@4.0.1 (GHSA-2p49-hgcm-8545) on PR #55 -- `npm update svgo` bumps the lockfile 4.0.1 -> 4.0.2 (in-range patch; svgo is transitive/dev via `postcss-svgo` `^4.0.1`, and the OSV-fixed 4.0.2 already sits in range, so NO `overrides` entry -> NO npm 10/11 portability trap; skill Rules 1/2 N/A). `package.json` unchanged. Verified: `npm run cve-lite` exit 0 (HIGH gone; one MEDIUM below the gate remains), `npm run fallow` exit 0, `npm install --package-lock-only` no-diff (npm ci coherent). Lean-inline (--full requested, downgraded once the fix was confirmed a trivial in-range bump). Real-CI green pending next push | 2026-07-21 | 4c38ab7 | Verified | [260721-wda-address-the-svgo-4-0-1-high-severity-vul](./quick/260721-wda-address-the-svgo-4-0-1-high-severity-vul/) |
 | 260722-g6y | Unblock PR #55: separate the deliberate RED SARIF proof onto its OWN Code Scanning tool (--full: research+discuss+plan-check+UAT). ROOT CAUSE of the block: GitHub groups Code Scanning alerts by TOOL (`driver.name`), NOT category, so the proof fixture's 4 deliberate alerts (TS2322, NG8002, NG8101, ATC90002) landed under the SAME `angular-typechecker` tool as the clean dogfood -> dogfood tool check RED + 3 unresolved `github-advanced-security` threads (`required_review_thread_resolution:true`) -> `mergeStateStatus:BLOCKED`. NB the handoff's assumed blocker (the `main` code_scanning ruleset) was WRONG -- that rule gates ONLY CodeQL (0 alerts, satisfied); the real gate was the per-tool check + the threads. FIX (2 `feat(ci)` commits, NO product code, additive-only, version held 0.2.3): (1) renamed job `code-scanning-proof` -> `code-scanning-red-proof` (+`ci` aggregate needs, +4 drift surfaces: guard spec, act-compat, integration-spec comment); a `node -e` post-process rewrites `runs[].tool.driver.name` -> `angular-typechecker-red-proof` before upload (mirrors the fallow `automationDetails` rewrite; CLI itself unmodified); (2) `assert-code-scanning.mjs`: `missingTuples` -> pure `tupleDiff(alerts,expected)->{missing,extra}` keyed on rule.id + `most_recent_instance.location.path` (EXACT set, code+file), then assert-THEN-dismiss enforced STRUCTURALLY by data dependency (`dismissAlerts(await assertAlerts(ref))`), dismiss `used in tests` + NON-FATAL `::warning::` (job is in required `ci`), query is STATE-AGNOSTIC (no `state=open` -- dismissal is global+permanent, an open-only filter would red the SECOND future PR). Research/UAT corrected TWO locked errors before CI: ATC90002 is NOT file-less (phase 35-04 whole-file fallback -> assert at `tsconfig.json`), and the `state=open` recurrence trap. REAL-CI UAT (throwaway probe PR #57 -> milestone branch, run 29946473573, closed+branch-deleted): dogfood `angular-typechecker` check FAILURE->SUCCESS; proof lands under `angular-typechecker-red-proof`; exact-set assert PASS; assert-then-dismiss PASS. All 3 deferred open questions SETTLED: A1 dismissal DOES resolve the review threads (PR #55 -> 0 unresolved, CLEAN/MERGEABLE -- subsumes the separately-planned thread-cleanup step), A2 assert PASSES on a re-run against already-dismissed alerts (state-agnostic query proven; self-healing), A3 PATCH succeeds on a PR-only alert (`most_recent_instance.state`). Superseded research P4 (rename orphans legacy alerts) -- GitHub re-homed #5-#8 to the new tool. Local gates green (test 592, integration 156, lint maxWarnings:0, format:check, typecheck x12). Rework pushed to PR #55 branch; MERGE deferred to explicit user OK (PR-only main) | 2026-07-22 | 3335c15 + 02cfbc7 | Verified | [260722-g6y-separate-red-sarif-proof-into-its-own-co](./quick/260722-g6y-separate-red-sarif-proof-into-its-own-co/) |
+| 260725-5yo | Resolve all cve-lite high/medium + Dependabot vulns in #66; ratchet gate to `--fail-on medium`. The brace-expansion OOM DoS fix (GHSA-mh99-v99m-4gvg) shipped as `5.0.8` on 2026-07-23, so cve-lite (a required `ci` gate) began failing EVERY PR on all brace-expansion `< 5.0.8` -- including #66. Bumped `overrides.nx.brace-expansion` 5.0.7 -> 5.0.8 (the one genuinely-exploitable edge; nested/portable, within-major per skill Rule 2); `npm update vite postcss tar` cleared the postcss(via vite)+tar mediums. The remaining dev-only `brace-expansion@1.1.16`/`2.1.2` (maintenance-v1/v2, published 2026-07-08 BEFORE the fix; under eslint/verdaccio/glob's `minimatch@3/7/9` pinned `^1`/`^2`) + `@hono/node-server@1.19.14` (transitive of `@modelcontextprotocol/sdk@^1.19.9`) have ONLY cross-major fixes (brace-expansion 5.x + minimatch 10.x each changed export shape) that break their parents -- none ship in the published plugin. Per user decision, ratcheted `scripts.cve-lite` -> `cve-lite . --fail-on medium --ratchet` + committed `.cve-lite/baseline.json` pinning exactly those 3 dev findings (keyed name+version+advisory, so a bump re-triggers); the gate now fails on any NEW medium+ vuln (dev or prod). Reconciled the `ci.yml` cve-lite comment; gitignored cve-lite report artifacts; prettier-ignored the generated baseline. Folded Dependabot PR #59's `fast-uri` 3.1.3 -> 3.1.4 fixture-lock bump into #66 (close #59). @hono/node-server stays a tracked Dependabot alert (dev-only, cross-major, parent caps at 1.x). NO `packages/angular-typechecker/**` change, NO version bump. Verified: `npm run cve-lite` exit 0 ("no new findings above baseline"); `--prod-only --fail-on medium` exit 0 (shipped surface clean); nx build + test(592) + lint + format:check + `npm ci --dry-run` all green | 2026-07-25 | 7cac19b | Verified | [260725-5yo-resolve-all-high-cve-lite-vulnerabilitie](./quick/260725-5yo-resolve-all-high-cve-lite-vulnerabilitie/) |
 
 ## Deferred Items
 
@@ -280,10 +281,19 @@ The `audit-open` pre-close scan flagged 22 items; all were acknowledged as false
 - **`24-ACV-01-UAT.md` (`executed-fail`) and `24-HUMAN-UAT.md`**: both refer to the ORIGINAL pre-24-06 ACV-01 execution, superseded by the 2026-07-15 re-run (quick task 260715-ig5, commit 895ee43) which PASSED against post-24-06 HEAD on both real-clone gates. The stale UAT file status is cosmetic.
 - **`24-VERIFICATION.md` (`human_needed`)**: the single flagged human item (re-run the ACV-01 real-clone gate post-24-06) was RESOLVED by the same 260715-ig5 re-run, one session before this close. The frontmatter `status: human_needed` was never re-flipped -- a cosmetic bookkeeping gap, not open work. Already recorded as a `bookkeeping` (non-blocking) item in `v0.2.1-MILESTONE-AUDIT.md`.
 
+### Acknowledged at v0.2.4 milestone close (2026-07-23)
+
+The `audit-open` pre-close scan flagged 2 items; both handled before close:
+
+| Category | Item | Status | Resolution |
+|----------|------|--------|------------|
+| quick_task | `260714-nub` (optional CI actions/cache Verdaccio-uplink optimization) | blocked | ACKNOWLEDGED-DEFERRED (override_closeout). Optional workspace-wide CI cache; authored + code-reviewed but never applied (throwaway probe surfaced an unrelated e2e regression, since fixed). Predates v0.2.3; already tracked in the ROADMAP Backlog + STATE Quick Tasks table. Carried forward, not open milestone work. |
+| uat_gap | Phase 35 `35-UAT.md` (`issues`) | resolved | The stale `issues` status captured the file-less SARIF upload gap G-35-01, which was CLOSED in plan 35-04 (region-less whole-file fallback location) and PROOF-01/02 verified in real CI (run 29875173270). Flipped `35-UAT.md` to `complete` (3/3 passed) with the resolution evidence before close -- not open work. |
+
 ## Session Continuity
 
-**Stopped at:** Quick task 260722-g6y complete (RED-SARIF proof separated onto its own Code Scanning tool). Rework pushed to PR #55 branch; PR #55 is now CLEAN/MERGEABLE (0 unresolved threads). MERGE + the human-only `main` ruleset toggle (UAT item 2) + the release cut are the remaining steps -- all gated on explicit user go.
-**Resume file:** .planning/quick/260722-g6y-separate-red-sarif-proof-into-its-own-co/260722-g6y-UAT.md
+**Stopped at:** Milestone v0.2.4 CLOSED + archived (audit PASSED 11/11; phases 33-36 -> `.planning/milestones/v0.2.4-phases/`; ROADMAP collapsed; REQUIREMENTS archived + removed). Phase 36 completed + learnings extracted + global bridge. All landing via the `chore/v0.2.4-phase36-completion` planning PR into `main` (main is PR-only). Remaining wrap-up: the AGENTS.md GATE-02 runbook reconciliation + spike-012 docs (same PR), then the human-gated `angular-typechecker@0.2.4` release cut and the low-urgency fallow file-less SARIF fix.
+**Resume file:** (none -- work is on branch `chore/v0.2.4-phase36-completion`)
 
 Last session: 2026-07-23
 from v0.2.2's Phase 29. All 13 v0.2.3 requirements (FMT/REP/OBS/CLIX/VER/ADD/DOC) mapped to exactly one
@@ -321,9 +331,7 @@ Completed the two teed-up autonomous tasks:
 
 ## Operator Next Steps
 
-- **DONE 2026-07-21 -- backfilled the two forgotten milestone closes** -- v0.2.1 and v0.2.2 were structurally archived during the OpenGSD migration but `/gsd-complete-milestone` was never run for them. Added the missing `RETROSPECTIVE.md` v0.2.1 + v0.2.2 sections (chronological, before v0.2.3) and the PROJECT.md `### Validated (v0.2.2)` block. RETROSPECTIVE now runs v0.2.0 -> v0.2.1 -> v0.2.2 -> v0.2.3 with no gap; PROJECT.md Validated covers every shipped milestone.
-- **Start v0.2.4** -- `/gsd-new-milestone v0.2.4` "Enhanced SARIF reporting for GitHub Code Scanning" (5-area scope, spike-locked). Do it on a kickoff branch off `main` (PR-only) -> PR; name the branch yourself (don't trust GSD auto-derivation). SKIP the 4-researcher round (the empirical spike + prior SARIF research answered the unknowns). `.planning/HANDOFF.json` + `.planning/.continue-here.md` hold the full v0.2.4 scope + anti-patterns -- read them first. `.planning/phases/` is now empty, so `new-milestone`'s `phases.clear` is safe.
-- One non-blocking human action pending: enable the GitHub "Require code scanning results" ruleset (v0.2.4 area 4).
+- Start the next milestone with /gsd-new-milestone
 
 ## Performance Metrics
 

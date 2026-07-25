@@ -352,19 +352,28 @@ jobs:
           FALLOW_AUDIT_BASE: origin/main
 
   # Dependency vulnerability gate (quick-260720-wso). Runs OWASP cve-lite-cli's
-  # lockfile scan against OSV and FAILS the PR on any high-or-critical advisory
-  # (`npm run cve-lite` = `cve-lite . --fail-on high`). Like the `code-scanning`
-  # job below (a required merge gate too since GATE-01 / Phase 36), this IS a
-  # required merge gate (listed in the `ci` aggregate's needs) at the maintainer's
-  # request. Accepted tradeoffs on the
+  # lockfile scan against OSV and FAILS the PR on any medium-or-above advisory that
+  # is NEW relative to the committed `.cve-lite/baseline.json` ratchet baseline
+  # (`npm run cve-lite` = `cve-lite . --fail-on medium --ratchet`). Like the
+  # `code-scanning` job below (a required merge gate too since GATE-01 / Phase 36),
+  # this IS a required merge gate (listed in the `ci` aggregate's needs) at the
+  # maintainer's request. Accepted tradeoffs on the
   # PR-only, empty-bypass `main`: (1) an OSV.dev outage or a newly-published
-  # high/critical advisory with no available fix can block the merge button --
+  # medium/high/critical advisory with no available fix can block the merge button --
   # recover by toggling the branch ruleset enforcement (AGENTS.md "Lockout
   # recovery"). (2) cve-lite-cli is pinned EXACTLY as a devDependency so a future
   # upstream publish cannot silently enter CI; updates arrive via reviewed
-  # dependency PRs. --fail-on high (not the default `critical`) so the high-severity
-  # transitive-dep class that motivated this gate (e.g. brace-expansion ReDoS) is
-  # caught; moderate/low stay non-blocking and are covered by Dependabot's own PRs.
+  # dependency PRs. --fail-on medium (not the default `critical`) tightens the bar so
+  # the transitive-dep class that motivated this gate (e.g. brace-expansion ReDoS) is
+  # caught. --ratchet pins the current known findings in `.cve-lite/baseline.json`
+  # (committed): a small set of DEV-ONLY transitives whose only fix crosses a major
+  # line and would break the dev toolchain (brace-expansion 1.1.16/2.1.2 under
+  # eslint/verdaccio/glob's pinned minimatch; @hono/node-server under verdaccio) --
+  # none ship in the published plugin. The gate fails on any finding ABOVE that
+  # baseline (any NEW dev OR prod vuln, at medium+), and a version bump of a baselined
+  # package re-triggers it (baseline is keyed on name+version+advisory). Regenerate
+  # the baseline with `npm run cve-lite` after clearing a fixable finding; low/none
+  # stay non-blocking and are covered by Dependabot's own PRs.
   # Path-gated (D-08) with the SAME NEGATIVE if: form as test/e2e/fallow -- skips a
   # planning/docs-only PR yet stays in the `act -n` plan under the empty filter.
   cve-lite:
@@ -616,13 +625,16 @@ jobs:
         run: |
           echo "::error::angular-typechecker produced no SARIF on a non-fork PR. A reporter regression (empty/invalid SARIF) would pass this required gate green AND leave the Code Scanning ruleset with no analysis on the PR ref. Failing loud."
           exit 1
-      # fallow is ALSO a required tool of the GATE-02 ruleset, so a missing fallow analysis
-      # would deadlock the ref too. fallow's `--format sarif -o` always writes a valid file,
-      # so this is a cheap backstop against a fallow infra break, not an expected failure.
+      # fallow is NOT a required tool of the GATE-02 ruleset (only angular-typechecker +
+      # CodeQL are -- see AGENTS.md; fallow's findings gate via the separate `fallow` job),
+      # so a missing fallow analysis does NOT deadlock the ref. fallow's `--format sarif -o`
+      # always writes a valid file, so this is a cheap backstop against a fallow infra break
+      # (a silently-missing analysis would hide fallow's Code Scanning alerts), not a gate
+      # requirement and not an expected failure.
       - name: Assert fallow SARIF was produced (non-fork PR)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false && steps.fallow-sarif.outputs.produced == 'false' }}
         run: |
-          echo "::error::fallow produced no SARIF on a non-fork PR. The 'Require code scanning results' ruleset lists fallow as a required tool, so a missing fallow analysis would deadlock the PR ref. Failing loud."
+          echo "::error::fallow produced no SARIF on a non-fork PR. fallow's --format sarif -o normally always writes a file, so this signals a fallow infra break; a silently-missing analysis hides fallow's Code Scanning alerts. (fallow is not a required Code Scanning gate tool, so this does not deadlock the ruleset.) Failing loud."
           exit 1
       # No `category:` here on purpose -- the merged file is now multi-run (one run
       # per executor-using project), each carrying a distinct automationDetails.id
@@ -668,8 +680,9 @@ jobs:
   # per-project `angular-typecheck/<project>` dogfood ids and the `fallow/<i>` ids.
   #
   # This proof tool MUST NOT join the "Require code scanning results" required-tool list
-  # (see AGENTS.md) -- its RED is intentional. The required tools stay `angular-typechecker`
-  # + `fallow`, and this job's own check is not a required check, so it cannot block merge.
+  # (see AGENTS.md) -- its RED is intentional. The required Code Scanning tools are
+  # `angular-typechecker` + CodeQL (fallow is NOT required -- its findings gate via the
+  # `fallow` job), and this job's own check is not a required check, so it cannot block merge.
   #
   # After a PASSING assert the script dismisses exactly those alerts with
   # `dismissed_reason: used in tests` (D-01), so the proof is self-healing: a later PR

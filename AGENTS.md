@@ -244,20 +244,48 @@ permanently weaken the PR-only guarantee).
 
 The agent NEVER flips the `main` "Require code scanning results" ruleset (or any
 `main` ruleset) via `gh api` or any automated call. Enabling this second hard gate is
-a human maintainer action performed in the GitHub UI AFTER this phase's PR merges --
-GitHub SARIF ingestion and ruleset evaluation are provable only on GitHub
-(real-CI-only), and flipping a `main` protection the owner cannot bypass is exactly
-the class of irreversible control this repo keeps human-only. The steps below are the
-runbook the maintainer follows; run them in this fixed order and do NOT skip Evaluate.
+a human maintainer action performed in the GitHub UI -- GitHub SARIF ingestion and
+ruleset evaluation are provable only on GitHub (real-CI-only), and flipping a `main`
+protection the owner cannot bypass is exactly the class of irreversible control this
+repo keeps human-only.
 
-1. **Add the rule.** Settings -> Rules -> Rulesets -> the `main` ruleset -> add
-   "Require code scanning results". Under "Required tools and alert thresholds", "Add
-   tool" for BOTH `angular-typechecker` AND `fallow`. Set each tool's alert threshold
-   conservatively so this is an ANALYSIS-EXISTENCE gate, not a second findings gate --
-   findings already gate via `ci`'s `test` (`nx run-many -t typecheck`) and the
-   `fallow` job. The load-bearing block is the MISSING-analysis block, which fires
-   whenever a required tool's analysis is missing / not-configured / in-progress,
-   regardless of the alert threshold.
+STATUS: this gate is ACTIVE on `main` (enabled 2026-07-22) with `angular-typechecker`
+and CodeQL as the required Code Scanning tools, proven clean on both a `.planning/`-only
+probe PR and a code probe PR. The steps below are the runbook that was followed and
+remain the reference for re-enabling or auditing it; run them in this fixed order and do
+NOT skip the orphan-cleanup prerequisite or Evaluate.
+
+0. **PREREQUISITE -- delete orphaned Code Scanning configs FIRST (load-bearing; this was
+   the ONLY real blocker).** The gate matches each required tool by its
+   `(analysis_key, category, environment)` tuple, NOT by tool name. A category /
+   analysis-key RENAME (this repo renamed the dogfood category `angular-typechecker` ->
+   `angular-typecheck` in an earlier phase) leaves the OLD config ORPHANED on `main`: a
+   tuple the gate still expects but that no future upload can ever reproduce. A required
+   tool with an orphaned config blocks EVERY PR permanently with "1 configuration not
+   found" -- the hardest-to-diagnose failure here (the red herrings single-run-vs-multi-run
+   SARIF, head-ref-vs-merge-ref upload, and a supposed GitHub product limitation were ALL
+   pursued and disproven before the orphan surfaced). KEY DISTINCTION: "configuration not
+   found" is TRANSIENT for a LIVE config (it clears as soon as CI uploads a matching
+   analysis) but PERMANENT for an ORPHANED one. Before enabling the rule, list the tool's
+   Code Scanning analyses on `main` and DELETE any orphaned ones via the Code Scanning API
+   (`DELETE /repos/{owner}/{repo}/code-scanning/analyses/{id}`); references: community
+   discussion #153284, github/codeql #18506, microsoft/hve-core #248. When deleting a SET
+   of analyses, follow each response's `next_analysis_url` for ordering; the LAST analysis
+   in a set returns HTTP 400 unless you pass `?confirm_delete=true`. NO `ci.yml` change is
+   needed -- the EXISTING multi-run + default (merge-ref) SARIF upload already satisfies the
+   gate once the orphan is gone.
+1. **Add the rule -- `angular-typechecker` + CodeQL ONLY.** Settings -> Rules -> Rulesets
+   -> the `main` ruleset -> add "Require code scanning results". Under "Required tools and
+   alert thresholds", "Add tool" for `angular-typechecker` (CodeQL is already required).
+   Do NOT add `fallow` -- its findings already gate via the `ci` `fallow` job, so requiring
+   it as a Code Scanning tool is redundant (and it has a separate file-less-upload bug that
+   can intermittently skip its analysis). NEVER add `angular-typechecker-red-proof`: the
+   proof tool reports DELIBERATE errors, so requiring it would permanently block every PR.
+   Set the alert threshold conservatively so this is an ANALYSIS-EXISTENCE gate, not a
+   second findings gate -- findings already gate via `ci`'s `test` (`nx run-many -t
+typecheck`). The load-bearing block is the MISSING-analysis block, which fires whenever
+   a required tool's analysis is missing / not-configured / in-progress, regardless of the
+   alert threshold.
 2. **Evaluate mode FIRST.** Enable the rule in Evaluate mode before Active -- Evaluate
    records would-be blocks WITHOUT blocking (GitHub's recommended de-risking). Caveat
    to confirm in the live UI: for repo-level rulesets, Evaluate availability may depend
@@ -265,9 +293,10 @@ runbook the maintainer follows; run them in this fixed order and do NOT skip Eva
    ruleset and lean on the `enforcement: disabled` recovery in step 5.
 3. **Probe both PR kinds.** Push a deliberate `.planning/`-only PR AND a code-touching
    PR. In the ruleset's evaluation view (the "Ruleset Insights" view -- confirm the
-   exact label live), confirm NEITHER would be blocked: the planning-only PR now
-   produces an angular-typechecker analysis (the dogfood job is un-path-gated) plus
-   fallow; the code PR produces both plus the proof.
+   exact label live), confirm NEITHER would be blocked: the planning-only PR produces an
+   `angular-typechecker` analysis (the dogfood job is un-path-gated), and the code PR
+   produces that plus the proof tool's analysis. (This was proven clean on probe PRs #64
+   planning-only and #65 code.)
 4. **Flip to Active** only after step 3 confirms no would-be block.
 5. **Recovery.** If Active wedges the empty-bypass `main` merge button, toggle the
    ruleset `enforcement` to `disabled`, merge the fix, then re-enable -- exactly as

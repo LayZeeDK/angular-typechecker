@@ -1,25 +1,10 @@
 ---
-status: testing
+status: complete
 phase: 36-code-scanning-gating-scanned-files-documentation
 source: [36-VERIFICATION.md]
 started: 2026-07-22T05:59:08Z
-updated: 2026-07-22T07:54:22Z
+updated: 2026-07-23T17:20:00Z
 ---
-
-## Current Test
-
-number: 2
-name: GATE-02 human-only ruleset enablement (D-04) -- run the AGENTS.md runbook on `main`
-expected: |
-  A maintainer follows the AGENTS.md "Enabling the Require code scanning
-  results ruleset (human-run, real-CI-only)" runbook end-to-end AFTER this
-  phase's PR (#55) merges: add the rule for BOTH angular-typechecker AND fallow
-  -> Evaluate mode first -> probe a `.planning/`-only PR AND a code PR ->
-  confirm Ruleset Insights shows neither would be blocked -> flip to Active.
-  The `enforcement: disabled` recovery path is understood and the fork-PR
-  deadlock is accepted as documented. Human-only, real-CI-only -- the agent
-  never performs this toggle.
-awaiting: human maintainer (post-merge)
 
 ## Tests
 
@@ -47,20 +32,41 @@ evidence: |
 ### 2. GATE-02 human-only ruleset enablement (D-04) -- run the AGENTS.md runbook on `main`
 
 expected: A maintainer follows the AGENTS.md "Enabling the Require code scanning results ruleset (human-run, real-CI-only)" runbook end-to-end AFTER this phase's PR merges: add the rule for BOTH angular-typechecker AND fallow -> Evaluate mode first -> probe a `.planning/`-only PR AND a code PR -> confirm Ruleset Insights shows neither would be blocked -> flip to Active. The `enforcement: disabled` recovery path is understood and the fork-PR deadlock is accepted as documented. Human-only, real-CI-only -- the agent never performs this toggle.
-result: [pending]
-note: |
-  Blocked on a human maintainer, by design (D-04 + the repo's human-only posture
-  for `main` protections). The agent NEVER flips the `main` ruleset -- a misstep
-  on the PR-only, empty-bypass `main` could lock out all merges. This step is
-  genuinely post-merge: it runs AFTER PR #55 merges. The AGENTS.md runbook is
-  shipped and code-reviewed for accuracy; execution is the maintainer's action.
+result: [passed]
+evidence: |
+  Executed by the human maintainer AFTER PR #55 merged (merge commit 966a7c6),
+  and proven live on `main`. The "Require code scanning results" ruleset is now
+  ACTIVE on `main` with `angular-typechecker` + CodeQL as required Code Scanning
+  tools (user-authorized this session), and was proven CLEAN on BOTH probe PR
+  kinds the runbook requires:
+  - Planning-only probe PR #64: the un-path-gated `code-scanning` dogfood job
+    produced an `angular-typechecker` analysis, so the gate did NOT deadlock a
+    `.planning/`-only PR -- check = success ("No new alerts").
+  - Code probe PR #65: produced the `angular-typechecker` analysis + the proof
+    tool -- check = success ("No new alerts").
+  DEVIATION vs the original expected flow (recorded honestly, non-blocking):
+  (a) The true blocker was NOT the runbook mechanics but an ORPHANED
+      `angular-typechecker`-category Code Scanning config left on `main` by the
+      Phase-34 category rename to `angular-typecheck`; a required tool whose
+      analysis can never be reproduced yields a PERMANENT "configuration not
+      found" block. Resolved by deleting the 4 orphaned analyses via the Code
+      Scanning API (spike 012). No `ci.yml` change was needed -- the existing
+      multi-run + default merge-ref upload already satisfies the gate.
+  (b) `fallow` was intentionally NOT added to the required tool list (findings
+      already gate via the `ci` `fallow` job), and `angular-typechecker-red-proof`
+      is deliberately kept OFF the required list. Both are documented decisions,
+      not gaps.
+  The `enforcement: disabled` recovery path and the fork-PR deadlock limitation
+  are documented in AGENTS.md and understood. See HANDOFF.json + auto-memory
+  `gate-02-require-code-scanning-results-blocks-third-party-sarif` for the full
+  root-cause narrative. (Task-list #12 marks this human toggle complete.)
 
 ## Summary
 
 total: 2
-passed: 1
+passed: 2
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 

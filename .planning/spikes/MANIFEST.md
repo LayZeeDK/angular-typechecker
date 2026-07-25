@@ -221,3 +221,44 @@ the real Angular 22 `bluehalo/ngx-leaflet` clone (`@angular/cli` 22.0.0 / `@angu
 minimal builder (Plan 21-01) STAYS as the ACB-01 deliverable; Waves 2-3 (ENG-01 + the ACB
 in-repo guard suite) proceed after the human GO/NO-GO checkpoint. No fallback to a hand-written
 `@angular-devkit/architect` builder was needed (D-04).
+
+---
+
+## Idea 5 -- v0.2.4 GATE-02 Code Scanning merge gate (Phase 36)
+
+Can GitHub's "Require code scanning results" ruleset require an `angular-typechecker` Code
+Scanning analysis on the PR-only, empty-bypass `main` branch WITHOUT permanently deadlocking
+every PR, given the dogfood `code-scanning` job's existing (multi-run, no-`category`-input,
+default merge-ref) SARIF upload? Every prior attempt failed identically with "1 configuration
+not found", and an earlier session wrongly concluded the gate was unviable. This is a DIAGNOSTIC
+spike -- find the real cause of the block, then prove the gate works.
+
+### Requirements emerging from this idea
+
+- **GATE-02 = RESOLVED (Spike 012):** the gate WORKS with the EXISTING setup; the ONLY blocker
+  was an ORPHANED `angular-typechecker` config on `main` from the Phase-34 category rename
+  (`angular-typechecker` -> `angular-typecheck`). Deleting the 4 orphaned analyses via the Code
+  Scanning API fixed it -- NO `ci.yml` change.
+- **The gate matches `(analysis_key, category, environment)` tuples, not tool name (Spike 012):**
+  a category rename orphans the old tuple; "configuration not found" is TRANSIENT for a live
+  config but PERMANENT for an orphaned one.
+- **Required tools = `angular-typechecker` + CodeQL ONLY (Spike 012):** `fallow` (findings gate
+  via the `ci` `fallow` job) and `angular-typechecker-red-proof` (reports deliberate errors) are
+  kept OFF the required list. Enablement is human-only, real-CI-only; runbook in `AGENTS.md`.
+- **Red herrings, recorded:** single-run-vs-multi-run SARIF, head-ref-vs-merge-ref upload, and a
+  supposed GitHub product limitation (roadmap #847, actually CLOSED/GA) were all pursued and
+  disproven. An experimental single-run change to `main` (`41ac49a`) was reverted (`44e4306`).
+
+### Spikes (Idea 5)
+
+| # | Gate(s) | Type | Validates | Verdict | Tags |
+|---|---------|------|-----------|---------|------|
+| 012 | GATE-02 | diagnostic | the angular-typechecker "Require code scanning results" merge gate works on the PR-only empty-bypass `main` with the existing multi-run/default-merge-ref upload; the ONLY blocker was an ORPHANED config from a category rename (delete orphaned analyses via the Code Scanning API, no `ci.yml` change); proven clean on probe PRs #64 (planning-only) + #65 (code) | **RESOLVED** | code-scanning, sarif, ruleset, merge-gate, orphaned-config, category-rename, gate, gate-02, ci |
+
+### Idea-5 verdict (Phase-36 GATE-02)
+
+**RESOLVED -- the merge gate is real and ACTIVE on `main`.** The angular-typechecker Code Scanning
+result check is a required member of the `main` "Require code scanning results" ruleset
+(`18229122`, alongside CodeQL), proven not to deadlock either a planning-only PR (#64) or a code
+PR (#65). The fix was operational (delete orphaned Code Scanning analyses), not a workflow change;
+the SARIF shape and upload mechanics were never the problem. Full write-up: `012-*/README.md`.
