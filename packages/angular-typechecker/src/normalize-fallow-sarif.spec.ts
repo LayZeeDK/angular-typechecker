@@ -13,9 +13,11 @@ import { findWorkspaceRoot, validateSarif } from '@workspace/test-util';
 // `locationFromSarifResult: expected at least one location` -- so one file-less
 // clone group cost every fallow alert twice in live CI (runs 30004691193,
 // 29772473095). This proves the REAL tools/ci/normalize-fallow-sarif.mjs anchors
-// every location-deficient result at `.fallowrc.jsonc` (region-less) WITHOUT
-// dropping it or clobbering an already-located result, and keeps the frozen
-// `fallow/<index>` id scheme that pins the Code Scanning category to `fallow`.
+// every location-deficient `locations` ENTRY at `.fallowrc.jsonc` (region-less)
+// WITHOUT dropping a result or clobbering an already-located entry, fingerprints
+// every result it anchors so co-located clone groups cannot collapse into a single
+// alert, and keeps the frozen `fallow/<index>` id scheme that pins the Code
+// Scanning category to `fallow`.
 //
 // It drives the real script as a SUBPROCESS (execFileSync) against a hermetic
 // mkdtempSync temp dir holding a fixture `fallow.sarif` -- the script's only input
@@ -129,6 +131,8 @@ function createFixture(): SarifDoc {
       },
       // Run 2 -- the two UNOBSERVED deficiency shapes GitHub would also reject:
       // an empty `locations` array, and an entry lacking `physicalLocation`.
+      // Their ruleId AND (post-anchor) location are identical, so they are also
+      // the pair that proves the synthesized fingerprints keep them distinct.
       {
         tool: { driver: { name: 'fallow', version: '3.9.1' } },
         results: [
@@ -143,6 +147,36 @@ function createFixture(): SarifDoc {
             level: 'warning',
             message: { text: 'Location without physicalLocation' },
             locations: [{}],
+          },
+        ],
+      },
+      // Run 3 -- a MIXED array. GitHub reads the alert location from
+      // `locations[0]`, so a first entry lacking a uri still kills the WHOLE
+      // upload even though a later entry is usable. The usable entry must
+      // survive byte-unchanged beside the anchored one. It also carries a
+      // fallow-supplied fingerprint, which the `??=` must NOT overwrite.
+      {
+        tool: { driver: { name: 'fallow', version: '3.9.1' } },
+        results: [
+          {
+            ruleId: 'fallow/code-duplication',
+            level: 'warning',
+            message: { text: 'Mixed locations array' },
+            partialFingerprints: { fallowFingerprint: 'def456' },
+            locations: [
+              {},
+              {
+                physicalLocation: {
+                  artifactLocation: { uri: 'tools/ci/merge-sarif.mjs' },
+                  region: {
+                    startLine: 20,
+                    startColumn: 1,
+                    endLine: 20,
+                    endColumn: 9,
+                  },
+                },
+              },
+            ],
           },
         ],
       },
@@ -175,10 +209,10 @@ describe('normalize-fallow-sarif.mjs anchors file-less fallow results', () => {
       expect(dupesResults).toHaveLength(1);
       expect(dupesResults[0].ruleId).toBe('fallow/code-duplication');
       expect(
-        dupesResults[0].locations?.[0].physicalLocation?.artifactLocation?.uri,
+        dupesResults[0].locations?.[0]?.physicalLocation?.artifactLocation?.uri,
       ).toBe('.fallowrc.jsonc');
       expect(
-        dupesResults[0].locations?.[0].physicalLocation,
+        dupesResults[0].locations?.[0]?.physicalLocation,
       ).not.toHaveProperty('region');
 
       // 2. An already-located result is NOT clobbered -- its uri, region, and
@@ -187,16 +221,65 @@ describe('normalize-fallow-sarif.mjs anchors file-less fallow results', () => {
         createFixture().runs[0].results[0],
       );
 
-      // 3. THE assertion that guards the bug: every result in every run now has a
-      // physicalLocation.artifactLocation.uri, the one condition GitHub's
-      // `locationFromSarifResult` enforces. Covers run 2's two unobserved shapes.
+      // 3. THE assertion that guards the bug: EVERY entry of EVERY result now
+      // has a physicalLocation.artifactLocation.uri, the one condition GitHub's
+      // `locationFromSarifResult` enforces. Per ENTRY, not just `locations[0]`,
+      // because a MIXED array (run 3) whose FIRST entry is deficient is what
+      // GitHub actually reads -- and `locations[0]` is asserted explicitly so a
+      // regression to a `.some()`-style per-result predicate fails here.
+      // Combined with the never-drop count below this covers run 2's two
+      // unobserved shapes and run 3's mixed one.
+      expect(output.runs.flatMap((run) => run.results)).toHaveLength(5);
+
       for (const run of output.runs) {
         for (const result of run.results) {
           expect(
-            result.locations?.[0].physicalLocation?.artifactLocation?.uri,
+            result.locations?.[0]?.physicalLocation?.artifactLocation?.uri,
           ).toBeTruthy();
+
+          for (const location of result.locations ?? []) {
+            expect(
+              location.physicalLocation?.artifactLocation?.uri,
+            ).toBeTruthy();
+          }
         }
       }
+
+      // 3b. The mixed array keeps BOTH entries: the deficient one is anchored in
+      // place and the usable one survives byte-unchanged (never clobbered, never
+      // dropped, never reordered).
+      const mixedResult = output.runs[3].results[0];
+
+      expect(mixedResult.locations).toEqual([
+        { physicalLocation: { artifactLocation: { uri: '.fallowrc.jsonc' } } },
+        createFixture().runs[3].results[0].locations?.[1],
+      ]);
+
+      // 3c. Every anchored result ends up WITH a fingerprint, and co-located
+      // ones are DISTINCT. Without this, run 2's two results share a ruleId AND
+      // (post-anchor) the exact same region-less location, so GitHub's
+      // location-derived fallback fingerprint -- which ignores `message.text` --
+      // would collapse them into ONE alert: a dropped finding wearing a
+      // disguise, which is what the never-drop rule forbids.
+      const anchoredFingerprints = [
+        ...output.runs[1].results,
+        ...output.runs[2].results,
+        mixedResult,
+      ].map((result) => JSON.stringify(result.partialFingerprints));
+
+      for (const fingerprint of anchoredFingerprints) {
+        expect(fingerprint).toBeTruthy();
+      }
+
+      expect(new Set(anchoredFingerprints).size).toBe(
+        anchoredFingerprints.length,
+      );
+
+      // 3d. `??=`, not `=`: a fingerprint fallow already supplied on a
+      // location-deficient result survives untouched.
+      expect(mixedResult.partialFingerprints).toEqual({
+        fallowFingerprint: 'def456',
+      });
 
       // 4. Orphan-tuple guard: the id scheme is FROZEN at `fallow/<index>` --
       // including overwriting fallow's own `fallow/audit/dupes`, which would
@@ -206,6 +289,7 @@ describe('normalize-fallow-sarif.mjs anchors file-less fallow results', () => {
         'fallow/0',
         'fallow/1',
         'fallow/2',
+        'fallow/3',
       ]);
 
       // 5. Envelope regression guard ONLY. validateSarif CANNOT detect this bug --
