@@ -229,9 +229,10 @@ reaches `main` only through a PR that satisfies the required status checks (`ci`
 CodeQL `Analyze (actions)` / `Analyze (javascript-typescript)` checks -- produced by
 whichever CodeQL setup is active: TODAY that is DEFAULT setup; after the item-7 migration
 lands it is the committed `.github/workflows/codeql.yml`, whose `analyze` job `name:`
-RENDERS those two contexts, which makes that job name BYTE-LOAD-BEARING -- renaming it
-makes the required checks never report and wedges `main` for every PR, including the one
-trying to fix it). Do NOT attempt a direct `git push origin main`; it will be rejected.
+RENDERS those two contexts. That job name is BYTE-LOAD-BEARING from the moment the file
+exists -- ALREADY, not only after the migration lands -- because renaming it makes the
+required checks never report and wedges `main` for every PR, including the one trying to
+fix it). Do NOT attempt a direct `git push origin main`; it will be rejected.
 This is why releases run through the Release PR above rather than a local cut pushed to
 `main`.
 
@@ -371,8 +372,13 @@ typecheck`). The load-bearing block is the MISSING-analysis block, which fires w
    belongs in the committed `.github/workflows/codeql.yml` instead. THE MIGRATION ITSELF IS
    STILL PENDING (see STATUS). This item is the SINGLE place the ordering is stated -- step
    0 and item 6 point here. Two ORDERING constraints bite, NOW and on any future re-run:
-   (a) the maintainer disables default setup BEFORE the advanced workflow runs on the same
-   ref (the categories are deliberately identical, so concurrent uploads collide); and
+   (a) the maintainer disables default setup BEFORE the advanced workflow FIRST RUNS -- and
+   because `codeql.yml`'s `pull_request:` trigger is UNFILTERED, that first run happens when
+   the branch is PUSHED and a PR opened, NOT at merge. Both setups would then upload the
+   deliberately-identical category on the same `refs/pull/<n>/merge`, and collide. So the
+   disable gates the PUSH. (GitHub's documented switch procedure disables CodeQL before the
+   workflow is even committed; here it is already committed, which is why the gate moves to
+   the push.) And
    (b) the orphaned default-setup analyses are deleted only AFTER a live advanced-setup
    analysis exists on `main`. Delete them earlier -- including now, while default setup is
    still the ONLY producer -- and CodeQL becomes "not configured", which is step 0's

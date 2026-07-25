@@ -1,7 +1,13 @@
 # CodeQL ADVANCED setup (quick task 260725-73m).
 #
-# WHY this file exists at all -- CodeQL used to run here as GitHub's DEFAULT
-# setup, and that permanently deadlocked Dependabot and fork PRs:
+# WHY this file exists at all -- CodeQL runs here as GitHub's DEFAULT setup
+# TODAY (`code-scanning/default-setup` is still `state: configured`), and that
+# permanently deadlocks Dependabot PRs. This workflow is the committed
+# replacement; the migration is PENDING until a maintainer disables default
+# setup. See AGENTS.md item 7 for the ordering -- the disable must happen BEFORE
+# this file is pushed, because the unfiltered `pull_request:` trigger below
+# makes it run on the PR, not at merge, and both setups would upload the same
+# category on the same ref. The deadlock it removes:
 #   - Code scanning "always allows the uploading of results when the
 #     `pull_request` event triggers the action run" (GitHub Docs, code scanning
 #     troubleshooting). Default setup runs as event `dynamic`, NOT
@@ -14,8 +20,10 @@
 #     `Analyze (actions)` + `Analyze (javascript-typescript)`; Dependabot PRs
 #     #46/#59 received NEITHER. Both of those checks are REQUIRED by the `main`
 #     ruleset, so those PRs could never merge (#46 sat BLOCKED with `ci` green).
-#   - This workflow triggers on `pull_request`, which is inside the exemption, so
-#     the required `Analyze (*)` checks finally report on those PRs.
+#   - This workflow triggers on `pull_request`. That event IS scheduled on a
+#     Dependabot ref (ci.yml proves it) and is inside the upload exemption, so
+#     the required `Analyze (*)` checks are EXPECTED to report on those PRs once
+#     the migration lands. Not yet observed -- this workflow has never run.
 # Corroborated in the opposite direction in this repo: ci.yml's `code-scanning`
 # job runs on `pull_request` and DID upload its SARIF on Dependabot PR #46
 # despite the read-only token. That is the TOKEN half only -- #46 is NOT a fork
