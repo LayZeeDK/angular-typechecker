@@ -2,6 +2,53 @@
 
 All notable changes to **angular-typechecker** are documented in this file.
 
+## 0.2.4
+
+**Richer GitHub Code Scanning alerts.** The SARIF output (`--format sarif`) now
+describes every diagnostic it reports: each alert resolves to a rule carrying a
+description, a severity, a documentation link, help text, and a category tag. Alerts
+arrive readable and filterable in GitHub Code Scanning instead of showing a bare
+diagnostic code. Nothing changes for the human-readable or JSON output, and the
+pass/fail exit code is identical in every format.
+
+### Features
+
+- Every alert has a rule description. Previously only Angular's extended (NG8xxx)
+  checks were described; a TypeScript or template-type-check diagnostic reached
+  GitHub as a bare code with an empty rule panel. Now every distinct diagnostic in
+  the run gets its own rule entry with a short description, a severity, a link to
+  the relevant documentation, and help text explaining what to do about it.
+- Filter alerts by the kind of check. Each rule is tagged with the check that
+  produced it -- `typescript`, `template-type-check`, `extended-diagnostics`, or
+  `tool` -- so `tag:template-type-check` narrows the Code Scanning alert list to
+  just the template failures. `severity:` and `rule:` filters work too, because
+  each rule now declares its own level.
+- Only the rules you actually hit. The SARIF log lists exactly the rules the run
+  reported, so a clean run emits an empty rule list rather than a fixed set of
+  Angular rules that never fired.
+
+### Fixes
+
+- Whole-program diagnostics now reach Code Scanning. A diagnostic with no source
+  location -- for example a missing global type, or a `tsconfig` that resolves no
+  files or points at a missing reference -- used to be emitted without a location,
+  which GitHub could not turn into an alert. It is now anchored to the `tsconfig`
+  being checked and appears as a whole-file alert on it, so the alert list matches
+  the exit code.
+
+### Notes
+
+- The "Scanned files" panel on a GitHub alert page stays empty for
+  angular-typechecker. That is a GitHub limitation affecting every third-party
+  SARIF tool -- GitHub fills that panel only from its own CodeQL telemetry, and
+  SARIF has no field a third-party tool can use for it. Alerts, rule descriptions,
+  and file locations all appear normally. See the README for details.
+
+### Compatibility
+
+- Unchanged: Nx 23, Angular 22 (`@angular/compiler-cli` `^22.0.0`), TypeScript
+  `>=6.0.0 <6.1.0`, Node `^22.22.3 || ^24.15.0 || ^26.0.0`. No new dependencies.
+
 ## 0.2.3
 
 **Machine-readable output.** angular-typechecker can now report in two machine
