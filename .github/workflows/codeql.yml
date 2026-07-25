@@ -1,0 +1,126 @@
+# CodeQL ADVANCED setup (quick task 260725-73m).
+#
+# WHY this file exists at all -- CodeQL runs here as GitHub's DEFAULT setup
+# TODAY (`code-scanning/default-setup` is still `state: configured`), and that
+# permanently deadlocks Dependabot PRs. This workflow is the committed
+# replacement; the migration is PENDING until a maintainer disables default
+# setup. See AGENTS.md item 7 for the ordering -- the disable must happen BEFORE
+# this file is pushed, because the unfiltered `pull_request:` trigger below
+# makes it run on the PR, not at merge, and both setups would upload the same
+# category on the same ref. The deadlock it removes:
+#   - Code scanning "always allows the uploading of results when the
+#     `pull_request` event triggers the action run" (GitHub Docs, code scanning
+#     troubleshooting). Default setup runs as event `dynamic`, NOT
+#     `pull_request`, so it falls OUTSIDE that exemption -- and, empirically,
+#     GitHub never schedules it at all on a Dependabot-triggered ref. The EFFECT
+#     is proven (below); the REASON is INFERENCE -- the exemption governs upload
+#     PERMISSION, not run SCHEDULING, so it cannot by itself explain a run that
+#     was never created.
+#   - Proven by controlled comparison: maintainer PRs #64/#65 both received
+#     `Analyze (actions)` + `Analyze (javascript-typescript)`; Dependabot PRs
+#     #46/#59 received NEITHER. Both of those checks are REQUIRED by the `main`
+#     ruleset, so those PRs could never merge (#46 sat BLOCKED with `ci` green).
+#   - This workflow triggers on `pull_request`. That event IS scheduled on a
+#     Dependabot ref (ci.yml proves it) and is inside the upload exemption, so
+#     the required `Analyze (*)` checks are EXPECTED to report on those PRs once
+#     the migration lands. Not yet observed -- this workflow has never run.
+# Corroborated in the opposite direction in this repo: ci.yml's `code-scanning`
+# job runs on `pull_request` and DID upload its SARIF on Dependabot PR #46
+# despite the read-only token. That is the TOKEN half only -- #46 is NOT a fork
+# (`head.repo.fork` is false), and ci.yml still gates both SARIF uploads on
+# `head.repo.fork == false`, so real external fork PRs remain blocked by that
+# gate. See AGENTS.md GATE-02 item 6; do NOT remove those fork gates.
+#
+# Threat model / conventions (mirrors ci.yml + release.yml):
+#   - Least privilege: `contents: read` at the top level; the analyze job
+#     re-grants only what CodeQL needs. Job-level permissions REPLACE the
+#     top-level block, so `contents: read` is restated for actions/checkout.
+#   - SHA-pinned actions: every reference is a full 40-char commit SHA (a
+#     mutable major-version tag repointed to malicious code was the tj-actions
+#     vector). Dependabot keeps them fresh.
+#   - persist-credentials: false so a checkout credential cannot be persisted to
+#     .git/config and leaked via an artifact or log.
+#   - No untrusted-PR metadata is interpolated into any `run:` step (there are no
+#     `run:` steps here at all).
+#
+# NOT a member of ci.yml's `ci` aggregate. This workflow's two checks are
+# required DIRECTLY by the `main` ruleset by their rendered names, deliberately
+# independent of the `ci` roll-up.
+name: codeql
+
+on:
+  # LOAD-BEARING -- the whole point of the migration. Unfiltered, matching
+  # ci.yml's form: `pull_request` is the only event code scanning documents as
+  # always permitted to upload results, so Dependabot/fork runs report.
+  pull_request: {}
+  # `main` must carry the base-ref analyses the ruleset compares a PR against.
+  push:
+    branches: [main]
+  # Weekly re-scan against updated CodeQL queries. Deliberately off the top of
+  # the hour (GitHub's scheduler is busiest there).
+  schedule:
+    - cron: '27 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    # BYTE-LOAD-BEARING JOB NAME. This renders `Analyze (actions)` and
+    # `Analyze (javascript-typescript)` -- byte-identical to the two status
+    # checks the `main` ruleset already requires, which is why the migration
+    # needs NO ruleset edit. `main` has an EMPTY bypass list, so "tidying" this
+    # name would wedge the merge button for every PR, including the one that
+    # tried to fix it. Do NOT rename it.
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      # security-events: write uploads the analysis; actions: read and
+      # packages: read are what the codeql-action needs; contents: read is
+      # restated for the checkout (job-level REPLACES top-level).
+      security-events: write
+      actions: read
+      contents: read
+      packages: read
+    strategy:
+      # fail-fast: false so one red language never masks the other -- and, more
+      # importantly, so a failure in one cell cannot leave the other required
+      # check unreported.
+      fail-fast: false
+      matrix:
+        # EXACTLY the two analyses default setup produced on `main`
+        # (`/language:actions` + `/language:javascript-typescript`, both
+        # build-mode none, both ubuntu-latest). Default setup ALSO listed
+        # `javascript` and `typescript`, but those are ALIASES of
+        # javascript-typescript and produce no separate analysis -- adding them
+        # here would create matrix cells whose check names the ruleset does not
+        # require.
+        include:
+          - { language: actions, build-mode: none }
+          - { language: javascript-typescript, build-mode: none }
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      # This codeql-action SHA is the SAME one ci.yml already pins for
+      # `upload-sarif`, on purpose: ONE codeql-action version repo-wide and no
+      # new supply-chain surface. Dependabot bumps init/, analyze/ and
+      # upload-sarif/ together -- keep all three on one SHA.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+      # The category is deliberately IDENTICAL to default setup's, so the
+      # `(analysis_key, category, environment)` tuple the "Require code scanning
+      # results" gate matches on differs ONLY in analysis_key
+      # (`dynamic/github-code-scanning/codeql:analyze` ->
+      # `.github/workflows/codeql.yml:analyze`). Consequences, both handled by
+      # the human runbook in AGENTS.md: default setup must be disabled BEFORE
+      # this workflow runs on the same ref (identical categories collide), and
+      # the old default-setup analyses on `main` become ORPHANED and must be
+      # deleted via the Code Scanning API once a live analysis from HERE exists.
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          category: '/language:${{matrix.language}}'
