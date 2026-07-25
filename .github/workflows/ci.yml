@@ -603,11 +603,16 @@ jobs:
       #
       # tools/ci/normalize-fallow-sarif.mjs still stamps that per-run
       # `automationDetails.id` (which the no-`category` upload below depends on), AND
-      # it gives every location-deficient result a region-less anchor at
+      # it gives every location-deficient `locations` ENTRY a region-less anchor at
       # `.fallowrc.jsonc` -- because the audit dupes run emits its
       # `fallow/code-duplication` result with `locations` omitted and GitHub otherwise
       # rejects the WHOLE multi-run upload with `locationFromSarifResult: expected at
       # least one location`, losing the sibling runs' properly located findings too.
+      # Per ENTRY, not per result: GitHub reads an alert's location from
+      # `locations[0]`, so a mixed array whose first entry is deficient is rejected
+      # too. It also fingerprints each result it anchors, since every anchored result
+      # shares the same region-less location and would otherwise collapse into one
+      # Code Scanning alert.
       - id: fallow-sarif
         env:
           FALLOW_AUDIT_BASE: origin/main
