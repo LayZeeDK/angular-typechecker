@@ -2,11 +2,14 @@
 #
 # WHY this file exists at all -- CodeQL used to run here as GitHub's DEFAULT
 # setup, and that permanently deadlocked Dependabot and fork PRs:
-#   - Code scanning "always allows uploading of results when the `pull_request`
-#     event triggers the action run" (GitHub Docs, code scanning
+#   - Code scanning "always allows the uploading of results when the
+#     `pull_request` event triggers the action run" (GitHub Docs, code scanning
 #     troubleshooting). Default setup runs as event `dynamic`, NOT
-#     `pull_request`, so it falls OUTSIDE that exemption -- and GitHub never
-#     schedules it at all on a Dependabot-triggered ref.
+#     `pull_request`, so it falls OUTSIDE that exemption -- and, empirically,
+#     GitHub never schedules it at all on a Dependabot-triggered ref. The EFFECT
+#     is proven (below); the REASON is INFERENCE -- the exemption governs upload
+#     PERMISSION, not run SCHEDULING, so it cannot by itself explain a run that
+#     was never created.
 #   - Proven by controlled comparison: maintainer PRs #64/#65 both received
 #     `Analyze (actions)` + `Analyze (javascript-typescript)`; Dependabot PRs
 #     #46/#59 received NEITHER. Both of those checks are REQUIRED by the `main`
@@ -15,7 +18,10 @@
 #     the required `Analyze (*)` checks finally report on those PRs.
 # Corroborated in the opposite direction in this repo: ci.yml's `code-scanning`
 # job runs on `pull_request` and DID upload its SARIF on Dependabot PR #46
-# despite the read-only token.
+# despite the read-only token. That is the TOKEN half only -- #46 is NOT a fork
+# (`head.repo.fork` is false), and ci.yml still gates both SARIF uploads on
+# `head.repo.fork == false`, so real external fork PRs remain blocked by that
+# gate. See AGENTS.md GATE-02 item 6; do NOT remove those fork gates.
 #
 # Threat model / conventions (mirrors ci.yml + release.yml):
 #   - Least privilege: `contents: read` at the top level; the analyze job
