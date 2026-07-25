@@ -226,7 +226,10 @@ the PR lands, and never push a release directly to `main`.
 `main` is governed by an active "Default branch" ruleset with an EMPTY bypass list -- even
 the repository owner cannot push directly to `main`. Every change (code AND `.planning/`)
 reaches `main` only through a PR that satisfies the required status checks (`ci` plus the
-CodeQL `Analyze (actions)` / `Analyze (javascript-typescript)` checks). Do NOT attempt a
+CodeQL `Analyze (actions)` / `Analyze (javascript-typescript)` checks -- both produced by
+`.github/workflows/codeql.yml`, whose `analyze` job `name:` RENDERS those two contexts, so
+that job name is BYTE-LOAD-BEARING: renaming it makes the required checks never report and
+wedges `main` for every PR, including the one trying to fix it). Do NOT attempt a
 direct `git push origin main`; it will be rejected. This is why releases run through the
 Release PR above rather than a local cut pushed to `main`.
 
@@ -243,7 +246,10 @@ permanently weaken the PR-only guarantee).
 ### Enabling the "Require code scanning results" ruleset (human-run, real-CI-only)
 
 The agent NEVER flips the `main` "Require code scanning results" ruleset (or any
-`main` ruleset) via `gh api` or any automated call. Enabling this second hard gate is
+`main` ruleset) via `gh api` or any automated call, and that same prohibition covers
+changing a CodeQL setup -- disabling default setup, or switching default -> advanced, is
+likewise a repository security-configuration change on the gate guarding `main`, so it too
+is human-only. Enabling this second hard gate is
 a human maintainer action performed in the GitHub UI -- GitHub SARIF ingestion and
 ruleset evaluation are provable only on GitHub (real-CI-only), and flipping a `main`
 protection the owner cannot bypass is exactly the class of irreversible control this
@@ -251,16 +257,25 @@ repo keeps human-only.
 
 STATUS: this gate is ACTIVE on `main` (enabled 2026-07-22) with `angular-typechecker`
 and CodeQL as the required Code Scanning tools, proven clean on both a `.planning/`-only
-probe PR and a code probe PR. The steps below are the runbook that was followed and
+probe PR and a code probe PR. As of 2026-07-25 (quick task 260725-73m) CodeQL's required
+analyses come from ADVANCED setup -- the committed `.github/workflows/codeql.yml` -- not
+from default setup; see item 7 for why that must not be reverted. The steps below are the
+runbook that was followed and
 remain the reference for re-enabling or auditing it; run them in this fixed order and do
 NOT skip the orphan-cleanup prerequisite or Evaluate.
 
 0. **PREREQUISITE -- delete orphaned Code Scanning configs FIRST (load-bearing; this was
    the ONLY real blocker).** The gate matches each required tool by its
-   `(analysis_key, category, environment)` tuple, NOT by tool name. A category /
-   analysis-key RENAME (this repo renamed the dogfood category `angular-typechecker` ->
-   `angular-typecheck` in an earlier phase) leaves the OLD config ORPHANED on `main`: a
-   tuple the gate still expects but that no future upload can ever reproduce. A required
+   `(analysis_key, category, environment)` tuple, NOT by tool name. A change to ANY
+   COMPONENT of that tuple -- a category rename, an analysis-key rename, OR a
+   default -> advanced setup migration -- leaves the OLD config ORPHANED on `main`: a
+   tuple the gate still expects but that no future upload can ever reproduce. Two worked
+   instances in this repo: (1) the dogfood CATEGORY rename `angular-typechecker` ->
+   `angular-typecheck` in an earlier phase; (2) the 2026-07-25 CodeQL default -> advanced
+   setup migration (item 7), which changes the ANALYSIS_KEY from
+   `dynamic/github-code-scanning/codeql:analyze` to
+   `.github/workflows/codeql.yml:analyze` while the category stays byte-identical -- and
+   which is the likelier of the two to recur. A required
    tool with an orphaned config blocks EVERY PR permanently with "1 configuration not
    found" -- the hardest-to-diagnose failure here (the red herrings single-run-vs-multi-run
    SARIF, head-ref-vs-merge-ref upload, and a supposed GitHub product limitation were ALL
@@ -276,7 +291,9 @@ NOT skip the orphan-cleanup prerequisite or Evaluate.
    gate once the orphan is gone.
 1. **Add the rule -- `angular-typechecker` + CodeQL ONLY.** Settings -> Rules -> Rulesets
    -> the `main` ruleset -> add "Require code scanning results". Under "Required tools and
-   alert thresholds", "Add tool" for `angular-typechecker` (CodeQL is already required).
+   alert thresholds", "Add tool" for `angular-typechecker` (CodeQL is already required --
+   its analyses now come from the committed advanced-setup workflow
+   `.github/workflows/codeql.yml`, not from default setup).
    Do NOT add `fallow` -- its findings already gate via the `ci` `fallow` job, so requiring
    it as a Code Scanning tool is redundant (and it has a separate file-less-upload bug that
    can intermittently skip its analysis). NEVER add `angular-typechecker-red-proof`: the
@@ -301,11 +318,37 @@ typecheck`). The load-bearing block is the MISSING-analysis block, which fires w
 5. **Recovery.** If Active wedges the empty-bypass `main` merge button, toggle the
    ruleset `enforcement` to `disabled`, merge the fix, then re-enable -- exactly as
    "Lockout recovery" above. NEVER add a standing bypass actor.
-6. **Fork-PR deadlock (accepted limitation).** A fork PR gets a read-only token, so the
-   upload steps skip -> no analysis -> the ruleset blocks it. Low practical impact here
-   (no external contributors; the maintainer self-merges); a future external
-   contributor's PR needs a maintainer-side re-run or the `enforcement: disabled`
-   toggle. Un-path-gating the dogfood job cannot fix forks -- the token is read-only.
+6. **Fork / Dependabot PRs -- the real mechanism (FIXED for Dependabot; inferred for
+   forks).** A read-only token does NOT suppress the SARIF upload: code scanning "always
+   allows uploading of results when the `pull_request` event triggers the action run"
+   (GitHub Docs, code scanning troubleshooting). PROVEN in this repo -- Dependabot PR #46
+   is treated as a fork per GitHub's own Dependabot docs, yet its `ci.yml`
+   `code-scanning` job uploaded BOTH the `angular-typechecker` and `fallow` SARIF
+   successfully (`refs/pull/46/merge`, 2026-07-25T02:58:33Z).
+   The actual cause of the permanent block was CodeQL **default setup**, which ran as
+   event `dynamic` -- OUTSIDE the `pull_request` exemption -- so GitHub never scheduled it
+   on a Dependabot-triggered ref and its required `Analyze (actions)` /
+   `Analyze (javascript-typescript)` checks never reported at all. Evidence: maintainer
+   PRs #64/#65 got both checks; Dependabot PRs #46/#59 got neither.
+   The advanced-setup migration (`.github/workflows/codeql.yml`, quick task 260725-73m)
+   moves CodeQL onto `pull_request` and therefore removes that cause. It also ORPHANS the
+   old default-setup config, so step 0's orphan-cleanup prerequisite applies to the CodeQL
+   config itself once default setup is disabled.
+   EVIDENCE BOUNDARY: the Dependabot case is PROVEN; a real EXTERNAL fork PR has never
+   been tested in this repo, so the expectation that fork PRs now produce CodeQL analyses
+   is a documented INFERENCE, not an observation. Practical impact stays low either way
+   (no external contributors; the maintainer self-merges), and `enforcement: disabled`
+   remains the recovery valve per step 5 and "Lockout recovery".
+7. **Never reintroduce CodeQL default setup.** Default setup runs as event `dynamic`,
+   outside code scanning's `pull_request` upload exemption, so its `Analyze (*)` checks
+   never report on Dependabot/fork PRs and those PRs can never satisfy this gate (proven
+   -- see item 6). That is why CodeQL lives in the committed
+   `.github/workflows/codeql.yml` instead. If that migration is ever re-run, two ORDERING
+   constraints bite: disable default setup BEFORE the advanced workflow runs on the same
+   ref (the categories are deliberately identical, so concurrent uploads collide), and
+   delete the orphaned default-setup analyses only AFTER a live advanced-setup analysis
+   exists on `main` (delete them earlier and CodeQL is "not configured", which is step 0's
+   PERMANENT block).
 
 ## Parallel execution in git worktrees: the `node_modules` junction
 
