@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           # registry-url is REQUIRED for npm to DETECT the OIDC trusted-publishing
@@ -67,14 +67,20 @@ jobs:
           # NOT exactly match the OIDC claims (org/user casing, repo, workflow filename
           # release.yml, environment npm-publish) -- fix the TP on npmjs.com.
           registry-url: https://registry.npmjs.org/
-      # setup-node writes a deprecated `always-auth=true` into the .npmrc it generates
-      # for registry-url; npm 11 no longer recognizes it and warns on every command.
-      # Strip it (cosmetic only -- OIDC is unaffected and registry-url must stay). The
-      # NPM_CONFIG_USERCONFIG path is exported by setup-node above.
-      - run: |
-          if [ -n "$NPM_CONFIG_USERCONFIG" ] && [ -f "$NPM_CONFIG_USERCONFIG" ]; then
-            sed -i '/^always-auth=/d' "$NPM_CONFIG_USERCONFIG"
-          fi
+          # Additive defense-in-depth (same class as the tag-ref `if:` above):
+          # upstream actions/setup-node#1567 recommends disabling
+          # package-manager-cache in PUBLISHING workflows, because a poisoned npm
+          # cache may expose credentials -- including the OIDC token this job
+          # mints -- to attacker-controlled code. The input defaults to TRUE, so
+          # setup-node enables npm caching with NO `cache:` input present whenever
+          # package.json declares npm via `packageManager` or
+          # `devEngines.packageManager`. Neither field exists today, so this is a
+          # ZERO-behavior change (and the input exists identically in v6.4.0 -- it
+          # is not introduced by the v7 bump). It closes a LATENT trap: adding
+          # `packageManager` is routine for Corepack (ci.yml already runs
+          # `corepack enable`), and would otherwise SILENTLY switch caching on
+          # inside this OIDC-privileged job. Fails safe.
+          package-manager-cache: false
       - run: npm i -g npm@latest
       - run: npm ci
       # CI is a fresh checkout and dist/ is gitignored, so the publishable output
