@@ -600,13 +600,21 @@ jobs:
       # category. So tag each run with a distinct `automationDetails.id` and upload
       # WITHOUT a `category` input -- the per-run id becomes the category, so the two
       # sub-analyses land as distinct fallow analyses instead of colliding.
+      #
+      # tools/ci/normalize-fallow-sarif.mjs still stamps that per-run
+      # `automationDetails.id` (which the no-`category` upload below depends on), AND
+      # it gives every location-deficient result a region-less anchor at
+      # `.fallowrc.jsonc` -- because the audit dupes run emits its
+      # `fallow/code-duplication` result with `locations` omitted and GitHub otherwise
+      # rejects the WHOLE multi-run upload with `locationFromSarifResult: expected at
+      # least one location`, losing the sibling runs' properly located findings too.
       - id: fallow-sarif
         env:
           FALLOW_AUDIT_BASE: origin/main
         run: |
           npx fallow audit --format sarif -o fallow.sarif --base origin/main || true
           if [ -s fallow.sarif ]; then
-            node -e 'const fs=require("fs");const f="fallow.sarif";const j=JSON.parse(fs.readFileSync(f,"utf8"));(j.runs||[]).forEach(function(r,i){r.automationDetails={id:"fallow/"+i}});fs.writeFileSync(f,JSON.stringify(j))'
+            node tools/ci/normalize-fallow-sarif.mjs
             echo "produced=true" >> "$GITHUB_OUTPUT"
           else
             echo "produced=false" >> "$GITHUB_OUTPUT"
@@ -748,12 +756,16 @@ jobs:
       # SARIF run -> ONE upload under ONE category avoids the multi-run-same-category
       # rejection.
       #
-      # Then rewrite every run's tool driver name to the D-02 proof tool, mirroring the
-      # dogfood job's fallow `automationDetails` rewrite verbatim in style (outer single
-      # quotes, inner double quotes, `function` expressions -- no backticks, no `$`, no PR
-      # data, so the top-of-file no-command-injection invariant is untouched and no new
-      # file or dependency is introduced). This is a CI-side post-process of the SARIF the
-      # shipped CLI already emits -- the CLI itself is NOT modified. The literal here MUST
+      # Then rewrite every run's tool driver name to the D-02 proof tool. The inline
+      # `node -e` style is deliberate and self-contained: outer single quotes, inner
+      # double quotes, `function` expressions -- no backticks, no `$`, no PR data, so
+      # the top-of-file no-command-injection invariant is untouched and no new file or
+      # dependency is introduced. (The dogfood job's fallow step no longer has an inline
+      # rewrite -- it calls tools/ci/normalize-fallow-sarif.mjs, which also needs a
+      # location fallback this one-liner does not.)
+      #
+      # This is a CI-side post-process of the SARIF the shipped CLI already emits --
+      # the CLI itself is NOT modified. The literal here MUST
       # equal the TOOL constant in tools/ci/assert-code-scanning.mjs, or the assert's
       # `tool_name` query matches nothing and the proof is permanently RED; the
       # ci-e2e-coverage-guard spec locks the two together.
