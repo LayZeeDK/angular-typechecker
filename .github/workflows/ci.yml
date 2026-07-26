@@ -657,7 +657,7 @@ jobs:
       # rejection (mirrors the fallow upload below).
       - name: Upload angular-typechecker SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.atc-sarif.outputs.produced == 'true' }}
-        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           sarif_file: angular-typechecker.sarif
       # No `category:` here on purpose -- the multi-run fallow file carries a distinct
@@ -666,7 +666,7 @@ jobs:
       # value and re-trigger the "multiple runs with the same category" rejection.
       - name: Upload fallow SARIF
         if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false) && steps.fallow-sarif.outputs.produced == 'true' }}
-        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           sarif_file: fallow.sarif
 
@@ -791,7 +791,7 @@ jobs:
       # push-to-`main` leg) is sufficient here.
       - id: upload
         if: ${{ github.event.pull_request.head.repo.fork == false && steps.gen.outputs.produced == 'true' }}
-        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           sarif_file: proof.sarif
           category: angular-typecheck-proof
