@@ -238,7 +238,7 @@ jobs:
       # provision yarn via a pinned setup step (mirroring the pnpm/action-setup
       # below) or gate this step on the Node major instead.
       - run: corepack enable
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         with:
           version: 11.9.0
       - run: npm ci
@@ -308,7 +308,7 @@ jobs:
           cache: npm
       - run: corepack enable
         shell: bash
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
         with:
           version: 11.9.0
       - run: npm ci
